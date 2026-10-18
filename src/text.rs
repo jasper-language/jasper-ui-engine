@@ -32,10 +32,14 @@ impl TextEngine for SimpleTextEngine {
         let mut max_line = 0.0f32;
 
         for raw_line in text.split('\n') {
+            // Treat CRLF the same as LF so measurement matches Windows input.
+            let raw_line = raw_line.strip_suffix('\r').unwrap_or(raw_line);
             let mut line_width = 0.0f32;
             let mut count = 0u32;
             for ch in raw_line.chars() {
-                let advance = if is_wide(ch) {
+                let advance = if is_zero_width(ch) {
+                    0.0
+                } else if is_wide(ch) {
                     font_size
                 } else {
                     font_size * 0.6
@@ -81,6 +85,19 @@ fn is_wide(ch: char) -> bool {
     )
 }
 
+fn is_zero_width(ch: char) -> bool {
+    matches!(ch as u32,
+        0x0300..=0x036F
+        | 0x1AB0..=0x1AFF
+        | 0x1DC0..=0x1DFF
+        | 0x200B..=0x200D
+        | 0x20D0..=0x20FF
+        | 0xFE00..=0xFE0F
+        | 0xFE20..=0xFE2F
+        | 0xE0100..=0xE01EF
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -100,5 +117,33 @@ mod tests {
         let metrics = engine.measure("abcdef", 10.0, Some(18.0));
         assert_eq!(metrics.lines, 2);
         assert!(metrics.height > 20.0);
+    }
+
+    #[test]
+    fn measures_empty_lines_and_crlf() {
+        let engine = SimpleTextEngine;
+        let empty = engine.measure("", 10.0, None);
+        assert_eq!(empty.lines, 1);
+        assert_eq!(empty.width, 0.0);
+        assert!((empty.height - 12.5).abs() < 0.01);
+
+        let windows = engine.measure("a\r\n\r\nb", 10.0, None);
+        assert_eq!(windows.lines, 3);
+        assert!((windows.height - 37.5).abs() < 0.01);
+    }
+
+    #[test]
+    fn wraps_cjk_at_full_width_glyph_boundaries() {
+        let engine = SimpleTextEngine;
+        let metrics = engine.measure("你好世界", 10.0, Some(20.0));
+        assert_eq!(metrics.lines, 2);
+        assert!((metrics.width - 20.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn combining_marks_do_not_add_advance() {
+        let engine = SimpleTextEngine;
+        let metrics = engine.measure("e\u{0301}", 10.0, None);
+        assert!((metrics.width - 6.0).abs() < 0.01);
     }
 }
