@@ -32,6 +32,7 @@
 | 滚动条 | `scrollbar`：track/thumb 几何、命中、thumb 拖动映射、`paint_scrollbars`（含祖先裁剪）；不新增场景节点 |
 | Canvas 组件 | `Node::canvas` + `Canvas` 记录式绘制指令（矩形/线/文字/裁剪）；局部命中区域（后注册优先）；参与布局、内容裁剪与 `ScenePatch::SetCanvas`；`tiny-skia` CPU 渲染器（文字需后续接排版器） |
 | GPU 适配器选择 | 宿主中立策略：自动/集成/独立/指定名称/纯软件；软件回退开关；`SelectionFallback` 报告回退原因 |
+| GPU 适配器枚举 | `--features gpu`：wgpu `Instance` 枚举适配器，映射 DeviceType/vendor/device，并套用上述选择策略 |
 | 桌面输入映射 | `DesktopInput`（`--features desktop`）：winit 鼠标/键盘/滚轮/IME/Focus → 引擎 `InputEvent`；窗口创建与呈现尚未接 |
 | 引擎流水线 | Scene → Layout → Paint → Batch → Backend |
 

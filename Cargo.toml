@@ -20,12 +20,16 @@ tiny-skia = { version = "0.12.0", optional = true, default-features = false, fea
 cosmic-text = { version = "0.19.0", optional = true, default-features = false, features = ["std", "swash", "fontconfig"] }
 # Desktop windowing/input host. Optional so headless and jasper-os builds stay light.
 winit = { version = "0.30.13", optional = true }
+# Real adapter enumeration for the desktop GPU host; the selection policy stays host-neutral.
+wgpu = { version = "30.0.1", optional = true }
+pollster = { version = "0.4.0", optional = true }
 
 [features]
 default = ["canvas-tiny-skia"]
 canvas-tiny-skia = ["dep:tiny-skia"]
 real-text = ["dep:cosmic-text"]
 desktop = ["dep:winit"]
+gpu = ["dep:wgpu", "dep:pollster"]
 
 [profile.release]
 lto = "thin"

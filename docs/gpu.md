@@ -20,6 +20,7 @@
 - `JASPER_GPU_ALLOW_SOFTWARE=0|1`
 - `GraphicsSettings::from_env()` 读取；`env_pairs()` 供设置界面写回。
 - `select_adapter(adapters, preference, allow_software)` 是宿主中立策略，不依赖 wgpu。
+- `--features gpu` 下 `gpu_wgpu::instance()` / `adapters()` / `select()` 已接真实 wgpu 枚举；桌面宿主下一步用它创建设备与 surface。
 
 ## 运行时切换
 

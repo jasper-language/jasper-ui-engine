@@ -34,7 +34,7 @@
 
 - 真实文本栈：cosmic-text 测量已接（可选 `real-text`）；下一步字形光栅/图集缓存、光标几何与默认引擎切换
 - winit 平台适配：输入事件映射已落地；窗口创建、呈现、DPI 与事件循环下一步
-- GPU 后端（wgpu/Vello）与软件后端降级；适配器选择策略已落地，待接 wgpu/winit
+- GPU 后端（wgpu/Vello）与软件后端降级；适配器选择与 wgpu 枚举已落地，待接 surface/device 与渲染管线
 - 图片解码（`image`）与资源缓存
 - 帧调度/按需重绘/局部失效（起步）
 

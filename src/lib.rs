@@ -33,6 +33,8 @@ pub mod desktop;
 pub mod engine;
 pub mod geometry;
 pub mod gesture;
+#[cfg(feature = "gpu")]
+pub mod gpu_wgpu;
 pub mod graphics;
 pub mod hit_test;
 pub mod input;
@@ -61,6 +63,11 @@ pub use desktop::DesktopInput;
 pub use engine::{Engine, EngineError, FrameStats};
 pub use geometry::{Edges, Point, Rect, Size};
 pub use gesture::{Gesture, GestureConfig, GestureRecognizer};
+#[cfg(feature = "gpu")]
+pub use gpu_wgpu::{
+    adapter_kind, adapters as wgpu_adapters, describe as describe_wgpu_adapter,
+    instance as wgpu_instance, select as select_wgpu_adapter,
+};
 pub use graphics::{
     select_adapter, AdapterInfo, AdapterKind, AdapterSelection, GpuPreference, GraphicsSettings,
     SelectionFallback,
