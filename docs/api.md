@@ -59,6 +59,7 @@ println!("{} boxes, {} ops, {} bytes", stats.layout_boxes, stats.paint_ops, stat
 | `RenderBackend` / `HeadlessBackend` | `backend` | 后端契约/软件后端 |
 | `PlatformHost` / `HeadlessHost` | `platform` | 宿主窗口/DPI/重绘 |
 | `PointerEvent` / `PointerTracker` | `input` | 指针/触摸/笔 |
+| `ScrollBounds` / `ScrollConfig` / `ScrollController` / `ScrollUpdate` | `scroll` | 滚动范围、wheel 路由、fling 惯性 |
 | `Engine` / `FrameStats` | `engine` | 流水线 |
 
 ## Scene
@@ -85,8 +86,8 @@ scene.apply(ScenePatch::Remove { id: NodeId(2) })?;
 - 尺寸：`Length::Auto/Px/Percent`；`min_*`/`max_*`。
 - 布局：`Display::{Block,Flex,None}`、`FlexDirection::{Row,Column}`、`Align`、`Justify`、`gap`、`flex_grow`。
 - 间距：`padding`、`margin`、`border`。
-- 溢出：`overflow(Overflow::Hidden/Scroll)`；`Scroll` 当前无滚动条/惯性。
-- 滚动：`Node::scroll(Point)`，或 `ScenePatch::SetScroll { id, offset }`。
+- 溢出：`overflow(Overflow::Hidden/Scroll)`；`Scroll` 支持 wheel 路由/clamp/fling，但仍无可视滚动条。
+- 滚动：`Node::scroll(Point)`，或 `ScenePatch::SetScroll { id, offset }`（见“滚动控制”）。
 - 文字：`font_size`、`color`（测量参与布局；光栅未实现）。
 - 当前不支持阴影/滤镜/变换/滚动/虚拟化。
 
@@ -151,7 +152,7 @@ tracker.track(event)?;
 
 - 触摸/笔/鼠标统一为 `PointerEvent`；多点用 `pointer_id`。
 - `PointerTracker` 只跟踪按下中的指针；Hover/Move 未按下时忽略。
-- 手势、命中测试、IME 组合尚未实现。
+- 手势、命中测试见下文；IME 组合尚未实现。
 
 ## 命中测试与指针路由
 
@@ -206,6 +207,32 @@ let timed = recognizer.tick(now_ms);         // 推进 long-press
 - `GestureConfig` 可调 tap/long-press/pan/pinch 阈值。
 - 这是宿主中立参考实现；Jasper UI 层可替换手势语义与冲突规则。
 - 不会自动处理“点击 vs 滚动”的手势竞技场；需要上层策略。
+
+## 滚动控制
+
+```rust
+use jasper_ui_engine::scroll::ScrollController;
+
+let layout = engine.layout(&scene)?;
+let mut scroll = ScrollController::default();
+
+// 滚轮/trackpad：正 delta 表示内容上移（offset 增加）。
+if let Some(update) = scroll.wheel(&layout, &scene, pointer_position, delta) {
+    scene.apply(update.patch())?;
+}
+
+// 惯性：手势 PanEnd 时把释放速度交给 fling，按帧推进。
+scroll.begin_fling(node, release_velocity);
+for update in scroll.tick(&layout, &scene, dt_seconds) {
+    scene.apply(update.patch())?;
+}
+```
+
+- `ScrollBounds` 由布局树中该节点的直接子节点并集算出；`max_offset()` 是 clamp 上界。
+- `wheel` 命中几何盒（透明容器也算），选最近的、该方向仍可滚动的 `Overflow::Scroll` 祖先；到边界后可继续向外层链式滚动。
+- 一次事件只由一个祖先消费，不拆分残余 delta；滚轮输入会取消该链上的 fling。
+- `tick` 用指数摩擦衰减速度，到边界或低于 `min_velocity` 即停止；`dt` 上限 0.1s。
+- `ScrollUpdate::patch()` 产出普通的 `ScenePatch::SetScroll`，仍走版本/原子批；应用后应重新布局再继续命中/滚动。
 
 ## Engine
 

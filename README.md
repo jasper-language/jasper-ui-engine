@@ -35,6 +35,7 @@ Jasper UI 的 **宿主无关 Native 引擎底座**（Rust）。它只负责底�
 - **场景版本 + 原子批量补丁**：成功才推进版本；过期批次拒绝；失败不半应用
 - **参考手势层**：tap / long-press / pan / pinch / cancel，接在指针路由/capture 上
 - **溢出裁剪 + 滚动偏移**：`Overflow::Hidden/Scroll` 裁剪子树；`Node::scroll` 平移子节点
+- **滚动控制**：滚轮 delta 路由到最近可滚动祖先、边界 clamp、fling 惯性（无可视滚动条）
 - 引擎流水线：场景 → 布局 → 绘制 → UiBatch → 后端
 - 测试与可运行示例
 
@@ -44,7 +45,7 @@ Jasper UI 的 **宿主无关 Native 引擎底座**（Rust）。它只负责底�
 - winit 窗口、wgpu/Vello GPU、AccessKit、图片/SVG 解码
 - Jasper ABI、Jasper UI Framework、UI IR、状态/事件/动画/路由
 - Web HTML/CSS/JS/WASM 输出
-- 输入法组合、滚动条/惯性、AccessKit 桥（v0.2 接；命中/捕获/语义/焦点/手势/裁剪已落地）
+- 输入法组合、滚动条/过冲回弹、AccessKit 桥（v0.2 接；命中/捕获/语义/焦点/手势/裁剪/滚动已落地）
 - 这些缺口在 [docs/status.md](docs/status.md) 里逐项标注，不写成“已完成”。
 
 ## 快速开始
