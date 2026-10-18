@@ -59,7 +59,7 @@ pub use canvas::{Canvas, CanvasHitRegion, CanvasOp};
 #[cfg(feature = "canvas-tiny-skia")]
 pub use canvas_tiny_skia::{render_canvas, CanvasRenderReport};
 #[cfg(feature = "desktop")]
-pub use desktop::DesktopInput;
+pub use desktop::{rgba_to_u32, DesktopInput, PixelError};
 pub use engine::{Engine, EngineError, FrameStats};
 pub use geometry::{Edges, Point, Rect, Size};
 pub use gesture::{Gesture, GestureConfig, GestureRecognizer};

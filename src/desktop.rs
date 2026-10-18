@@ -19,6 +19,23 @@ use crate::input::{
 
 const LINE_SCROLL_PX: f32 = 48.0;
 
+/// Pixel conversion failures for software presentation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PixelError {
+    LengthMismatch,
+}
+
+/// Converts RGBA8 pixels to softbuffer's `0x00RRGGBB` words.
+pub fn rgba_to_u32(pixels: &[u8], out: &mut [u32]) -> Result<(), PixelError> {
+    if pixels.len() != out.len().saturating_mul(4) {
+        return Err(PixelError::LengthMismatch);
+    }
+    for (destination, source) in out.iter_mut().zip(pixels.as_chunks::<4>().0) {
+        *destination = ((source[0] as u32) << 16) | ((source[1] as u32) << 8) | source[2] as u32;
+    }
+    Ok(())
+}
+
 /// Stateful translator for one desktop window.
 pub struct DesktopInput {
     pointer_id: PointerId,
@@ -286,6 +303,17 @@ mod tests {
                 start: 0,
                 end: 2
             }))
+        );
+    }
+
+    #[test]
+    fn converts_rgba_to_softbuffer_words() {
+        let mut out = [0u32; 2];
+        rgba_to_u32(&[255, 0, 0, 255, 0, 128, 255, 255], &mut out).unwrap();
+        assert_eq!(out, [0x00FF0000, 0x000080FF]);
+        assert_eq!(
+            rgba_to_u32(&[1, 2, 3, 4], &mut []),
+            Err(PixelError::LengthMismatch)
         );
     }
 }

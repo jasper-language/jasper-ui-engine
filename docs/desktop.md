@@ -15,12 +15,18 @@
   - `ModifiersChanged` → `Modifiers`
 - 纯映射层不创建窗口，因此可以在无头 CI 中测试。
 
+## 已落地：真实窗口 + 软件呈现
+
+- `examples/window` 用 `ApplicationHandler` 创建 winit 窗口。
+- `softbuffer` 把 `HeadlessBackend` 的 RGBA 帧转换为 `0x00RRGGBB` 并呈现。
+- `cargo run --features desktop --example window -- --once` 已实跑：创建窗口、渲染一帧、退出。
+- 输入事件经 `DesktopInput` 规范化并打印到 stderr。
+
 ## 下一片
 
-- 创建窗口与事件循环（`ApplicationHandler`）
-- `softbuffer` 软件呈现一帧（先在真实窗口里看到界面）
-- DPI/缩放与窗口尺寸变化
+- DPI/缩放与窗口尺寸变化的完整处理
 - 触控/笔事件（winit `Touch` / 平台扩展）
+- 窗口生命周期与多窗口
 
 ## 再下一片
 

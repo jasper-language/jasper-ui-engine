@@ -34,6 +34,7 @@
 | GPU 适配器选择 | 宿主中立策略：自动/集成/独立/指定名称/纯软件；软件回退开关；`SelectionFallback` 报告回退原因 |
 | GPU 适配器枚举 | `--features gpu`：wgpu `Instance` 枚举适配器，映射 DeviceType/vendor/device，并套用上述选择策略 |
 | 桌面输入映射 | `DesktopInput`（`--features desktop`）：winit 鼠标/键盘/滚轮/IME/Focus → 引擎 `InputEvent`；窗口创建与呈现尚未接 |
+| 桌面窗口/软件呈现 | `examples/window`：winit 创建真实窗口、`softbuffer` 呈现 HeadlessBackend 帧；`--once` 单帧退出已实跑 |
 | 引擎流水线 | Scene → Layout → Paint → Batch → Backend |
 
 ## 已实现但尚未充分验证

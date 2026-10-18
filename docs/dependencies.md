@@ -12,6 +12,7 @@
 | `winit` | 0.30.13 | Apache-2.0 | 桌面窗口与原始输入事件（可选特性 `desktop`） | 已锁定；`--features desktop` 输入映射测试通过 |
 | `wgpu` | 30.0.1 | MIT OR Apache-2.0 | GPU 实例与适配器枚举（可选特性 `gpu`） | 已锁定；`--features gpu` 测试通过 |
 | `pollster` | 0.4.0 | MIT OR Apache-2.0 | 在同步宿主里等待 wgpu 的异步适配器枚举 | 已锁定；随 `gpu` 特性 |
+| `softbuffer` | 0.4.8 | MIT OR Apache-2.0 | 桌面软件帧缓冲呈现（可选特性 `desktop`） | 已锁定；`examples/window -- --once` 实跑通过 |
 
 > `tiny-skia` 是纯 Rust 的 Skia 子集，不引入 C++/系统图形库。BSD-3-Clause 与 Apache-2.0 兼容；完整声明见仓库根目录 `THIRD_PARTY_LICENSES.md`。
 > `cosmic-text` 为可选特性；默认构建仍使用 `SimpleTextEngine` 的近似测量，开启 `real-text` 后由系统字体与真实 shaping 接管。

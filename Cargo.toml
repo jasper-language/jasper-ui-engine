@@ -23,14 +23,19 @@ winit = { version = "0.30.13", optional = true }
 # Real adapter enumeration for the desktop GPU host; the selection policy stays host-neutral.
 wgpu = { version = "30.0.1", optional = true }
 pollster = { version = "0.4.0", optional = true }
+softbuffer = { version = "0.4.8", optional = true }
 
 [features]
 default = ["canvas-tiny-skia"]
 canvas-tiny-skia = ["dep:tiny-skia"]
 real-text = ["dep:cosmic-text"]
-desktop = ["dep:winit"]
+desktop = ["dep:winit", "dep:softbuffer"]
 gpu = ["dep:wgpu", "dep:pollster"]
 
 [profile.release]
 lto = "thin"
 codegen-units = 1
+
+[[example]]
+name = "window"
+required-features = ["desktop"]

@@ -40,6 +40,7 @@ Jasper UI 的 **宿主无关 Native 引擎底座**（Rust）。它只负责底�
 - **Canvas 组件**：记录式绘制指令（矩形/线/文字/裁剪），参与布局与内容裁剪；CPU 渲染走 `tiny-skia`
 - **GPU 选择策略**：自动/集成/独立/指定适配器/纯软件，支持软件回退与运行时切换规划
 - **桌面输入**：`--features desktop` 把 winit 鼠标/键盘/滚轮/IME/Focus 规范化为引擎事件
+- **桌面窗口**：`cargo run --features desktop --example window` 打开真实 winit 窗口并用 softbuffer 呈现引擎帧
 - **GPU 选择**：`--features gpu` 用 wgpu 枚举真实适配器，套用自动/集成/独立/指定/纯软件策略
 - 引擎流水线：场景 → 布局 → 绘制 → UiBatch → 后端
 - 测试与可运行示例
