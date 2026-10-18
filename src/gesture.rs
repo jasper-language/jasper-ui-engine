@@ -4,7 +4,7 @@
 use std::collections::BTreeMap;
 
 use crate::geometry::Point;
-use crate::input::{PointerId, PointerPhase};
+use crate::input::{MouseButton, PointerId, PointerPhase};
 use crate::pointer::PointerRoute;
 use crate::scene::NodeId;
 
@@ -52,6 +52,12 @@ pub enum Gesture {
         pointer_id: PointerId,
         target: Option<NodeId>,
         position: Point,
+    },
+    SecondaryTap {
+        pointer_id: PointerId,
+        target: Option<NodeId>,
+        position: Point,
+        button: MouseButton,
     },
     LongPress {
         pointer_id: PointerId,
@@ -246,31 +252,43 @@ impl GestureRecognizer {
                         && duration <= self.config.tap_max_duration_ms
                         && moved <= self.config.tap_max_distance
                     {
-                        let double = self.last_tap.as_ref().is_some_and(|last| {
-                            last.target == state.target
-                                && event.timestamp_millis.saturating_sub(last.timestamp_ms)
-                                    <= self.config.double_tap_ms
-                                && distance(last.position, event.position)
-                                    <= self.config.double_tap_distance
-                        });
-                        if double {
-                            out.push(Gesture::DoubleTap {
-                                pointer_id: event.pointer_id,
-                                target: state.target,
-                                position: event.position,
-                            });
+                        if let Some(button) = secondary_button(event) {
+                            // Right/middle/back/forward clicks are commands, not
+                            // taps; they also break a pending double-tap.
                             self.last_tap = None;
-                        } else {
-                            out.push(Gesture::Tap {
+                            out.push(Gesture::SecondaryTap {
                                 pointer_id: event.pointer_id,
                                 target: state.target,
                                 position: event.position,
+                                button,
                             });
-                            self.last_tap = Some(TapRecord {
-                                target: state.target,
-                                position: event.position,
-                                timestamp_ms: event.timestamp_millis,
+                        } else {
+                            let double = self.last_tap.as_ref().is_some_and(|last| {
+                                last.target == state.target
+                                    && event.timestamp_millis.saturating_sub(last.timestamp_ms)
+                                        <= self.config.double_tap_ms
+                                    && distance(last.position, event.position)
+                                        <= self.config.double_tap_distance
                             });
+                            if double {
+                                out.push(Gesture::DoubleTap {
+                                    pointer_id: event.pointer_id,
+                                    target: state.target,
+                                    position: event.position,
+                                });
+                                self.last_tap = None;
+                            } else {
+                                out.push(Gesture::Tap {
+                                    pointer_id: event.pointer_id,
+                                    target: state.target,
+                                    position: event.position,
+                                });
+                                self.last_tap = Some(TapRecord {
+                                    target: state.target,
+                                    position: event.position,
+                                    timestamp_ms: event.timestamp_millis,
+                                });
+                            }
                         }
                     }
                 }
@@ -401,6 +419,13 @@ fn distance(a: Point, b: Point) -> f32 {
     (dx * dx + dy * dy).sqrt()
 }
 
+fn secondary_button(event: &crate::input::PointerEvent) -> Option<MouseButton> {
+    match event.button {
+        Some(MouseButton::Left) | None => None,
+        Some(button) => Some(button),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -426,6 +451,12 @@ mod tests {
 
     fn with_contact(mut route: PointerRoute, contact: f32) -> PointerRoute {
         route.event.contact = crate::geometry::Size::new(contact, contact);
+        route
+    }
+
+    fn with_button(mut route: PointerRoute, button: MouseButton) -> PointerRoute {
+        route.event.kind = PointerKind::Mouse;
+        route.event.button = Some(button);
         route
     }
 
@@ -618,6 +649,77 @@ mod tests {
 
         recognizer.process(&route(1, PointerPhase::Down, 10.0, 10.0, 180));
         let tap = recognizer.process(&route(1, PointerPhase::Up, 10.0, 10.0, 220));
+        assert!(matches!(tap[0], Gesture::Tap { .. }));
+    }
+
+    #[test]
+    fn right_click_is_a_secondary_tap_not_a_tap() {
+        let mut recognizer = GestureRecognizer::default();
+        recognizer.process(&with_button(
+            route(1, PointerPhase::Down, 10.0, 10.0, 0),
+            MouseButton::Right,
+        ));
+        let out = recognizer.process(&with_button(
+            route(1, PointerPhase::Up, 10.0, 10.0, 50),
+            MouseButton::Right,
+        ));
+        assert_eq!(
+            out,
+            vec![Gesture::SecondaryTap {
+                pointer_id: PointerId(1),
+                target: Some(NodeId(1)),
+                position: Point::new(10.0, 10.0),
+                button: MouseButton::Right,
+            }]
+        );
+    }
+
+    #[test]
+    fn left_click_remains_a_tap() {
+        let mut recognizer = GestureRecognizer::default();
+        recognizer.process(&with_button(
+            route(1, PointerPhase::Down, 10.0, 10.0, 0),
+            MouseButton::Left,
+        ));
+        let out = recognizer.process(&with_button(
+            route(1, PointerPhase::Up, 10.0, 10.0, 50),
+            MouseButton::Left,
+        ));
+        assert!(matches!(out[0], Gesture::Tap { .. }));
+    }
+
+    #[test]
+    fn secondary_click_breaks_a_double_tap_sequence() {
+        let mut recognizer = GestureRecognizer::default();
+        recognizer.process(&with_button(
+            route(1, PointerPhase::Down, 10.0, 10.0, 0),
+            MouseButton::Left,
+        ));
+        recognizer.process(&with_button(
+            route(1, PointerPhase::Up, 10.0, 10.0, 50),
+            MouseButton::Left,
+        ));
+
+        recognizer.process(&with_button(
+            route(1, PointerPhase::Down, 10.0, 10.0, 100),
+            MouseButton::Right,
+        ));
+        assert!(matches!(
+            recognizer.process(&with_button(
+                route(1, PointerPhase::Up, 10.0, 10.0, 150),
+                MouseButton::Right,
+            ))[0],
+            Gesture::SecondaryTap { .. }
+        ));
+
+        recognizer.process(&with_button(
+            route(1, PointerPhase::Down, 10.0, 10.0, 200),
+            MouseButton::Left,
+        ));
+        let tap = recognizer.process(&with_button(
+            route(1, PointerPhase::Up, 10.0, 10.0, 250),
+            MouseButton::Left,
+        ));
         assert!(matches!(tap[0], Gesture::Tap { .. }));
     }
 }
