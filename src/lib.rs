@@ -31,6 +31,7 @@ pub mod canvas_tiny_skia;
 pub mod engine;
 pub mod geometry;
 pub mod gesture;
+pub mod graphics;
 pub mod hit_test;
 pub mod input;
 pub mod keyboard;
@@ -56,6 +57,10 @@ pub use canvas_tiny_skia::{render_canvas, CanvasRenderReport};
 pub use engine::{Engine, EngineError, FrameStats};
 pub use geometry::{Edges, Point, Rect, Size};
 pub use gesture::{Gesture, GestureConfig, GestureRecognizer};
+pub use graphics::{
+    select_adapter, AdapterInfo, AdapterKind, AdapterSelection, GpuPreference, GraphicsSettings,
+    SelectionFallback,
+};
 pub use hit_test::{hit_test as hit_test_at, hit_test_path};
 pub use input::{InputEvent, PointerEvent, PointerKind, PointerPhase, PointerTracker};
 pub use keyboard::{CompositionRoute, KeyAction, KeyRoute, KeyboardRouter, TextRoute};
