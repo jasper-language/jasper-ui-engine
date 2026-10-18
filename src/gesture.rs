@@ -16,6 +16,10 @@ pub struct GestureConfig {
     pub long_press_ms: u64,
     pub pan_threshold: f32,
     pub pinch_threshold: f32,
+    /// Maximum gap between two taps for the second to become a double-tap.
+    pub double_tap_ms: u64,
+    /// Maximum distance between two taps for a double-tap.
+    pub double_tap_distance: f32,
     /// Touch contacts wider or taller than this (logical px) are treated as a
     /// palm and do not produce gestures. Zero disables palm rejection.
     pub palm_contact_max: f32,
@@ -29,6 +33,8 @@ impl Default for GestureConfig {
             long_press_ms: 500,
             pan_threshold: 8.0,
             pinch_threshold: 8.0,
+            double_tap_ms: 300,
+            double_tap_distance: 8.0,
             palm_contact_max: 40.0,
         }
     }
@@ -38,6 +44,11 @@ impl Default for GestureConfig {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Gesture {
     Tap {
+        pointer_id: PointerId,
+        target: Option<NodeId>,
+        position: Point,
+    },
+    DoubleTap {
         pointer_id: PointerId,
         target: Option<NodeId>,
         position: Point,
@@ -104,12 +115,20 @@ struct PinchState {
     target: Option<NodeId>,
 }
 
+#[derive(Clone, Debug)]
+struct TapRecord {
+    target: Option<NodeId>,
+    position: Point,
+    timestamp_ms: u64,
+}
+
 /// Stateful recognizer; feed it `PointerRoute`s and `tick` it for long-press.
 #[derive(Clone, Debug)]
 pub struct GestureRecognizer {
     config: GestureConfig,
     pointers: BTreeMap<PointerId, PointerState>,
     pinch: Option<PinchState>,
+    last_tap: Option<TapRecord>,
 }
 
 impl Default for GestureRecognizer {
@@ -124,6 +143,7 @@ impl GestureRecognizer {
             config,
             pointers: BTreeMap::new(),
             pinch: None,
+            last_tap: None,
         }
     }
 
@@ -162,6 +182,7 @@ impl GestureRecognizer {
                 // continuing with a bogus pointer.
                 if self.is_palm(event) {
                     if self.pointers.remove(&event.pointer_id).is_some() {
+                        self.last_tap = None;
                         out.push(Gesture::Cancelled {
                             pointer_id: event.pointer_id,
                         });
@@ -181,6 +202,7 @@ impl GestureRecognizer {
                         && moved > self.config.pan_threshold
                     {
                         state.panning = true;
+                        self.last_tap = None;
                         out.push(Gesture::PanStart {
                             pointer_id: event.pointer_id,
                             target: state.target,
@@ -224,17 +246,39 @@ impl GestureRecognizer {
                         && duration <= self.config.tap_max_duration_ms
                         && moved <= self.config.tap_max_distance
                     {
-                        out.push(Gesture::Tap {
-                            pointer_id: event.pointer_id,
-                            target: state.target,
-                            position: event.position,
+                        let double = self.last_tap.as_ref().is_some_and(|last| {
+                            last.target == state.target
+                                && event.timestamp_millis.saturating_sub(last.timestamp_ms)
+                                    <= self.config.double_tap_ms
+                                && distance(last.position, event.position)
+                                    <= self.config.double_tap_distance
                         });
+                        if double {
+                            out.push(Gesture::DoubleTap {
+                                pointer_id: event.pointer_id,
+                                target: state.target,
+                                position: event.position,
+                            });
+                            self.last_tap = None;
+                        } else {
+                            out.push(Gesture::Tap {
+                                pointer_id: event.pointer_id,
+                                target: state.target,
+                                position: event.position,
+                            });
+                            self.last_tap = Some(TapRecord {
+                                target: state.target,
+                                position: event.position,
+                                timestamp_ms: event.timestamp_millis,
+                            });
+                        }
                     }
                 }
                 self.update_pinch(&mut out);
             }
             PointerPhase::Cancel => {
                 if self.pointers.remove(&event.pointer_id).is_some() {
+                    self.last_tap = None;
                     out.push(Gesture::Cancelled {
                         pointer_id: event.pointer_id,
                     });
@@ -258,6 +302,7 @@ impl GestureRecognizer {
                 && now_ms.saturating_sub(state.started_at) >= self.config.long_press_ms
             {
                 state.long_pressed = true;
+                self.last_tap = None;
                 out.push(Gesture::LongPress {
                     pointer_id: *id,
                     target: state.target,
@@ -348,6 +393,12 @@ impl GestureRecognizer {
             });
         }
     }
+}
+
+fn distance(a: Point, b: Point) -> f32 {
+    let dx = a.x - b.x;
+    let dy = a.y - b.y;
+    (dx * dx + dy * dy).sqrt()
 }
 
 #[cfg(test)]
@@ -525,5 +576,48 @@ mod tests {
             60.0,
         ));
         assert!(matches!(out[0], Gesture::Tap { .. }));
+    }
+
+    #[test]
+    fn recognizes_double_tap_across_pointer_ids() {
+        let mut recognizer = GestureRecognizer::default();
+        recognizer.process(&route(1, PointerPhase::Down, 10.0, 10.0, 0));
+        let first = recognizer.process(&route(1, PointerPhase::Up, 10.0, 10.0, 80));
+        assert!(matches!(first[0], Gesture::Tap { .. }));
+
+        // A touch lifted and pressed again usually gets a new pointer id.
+        recognizer.process(&route(2, PointerPhase::Down, 11.0, 10.0, 150));
+        let second = recognizer.process(&route(2, PointerPhase::Up, 11.0, 10.0, 220));
+        assert!(matches!(second[0], Gesture::DoubleTap { .. }));
+    }
+
+    #[test]
+    fn double_tap_requires_time_and_distance() {
+        let mut recognizer = GestureRecognizer::default();
+        recognizer.process(&route(1, PointerPhase::Down, 10.0, 10.0, 0));
+        recognizer.process(&route(1, PointerPhase::Up, 10.0, 10.0, 50));
+
+        recognizer.process(&route(1, PointerPhase::Down, 40.0, 10.0, 100));
+        let far = recognizer.process(&route(1, PointerPhase::Up, 40.0, 10.0, 150));
+        assert!(matches!(far[0], Gesture::Tap { .. }));
+
+        recognizer.process(&route(1, PointerPhase::Down, 40.0, 10.0, 700));
+        let slow = recognizer.process(&route(1, PointerPhase::Up, 40.0, 10.0, 750));
+        assert!(matches!(slow[0], Gesture::Tap { .. }));
+    }
+
+    #[test]
+    fn pan_breaks_a_double_tap_sequence() {
+        let mut recognizer = GestureRecognizer::default();
+        recognizer.process(&route(1, PointerPhase::Down, 10.0, 10.0, 0));
+        recognizer.process(&route(1, PointerPhase::Up, 10.0, 10.0, 50));
+
+        recognizer.process(&route(1, PointerPhase::Down, 10.0, 10.0, 100));
+        recognizer.process(&route(1, PointerPhase::Move, 40.0, 10.0, 120));
+        recognizer.process(&route(1, PointerPhase::Up, 40.0, 10.0, 140));
+
+        recognizer.process(&route(1, PointerPhase::Down, 10.0, 10.0, 180));
+        let tap = recognizer.process(&route(1, PointerPhase::Up, 10.0, 10.0, 220));
+        assert!(matches!(tap[0], Gesture::Tap { .. }));
     }
 }
