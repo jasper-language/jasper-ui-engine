@@ -8,15 +8,15 @@
 
 | 产物 | 字节 | MiB |
 |---|---:|---:|
-| `target/release/libjasper_ui_engine.rlib` | 3,877,080 | 3.70 |
-| `target/release/examples/hello`（未 strip） | 933,312 | 0.89 |
-| `target/release/examples/hello`（strip） | 782,368 | 0.75 |
+| `target/release/libjasper_ui_engine.rlib` | 3,893,128 | 3.71 |
+| `target/release/examples/hello`（未 strip） | 933,840 | 0.89 |
+| `target/release/examples/hello`（strip） | 782,896 | 0.75 |
 
 `size` 的段统计（未 strip 的 example）：
 
 ```text
    text    data     bss     dec     hex filename
- 761,381   17,600   1,387  780,368   be850 target/release/examples/hello
+ 761,917   17,600     859  780,376   be858 target/release/examples/hello
 ```
 
 ## 怎么理解

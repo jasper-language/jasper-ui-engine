@@ -1,6 +1,7 @@
 //! Instance scene tree with stable node identities and incremental patches.
 //! 实例层场景树；不是 Jasper 的声明层组件树，也不是 Web DOM。
 
+use crate::geometry::Point;
 use crate::semantics::Semantics;
 use crate::style::Style;
 
@@ -23,6 +24,8 @@ pub struct Node {
     pub kind: NodeKind,
     pub style: Style,
     pub semantics: Semantics,
+    /// Child offset applied after layout; scroll containers update this.
+    pub scroll: Point,
     pub children: Vec<Node>,
 }
 
@@ -33,6 +36,7 @@ impl Node {
             kind,
             style: Style::default(),
             semantics: Semantics::default(),
+            scroll: Point::ZERO,
             children: Vec::new(),
         }
     }
@@ -56,6 +60,11 @@ impl Node {
 
     pub fn with_semantics(mut self, semantics: Semantics) -> Self {
         self.semantics = semantics;
+        self
+    }
+
+    pub fn scroll(mut self, offset: Point) -> Self {
+        self.scroll = offset;
         self
     }
 
@@ -157,6 +166,11 @@ impl Scene {
                 node.style = style;
                 Ok(())
             }
+            ScenePatch::SetScroll { id, offset } => {
+                let node = find_node_mut(&mut self.root, id).ok_or(SceneError::NodeNotFound(id))?;
+                node.scroll = offset;
+                Ok(())
+            }
             ScenePatch::UpdateText { id, text } => {
                 let node = find_node_mut(&mut self.root, id).ok_or(SceneError::NodeNotFound(id))?;
                 match &mut node.kind {
@@ -196,6 +210,10 @@ pub enum ScenePatch {
     UpdateText {
         id: NodeId,
         text: String,
+    },
+    SetScroll {
+        id: NodeId,
+        offset: Point,
     },
     Remove {
         id: NodeId,
@@ -327,6 +345,19 @@ mod tests {
         assert_eq!(result, Err(SceneError::NodeNotFound(id(9))));
         assert!(!scene.contains(id(2)));
         assert_eq!(scene.version(), 1);
+    }
+
+    #[test]
+    fn set_scroll_is_versioned_patch() {
+        let mut scene = Scene::new(Node::container(id(1)));
+        scene
+            .apply(ScenePatch::SetScroll {
+                id: id(1),
+                offset: Point::new(0.0, 24.0),
+            })
+            .unwrap();
+        assert_eq!(scene.find(id(1)).unwrap().scroll, Point::new(0.0, 24.0));
+        assert_eq!(scene.version(), 2);
     }
 
     #[test]

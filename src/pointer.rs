@@ -141,6 +141,7 @@ mod tests {
                     content: Rect::new(0.0, 0.0, 100.0, 100.0),
                     style: root_style,
                     text: None,
+                    clip: None,
                 },
                 LayoutBox {
                     node_id: NodeId(2),
@@ -149,6 +150,7 @@ mod tests {
                     content: Rect::new(10.0, 10.0, 30.0, 30.0),
                     style: child_style,
                     text: None,
+                    clip: None,
                 },
             ],
         }

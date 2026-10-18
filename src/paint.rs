@@ -54,6 +54,9 @@ pub fn paint(layout: &LayoutTree, clear: Color) -> DisplayList {
     display.push(PaintOp::Clear(clear));
 
     for node in &layout.boxes {
+        if let Some(clip) = node.clip {
+            display.push(PaintOp::PushClip(clip));
+        }
         if node.style.background.a > 0 {
             display.push(PaintOp::FillRect {
                 rect: node.rect,
@@ -77,6 +80,9 @@ pub fn paint(layout: &LayoutTree, clear: Color) -> DisplayList {
                 });
             }
         }
+        if node.clip.is_some() {
+            display.push(PaintOp::PopClip);
+        }
     }
 
     display
@@ -89,6 +95,29 @@ mod tests {
     use crate::layout::LayoutBox;
     use crate::scene::NodeId;
     use crate::style::{Color, Style};
+
+    #[test]
+    fn emits_clip_for_clipped_nodes() {
+        let layout = LayoutTree {
+            viewport: Size::new(100.0, 100.0),
+            scene_version: 1,
+            boxes: vec![LayoutBox {
+                node_id: NodeId(1),
+                parent: None,
+                rect: Rect::new(0.0, 0.0, 100.0, 100.0),
+                content: Rect::new(0.0, 0.0, 100.0, 100.0),
+                style: Style::default().background(Color::RED),
+                text: None,
+                clip: Some(Rect::new(0.0, 0.0, 50.0, 50.0)),
+            }],
+        };
+        let display = paint(&layout, Color::WHITE);
+        assert!(display
+            .ops
+            .iter()
+            .any(|op| matches!(op, PaintOp::PushClip(_))));
+        assert!(display.ops.iter().any(|op| matches!(op, PaintOp::PopClip)));
+    }
 
     #[test]
     fn paints_background_border_and_text() {
@@ -105,6 +134,7 @@ mod tests {
                     .border(1.0, Color::WHITE)
                     .text(12.0, Color::BLACK),
                 text: Some("hi".into()),
+                clip: None,
             }],
         };
         let display = paint(&layout, Color::WHITE);

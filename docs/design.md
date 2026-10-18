@@ -106,6 +106,9 @@ Jasper UI Framework / UI IR / Compiler        （Jasper 侧，后续）
 - 不含：阴影、滤镜、变换、Grid 全部高级特性、滚动、虚拟化。
 - 文本叶子通过 `TextEngine::measure` 参与测量；真实 Parley 适配后续替换。
 - Taffy 类型不暴露给 Jasper 公共 API。
+- 溢出：`Style::overflow = Hidden/Scroll` 时，子节点带祖先裁剪矩形；`Scroll` 当前等同 Hidden（无滚动条/惯性）。
+- 滚动：`Node::scroll` 在布局后平移子树；`ScenePatch::SetScroll` 可增量更新。
+- 绘制对带 `clip` 的节点发 `PushClip/PopClip`；命中测试要求点同时落在节点矩形和祖先裁剪内。
 
 ## 9. 绘制与批处理
 

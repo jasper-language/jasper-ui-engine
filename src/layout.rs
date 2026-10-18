@@ -24,6 +24,8 @@ pub struct LayoutBox {
     pub content: Rect,
     pub style: Style,
     pub text: Option<String>,
+    /// Effective ancestor clip (not the node's own overflow clip).
+    pub clip: Option<Rect>,
 }
 
 /// Result of one layout pass.
@@ -109,6 +111,7 @@ impl LayoutEngine for TaffyLayoutEngine {
             &tree,
             &scene.root,
             None,
+            None,
             Point::ZERO,
             &taffy_ids,
             &mut boxes,
@@ -163,6 +166,7 @@ fn collect_boxes(
     tree: &TaffyTree<TextContext>,
     node: &Node,
     parent: Option<NodeId>,
+    clip: Option<Rect>,
     parent_origin: Point,
     ids: &HashMap<NodeId, taffy::NodeId>,
     out: &mut Vec<LayoutBox>,
@@ -192,9 +196,27 @@ fn collect_boxes(
         content,
         style: node.style.clone(),
         text: node.text_content().map(str::to_owned),
+        clip,
     });
+    let child_clip = if node.style.overflow == crate::style::Overflow::Visible {
+        clip
+    } else {
+        Some(
+            clip.map(|current| current.intersect(content))
+                .unwrap_or(content),
+        )
+    };
+    let child_origin = Point::new(origin.x - node.scroll.x, origin.y - node.scroll.y);
     for child in &node.children {
-        collect_boxes(tree, child, Some(node.id), origin, ids, out)?;
+        collect_boxes(
+            tree,
+            child,
+            Some(node.id),
+            child_clip,
+            child_origin,
+            ids,
+            out,
+        )?;
     }
     Ok(())
 }
@@ -331,6 +353,32 @@ mod tests {
         assert!((first.rect.x() - 10.0).abs() < 0.01);
         assert!((first.rect.y() - 10.0).abs() < 0.01);
         assert!((second.rect.y() - 35.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn overflow_hidden_clips_and_scrolls_children() {
+        let scene = Scene::new(
+            Node::container(NodeId(1))
+                .with_style(
+                    Style::default()
+                        .size(Length::Px(100.0), Length::Px(100.0))
+                        .overflow(crate::style::Overflow::Hidden),
+                )
+                .scroll(Point::new(0.0, -20.0))
+                .child(
+                    Node::rect(NodeId(2))
+                        .with_style(Style::default().size(Length::Px(50.0), Length::Px(50.0))),
+                ),
+        );
+        let layout = TaffyLayoutEngine
+            .layout(&scene, Size::new(100.0, 100.0), &SimpleTextEngine)
+            .unwrap();
+        let child = layout.find(NodeId(2)).unwrap();
+        assert!(
+            (child.rect.y() - 20.0).abs() < 0.01,
+            "scroll offset should move children"
+        );
+        assert_eq!(child.clip, Some(Rect::new(0.0, 0.0, 100.0, 100.0)));
     }
 
     #[test]

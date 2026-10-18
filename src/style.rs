@@ -50,6 +50,15 @@ pub enum Align {
     Stretch,
 }
 
+/// Overflow behavior for children.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Overflow {
+    #[default]
+    Visible,
+    Hidden,
+    Scroll,
+}
+
 /// Main-axis distribution.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Justify {
@@ -177,6 +186,7 @@ pub struct Style {
     pub border_color: Color,
     pub font_size: f32,
     pub color: Color,
+    pub overflow: Overflow,
 }
 
 impl Default for Style {
@@ -201,6 +211,7 @@ impl Default for Style {
             border_color: Color::TRANSPARENT,
             font_size: 14.0,
             color: Color::BLACK,
+            overflow: Overflow::Visible,
         }
     }
 }
@@ -276,6 +287,11 @@ impl Style {
     pub fn text(mut self, font_size: f32, color: Color) -> Self {
         self.font_size = font_size.max(1.0);
         self.color = color;
+        self
+    }
+
+    pub fn overflow(mut self, overflow: Overflow) -> Self {
+        self.overflow = overflow;
         self
     }
 }

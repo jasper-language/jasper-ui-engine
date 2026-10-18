@@ -75,6 +75,7 @@ scene.apply(ScenePatch::Remove { id: NodeId(2) })?;
 ```
 
 - `NodeId` 在场景生命周期内稳定；重复 ID 会报 `SceneError::DuplicateNode`。
+- `ScenePatch::SetScroll` 更新节点滚动偏移，走同一套版本/原子批。
 - `Scene::version()` 单调递增；`apply` / `apply_batch` **原子**（失败不改变场景/版本）。
 - `apply_batch_at(expected, patches)` 拒绝过期批次，返回 `SceneError::StaleVersion`。
 - `LayoutTree.scene_version` / `FrameStats.scene_version` 把版本带到宿主。
@@ -84,6 +85,8 @@ scene.apply(ScenePatch::Remove { id: NodeId(2) })?;
 - 尺寸：`Length::Auto/Px/Percent`；`min_*`/`max_*`。
 - 布局：`Display::{Block,Flex,None}`、`FlexDirection::{Row,Column}`、`Align`、`Justify`、`gap`、`flex_grow`。
 - 间距：`padding`、`margin`、`border`。
+- 溢出：`overflow(Overflow::Hidden/Scroll)`；`Scroll` 当前无滚动条/惯性。
+- 滚动：`Node::scroll(Point)`，或 `ScenePatch::SetScroll { id, offset }`。
 - 文字：`font_size`、`color`（测量参与布局；光栅未实现）。
 - 当前不支持阴影/滤镜/变换/滚动/虚拟化。
 

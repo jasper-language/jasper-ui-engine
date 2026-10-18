@@ -12,7 +12,11 @@ pub fn hit_test(layout: &LayoutTree, point: Point) -> Option<NodeId> {
         .boxes
         .iter()
         .rev()
-        .find(|item| is_hit_testable(item) && item.rect.contains(point))
+        .find(|item| {
+            is_hit_testable(item)
+                && item.rect.contains(point)
+                && item.clip.map(|clip| clip.contains(point)).unwrap_or(true)
+        })
         .map(|item| item.node_id)
 }
 
@@ -61,6 +65,7 @@ mod tests {
             content: rect,
             style,
             text: None,
+            clip: None,
         }
     }
 
@@ -101,6 +106,24 @@ mod tests {
         );
         assert_eq!(hit_test(&tree, Point::new(5.0, 5.0)), Some(NodeId(1)));
         assert_eq!(hit_test(&tree, Point::new(200.0, 200.0)), None);
+    }
+
+    #[test]
+    fn clipped_node_outside_clip_is_not_hit() {
+        let tree = LayoutTree {
+            viewport: Size::new(100.0, 100.0),
+            scene_version: 1,
+            boxes: vec![LayoutBox {
+                node_id: NodeId(1),
+                parent: None,
+                rect: Rect::new(20.0, 20.0, 40.0, 40.0),
+                content: Rect::new(20.0, 20.0, 40.0, 40.0),
+                style: Style::default().background(Color::RED),
+                text: None,
+                clip: Some(Rect::new(0.0, 0.0, 10.0, 10.0)),
+            }],
+        };
+        assert_eq!(hit_test(&tree, Point::new(25.0, 25.0)), None);
     }
 
     #[test]

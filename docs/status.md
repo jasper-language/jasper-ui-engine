@@ -21,6 +21,8 @@
 | 语义树 | `SemanticsTree::from_scene`，角色/标签/值/隐藏/可聚焦 |
 | 焦点管理 | pre-order `FocusManager`，Tab/Shift+Tab |
 | 参考手势 | tap/long-press/pan/pinch/cancel；阈值可配 |
+| 溢出裁剪 | `Overflow::Hidden/Scroll`；绘制 Push/PopClip；命中原生裁剪 |
+| 滚动偏移 | `Node::scroll` + `ScenePatch::SetScroll`；子树平移 |
 | 引擎流水线 | Scene → Layout → Paint → Batch → Backend |
 
 ## 已实现但尚未充分验证

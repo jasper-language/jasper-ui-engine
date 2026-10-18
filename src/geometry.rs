@@ -115,6 +115,15 @@ impl Rect {
             self.size.height,
         )
     }
+
+    /// Intersection; returns a zero-size rectangle when disjoint.
+    pub fn intersect(self, other: Rect) -> Rect {
+        let x0 = self.origin.x.max(other.origin.x);
+        let y0 = self.origin.y.max(other.origin.y);
+        let x1 = self.right().min(other.right());
+        let y1 = self.bottom().min(other.bottom());
+        Rect::new(x0, y0, (x1 - x0).max(0.0), (y1 - y0).max(0.0))
+    }
 }
 
 /// Four-sided spacing, used for padding, margin and border.
