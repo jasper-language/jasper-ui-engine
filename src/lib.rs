@@ -48,7 +48,7 @@ pub mod text;
 
 pub use backend::{BackendError, RenderBackend};
 pub use batch::{BatchError, UiBatch};
-pub use canvas::{Canvas, CanvasOp};
+pub use canvas::{Canvas, CanvasHitRegion, CanvasOp};
 #[cfg(feature = "canvas-tiny-skia")]
 pub use canvas_tiny_skia::{render_canvas, CanvasRenderReport};
 pub use engine::{Engine, EngineError, FrameStats};

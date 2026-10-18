@@ -40,6 +40,14 @@ pub enum CanvasOp {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Canvas {
     ops: Vec<CanvasOp>,
+    hit_regions: Vec<CanvasHitRegion>,
+}
+
+/// An application-defined hit target inside a canvas, in local coordinates.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct CanvasHitRegion {
+    pub id: u32,
+    pub bounds: Rect,
 }
 
 impl Canvas {
@@ -48,7 +56,10 @@ impl Canvas {
     }
 
     pub fn from_ops(ops: Vec<CanvasOp>) -> Self {
-        Self { ops }
+        Self {
+            ops,
+            hit_regions: Vec::new(),
+        }
     }
 
     pub fn ops(&self) -> &[CanvasOp] {
@@ -61,6 +72,25 @@ impl Canvas {
 
     pub fn is_empty(&self) -> bool {
         self.ops.is_empty()
+    }
+
+    pub fn hit_regions(&self) -> &[CanvasHitRegion] {
+        &self.hit_regions
+    }
+
+    /// Registers a local hit target. Later regions win when they overlap.
+    pub fn hit_region(&mut self, bounds: Rect, id: u32) -> &mut Self {
+        self.hit_regions.push(CanvasHitRegion { id, bounds });
+        self
+    }
+
+    /// Resolves a canvas-local point to the topmost registered region.
+    pub fn hit_test(&self, point: Point) -> Option<u32> {
+        self.hit_regions
+            .iter()
+            .rev()
+            .find(|region| region.bounds.contains(point))
+            .map(|region| region.id)
     }
 
     pub fn fill_rect(&mut self, rect: Rect, color: Color) -> &mut Self {
@@ -198,5 +228,16 @@ mod tests {
                 width: 2.0
             }
         );
+    }
+
+    #[test]
+    fn hit_regions_use_local_coordinates_and_last_wins() {
+        let mut canvas = Canvas::new();
+        canvas
+            .hit_region(Rect::new(0.0, 0.0, 10.0, 10.0), 1)
+            .hit_region(Rect::new(5.0, 5.0, 10.0, 10.0), 2);
+        assert_eq!(canvas.hit_test(Point::new(2.0, 2.0)), Some(1));
+        assert_eq!(canvas.hit_test(Point::new(7.0, 7.0)), Some(2));
+        assert_eq!(canvas.hit_test(Point::new(20.0, 20.0)), None);
     }
 }
