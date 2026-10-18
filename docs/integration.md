@@ -10,6 +10,8 @@
 4. Jasper UI 层产出 `Scene` / `ScenePatch`，调用 `Engine::render`。
 5. 输入用 `hit_test` / `PointerRouter`：命中节点 + root→target 路径 + capture；
    多指/多笔各自独立，触控笔字段不要丢。
+6. 需要参考手势时，把 route 喂给 `GestureRecognizer`（tap/long-press/pan/pinch）；
+   它只是宿主中立原语，Jasper 层可以替换。
 
 ## 2. 内置宿主（系统 UI 服务）
 

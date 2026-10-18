@@ -75,6 +75,7 @@ Jasper UI Framework / UI IR / Compiler        （Jasper 侧，后续）
 | `hit_test` | 布局树命中、root→target 路径 | 已验证 |
 | `pointer` | 指针路由、按 pointer capture、多指独立 | 已验证 |
 | `semantics` | 语义树快照、焦点顺序、Tab/Shift+Tab | 已验证（AccessKit 未接） |
+| `gesture` | tap/long-press/pan/pinch/cancel 参考识别器 | 已验证（可被 Jasper 层替换） |
 | `engine` | 场景→帧流水线 | 已验证 |
 
 ## 6. 宿主模式
@@ -146,6 +147,16 @@ Jasper UI Framework / UI IR / Compiler        （Jasper 侧，后续）
 - `FocusManager` 维护 pre-order 焦点顺序，支持 `focus_next`/`focus_prev`/`Tab`/`Shift+Tab`。
 - 后续 AccessKit 适配把 `SemanticsNode` 转成平台无障碍树；Web 用标准 HTML/ARIA，不走这里。
 - 当前没有动作执行（click/focus 动作）、没有焦点环/滚动到可见；由 Jasper UI 层后续定义。
+
+## 10.6 手势
+
+- `GestureRecognizer` 接收 `PointerRouter` 输出的 `PointerRoute`，产出 `Gesture`：
+  tap / long-press / pan-start/pan/pan-end / pinch-start/pinch/pinch-end / cancelled。
+- 阈值：`GestureConfig`（tap 时长/距离、长按时长、pan 阈值、pinch 阈值）。
+- 单指：超过 pan 阈值进入 pan；未移动且时长内抬起是 tap；`tick(now)` 推进长按。
+- 双指：按前两个活跃 pointer 计算中心/距离/scale；指针数不足时 PinchEnd。
+- 边界：这是**参考实现**；Jasper UI 层可以替换手势语义/优先级/手势竞技场。
+  Rust 只提供可测试的原语，不规定组件级手势冲突规则。
 
 ## 11. ABI 草案
 

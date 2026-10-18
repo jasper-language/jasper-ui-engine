@@ -20,6 +20,7 @@
 | 指针路由 | 按 pointer capture；多指/多笔独立 |
 | 语义树 | `SemanticsTree::from_scene`，角色/标签/值/隐藏/可聚焦 |
 | 焦点管理 | pre-order `FocusManager`，Tab/Shift+Tab |
+| 参考手势 | tap/long-press/pan/pinch/cancel；阈值可配 |
 | 引擎流水线 | Scene → Layout → Paint → Batch → Backend |
 
 ## 已实现但尚未充分验证
@@ -42,7 +43,7 @@
 | wgpu/Vello GPU | 未接；只有 `RenderBackend` trait |
 | AccessKit | 未接（已有宿主中立语义树 `SemanticsTree`） |
 | 图片/SVG | 未接 |
-| 手势/输入法 | 未接（命中/捕获已落地） |
+| 输入法组合 | 未接（手势参考层已落地） |
 | Jasper Native ABI | 未接；后续单独规范 |
 | Jasper UI Framework/UI IR | Jasper 侧，未开始 |
 | Web HTML/CSS/JS/WASM | Jasper 侧，未开始 |

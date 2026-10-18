@@ -8,7 +8,7 @@
 
 | 产物 | 字节 | MiB |
 |---|---:|---:|
-| `target/release/libjasper_ui_engine.rlib` | 3,724,296 | 3.55 |
+| `target/release/libjasper_ui_engine.rlib` | 3,877,080 | 3.70 |
 | `target/release/examples/hello`（未 strip） | 933,312 | 0.89 |
 | `target/release/examples/hello`（strip） | 782,368 | 0.75 |
 

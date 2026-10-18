@@ -189,6 +189,21 @@ focus.focus_next();
 - `FocusManager::handle_key` 只处理 Tab/Shift+Tab（KeyPhase::Down）。
 - AccessKit/平台无障碍桥未实现。
 
+## 手势（参考实现）
+
+```rust
+use jasper_ui_engine::gesture::{Gesture, GestureRecognizer};
+
+let mut recognizer = GestureRecognizer::default();
+let gestures = recognizer.process(&route);   // PointerRouter 的输出
+let timed = recognizer.tick(now_ms);         // 推进 long-press
+```
+
+- `Gesture`：Tap/LongPress/PanStart/Pan/PanEnd/PinchStart/Pinch/PinchEnd/Cancelled。
+- `GestureConfig` 可调 tap/long-press/pan/pinch 阈值。
+- 这是宿主中立参考实现；Jasper UI 层可替换手势语义与冲突规则。
+- 不会自动处理“点击 vs 滚动”的手势竞技场；需要上层策略。
+
 ## Engine
 
 - `Engine::new(size, backend, text)`：构造。
