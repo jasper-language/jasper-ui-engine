@@ -148,6 +148,25 @@ tracker.track(event)?;
 - `PointerTracker` 只跟踪按下中的指针；Hover/Move 未按下时忽略。
 - 手势、命中测试、IME 组合尚未实现。
 
+## 命中测试与指针路由
+
+```rust
+use jasper_ui_engine::hit_test::{hit_test, hit_test_path};
+use jasper_ui_engine::pointer::PointerRouter;
+
+let target = hit_test(&layout, Point::new(30.0, 30.0));       // 最上层绘制节点
+let path = hit_test_path(&layout, Point::new(30.0, 30.0));   // root -> target
+
+let mut router = PointerRouter::new();
+let route = router.route(pointer_event, &layout)?;
+// route.target / route.path / route.captured
+```
+
+- 命中顺序与绘制顺序一致（后绘制在上层）。
+- 透明容器本身不作为命中目标；其有绘制内容的子节点仍可命中。
+- Down 记录 target/path；Move/Up/Cancel 使用 capture；多指/多笔独立。
+- 手势识别、命中语义（可点击/可聚焦）仍由 Jasper UI 层后续定义。
+
 ## Engine
 
 - `Engine::new(size, backend, text)`：构造。

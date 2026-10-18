@@ -16,6 +16,8 @@
 | 软件光栅 | RGBA、填充、描边、裁剪、alpha 混合、PPM |
 | Headless 后端 | 真实帧缓冲；文字绘制明确返回 Unsupported |
 | 指针/多点/触控笔模型 | `PointerEvent` + `PointerTracker` |
+| 命中测试 | 布局树最上层命中 + root→target 路径 |
+| 指针路由 | 按 pointer capture；多指/多笔独立 |
 | 引擎流水线 | Scene → Layout → Paint → Batch → Backend |
 
 ## 已实现但尚未充分验证
@@ -26,6 +28,7 @@
 | 文字近似测量 | 不是真实字形度量；CJK/emoji/RTL 未验证 |
 | 软件光栅 | 未做模糊/渐变/圆角/抗锯齿；仅轴对齐矩形 |
 | 场景补丁 | 未做批量事务、并发/版本检查 |
+| 命中测试语义 | 只看绘制内容，未接组件可点击/可聚焦语义 |
 
 ## 未实现（明确返回错误或未接入）
 
@@ -37,7 +40,7 @@
 | wgpu/Vello GPU | 未接；只有 `RenderBackend` trait |
 | AccessKit | 未接 |
 | 图片/SVG | 未接 |
-| 命中测试/手势/输入法 | 未接；只有原始指针模型 |
+| 手势/输入法 | 未接（命中/捕获已落地） |
 | Jasper Native ABI | 未接；后续单独规范 |
 | Jasper UI Framework/UI IR | Jasper 侧，未开始 |
 | Web HTML/CSS/JS/WASM | Jasper 侧，未开始 |
@@ -54,7 +57,7 @@
 ## 下一步（按依赖顺序）
 
 1. 布局一致性测试 + 文字 measure 的 CJK/换行基线。
-2. 命中测试（基于布局盒）+ 指针路由（多指/笔）。
+2. 命中测试/指针路由已完成 v0.1 原型；下一步手势层与 Jasper 事件语义。
 3. 手势层与 Jasper 事件语义的边界规范。
 4. Parley 文本适配 + 字体回退（替换近似测量）。
 5. winit 平台适配（桌面自带宿主）。

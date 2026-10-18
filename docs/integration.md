@@ -8,6 +8,8 @@
 2. 用 GPU 后端（后续接 wgpu/Vello）实现 `RenderBackend`：`resize` / `submit(&UiBatch)` / `present`。
 3. 把输入规范化成 `input::InputEvent`（触摸/笔/鼠标），交给 Jasper UI 层做手势与事件分发。
 4. Jasper UI 层产出 `Scene` / `ScenePatch`，调用 `Engine::render`。
+5. 输入用 `hit_test` / `PointerRouter`：命中节点 + root→target 路径 + capture；
+   多指/多笔各自独立，触控笔字段不要丢。
 
 ## 2. 内置宿主（系统 UI 服务）
 

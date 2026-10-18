@@ -72,6 +72,8 @@ Jasper UI Framework / UI IR / Compiler        （Jasper 侧，后续）
 | `backend` | RenderBackend + Headless | 已验证 |
 | `platform` | PlatformHost + HeadlessHost | 只有 trait |
 | `input` | 指针/触摸/笔模型、活跃指针 | 已验证（无手势） |
+| `hit_test` | 布局树命中、root→target 路径 | 已验证 |
+| `pointer` | 指针路由、按 pointer capture、多指独立 | 已验证 |
 | `engine` | 场景→帧流水线 | 已验证 |
 
 ## 6. 宿主模式
@@ -127,7 +129,9 @@ Jasper UI Framework / UI IR / Compiler        （Jasper 侧，后续）
 | Android | MotionEvent：pressure、tilt、orientation、tool type、历史点 |
 | Linux | libinput tablet/touch：pressure、tilt、distance、eraser |
 
-边界：Rust 只做**规范化**；手势识别、手掌拒绝、预测/合并事件、输入法组合由 Jasper UI 层后续实现。触控笔不能退化成鼠标事件。
+边界：Rust 只做**规范化 + 命中/捕获**；手势识别、手掌拒绝、预测/合并事件、输入法组合由 Jasper UI 层后续实现。触控笔不能退化成鼠标事件。
+
+当前 `hit_test` 按绘制顺序取最上层**有绘制内容**的节点；透明容器本身不吞事件，命中路径用于冒泡。`PointerRouter` 在 Down 时记录 target/path，Move/Up/Cancel 沿用 capture，即使指针移出节点；多指/多笔各自独立。
 
 ## 11. ABI 草案
 

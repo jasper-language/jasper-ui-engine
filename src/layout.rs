@@ -19,6 +19,7 @@ use crate::text::TextEngine;
 #[derive(Clone, Debug, PartialEq)]
 pub struct LayoutBox {
     pub node_id: NodeId,
+    pub parent: Option<NodeId>,
     pub rect: Rect,
     pub content: Rect,
     pub style: Style,
@@ -102,7 +103,14 @@ impl LayoutEngine for TaffyLayoutEngine {
         .map_err(|error| LayoutError::Taffy(error.to_string()))?;
 
         let mut boxes = Vec::new();
-        collect_boxes(&tree, &scene.root, Point::ZERO, &taffy_ids, &mut boxes)?;
+        collect_boxes(
+            &tree,
+            &scene.root,
+            None,
+            Point::ZERO,
+            &taffy_ids,
+            &mut boxes,
+        )?;
         Ok(LayoutTree { viewport, boxes })
     }
 }
@@ -148,6 +156,7 @@ fn build_node(
 fn collect_boxes(
     tree: &TaffyTree<TextContext>,
     node: &Node,
+    parent: Option<NodeId>,
     parent_origin: Point,
     ids: &HashMap<NodeId, taffy::NodeId>,
     out: &mut Vec<LayoutBox>,
@@ -172,13 +181,14 @@ fn collect_boxes(
     );
     out.push(LayoutBox {
         node_id: node.id,
+        parent,
         rect,
         content,
         style: node.style.clone(),
         text: node.text_content().map(str::to_owned),
     });
     for child in &node.children {
-        collect_boxes(tree, child, origin, ids, out)?;
+        collect_boxes(tree, child, Some(node.id), origin, ids, out)?;
     }
     Ok(())
 }

@@ -9,7 +9,7 @@ Jasper UI 的 **宿主无关 Native 引擎底座**（Rust）。它只负责底�
 技术文档索引：[docs/README.md](docs/README.md)：
 设计 [design.md](docs/design.md)、API [api.md](docs/api.md)、ABI 草案 [abi.md](docs/abi.md)、
 依赖 [dependencies.md](docs/dependencies.md)、路线图 [roadmap.md](docs/roadmap.md)、
-宿主集成 [integration.md](docs/integration.md)。
+宿主集成 [integration.md](docs/integration.md)、体积 [size.md](docs/size.md)。
 
 ## 为什么独立成仓库
 
@@ -30,6 +30,7 @@ Jasper UI 的 **宿主无关 Native 引擎底座**（Rust）。它只负责底�
 - 软件光栅（RGBA、填充、描边、裁剪、alpha 混合、PPM 输出）
 - `RenderBackend` / `PlatformHost` trait + Headless 后端
 - 统一指针事件模型：鼠标 / 触摸 / 触控笔（多点、压力、倾斜、扭转、接触面积、笔擦）
+- **命中测试 + 指针路由**：布局树命中、root→target 路径、按 pointer 的 capture
 - 引擎流水线：场景 → 布局 → 绘制 → UiBatch → 后端
 - 测试与可运行示例
 
@@ -39,7 +40,7 @@ Jasper UI 的 **宿主无关 Native 引擎底座**（Rust）。它只负责底�
 - winit 窗口、wgpu/Vello GPU、AccessKit、图片/SVG 解码
 - Jasper ABI、Jasper UI Framework、UI IR、状态/事件/动画/路由
 - Web HTML/CSS/JS/WASM 输出
-- 输入法组合、手势识别、命中测试（v0.2 接）
+- 输入法组合、手势识别（v0.2 接；命中测试/捕获已落地）
 - 这些缺口在 [docs/status.md](docs/status.md) 里逐项标注，不写成“已完成”。
 
 ## 快速开始

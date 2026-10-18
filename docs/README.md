@@ -22,6 +22,7 @@
 | [dependencies.md](dependencies.md) | 依赖选型、许可证、锁定策略 |
 | [roadmap.md](roadmap.md) | v0.1 → v1 的阶段、验收与“会变”的部分 |
 | [status.md](status.md) | 已实现/未实现/未验证的逐项状态 |
+| [size.md](size.md) | release 体积基线（rlib / 示例 / strip） |
 
 ## 重要声明
 

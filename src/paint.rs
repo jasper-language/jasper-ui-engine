@@ -96,6 +96,7 @@ mod tests {
             viewport: Size::new(100.0, 100.0),
             boxes: vec![LayoutBox {
                 node_id: NodeId(1),
+                parent: None,
                 rect: Rect::new(0.0, 0.0, 100.0, 100.0),
                 content: Rect::new(2.0, 2.0, 96.0, 96.0),
                 style: Style::default()
