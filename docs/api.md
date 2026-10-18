@@ -217,8 +217,14 @@ let layout = engine.layout(&scene)?;
 let mut scroll = ScrollController::default();
 
 // 滚轮/trackpad：正 delta 表示内容上移（offset 增加）。
-if let Some(update) = scroll.wheel(&layout, &scene, pointer_position, delta) {
-    scene.apply(update.patch())?;
+// 返回从内到外的 0..n 条更新，可一次性原子应用。
+let patches: Vec<_> = scroll
+    .wheel(&layout, &scene, pointer_position, delta)
+    .into_iter()
+    .map(|update| update.patch())
+    .collect();
+if !patches.is_empty() {
+    scene.apply_batch(&patches)?;
 }
 
 // 惯性：手势 PanEnd 时把释放速度交给 fling，按帧推进。
@@ -229,8 +235,9 @@ for update in scroll.tick(&layout, &scene, dt_seconds) {
 ```
 
 - `ScrollBounds` 由布局树中该节点的直接子节点并集算出；`max_offset()` 是 clamp 上界。
-- `wheel` 命中几何盒（透明容器也算），选最近的、该方向仍可滚动的 `Overflow::Scroll` 祖先；到边界后可继续向外层链式滚动。
-- 一次事件只由一个祖先消费，不拆分残余 delta；滚轮输入会取消该链上的 fling。
+- `wheel` 命中几何盒（透明容器也算），从最近的 `Overflow::Scroll` 祖先开始逐级向外消费；内层到边界后，残余 delta 继续交给外层，返回所有实际移动的节点（从内到外）。
+- 每个轴独立拆分残余：例如内层纵向到边界后，纵向 remainder 交给外层；无容器可消费时返回空列表。
+- 滚轮输入总会取消该链上的 fling；一次事件的多个 `SetScroll` 可用 `Scene::apply_batch` 合成一个版本。
 - `tick` 用指数摩擦衰减速度，到边界或低于 `min_velocity` 即停止；`dt` 上限 0.1s。
 - `ScrollUpdate::patch()` 产出普通的 `ScenePatch::SetScroll`，仍走版本/原子批；应用后应重新布局再继续命中/滚动。
 

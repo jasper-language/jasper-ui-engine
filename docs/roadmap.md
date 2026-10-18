@@ -20,7 +20,7 @@
 - ✅ 指针路由：多指/多笔、capture、cancel（v0.1 已落地原型）
 - ✅ 语义树 + 焦点管理（宿主中立快照；AccessKit 后续）
 - ✅ 参考手势层（tap/long-press/pan/pinch；可替换）
-- ✅ 溢出裁剪 + 滚动偏移（wheel 路由/边界 clamp/fling 惯性；仍无可视滚动条）
+- ✅ 溢出裁剪 + 滚动偏移（wheel 逐级路由与残余 delta 拆分/边界 clamp/fling 惯性；仍无可视滚动条）
 - 手势竞技场/手掌拒绝/输入法组合（下一步）
 - 手势边界规范：Rust 原始事件 vs Jasper 手势语义
 - 布局一致性测试：固定样例 + 百分比/min-max/gap

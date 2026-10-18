@@ -4,8 +4,8 @@
 //! 约定：
 //! - 滚动偏移 `Node::scroll` 是“内容相对视口的位移”，`(0, 0)` 表示顶部/最左；
 //! - `delta` 为逻辑像素，正值表示内容向视口上方滚动（即 offset 增加）；
-//! - 一次滚轮事件由最近的、该方向仍可滚动的 `Overflow::Scroll` 祖先消费；
-//! - 仍在原型阶段：没有滚动条、没有过冲回弹、也不做残余 delta 的逐级拆分。
+//! - 一次滚轮事件沿祖先链从内到外消费：内层到边界后，残余 delta 继续交给外层；
+//! - 仍在原型阶段：没有滚动条、没有过冲回弹。
 
 use std::collections::BTreeMap;
 
@@ -106,27 +106,32 @@ impl ScrollController {
         self.config
     }
 
-    /// Routes a wheel/trackpad delta to the nearest scrollable ancestor of
-    /// `point` that can still consume it. Cancels any fling on that chain.
+    /// Routes a wheel/trackpad delta through the scrollable ancestors of
+    /// `point`, innermost first. Each container consumes as much of the
+    /// remaining delta as it can and the residual is handed to the next one.
+    ///
+    /// Returns one update per container that actually moved, in inner-to-outer
+    /// order, so callers can apply them in sequence. Any fling on the chain is
+    /// cancelled even when the delta cannot be consumed.
     pub fn wheel(
         &mut self,
         layout: &LayoutTree,
         scene: &Scene,
         point: Point,
         delta: Point,
-    ) -> Option<ScrollUpdate> {
+    ) -> Vec<ScrollUpdate> {
         if delta.x == 0.0 && delta.y == 0.0 {
-            return None;
+            return Vec::new();
         }
         let chain = scroll_chain(layout, point);
         if chain.is_empty() {
-            return None;
+            return Vec::new();
         }
-        let update = resolve_in_chain(&chain, layout, scene, delta)?;
+        let updates = resolve_in_chain(&chain, layout, scene, delta);
         for id in &chain {
             self.velocities.remove(id);
         }
-        Some(update)
+        updates
     }
 
     /// Starts a fling from a release velocity. Returns the stored (gained and
@@ -280,8 +285,13 @@ fn resolve_in_chain(
     layout: &LayoutTree,
     scene: &Scene,
     delta: Point,
-) -> Option<ScrollUpdate> {
+) -> Vec<ScrollUpdate> {
+    let mut remaining = delta;
+    let mut updates = Vec::new();
     for id in chain {
+        if remaining.x.abs() <= EPSILON && remaining.y.abs() <= EPSILON {
+            break;
+        }
         let Some(node) = scene.find(*id) else {
             continue;
         };
@@ -293,22 +303,26 @@ fn resolve_in_chain(
         };
         let previous = node.scroll;
         let mut offset = previous;
-        if delta.x != 0.0 {
-            offset.x = (previous.x + delta.x).clamp(0.0, max.x);
+        if remaining.x != 0.0 {
+            offset.x = (previous.x + remaining.x).clamp(0.0, max.x);
         }
-        if delta.y != 0.0 {
-            offset.y = (previous.y + delta.y).clamp(0.0, max.y);
+        if remaining.y != 0.0 {
+            offset.y = (previous.y + remaining.y).clamp(0.0, max.y);
         }
         let applied = Point::new(offset.x - previous.x, offset.y - previous.y);
+        // Whatever this container could not absorb continues outward. Keeping
+        // the per-axis residual means a vertical wheel can still hand its
+        // leftover to an outer container after the inner one hits its edge.
+        remaining = Point::new(remaining.x - applied.x, remaining.y - applied.y);
         if applied.x.abs() > EPSILON || applied.y.abs() > EPSILON {
-            return Some(ScrollUpdate {
+            updates.push(ScrollUpdate {
                 node: *id,
                 offset,
                 applied,
             });
         }
     }
-    None
+    updates
 }
 
 fn clamp_offset(offset: Point, max: Point) -> Point {
@@ -402,37 +416,35 @@ mod tests {
         let tree = layout(&scene, Size::new(100.0, 100.0));
         let mut controller = ScrollController::default();
 
-        let update = controller
-            .wheel(&tree, &scene, Point::new(50.0, 50.0), Point::new(0.0, 30.0))
-            .unwrap();
+        let updates =
+            controller.wheel(&tree, &scene, Point::new(50.0, 50.0), Point::new(0.0, 30.0));
         assert_eq!(
-            update,
-            ScrollUpdate {
+            updates,
+            vec![ScrollUpdate {
                 node: NodeId(1),
                 offset: Point::new(0.0, 30.0),
                 applied: Point::new(0.0, 30.0),
-            }
+            }]
         );
-        scene.apply(update.patch()).unwrap();
+        scene.apply(updates[0].patch()).unwrap();
 
         let tree = layout(&scene, Size::new(100.0, 100.0));
-        let update = controller
-            .wheel(
-                &tree,
-                &scene,
-                Point::new(50.0, 50.0),
-                Point::new(0.0, 500.0),
-            )
-            .unwrap();
-        assert_eq!(update.offset, Point::new(0.0, 200.0));
-        assert_eq!(update.applied, Point::new(0.0, 170.0));
-        scene.apply(update.patch()).unwrap();
+        let updates = controller.wheel(
+            &tree,
+            &scene,
+            Point::new(50.0, 50.0),
+            Point::new(0.0, 500.0),
+        );
+        assert_eq!(updates.len(), 1);
+        assert_eq!(updates[0].offset, Point::new(0.0, 200.0));
+        assert_eq!(updates[0].applied, Point::new(0.0, 170.0));
+        scene.apply(updates[0].patch()).unwrap();
 
         let tree = layout(&scene, Size::new(100.0, 100.0));
         assert!(
             controller
                 .wheel(&tree, &scene, Point::new(50.0, 50.0), Point::new(0.0, 10.0))
-                .is_none(),
+                .is_empty(),
             "at the bottom the event must not invent an offset"
         );
     }
@@ -449,7 +461,7 @@ mod tests {
                 Point::new(50.0, 50.0),
                 Point::new(0.0, -10.0)
             )
-            .is_none());
+            .is_empty());
     }
 
     #[test]
@@ -465,6 +477,8 @@ mod tests {
                 Point::new(50.0, 50.0),
                 Point::new(0.0, 150.0),
             )
+            .into_iter()
+            .next()
             .unwrap();
         assert_eq!(inner.node, NodeId(2));
         assert_eq!(inner.offset, Point::new(0.0, 100.0));
@@ -473,6 +487,8 @@ mod tests {
         let tree = layout(&scene, Size::new(200.0, 200.0));
         let outer = controller
             .wheel(&tree, &scene, Point::new(50.0, 50.0), Point::new(0.0, 50.0))
+            .into_iter()
+            .next()
             .unwrap();
         assert_eq!(
             outer.node,
@@ -480,6 +496,76 @@ mod tests {
             "an inner container at its limit should hand off to the parent"
         );
         assert_eq!(outer.offset, Point::new(0.0, 50.0));
+    }
+
+    #[test]
+    fn wheel_splits_residual_delta_across_the_chain() {
+        let scene = nested_scroll_scene();
+        let tree = layout(&scene, Size::new(200.0, 200.0));
+        let mut controller = ScrollController::default();
+
+        let updates = controller.wheel(
+            &tree,
+            &scene,
+            Point::new(50.0, 50.0),
+            Point::new(0.0, 250.0),
+        );
+        assert_eq!(
+            updates,
+            vec![
+                ScrollUpdate {
+                    node: NodeId(2),
+                    offset: Point::new(0.0, 100.0),
+                    applied: Point::new(0.0, 100.0),
+                },
+                ScrollUpdate {
+                    node: NodeId(1),
+                    offset: Point::new(0.0, 150.0),
+                    applied: Point::new(0.0, 150.0),
+                },
+            ],
+            "inner consumes its full range, the 150px residual goes to the outer container"
+        );
+    }
+
+    #[test]
+    fn wheel_residual_is_clamped_by_the_outer_container() {
+        let scene = nested_scroll_scene();
+        let tree = layout(&scene, Size::new(200.0, 200.0));
+        let mut controller = ScrollController::default();
+
+        let updates = controller.wheel(
+            &tree,
+            &scene,
+            Point::new(50.0, 50.0),
+            Point::new(0.0, 10_000.0),
+        );
+        assert_eq!(updates.len(), 2);
+        assert_eq!(updates[0].node, NodeId(2));
+        assert_eq!(updates[0].offset, Point::new(0.0, 100.0));
+        assert_eq!(updates[1].node, NodeId(1));
+        assert_eq!(
+            updates[1].offset,
+            Point::new(0.0, 300.0),
+            "outer max offset is content (500) minus viewport (200)"
+        );
+        assert_eq!(updates[1].applied, Point::new(0.0, 300.0));
+    }
+
+    #[test]
+    fn wheel_cancels_fling_even_when_already_at_the_edge() {
+        let scene = scroll_scene(Point::new(0.0, 200.0), 300.0);
+        let tree = layout(&scene, Size::new(100.0, 100.0));
+        let mut controller = ScrollController::default();
+        controller.begin_fling(NodeId(1), Point::new(0.0, 1000.0));
+
+        let updates =
+            controller.wheel(&tree, &scene, Point::new(50.0, 50.0), Point::new(0.0, 10.0));
+        assert!(updates.is_empty());
+        assert!(
+            !controller.is_flinging(),
+            "wheel input must stop inertia even without movement"
+        );
     }
 
     #[test]
@@ -543,10 +629,10 @@ mod tests {
 
         controller.begin_fling(NodeId(1), Point::new(0.0, 1000.0));
         assert!(controller.is_flinging());
-        let update = controller
-            .wheel(&tree, &scene, Point::new(50.0, 50.0), Point::new(0.0, 10.0))
-            .unwrap();
-        assert_eq!(update.offset, Point::new(0.0, 10.0));
+        let updates =
+            controller.wheel(&tree, &scene, Point::new(50.0, 50.0), Point::new(0.0, 10.0));
+        assert_eq!(updates.len(), 1);
+        assert_eq!(updates[0].offset, Point::new(0.0, 10.0));
         assert!(!controller.is_flinging(), "wheel input must stop inertia");
     }
 
