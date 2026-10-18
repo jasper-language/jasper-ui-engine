@@ -22,6 +22,7 @@
 | 语义树 | `SemanticsTree::from_scene`，角色/标签/值/隐藏/可聚焦 |
 | 焦点管理 | pre-order `FocusManager`，Tab/Shift+Tab |
 | 键盘路由 | `KeyboardRouter` 按焦点分发；Tab/Shift+Tab 导航、Enter/Space 激活按钮/复选/开关、Escape 关闭意图；带 Ctrl/Alt/Meta 的快捷键留给宿主 |
+| 文本/IME 路由 | 焦点在 `TextField` 时，`Text` 与 `Composition` 事件路由给该节点；按钮等控件不消费 |
 | 参考手势 | tap/double-tap/secondary-tap（右键/中键）/long-press/pan/pinch/cancel；时间与距离阈值可配 |
 | 手掌拒绝 | `GestureConfig::palm_contact_max`；掌触不进入手势状态机，掌触变大时取消进行中的 pan；设为 0 可关闭 |
 | 溢出裁剪 | `Overflow::Hidden/Scroll`；绘制 Push/PopClip；命中原生裁剪 |

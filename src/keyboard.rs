@@ -1,7 +1,7 @@
 //! Keyboard routing on top of the host-neutral focus/semantics model.
 //! 键盘事件先交给焦点节点；这里只产出意图（聚焦、激活、关闭），不绑定组件实现。
 
-use crate::input::{KeyEvent, KeyPhase};
+use crate::input::{CompositionEvent, KeyEvent, KeyPhase};
 use crate::scene::NodeId;
 use crate::semantics::{FocusManager, Role, SemanticsTree};
 
@@ -29,10 +29,26 @@ pub struct KeyRoute {
     pub action: KeyAction,
 }
 
+/// One routed text/IME sample.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TextRoute {
+    pub target: Option<NodeId>,
+    pub consumed: bool,
+}
+
+/// One routed IME composition update.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CompositionRoute {
+    pub event: CompositionEvent,
+    pub target: Option<NodeId>,
+    pub consumed: bool,
+}
+
 /// Focus-aware keyboard router.
 ///
-/// The router owns focus order only. Text input and IME composition stay
-/// separate because they target an editor and have their own selection model.
+/// The router owns focus order and command intents only. Text and composition
+/// events are routed to the focused editor, but selection/editing state stays
+/// with the component.
 #[derive(Clone, Debug)]
 pub struct KeyboardRouter {
     focus: FocusManager,
@@ -103,6 +119,29 @@ impl KeyboardRouter {
             action,
         }
     }
+
+    /// Routes committed text to the focused text field.
+    pub fn route_text(&self, text: &str, tree: &SemanticsTree) -> TextRoute {
+        let target = self.focus.focused();
+        let consumed =
+            target.is_some_and(|node| is_editable_target(tree, node) && !text.is_empty());
+        TextRoute { target, consumed }
+    }
+
+    /// Routes an IME composition update to the focused text field.
+    pub fn route_composition(
+        &self,
+        event: CompositionEvent,
+        tree: &SemanticsTree,
+    ) -> CompositionRoute {
+        let target = self.focus.focused();
+        let consumed = target.is_some_and(|node| is_editable_target(tree, node));
+        CompositionRoute {
+            event,
+            target,
+            consumed,
+        }
+    }
 }
 
 impl Role {
@@ -134,6 +173,11 @@ fn no_command_modifier(event: &KeyEvent) -> bool {
 
 fn focused_role(tree: &SemanticsTree, node: NodeId) -> Option<Role> {
     tree.find(node).map(|item| item.role)
+}
+
+fn is_editable_target(tree: &SemanticsTree, node: NodeId) -> bool {
+    tree.find(node)
+        .is_some_and(|item| item.role == Role::TextField && !item.disabled && !item.hidden)
 }
 
 #[cfg(test)]
@@ -247,5 +291,50 @@ mod tests {
         router.focus(NodeId(2)).unwrap();
         router.refresh(&tree);
         assert_eq!(router.focused(), Some(NodeId(2)));
+    }
+
+    #[test]
+    fn routes_text_and_composition_to_a_focused_text_field() {
+        let tree = tree();
+        let mut router = KeyboardRouter::new(&tree);
+        router.focus(NodeId(4)).unwrap();
+
+        assert_eq!(
+            router.route_text("你好", &tree),
+            TextRoute {
+                target: Some(NodeId(4)),
+                consumed: true
+            }
+        );
+        assert_eq!(
+            router.route_composition(
+                CompositionEvent {
+                    text: "ni".into(),
+                    start: 0,
+                    end: 2
+                },
+                &tree
+            ),
+            CompositionRoute {
+                event: CompositionEvent {
+                    text: "ni".into(),
+                    start: 0,
+                    end: 2
+                },
+                target: Some(NodeId(4)),
+                consumed: true
+            }
+        );
+    }
+
+    #[test]
+    fn text_is_not_consumed_by_non_editable_targets_or_empty_input() {
+        let tree = tree();
+        let mut router = KeyboardRouter::new(&tree);
+        router.focus(NodeId(2)).unwrap();
+        assert!(!router.route_text("x", &tree).consumed);
+
+        router.focus(NodeId(4)).unwrap();
+        assert!(!router.route_text("", &tree).consumed);
     }
 }

@@ -56,7 +56,7 @@ pub use geometry::{Edges, Point, Rect, Size};
 pub use gesture::{Gesture, GestureConfig, GestureRecognizer};
 pub use hit_test::{hit_test as hit_test_at, hit_test_path};
 pub use input::{InputEvent, PointerEvent, PointerKind, PointerPhase, PointerTracker};
-pub use keyboard::{KeyAction, KeyRoute, KeyboardRouter};
+pub use keyboard::{CompositionRoute, KeyAction, KeyRoute, KeyboardRouter, TextRoute};
 pub use layout::{LayoutBox, LayoutEngine, LayoutError, LayoutTree, TaffyLayoutEngine};
 pub use paint::{paint, DisplayList, PaintOp};
 pub use pointer::{HoverChange, HoverTracker, PointerRoute, PointerRouter};
