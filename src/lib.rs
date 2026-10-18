@@ -28,6 +28,8 @@ pub mod batch;
 pub mod canvas;
 #[cfg(feature = "canvas-tiny-skia")]
 pub mod canvas_tiny_skia;
+#[cfg(feature = "desktop")]
+pub mod desktop;
 pub mod engine;
 pub mod geometry;
 pub mod gesture;
@@ -54,6 +56,8 @@ pub use batch::{BatchError, UiBatch};
 pub use canvas::{Canvas, CanvasHitRegion, CanvasOp};
 #[cfg(feature = "canvas-tiny-skia")]
 pub use canvas_tiny_skia::{render_canvas, CanvasRenderReport};
+#[cfg(feature = "desktop")]
+pub use desktop::DesktopInput;
 pub use engine::{Engine, EngineError, FrameStats};
 pub use geometry::{Edges, Point, Rect, Size};
 pub use gesture::{Gesture, GestureConfig, GestureRecognizer};

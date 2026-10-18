@@ -31,7 +31,7 @@ pub enum PointerPhase {
 }
 
 /// Mouse/pen button identity. Touch uses `None`.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MouseButton {
     Left,
     Right,
