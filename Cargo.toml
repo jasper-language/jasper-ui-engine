@@ -1,0 +1,17 @@
+[package]
+name = "jasper-ui-engine"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Host-agnostic foundation for the Jasper UI native engine"
+repository = "https://github.com/jasper-language/jasper-ui-engine"
+rust-version = "1.71"
+
+[dependencies]
+# Taffy is the layout executor for the portable Flex/Grid/Block subset.
+# Version is pinned after `cargo info` / license check (MIT); see docs/status.md.
+taffy = "0.15.0"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
