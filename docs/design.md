@@ -74,6 +74,7 @@ Jasper UI Framework / UI IR / Compiler        （Jasper 侧，后续）
 | `input` | 指针/触摸/笔模型、活跃指针 | 已验证（无手势） |
 | `hit_test` | 布局树命中、root→target 路径 | 已验证 |
 | `pointer` | 指针路由、按 pointer capture、多指独立 | 已验证 |
+| `semantics` | 语义树快照、焦点顺序、Tab/Shift+Tab | 已验证（AccessKit 未接） |
 | `engine` | 场景→帧流水线 | 已验证 |
 
 ## 6. 宿主模式
@@ -132,6 +133,15 @@ Jasper UI Framework / UI IR / Compiler        （Jasper 侧，后续）
 边界：Rust 只做**规范化 + 命中/捕获**；手势识别、手掌拒绝、预测/合并事件、输入法组合由 Jasper UI 层后续实现。触控笔不能退化成鼠标事件。
 
 当前 `hit_test` 按绘制顺序取最上层**有绘制内容**的节点；透明容器本身不吞事件，命中路径用于冒泡。`PointerRouter` 在 Down 时记录 target/path，Move/Up/Cancel 沿用 capture，即使指针移出节点；多指/多笔各自独立。
+
+## 10.5 语义与焦点
+
+- `Semantics` 由 Jasper 组件层提供（role/label/description/value/disabled/focusable/hidden）；
+  Rust 只做宿主中立的快照与焦点遍历，不根据绘制结果反推语义。
+- `SemanticsTree::from_scene` 生成树；`focusables` 排除 hidden/disabled。
+- `FocusManager` 维护 pre-order 焦点顺序，支持 `focus_next`/`focus_prev`/`Tab`/`Shift+Tab`。
+- 后续 AccessKit 适配把 `SemanticsNode` 转成平台无障碍树；Web 用标准 HTML/ARIA，不走这里。
+- 当前没有动作执行（click/focus 动作）、没有焦点环/滚动到可见；由 Jasper UI 层后续定义。
 
 ## 11. ABI 草案
 

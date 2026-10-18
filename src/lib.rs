@@ -35,6 +35,7 @@ pub mod platform;
 pub mod pointer;
 pub mod raster;
 pub mod scene;
+pub mod semantics;
 pub mod style;
 pub mod text;
 
@@ -48,5 +49,6 @@ pub use layout::{LayoutBox, LayoutEngine, LayoutError, LayoutTree, TaffyLayoutEn
 pub use paint::{paint, DisplayList, PaintOp};
 pub use pointer::{PointerRoute, PointerRouter};
 pub use scene::{Node, NodeId, NodeKind, Scene, SceneError, ScenePatch};
+pub use semantics::{FocusError, FocusManager, Role, Semantics, SemanticsNode, SemanticsTree};
 pub use style::{Align, Color, Display, FlexDirection, Justify, Length, Style};
 pub use text::{SimpleTextEngine, TextEngine, TextMetrics};

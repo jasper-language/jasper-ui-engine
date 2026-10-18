@@ -167,6 +167,26 @@ let route = router.route(pointer_event, &layout)?;
 - Down 记录 target/path；Move/Up/Cancel 使用 capture；多指/多笔独立。
 - 手势识别、命中语义（可点击/可聚焦）仍由 Jasper UI 层后续定义。
 
+## 语义与焦点
+
+```rust
+use jasper_ui_engine::semantics::{FocusManager, Role, Semantics, SemanticsTree};
+
+let scene = Scene::new(
+    Node::rect(NodeId(2)).with_semantics(
+        Semantics::default().role(Role::Button).label("OK").focusable(true),
+    ),
+);
+let tree = SemanticsTree::from_scene(&scene);
+let mut focus = FocusManager::new(&tree);
+focus.focus_next();
+```
+
+- `Semantics` 由 Jasper 组件层填写；`SemanticsTree` 只是快照。
+- `focusables()` 排除 `hidden`/`disabled`；顺序是 pre-order。
+- `FocusManager::handle_key` 只处理 Tab/Shift+Tab（KeyPhase::Down）。
+- AccessKit/平台无障碍桥未实现。
+
 ## Engine
 
 - `Engine::new(size, backend, text)`：构造。

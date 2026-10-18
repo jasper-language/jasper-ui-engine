@@ -18,6 +18,8 @@
 | 指针/多点/触控笔模型 | `PointerEvent` + `PointerTracker` |
 | 命中测试 | 布局树最上层命中 + root→target 路径 |
 | 指针路由 | 按 pointer capture；多指/多笔独立 |
+| 语义树 | `SemanticsTree::from_scene`，角色/标签/值/隐藏/可聚焦 |
+| 焦点管理 | pre-order `FocusManager`，Tab/Shift+Tab |
 | 引擎流水线 | Scene → Layout → Paint → Batch → Backend |
 
 ## 已实现但尚未充分验证
@@ -38,7 +40,7 @@
 | 真实字体排版（Parley/字体回退/CJK/emoji/RTL） | 未接 |
 | winit 窗口/输入循环 | 未接；只有 `PlatformHost` trait |
 | wgpu/Vello GPU | 未接；只有 `RenderBackend` trait |
-| AccessKit | 未接 |
+| AccessKit | 未接（已有宿主中立语义树 `SemanticsTree`） |
 | 图片/SVG | 未接 |
 | 手势/输入法 | 未接（命中/捕获已落地） |
 | Jasper Native ABI | 未接；后续单独规范 |

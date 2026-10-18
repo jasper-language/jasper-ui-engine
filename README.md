@@ -31,6 +31,7 @@ Jasper UI 的 **宿主无关 Native 引擎底座**（Rust）。它只负责底�
 - `RenderBackend` / `PlatformHost` trait + Headless 后端
 - 统一指针事件模型：鼠标 / 触摸 / 触控笔（多点、压力、倾斜、扭转、接触面积、笔擦）
 - **命中测试 + 指针路由**：布局树命中、root→target 路径、按 pointer 的 capture
+- **语义树 + 焦点管理**：角色/标签/值/禁用/可聚焦，Tab/Shift+Tab 焦点遍历（AccessKit 后续）
 - 引擎流水线：场景 → 布局 → 绘制 → UiBatch → 后端
 - 测试与可运行示例
 
@@ -40,7 +41,7 @@ Jasper UI 的 **宿主无关 Native 引擎底座**（Rust）。它只负责底�
 - winit 窗口、wgpu/Vello GPU、AccessKit、图片/SVG 解码
 - Jasper ABI、Jasper UI Framework、UI IR、状态/事件/动画/路由
 - Web HTML/CSS/JS/WASM 输出
-- 输入法组合、手势识别（v0.2 接；命中测试/捕获已落地）
+- 输入法组合、手势识别、AccessKit 桥（v0.2 接；命中/捕获/语义/焦点已落地）
 - 这些缺口在 [docs/status.md](docs/status.md) 里逐项标注，不写成“已完成”。
 
 ## 快速开始

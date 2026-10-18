@@ -1,6 +1,7 @@
 //! Instance scene tree with stable node identities and incremental patches.
 //! 实例层场景树；不是 Jasper 的声明层组件树，也不是 Web DOM。
 
+use crate::semantics::Semantics;
 use crate::style::Style;
 
 /// Stable identity of a node within a scene.
@@ -21,6 +22,7 @@ pub struct Node {
     pub id: NodeId,
     pub kind: NodeKind,
     pub style: Style,
+    pub semantics: Semantics,
     pub children: Vec<Node>,
 }
 
@@ -30,6 +32,7 @@ impl Node {
             id,
             kind,
             style: Style::default(),
+            semantics: Semantics::default(),
             children: Vec::new(),
         }
     }
@@ -48,6 +51,11 @@ impl Node {
 
     pub fn with_style(mut self, style: Style) -> Self {
         self.style = style;
+        self
+    }
+
+    pub fn with_semantics(mut self, semantics: Semantics) -> Self {
+        self.semantics = semantics;
         self
     }
 
