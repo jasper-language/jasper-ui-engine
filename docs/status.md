@@ -24,6 +24,7 @@
 | 溢出裁剪 | `Overflow::Hidden/Scroll`；绘制 Push/PopClip；命中原生裁剪 |
 | 滚动偏移 | `Node::scroll` + `ScenePatch::SetScroll`；子树平移 |
 | 滚动控制 | `ScrollController`：wheel 逐级路由/拆分残余 delta、clamp、fling 惯性 |
+| 滚动条 | `scrollbar`：track/thumb 几何、命中、thumb 拖动映射、`paint_scrollbars`（含祖先裁剪）；不新增场景节点 |
 | 引擎流水线 | Scene → Layout → Paint → Batch → Backend |
 
 ## 已实现但尚未充分验证
@@ -34,7 +35,7 @@
 | 文字近似测量 | 不是真实字形度量；CJK/emoji/RTL 未验证 |
 | 软件光栅 | 未做模糊/渐变/圆角/抗锯齿；仅轴对齐矩形 |
 | 场景补丁 | 已做原子批量 + 版本/stale；未做并发多写/合并策略 |
-| 滚动控制 | 无滚动条/过冲回弹 |
+| 滚动控制 | 无过冲回弹；滚动条无自动隐藏/平台主题 |
 | 命中测试语义 | 只看绘制内容，未接组件可点击/可聚焦语义 |
 
 ## 未实现（明确返回错误或未接入）

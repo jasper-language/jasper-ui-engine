@@ -37,6 +37,7 @@ pub mod pointer;
 pub mod raster;
 pub mod scene;
 pub mod scroll;
+pub mod scrollbar;
 pub mod semantics;
 pub mod style;
 pub mod text;
@@ -54,6 +55,9 @@ pub use pointer::{PointerRoute, PointerRouter};
 pub use scene::{Node, NodeId, NodeKind, Scene, SceneError, ScenePatch};
 pub use scroll::{
     scroll_bounds, scroll_chain, ScrollBounds, ScrollConfig, ScrollController, ScrollUpdate,
+};
+pub use scrollbar::{
+    paint_scrollbars, scrollbars, ScrollAxis, Scrollbar, ScrollbarConfig, ScrollbarDrag, Scrollbars,
 };
 pub use semantics::{FocusError, FocusManager, Role, Semantics, SemanticsNode, SemanticsTree};
 pub use style::{Align, Color, Display, FlexDirection, Justify, Length, Style};

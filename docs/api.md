@@ -60,6 +60,7 @@ println!("{} boxes, {} ops, {} bytes", stats.layout_boxes, stats.paint_ops, stat
 | `PlatformHost` / `HeadlessHost` | `platform` | 宿主窗口/DPI/重绘 |
 | `PointerEvent` / `PointerTracker` | `input` | 指针/触摸/笔 |
 | `ScrollBounds` / `ScrollConfig` / `ScrollController` / `ScrollUpdate` | `scroll` | 滚动范围、wheel 路由、fling 惯性 |
+| `Scrollbar` / `ScrollbarConfig` / `ScrollbarDrag` / `Scrollbars` | `scrollbar` | 滚动条几何、命中、拖动、绘制 |
 | `Engine` / `FrameStats` | `engine` | 流水线 |
 
 ## Scene
@@ -86,10 +87,10 @@ scene.apply(ScenePatch::Remove { id: NodeId(2) })?;
 - 尺寸：`Length::Auto/Px/Percent`；`min_*`/`max_*`。
 - 布局：`Display::{Block,Flex,None}`、`FlexDirection::{Row,Column}`、`Align`、`Justify`、`gap`、`flex_grow`。
 - 间距：`padding`、`margin`、`border`。
-- 溢出：`overflow(Overflow::Hidden/Scroll)`；`Scroll` 支持 wheel 路由/clamp/fling，但仍无可视滚动条。
+- 溢出：`overflow(Overflow::Hidden/Scroll)`；`Scroll` 支持 wheel 路由/clamp/fling 与 overlay 滚动条（见“滚动控制”）。
 - 滚动：`Node::scroll(Point)`，或 `ScenePatch::SetScroll { id, offset }`（见“滚动控制”）。
 - 文字：`font_size`、`color`（测量参与布局；光栅未实现）。
-- 当前不支持阴影/滤镜/变换/滚动/虚拟化。
+- 当前不支持阴影/滤镜/变换/虚拟化。
 
 ## Paint / UiBatch
 
@@ -240,6 +241,30 @@ for update in scroll.tick(&layout, &scene, dt_seconds) {
 - 滚轮输入总会取消该链上的 fling；一次事件的多个 `SetScroll` 可用 `Scene::apply_batch` 合成一个版本。
 - `tick` 用指数摩擦衰减速度，到边界或低于 `min_velocity` 即停止；`dt` 上限 0.1s。
 - `ScrollUpdate::patch()` 产出普通的 `ScenePatch::SetScroll`，仍走版本/原子批；应用后应重新布局再继续命中/滚动。
+
+### 滚动条
+
+```rust
+use jasper_ui_engine::scrollbar::{paint_scrollbars, scrollbars, ScrollbarConfig};
+
+let config = ScrollbarConfig::default();
+if let Some(bars) = scrollbars(&layout, &scene, node, config) {
+    // 指针按下：只有落在 thumb 上才开始拖动（track 点击暂不跳转）。
+    if let Some(drag) = bars.hit(pointer).and_then(|bar| bar.begin_drag(pointer)) {
+        // 移动时把 update 走普通补丁；横轴分量保持不变。
+        scene.apply(drag.update(pointer, scene.find(node).unwrap().scroll).patch())?;
+    }
+    // 绘制：先 paint，再追加到同一显示列表。
+    let mut display = jasper_ui_engine::paint::paint(&layout, Color::WHITE);
+    paint_scrollbars(&mut display, bars, config);
+}
+```
+
+- `scrollbars` 只对 `Overflow::Scroll` 且该轴确实溢出的节点产出 bar；内容放得下时返回空 `Scrollbars`，不画假 thumb。
+- `ScrollbarConfig`：`thickness`/`margin`/`min_thumb` 与 `track_color`/`thumb_color`；默认 6px 宽、24px 最小 thumb。
+- `ScrollbarDrag` 保留按下时光标在 thumb 内的抓取偏移，拖动不会跳；越界自动 clamp 到 `max_offset()`。
+- `paint_scrollbars` 会带上布局里的祖先裁剪（`PushClip/PopClip`），不新增场景节点。
+- 未做：track 点击跳转、自动隐藏/淡出、过冲回弹、平台主题。
 
 ## Engine
 
