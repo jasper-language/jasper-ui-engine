@@ -6,6 +6,11 @@ Jasper UI 的 **宿主无关 Native 引擎底座**（Rust）。它只负责底�
 > 这是可运行的工程，不是完整引擎；未实现的能力会明确报错/标注，不用空实现或固定结果冒充完成。
 > 详见 [docs/status.md](docs/status.md)。
 
+技术文档索引：[docs/README.md](docs/README.md)：
+设计 [design.md](docs/design.md)、API [api.md](docs/api.md)、ABI 草案 [abi.md](docs/abi.md)、
+依赖 [dependencies.md](docs/dependencies.md)、路线图 [roadmap.md](docs/roadmap.md)、
+宿主集成 [integration.md](docs/integration.md)。
+
 ## 为什么独立成仓库
 
 - 引擎需要同时服务两类宿主：
