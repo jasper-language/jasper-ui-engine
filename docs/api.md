@@ -75,7 +75,9 @@ scene.apply(ScenePatch::Remove { id: NodeId(2) })?;
 ```
 
 - `NodeId` 在场景生命周期内稳定；重复 ID 会报 `SceneError::DuplicateNode`。
-- `ScenePatch` 当前不是事务；失败可能已部分应用，批量/原子 API 后续补。
+- `Scene::version()` 单调递增；`apply` / `apply_batch` **原子**（失败不改变场景/版本）。
+- `apply_batch_at(expected, patches)` 拒绝过期批次，返回 `SceneError::StaleVersion`。
+- `LayoutTree.scene_version` / `FrameStats.scene_version` 把版本带到宿主。
 
 ## Style / Layout
 

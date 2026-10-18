@@ -31,6 +31,8 @@ pub struct LayoutBox {
 pub struct LayoutTree {
     pub viewport: Size,
     pub boxes: Vec<LayoutBox>,
+    /// Scene version this layout was computed from.
+    pub scene_version: u64,
 }
 
 impl LayoutTree {
@@ -111,7 +113,11 @@ impl LayoutEngine for TaffyLayoutEngine {
             &taffy_ids,
             &mut boxes,
         )?;
-        Ok(LayoutTree { viewport, boxes })
+        Ok(LayoutTree {
+            viewport,
+            boxes,
+            scene_version: scene.version(),
+        })
     }
 }
 

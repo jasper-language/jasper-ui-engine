@@ -94,6 +94,7 @@ mod tests {
     fn paints_background_border_and_text() {
         let layout = LayoutTree {
             viewport: Size::new(100.0, 100.0),
+            scene_version: 1,
             boxes: vec![LayoutBox {
                 node_id: NodeId(1),
                 parent: None,

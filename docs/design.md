@@ -91,6 +91,10 @@ Jasper UI Framework / UI IR / Compiler        （Jasper 侧，后续）
 
 - 本仓库的 `Scene` 是**实例层**：当前持久节点、样式、文本、父子关系、稳定 NodeId。
 - Jasper 侧的 **声明层 UI IR**（组件组成/状态依赖）和 **增量更新协议** 不在这里。
+- `Scene` 有单调 `version`；`apply` / `apply_batch` 原子应用（prototype 用 clone-on-write），
+  成功只推进一次版本；失败保持原场景/版本。
+- `apply_batch_at(expected_version, patches)` 拒绝过期批次（`SceneError::StaleVersion`）。
+- `LayoutTree.scene_version` 与 `FrameStats.scene_version` 把版本带到宿主/事件侧。
 - 当前 `ScenePatch` 只是引擎内部增量；不是跨语言 ABI，也不是最终 UI IR。
 - 后续 ABI 会把“实例层场景更新”定义成版本化批量操作；见 [abi.md](abi.md)。
 

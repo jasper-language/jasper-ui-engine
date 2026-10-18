@@ -67,6 +67,7 @@ mod tests {
     fn layout() -> LayoutTree {
         LayoutTree {
             viewport: Size::new(100.0, 100.0),
+            scene_version: 1,
             boxes: vec![
                 item(
                     1,
@@ -106,6 +107,7 @@ mod tests {
     fn transparent_container_does_not_swallow_children() {
         let tree = LayoutTree {
             viewport: Size::new(100.0, 100.0),
+            scene_version: 1,
             boxes: vec![
                 item(1, None, Rect::new(0.0, 0.0, 100.0, 100.0), Style::default()),
                 item(

@@ -81,11 +81,17 @@ impl Node {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Scene {
     pub root: Node,
+    version: u64,
 }
 
 impl Scene {
     pub fn new(root: Node) -> Self {
-        Self { root }
+        Self { root, version: 1 }
+    }
+
+    /// Monotonic version; incremented exactly once per successful patch/batch.
+    pub fn version(&self) -> u64 {
+        self.version
     }
 
     pub fn find(&self, id: NodeId) -> Option<&Node> {
@@ -96,9 +102,41 @@ impl Scene {
         self.find(id).is_some()
     }
 
-    /// Applies one incremental patch. Patches are not transactional yet;
-    /// callers that need atomicity should build a batch API in a later version.
+    /// Applies one patch atomically (clone-on-write for the prototype).
     pub fn apply(&mut self, patch: ScenePatch) -> Result<(), SceneError> {
+        self.apply_batch(std::slice::from_ref(&patch))
+    }
+
+    /// Applies all patches or none. The version advances once on success.
+    pub fn apply_batch(&mut self, patches: &[ScenePatch]) -> Result<(), SceneError> {
+        self.apply_batch_at(self.version, patches)
+    }
+
+    /// Rejects a stale batch when `expected_version` is not the current version.
+    pub fn apply_batch_at(
+        &mut self,
+        expected_version: u64,
+        patches: &[ScenePatch],
+    ) -> Result<(), SceneError> {
+        if expected_version != self.version {
+            return Err(SceneError::StaleVersion {
+                expected: expected_version,
+                actual: self.version,
+            });
+        }
+        if patches.is_empty() {
+            return Ok(());
+        }
+        let mut next = self.clone();
+        for patch in patches {
+            next.apply_one(patch.clone())?;
+        }
+        next.version = self.version.saturating_add(1);
+        *self = next;
+        Ok(())
+    }
+
+    fn apply_one(&mut self, patch: ScenePatch) -> Result<(), SceneError> {
         match patch {
             ScenePatch::Insert {
                 parent,
@@ -171,6 +209,7 @@ pub enum SceneError {
     DuplicateNode(NodeId),
     CannotRemoveRoot,
     NotText(NodeId),
+    StaleVersion { expected: u64, actual: u64 },
 }
 
 fn find_node(node: &Node, id: NodeId) -> Option<&Node> {
@@ -253,5 +292,65 @@ mod tests {
             scene.apply(ScenePatch::Remove { id: id(1) }),
             Err(SceneError::CannotRemoveRoot)
         );
+    }
+
+    #[test]
+    fn version_advances_only_on_success() {
+        let mut scene = Scene::new(Node::container(id(1)));
+        assert_eq!(scene.version(), 1);
+        scene
+            .apply(ScenePatch::Insert {
+                parent: id(1),
+                index: 0,
+                node: Node::rect(id(2)),
+            })
+            .unwrap();
+        assert_eq!(scene.version(), 2);
+        assert_eq!(
+            scene.apply(ScenePatch::Remove { id: id(9) }),
+            Err(SceneError::NodeNotFound(id(9)))
+        );
+        assert_eq!(scene.version(), 2);
+    }
+
+    #[test]
+    fn batch_is_atomic() {
+        let mut scene = Scene::new(Node::container(id(1)));
+        let result = scene.apply_batch(&[
+            ScenePatch::Insert {
+                parent: id(1),
+                index: 0,
+                node: Node::rect(id(2)),
+            },
+            ScenePatch::Remove { id: id(9) },
+        ]);
+        assert_eq!(result, Err(SceneError::NodeNotFound(id(9))));
+        assert!(!scene.contains(id(2)));
+        assert_eq!(scene.version(), 1);
+    }
+
+    #[test]
+    fn stale_batch_is_rejected() {
+        let mut scene = Scene::new(Node::container(id(1)));
+        scene
+            .apply(ScenePatch::Insert {
+                parent: id(1),
+                index: 0,
+                node: Node::rect(id(2)),
+            })
+            .unwrap();
+        assert_eq!(
+            scene.apply_batch_at(1, &[ScenePatch::Remove { id: id(2) }]),
+            Err(SceneError::StaleVersion {
+                expected: 1,
+                actual: 2
+            })
+        );
+        assert!(scene.contains(id(2)));
+        scene
+            .apply_batch_at(2, &[ScenePatch::Remove { id: id(2) }])
+            .unwrap();
+        assert!(!scene.contains(id(2)));
+        assert_eq!(scene.version(), 3);
     }
 }

@@ -132,6 +132,7 @@ mod tests {
         let child_style = Style::default().background(Color::RED);
         LayoutTree {
             viewport: Size::new(100.0, 100.0),
+            scene_version: 1,
             boxes: vec![
                 LayoutBox {
                     node_id: NodeId(1),

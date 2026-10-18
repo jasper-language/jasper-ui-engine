@@ -12,6 +12,7 @@ use crate::text::TextEngine;
 /// Per-frame statistics for diagnostics and tests.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct FrameStats {
+    pub scene_version: u64,
     pub layout_boxes: usize,
     pub paint_ops: usize,
     pub batch_bytes: usize,
@@ -91,6 +92,7 @@ impl<B: RenderBackend> Engine<B> {
         self.backend.present()?;
 
         Ok(FrameStats {
+            scene_version: layout.scene_version,
             layout_boxes: layout.boxes.len(),
             paint_ops: batch.ops.len(),
             batch_bytes: bytes.len(),

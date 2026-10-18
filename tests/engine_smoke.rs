@@ -20,6 +20,7 @@ fn renders_a_rect_through_the_full_pipeline() {
     let mut engine = Engine::new(Size::new(32.0, 32.0), backend, Box::new(SimpleTextEngine))
         .with_clear_color(Color::WHITE);
     let stats = engine.render(&scene).expect("headless render");
+    assert_eq!(stats.scene_version, 1);
     assert_eq!(stats.layout_boxes, 1);
     assert!(stats.paint_ops >= 2);
     assert!(stats.batch_bytes > 10);
