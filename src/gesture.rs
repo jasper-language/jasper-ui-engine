@@ -16,6 +16,9 @@ pub struct GestureConfig {
     pub long_press_ms: u64,
     pub pan_threshold: f32,
     pub pinch_threshold: f32,
+    /// Touch contacts wider or taller than this (logical px) are treated as a
+    /// palm and do not produce gestures. Zero disables palm rejection.
+    pub palm_contact_max: f32,
 }
 
 impl Default for GestureConfig {
@@ -26,6 +29,7 @@ impl Default for GestureConfig {
             long_press_ms: 500,
             pan_threshold: 8.0,
             pinch_threshold: 8.0,
+            palm_contact_max: 40.0,
         }
     }
 }
@@ -133,6 +137,11 @@ impl GestureRecognizer {
         let mut out = Vec::new();
         match event.phase {
             PointerPhase::Down => {
+                // A palm-sized touch is not a gesture pointer. Do not insert it,
+                // so its later Move/Up samples are ignored as well.
+                if self.is_palm(event) {
+                    return out;
+                }
                 self.pointers.insert(
                     event.pointer_id,
                     PointerState {
@@ -147,6 +156,19 @@ impl GestureRecognizer {
                 self.update_pinch(&mut out);
             }
             PointerPhase::Move => {
+                // A real finger can grow into a palm contact mid-gesture (e.g.
+                // the user rests their hand while dragging). Cancel the active
+                // gesture so the UI can undo any applied pan instead of
+                // continuing with a bogus pointer.
+                if self.is_palm(event) {
+                    if self.pointers.remove(&event.pointer_id).is_some() {
+                        out.push(Gesture::Cancelled {
+                            pointer_id: event.pointer_id,
+                        });
+                    }
+                    self.update_pinch(&mut out);
+                    return out;
+                }
                 if let Some(state) = self.pointers.get_mut(&event.pointer_id) {
                     let total = Point::new(
                         event.position.x - state.start.x,
@@ -254,6 +276,16 @@ impl GestureRecognizer {
         self.pinch.is_some()
     }
 
+    /// Palm rejection is intentionally conservative: only touch contacts are
+    /// classified by area; mouse and pen contacts keep their normal meaning.
+    fn is_palm(&self, event: &crate::input::PointerEvent) -> bool {
+        let limit = self.config.palm_contact_max;
+        if limit <= 0.0 || event.kind != crate::input::PointerKind::Touch {
+            return false;
+        }
+        event.contact.width.max(event.contact.height) > limit
+    }
+
     fn update_pinch(&mut self, out: &mut Vec<Gesture>) {
         let mut ids: Vec<PointerId> = self.pointers.keys().copied().take(2).collect();
         if ids.len() < 2 {
@@ -341,6 +373,11 @@ mod tests {
         }
     }
 
+    fn with_contact(mut route: PointerRoute, contact: f32) -> PointerRoute {
+        route.event.contact = crate::geometry::Size::new(contact, contact);
+        route
+    }
+
     #[test]
     fn recognizes_tap() {
         let mut recognizer = GestureRecognizer::default();
@@ -411,5 +448,82 @@ mod tests {
                 pointer_id: PointerId(1)
             }]
         );
+    }
+
+    #[test]
+    fn ignores_palm_sized_touch() {
+        let mut recognizer = GestureRecognizer::default();
+        assert!(recognizer
+            .process(&with_contact(
+                route(1, PointerPhase::Down, 10.0, 10.0, 0),
+                60.0
+            ))
+            .is_empty());
+        assert_eq!(recognizer.active_pointers(), 0);
+        assert!(recognizer.tick(600).is_empty());
+        assert!(recognizer
+            .process(&with_contact(
+                route(1, PointerPhase::Up, 10.0, 10.0, 700),
+                60.0
+            ))
+            .is_empty());
+    }
+
+    #[test]
+    fn palm_growth_cancels_active_pan() {
+        let mut recognizer = GestureRecognizer::default();
+        recognizer.process(&route(1, PointerPhase::Down, 10.0, 10.0, 0));
+        let started = recognizer.process(&route(1, PointerPhase::Move, 30.0, 10.0, 50));
+        assert!(matches!(started[0], Gesture::PanStart { .. }));
+
+        let cancelled = recognizer.process(&with_contact(
+            route(1, PointerPhase::Move, 31.0, 10.0, 60),
+            60.0,
+        ));
+        assert_eq!(
+            cancelled,
+            vec![Gesture::Cancelled {
+                pointer_id: PointerId(1)
+            }]
+        );
+        assert_eq!(recognizer.active_pointers(), 0);
+        assert!(recognizer
+            .process(&with_contact(
+                route(1, PointerPhase::Up, 31.0, 10.0, 70),
+                60.0
+            ))
+            .is_empty());
+    }
+
+    #[test]
+    fn palm_does_not_begin_pinch() {
+        let mut recognizer = GestureRecognizer::default();
+        recognizer.process(&route(1, PointerPhase::Down, 0.0, 0.0, 0));
+        let out = recognizer.process(&with_contact(
+            route(2, PointerPhase::Down, 10.0, 0.0, 0),
+            60.0,
+        ));
+        assert!(out.iter().all(|g| !matches!(g, Gesture::PinchStart { .. })));
+        assert_eq!(recognizer.active_pointers(), 1);
+        assert!(!recognizer.is_pinching());
+    }
+
+    #[test]
+    fn palm_rejection_can_be_disabled() {
+        let config = GestureConfig {
+            palm_contact_max: 0.0,
+            ..Default::default()
+        };
+        let mut recognizer = GestureRecognizer::new(config);
+        recognizer.process(&with_contact(
+            route(1, PointerPhase::Down, 10.0, 10.0, 0),
+            60.0,
+        ));
+        assert_eq!(recognizer.active_pointers(), 1);
+        let out = recognizer.process(&with_contact(
+            route(1, PointerPhase::Up, 10.0, 10.0, 50),
+            60.0,
+        ));
+        assert!(matches!(out[0], Gesture::Tap { .. }));
     }
 }

@@ -21,6 +21,7 @@
 | 语义树 | `SemanticsTree::from_scene`，角色/标签/值/隐藏/可聚焦 |
 | 焦点管理 | pre-order `FocusManager`，Tab/Shift+Tab |
 | 参考手势 | tap/long-press/pan/pinch/cancel；阈值可配 |
+| 手掌拒绝 | `GestureConfig::palm_contact_max`；掌触不进入手势状态机，掌触变大时取消进行中的 pan；设为 0 可关闭 |
 | 溢出裁剪 | `Overflow::Hidden/Scroll`；绘制 Push/PopClip；命中原生裁剪 |
 | 滚动偏移 | `Node::scroll` + `ScenePatch::SetScroll`；子树平移 |
 | 滚动控制 | `ScrollController`：wheel 逐级路由/拆分残余 delta、clamp、fling 惯性 |
