@@ -43,6 +43,18 @@ impl UiBatch {
                     write_color(&mut out, *color);
                     out.extend_from_slice(&width.to_le_bytes());
                 }
+                PaintOp::Line {
+                    from,
+                    to,
+                    color,
+                    width,
+                } => {
+                    out.push(7);
+                    write_point(&mut out, *from);
+                    write_point(&mut out, *to);
+                    write_color(&mut out, *color);
+                    out.extend_from_slice(&width.to_le_bytes());
+                }
                 PaintOp::DrawText {
                     origin,
                     text,
@@ -103,6 +115,12 @@ impl UiBatch {
                 },
                 5 => PaintOp::PushClip(cursor.rect()?),
                 6 => PaintOp::PopClip,
+                7 => PaintOp::Line {
+                    from: cursor.point()?,
+                    to: cursor.point()?,
+                    color: cursor.color()?,
+                    width: cursor.f32()?,
+                },
                 _ => return Err(BatchError::UnknownOp(tag)),
             };
             ops.push(op);
@@ -222,6 +240,12 @@ mod tests {
                 rect: Rect::new(5.0, 6.0, 7.0, 8.0),
                 color: Color::BLUE,
                 width: 2.0,
+            },
+            PaintOp::Line {
+                from: Point::new(0.0, 1.0),
+                to: Point::new(2.0, 3.0),
+                color: Color::GREEN,
+                width: 1.5,
             },
             PaintOp::DrawText {
                 origin: Point::new(9.0, 10.0),

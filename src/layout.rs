@@ -10,6 +10,7 @@ use taffy::style::{
 };
 use taffy::{AvailableSpace, TaffyTree};
 
+use crate::canvas::Canvas;
 use crate::geometry::{Edges, Point, Rect, Size};
 use crate::scene::{Node, NodeId, Scene};
 use crate::style::{Align, Display, FlexDirection, Justify, Length, Style};
@@ -24,6 +25,8 @@ pub struct LayoutBox {
     pub content: Rect,
     pub style: Style,
     pub text: Option<String>,
+    /// Canvas commands in content-local coordinates, when this node is a canvas.
+    pub canvas: Option<Canvas>,
     /// Effective ancestor clip (not the node's own overflow clip).
     pub clip: Option<Rect>,
 }
@@ -149,6 +152,9 @@ fn build_node(
                 },
             )
             .map_err(|error| LayoutError::Taffy(error.to_string()))?,
+        crate::scene::NodeKind::Canvas(_) => tree
+            .new_leaf(style)
+            .map_err(|error| LayoutError::Taffy(error.to_string()))?,
         _ => {
             let mut children = Vec::with_capacity(node.children.len());
             for child in &node.children {
@@ -196,6 +202,7 @@ fn collect_boxes(
         content,
         style: node.style.clone(),
         text: node.text_content().map(str::to_owned),
+        canvas: node.canvas_content().cloned(),
         clip,
     });
     let child_clip = if node.style.overflow == crate::style::Overflow::Visible {

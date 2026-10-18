@@ -18,6 +18,12 @@ pub enum PaintOp {
         color: Color,
         width: f32,
     },
+    Line {
+        from: Point,
+        to: Point,
+        color: Color,
+        width: f32,
+    },
     DrawText {
         origin: Point,
         text: String,
@@ -80,6 +86,13 @@ pub fn paint(layout: &LayoutTree, clear: Color) -> DisplayList {
                 });
             }
         }
+        if let Some(canvas) = &node.canvas {
+            // Canvas commands are local to the content box and must not paint
+            // outside it, even when the node's own overflow is visible.
+            display.push(PaintOp::PushClip(node.content));
+            display.ops.extend(canvas.to_paint_ops(node.content.origin));
+            display.push(PaintOp::PopClip);
+        }
         if node.clip.is_some() {
             display.push(PaintOp::PopClip);
         }
@@ -108,6 +121,7 @@ mod tests {
                 content: Rect::new(0.0, 0.0, 100.0, 100.0),
                 style: Style::default().background(Color::RED),
                 text: None,
+                canvas: None,
                 clip: Some(Rect::new(0.0, 0.0, 50.0, 50.0)),
             }],
         };
@@ -134,6 +148,7 @@ mod tests {
                     .border(1.0, Color::WHITE)
                     .text(12.0, Color::BLACK),
                 text: Some("hi".into()),
+                canvas: None,
                 clip: None,
             }],
         };
@@ -150,5 +165,30 @@ mod tests {
             .ops
             .iter()
             .any(|op| matches!(op, PaintOp::DrawText { .. })));
+    }
+
+    #[test]
+    fn paints_canvas_commands_in_content_coordinates() {
+        let mut canvas = crate::canvas::Canvas::new();
+        canvas.fill_rect(Rect::new(1.0, 2.0, 3.0, 4.0), Color::RED);
+        let layout = LayoutTree {
+            viewport: Size::new(100.0, 100.0),
+            scene_version: 1,
+            boxes: vec![LayoutBox {
+                node_id: NodeId(1),
+                parent: None,
+                rect: Rect::new(0.0, 0.0, 20.0, 20.0),
+                content: Rect::new(10.0, 20.0, 20.0, 20.0),
+                style: Style::default(),
+                text: None,
+                canvas: Some(canvas),
+                clip: None,
+            }],
+        };
+        let display = paint(&layout, Color::WHITE);
+        assert!(display.ops.iter().any(|op| matches!(
+            op,
+            PaintOp::FillRect { rect, .. } if *rect == Rect::new(11.0, 22.0, 3.0, 4.0)
+        )));
     }
 }

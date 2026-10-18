@@ -5,7 +5,7 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
-use crate::geometry::Rect;
+use crate::geometry::{Point, Rect};
 use crate::style::Color;
 
 /// RGBA8 software framebuffer.
@@ -102,6 +102,48 @@ impl Canvas {
             Rect::new(rect.right() - w, rect.y() + w, w, rect.height() - 2.0 * w),
             color,
         );
+    }
+
+    /// Draws a line with a square brush. This is the deterministic software
+    /// path; GPU/Canvas backends may use their own anti-aliased line rasterizer.
+    pub fn line(&mut self, from: Point, to: Point, color: Color, width: f32) {
+        if color.a == 0 || width <= 0.0 {
+            return;
+        }
+        let brush = width.max(1.0);
+        let mut x0 = from.x.round() as i64;
+        let mut y0 = from.y.round() as i64;
+        let x1 = to.x.round() as i64;
+        let y1 = to.y.round() as i64;
+        let dx = (x1 - x0).abs();
+        let sx = if x0 < x1 { 1 } else { -1 };
+        let dy = -(y1 - y0).abs();
+        let sy = if y0 < y1 { 1 } else { -1 };
+        let mut err = dx + dy;
+        let steps = dx.max(-dy);
+        for _ in 0..=steps {
+            self.fill_rect(
+                Rect::new(
+                    x0 as f32 - brush / 2.0,
+                    y0 as f32 - brush / 2.0,
+                    brush,
+                    brush,
+                ),
+                color,
+            );
+            if x0 == x1 && y0 == y1 {
+                break;
+            }
+            let e2 = 2 * err;
+            if e2 >= dy {
+                err += dy;
+                x0 += sx;
+            }
+            if e2 <= dx {
+                err += dx;
+                y0 += sy;
+            }
+        }
     }
 
     pub fn pixel(&self, x: u32, y: u32) -> Option<Color> {
@@ -206,5 +248,18 @@ mod tests {
         let pixel = canvas.pixel(0, 0).unwrap();
         assert!((pixel.r as i32 - 128).abs() <= 1);
         assert_eq!(pixel.a, 255);
+    }
+
+    #[test]
+    fn draws_lines_with_clipping() {
+        let mut canvas = Canvas::new(8, 8);
+        canvas.clear(Color::BLACK);
+        canvas.line(Point::new(1.0, 1.0), Point::new(6.0, 1.0), Color::RED, 1.0);
+        assert_eq!(canvas.pixel(3, 1).unwrap(), Color::RED);
+        assert_eq!(canvas.pixel(3, 3).unwrap(), Color::BLACK);
+        canvas.push_clip(Rect::new(0.0, 0.0, 3.0, 8.0));
+        canvas.line(Point::new(1.0, 5.0), Point::new(6.0, 5.0), Color::BLUE, 1.0);
+        assert_eq!(canvas.pixel(2, 5).unwrap(), Color::BLUE);
+        assert_eq!(canvas.pixel(5, 5).unwrap(), Color::BLACK);
     }
 }

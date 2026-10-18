@@ -65,6 +65,7 @@ mod tests {
             content: rect,
             style,
             text: None,
+            canvas: None,
             clip: None,
         }
     }
@@ -120,6 +121,7 @@ mod tests {
                 content: Rect::new(20.0, 20.0, 40.0, 40.0),
                 style: Style::default().background(Color::RED),
                 text: None,
+                canvas: None,
                 clip: Some(Rect::new(0.0, 0.0, 10.0, 10.0)),
             }],
         };

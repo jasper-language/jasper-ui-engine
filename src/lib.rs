@@ -25,6 +25,9 @@
 
 pub mod backend;
 pub mod batch;
+pub mod canvas;
+#[cfg(feature = "canvas-tiny-skia")]
+pub mod canvas_tiny_skia;
 pub mod engine;
 pub mod geometry;
 pub mod gesture;
@@ -45,6 +48,9 @@ pub mod text;
 
 pub use backend::{BackendError, RenderBackend};
 pub use batch::{BatchError, UiBatch};
+pub use canvas::{Canvas, CanvasOp};
+#[cfg(feature = "canvas-tiny-skia")]
+pub use canvas_tiny_skia::{render_canvas, CanvasRenderReport};
 pub use engine::{Engine, EngineError, FrameStats};
 pub use geometry::{Edges, Point, Rect, Size};
 pub use gesture::{Gesture, GestureConfig, GestureRecognizer};

@@ -36,6 +36,7 @@ Jasper UI 的 **宿主无关 Native 引擎底座**（Rust）。它只负责底�
 - **参考手势层**：tap / long-press / pan / pinch / cancel，接在指针路由/capture 上
 - **溢出裁剪 + 滚动偏移**：`Overflow::Hidden/Scroll` 裁剪子树；`Node::scroll` 平移子节点
 - **滚动控制**：滚轮 delta 沿祖先链逐级消费、残余拆分、边界 clamp、fling 惯性；滚动条几何/命中/拖动/绘制
+- **Canvas 组件**：记录式绘制指令（矩形/线/文字/裁剪），参与布局与内容裁剪；CPU 渲染走 `tiny-skia`
 - 引擎流水线：场景 → 布局 → 绘制 → UiBatch → 后端
 - 测试与可运行示例
 

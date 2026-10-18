@@ -141,6 +141,7 @@ mod tests {
                     content: Rect::new(0.0, 0.0, 100.0, 100.0),
                     style: root_style,
                     text: None,
+                    canvas: None,
                     clip: None,
                 },
                 LayoutBox {
@@ -150,6 +151,7 @@ mod tests {
                     content: Rect::new(10.0, 10.0, 30.0, 30.0),
                     style: child_style,
                     text: None,
+                    canvas: None,
                     clip: None,
                 },
             ],

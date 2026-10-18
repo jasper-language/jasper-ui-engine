@@ -1,6 +1,7 @@
 //! Instance scene tree with stable node identities and incremental patches.
 //! 实例层场景树；不是 Jasper 的声明层组件树，也不是 Web DOM。
 
+use crate::canvas::Canvas;
 use crate::geometry::Point;
 use crate::semantics::Semantics;
 use crate::style::Style;
@@ -15,6 +16,7 @@ pub enum NodeKind {
     Container,
     Text(String),
     Rect,
+    Canvas(Canvas),
 }
 
 /// One node in the instance scene.
@@ -53,6 +55,10 @@ impl Node {
         Self::new(id, NodeKind::Rect)
     }
 
+    pub fn canvas(id: NodeId, canvas: Canvas) -> Self {
+        Self::new(id, NodeKind::Canvas(canvas))
+    }
+
     pub fn with_style(mut self, style: Style) -> Self {
         self.style = style;
         self
@@ -81,6 +87,13 @@ impl Node {
     pub fn text_content(&self) -> Option<&str> {
         match &self.kind {
             NodeKind::Text(text) => Some(text),
+            _ => None,
+        }
+    }
+
+    pub fn canvas_content(&self) -> Option<&Canvas> {
+        match &self.kind {
+            NodeKind::Canvas(canvas) => Some(canvas),
             _ => None,
         }
     }
@@ -181,6 +194,16 @@ impl Scene {
                     _ => Err(SceneError::NotText(id)),
                 }
             }
+            ScenePatch::SetCanvas { id, canvas } => {
+                let node = find_node_mut(&mut self.root, id).ok_or(SceneError::NodeNotFound(id))?;
+                match &mut node.kind {
+                    NodeKind::Canvas(existing) => {
+                        *existing = canvas;
+                        Ok(())
+                    }
+                    _ => Err(SceneError::NotCanvas(id)),
+                }
+            }
             ScenePatch::Remove { id } => {
                 if self.root.id == id {
                     return Err(SceneError::CannotRemoveRoot);
@@ -211,6 +234,10 @@ pub enum ScenePatch {
         id: NodeId,
         text: String,
     },
+    SetCanvas {
+        id: NodeId,
+        canvas: Canvas,
+    },
     SetScroll {
         id: NodeId,
         offset: Point,
@@ -227,6 +254,7 @@ pub enum SceneError {
     DuplicateNode(NodeId),
     CannotRemoveRoot,
     NotText(NodeId),
+    NotCanvas(NodeId),
     StaleVersion { expected: u64, actual: u64 },
 }
 
@@ -358,6 +386,37 @@ mod tests {
             .unwrap();
         assert_eq!(scene.find(id(1)).unwrap().scroll, Point::new(0.0, 24.0));
         assert_eq!(scene.version(), 2);
+    }
+
+    #[test]
+    fn set_canvas_updates_canvas_nodes_only() {
+        let mut scene = Scene::new(Node::container(id(1)));
+        scene
+            .apply(ScenePatch::Insert {
+                parent: id(1),
+                index: 0,
+                node: Node::canvas(id(2), Canvas::new()),
+            })
+            .unwrap();
+        let mut canvas = Canvas::new();
+        canvas.fill_rect(
+            crate::geometry::Rect::new(0.0, 0.0, 4.0, 4.0),
+            crate::style::Color::RED,
+        );
+        scene
+            .apply(ScenePatch::SetCanvas {
+                id: id(2),
+                canvas: canvas.clone(),
+            })
+            .unwrap();
+        assert_eq!(scene.find(id(2)).unwrap().canvas_content(), Some(&canvas));
+        assert_eq!(
+            scene.apply(ScenePatch::SetCanvas {
+                id: id(1),
+                canvas: Canvas::new()
+            }),
+            Err(SceneError::NotCanvas(id(1)))
+        );
     }
 
     #[test]

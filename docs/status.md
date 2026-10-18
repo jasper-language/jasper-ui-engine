@@ -27,6 +27,7 @@
 | 滚动偏移 | `Node::scroll` + `ScenePatch::SetScroll`；子树平移 |
 | 滚动控制 | `ScrollController`：wheel 逐级路由/拆分残余 delta、clamp、fling 惯性 |
 | 滚动条 | `scrollbar`：track/thumb 几何、命中、thumb 拖动映射、`paint_scrollbars`（含祖先裁剪）；不新增场景节点 |
+| Canvas 组件 | `Node::canvas` + `Canvas` 记录式绘制指令（矩形/线/文字/裁剪）；参与布局、内容裁剪与 `ScenePatch::SetCanvas`；`tiny-skia` CPU 渲染器（文字需后续接排版器） |
 | 引擎流水线 | Scene → Layout → Paint → Batch → Backend |
 
 ## 已实现但尚未充分验证

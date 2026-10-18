@@ -73,6 +73,12 @@ impl RenderBackend for HeadlessBackend {
                 PaintOp::StrokeRect { rect, color, width } => {
                     self.canvas.stroke_rect(*rect, *color, *width)
                 }
+                PaintOp::Line {
+                    from,
+                    to,
+                    color,
+                    width,
+                } => self.canvas.line(*from, *to, *color, *width),
                 PaintOp::PushClip(rect) => self.canvas.push_clip(*rect),
                 PaintOp::PopClip => self.canvas.pop_clip(),
                 PaintOp::DrawText { .. } => {

@@ -21,6 +21,7 @@
 - ✅ 语义树 + 焦点管理（宿主中立快照；AccessKit 后续）
 - ✅ 参考手势层（tap/long-press/pan/pinch；可替换）
 - ✅ 溢出裁剪 + 滚动偏移（wheel 逐级路由与残余 delta 拆分/边界 clamp/fling 惯性；滚动条几何/拖动/绘制已落地，仍无过冲回弹）
+- ✅ Canvas 组件（记录式绘制、内容裁剪、`tiny-skia` CPU 渲染；文字排版后续接）
 - 手势竞技场/输入法组合（下一步；手掌拒绝与键盘焦点路由已落地）
 - 手势边界规范：Rust 原始事件 vs Jasper 手势语义
 - 布局一致性测试：固定样例 + 百分比/min-max/gap
