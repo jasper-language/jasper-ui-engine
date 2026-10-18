@@ -59,7 +59,7 @@ pub use input::{InputEvent, PointerEvent, PointerKind, PointerPhase, PointerTrac
 pub use keyboard::{KeyAction, KeyRoute, KeyboardRouter};
 pub use layout::{LayoutBox, LayoutEngine, LayoutError, LayoutTree, TaffyLayoutEngine};
 pub use paint::{paint, DisplayList, PaintOp};
-pub use pointer::{PointerRoute, PointerRouter};
+pub use pointer::{HoverChange, HoverTracker, PointerRoute, PointerRouter};
 pub use scene::{Node, NodeId, NodeKind, Scene, SceneError, ScenePatch};
 pub use scroll::{
     scroll_bounds, scroll_chain, ScrollBounds, ScrollConfig, ScrollController, ScrollUpdate,

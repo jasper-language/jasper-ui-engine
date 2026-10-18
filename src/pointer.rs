@@ -119,6 +119,53 @@ impl PointerRouter {
     }
 }
 
+/// Mouse hover transition.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum HoverChange {
+    Enter(NodeId),
+    Leave(NodeId),
+}
+
+/// Tracks which node the mouse is over and emits enter/leave only on changes.
+///
+/// The caller feeds [`PointerRoute::target`] from hover samples; this keeps
+/// per-frame mouse moves from producing redundant host work.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct HoverTracker {
+    current: Option<NodeId>,
+}
+
+impl HoverTracker {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn hovered(&self) -> Option<NodeId> {
+        self.current
+    }
+
+    /// Returns `Leave(old)` then `Enter(new)` when the target changes.
+    pub fn update(&mut self, target: Option<NodeId>) -> Vec<HoverChange> {
+        if target == self.current {
+            return Vec::new();
+        }
+        let mut out = Vec::new();
+        if let Some(old) = self.current {
+            out.push(HoverChange::Leave(old));
+        }
+        if let Some(new) = target {
+            out.push(HoverChange::Enter(new));
+        }
+        self.current = target;
+        out
+    }
+
+    /// Clears hover, emitting a leave for the previous target.
+    pub fn clear(&mut self) -> Vec<HoverChange> {
+        self.update(None)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -224,5 +271,22 @@ mod tests {
         assert_eq!(hover.target, Some(NodeId(2)));
         assert!(!hover.captured);
         assert!(!router.has_capture(PointerId(1)));
+    }
+
+    #[test]
+    fn hover_tracker_emits_changes_only_on_target_switch() {
+        let mut hover = HoverTracker::new();
+        assert_eq!(
+            hover.update(Some(NodeId(1))),
+            vec![HoverChange::Enter(NodeId(1))]
+        );
+        assert_eq!(hover.update(Some(NodeId(1))), Vec::new());
+        assert_eq!(
+            hover.update(Some(NodeId(2))),
+            vec![HoverChange::Leave(NodeId(1)), HoverChange::Enter(NodeId(2))]
+        );
+        assert_eq!(hover.hovered(), Some(NodeId(2)));
+        assert_eq!(hover.clear(), vec![HoverChange::Leave(NodeId(2))]);
+        assert_eq!(hover.hovered(), None);
     }
 }

@@ -18,6 +18,7 @@
 | 指针/多点/触控笔模型 | `PointerEvent` + `PointerTracker` |
 | 命中测试 | 布局树最上层命中 + root→target 路径 |
 | 指针路由 | 按 pointer capture；多指/多笔独立 |
+| 鼠标 hover | `HoverTracker` 只在目标变化时产出 Enter/Leave，避免每帧重复命中回调 |
 | 语义树 | `SemanticsTree::from_scene`，角色/标签/值/隐藏/可聚焦 |
 | 焦点管理 | pre-order `FocusManager`，Tab/Shift+Tab |
 | 键盘路由 | `KeyboardRouter` 按焦点分发；Tab/Shift+Tab 导航、Enter/Space 激活按钮/复选/开关、Escape 关闭意图；带 Ctrl/Alt/Meta 的快捷键留给宿主 |
