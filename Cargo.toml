@@ -5,7 +5,7 @@ edition = "2021"
 license = "Apache-2.0"
 description = "Host-agnostic foundation for the Jasper UI native engine"
 repository = "https://github.com/jasper-language/jasper-ui-engine"
-rust-version = "1.71"
+rust-version = "1.89"
 
 [dependencies]
 # Taffy is the layout executor for the portable Flex/Grid/Block subset.
@@ -15,10 +15,14 @@ taffy = "0.15.0"
 # Canvas component renderer. Disable default features to keep the dependency
 # surface small; the `std` feature is required by this crate.
 tiny-skia = { version = "0.12.0", optional = true, default-features = false, features = ["std"] }
+# cosmic-text provides real shaping, font fallback, bidi and line breaking.
+# Kept optional so minimal/headless hosts can still build without a font stack.
+cosmic-text = { version = "0.19.0", optional = true, default-features = false, features = ["std", "swash", "fontconfig"] }
 
 [features]
 default = ["canvas-tiny-skia"]
 canvas-tiny-skia = ["dep:tiny-skia"]
+real-text = ["dep:cosmic-text"]
 
 [profile.release]
 lto = "thin"

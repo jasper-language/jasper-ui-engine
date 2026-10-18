@@ -8,8 +8,10 @@
 |---|---|---|---|---|
 | `taffy` | 0.15.0 | MIT | Flex/Grid/Block 布局执行器 | 已锁定；测试通过 |
 | `tiny-skia` | 0.12.0 | BSD-3-Clause | Canvas 组件的 CPU 光栅化（可选特性 `canvas-tiny-skia`，默认开启） | 已锁定；76 项库测试通过 |
+| `cosmic-text` | 0.19.0 | MIT OR Apache-2.0 | 真实 shaping、字体回退、CJK/emoji/RTL、断行（可选特性 `real-text`） | 已锁定；`--features real-text` 测试通过 |
 
 > `tiny-skia` 是纯 Rust 的 Skia 子集，不引入 C++/系统图形库。BSD-3-Clause 与 Apache-2.0 兼容；完整声明见仓库根目录 `THIRD_PARTY_LICENSES.md`。
+> `cosmic-text` 为可选特性；默认构建仍使用 `SimpleTextEngine` 的近似测量，开启 `real-text` 后由系统字体与真实 shaping 接管。
 
 `Cargo.lock` 记录完整传递依赖；禁止手改锁文件绕过审计。
 

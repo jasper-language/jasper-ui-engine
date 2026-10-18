@@ -37,3 +37,12 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+## cosmic-text 0.19.0
+
+Copyright the cosmic-text contributors. Licensed under MIT OR Apache-2.0.
+Source: https://github.com/pop-os/cosmic-text
+
+This project takes cosmic-text under the Apache-2.0 option; the MIT option is
+also available. When distributing binaries, keep this notice with the
+third-party license list.

@@ -25,6 +25,7 @@ Jasper UI 的 **宿主无关 Native 引擎底座**（Rust）。它只负责底�
 - 场景树（稳定 `NodeId`）与增量 `ScenePatch`
 - **Taffy 布局适配**（Flexbox / Grid / Block；百分比、min/max、padding/margin/gap）
 - 文字测量 trait + 参考实现（近似度量，真实排版后续接 Parley）
+- 可选真实文本测量：`--features real-text` 使用 cosmic-text 的系统字体、shaping 与断行
 - 绘制显示列表（Fill/Stroke/Text/Clip）
 - `UiBatch` 二进制编码/解码（带版本、边界检查）
 - 软件光栅（RGBA、填充、描边、裁剪、alpha 混合、PPM 输出）

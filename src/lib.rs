@@ -45,6 +45,8 @@ pub mod scrollbar;
 pub mod semantics;
 pub mod style;
 pub mod text;
+#[cfg(feature = "real-text")]
+pub mod text_cosmic;
 
 pub use backend::{BackendError, RenderBackend};
 pub use batch::{BatchError, UiBatch};
@@ -70,3 +72,5 @@ pub use scrollbar::{
 pub use semantics::{FocusError, FocusManager, Role, Semantics, SemanticsNode, SemanticsTree};
 pub use style::{Align, Color, Display, FlexDirection, Justify, Length, Style};
 pub use text::{SimpleTextEngine, TextEngine, TextMetrics};
+#[cfg(feature = "real-text")]
+pub use text_cosmic::CosmicTextEngine;

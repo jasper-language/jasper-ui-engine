@@ -42,7 +42,7 @@ impl Canvas {
     }
 
     pub fn clear(&mut self, color: Color) {
-        for pixel in self.pixels.chunks_exact_mut(4) {
+        for pixel in self.pixels.as_chunks_mut::<4>().0 {
             pixel[0] = color.r;
             pixel[1] = color.g;
             pixel[2] = color.b;
@@ -162,7 +162,7 @@ impl Canvas {
     pub fn to_ppm(&self) -> Vec<u8> {
         let mut out = format!("P6\n{} {}\n255\n", self.width, self.height).into_bytes();
         out.reserve(self.width as usize * self.height as usize * 3);
-        for pixel in self.pixels.chunks_exact(4) {
+        for pixel in self.pixels.as_chunks::<4>().0 {
             // PPM has no alpha; composite over black for deterministic output.
             let alpha = pixel[3] as f32 / 255.0;
             out.push((pixel[0] as f32 * alpha).round() as u8);

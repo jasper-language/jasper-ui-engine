@@ -11,6 +11,7 @@
 | 场景树 + 增量补丁 | `scene.rs`；稳定 NodeId；插入/更新/删除；版本/原子批 |
 | Taffy 布局 | Flex/Grid/Block；文本测量接入 measure 回调 |
 | 文字测量 | `TextEngine` trait + 近似参考实现（非 Parley） |
+| 真实文本测量 | `CosmicTextEngine`（`--features real-text`）：系统字体、真实 shaping、字体回退、CJK/emoji/RTL、断行；默认构建仍用近似实现 |
 | 显示列表 | Fill/Stroke/Text/Clip |
 | UiBatch | 版本化编码/解码；边界检查；往返测试 |
 | 软件光栅 | RGBA、填充、描边、裁剪、alpha 混合、PPM |
@@ -38,6 +39,7 @@
 |---|---|
 | Taffy 百分比/min-max | 只有单元测试，缺跨平台/大场景一致性测试 |
 | 文字近似测量 | 不是真实字形度量；CJK/空行/CRLF/组合字符基线已测，emoji/RTL/字形仍待 Parley |
+| cosmic-text 真实文本 | 已接入测量；尚未接字形光栅/图集缓存，也尚未作为默认 `TextEngine` |
 | 软件光栅 | 未做模糊/渐变/圆角/抗锯齿；仅轴对齐矩形 |
 | 场景补丁 | 已做原子批量 + 版本/stale；未做并发多写/合并策略 |
 | 滚动控制 | 无过冲回弹；滚动条无自动隐藏/平台主题 |
