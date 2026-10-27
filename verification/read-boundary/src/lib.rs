@@ -346,6 +346,22 @@ pub fn assert_canvas_import(bytes: &[u8], width: u32, height: u32) {
     }
 }
 
+/// Independent wide-integer oracle for Canvas::pixel over an imported packed buffer.
+/// 用宽整数独立校验导入缓冲上的 Canvas::pixel 越界拒绝与通道读取。
+pub fn assert_canvas_pixel(bytes: &[u8], width: u32, height: u32, x: u32, y: u32) {
+    let Ok(canvas) = Canvas::from_rgba8(width, height, bytes.to_vec()) else {
+        return;
+    };
+    let result = canvas.pixel(x, y);
+    if x >= width || y >= height {
+        assert!(result.is_none());
+        return;
+    }
+    let index = ((y as u128 * width as u128 + x as u128) * 4) as usize;
+    let color = result.unwrap();
+    assert_eq!([color.r, color.g, color.b, color.a], bytes[index..index + 4]);
+}
+
 /// Check exact resource transitions against an independent state tuple oracle.
 /// 用独立状态元组规格校验资源准入、撤销和再次签发。
 pub fn assert_resource(
@@ -1023,6 +1039,17 @@ mod kani_checks {
     }
 
     #[kani::proof]
+    #[kani::unwind(37)]
+    fn canvas_pixel_read() {
+        let bytes: [u8; 36] = kani::any();
+        let width: u32 = kani::any();
+        let height: u32 = kani::any();
+        kani::assume(width >= 1 && width <= 3 && height >= 1 && height <= 3);
+        let len = (width * height * 4) as usize;
+        assert_canvas_pixel(&bytes[..len], width, height, kani::any(), kani::any());
+    }
+
+    #[kani::proof]
     #[kani::unwind(17)]
     fn owned_canvas_import() {
         let bytes: [u8; 16] = kani::any();
@@ -1254,6 +1281,20 @@ mod properties {
             assert_canvas_import(&packed[..packed.len()-1], small_width, small_height);
         }
         #[test]
+        fn canvas_pixel_property(bytes in prop::collection::vec(any::<u8>(), 0..256),
+                                 width in 1u32..8, height in 1u32..8, x in any::<u32>(), y in any::<u32>(),
+                                 small_x in 0u32..9, small_y in 0u32..9) {
+            let mut packed = vec![0; (width * height * 4) as usize];
+            for (i, byte) in packed.iter_mut().enumerate() {
+                *byte = bytes.get(i % bytes.len().max(1)).copied().unwrap_or(0);
+            }
+            assert_canvas_pixel(&packed, width, height, x, y);
+            assert_canvas_pixel(&packed, width, height, small_x, small_y);
+            assert_canvas_pixel(&packed, width, height, width - 1, height - 1);
+            assert_canvas_pixel(&packed, width, height, width, 0);
+            assert_canvas_pixel(&packed, width, height, 0, height);
+        }
+        #[test]
         fn rgb_word_property(red in any::<u8>(), green in any::<u8>(), blue in any::<u8>()) {
             assert_rgb_word(red, green, blue);
         }
@@ -1449,6 +1490,15 @@ mod memory {
                 }
             }
         }
+        let ramp: Vec<u8> = (0..48).collect();
+        for (width, height) in [(1, 1), (2, 3), (3, 2), (4, 3)] {
+            let len = (width * height * 4) as usize;
+            for x in [0, 1, width - 1, width, u32::MAX] {
+                for y in [0, 1, height - 1, height, u32::MAX] {
+                    assert_canvas_pixel(&ramp[..len], width, height, x, y);
+                }
+            }
+        }
         for width in [0, 1, 16, u32::MAX] {
             for budget in [0, 4, 63, 64, usize::MAX] {
                 assert_surface_row(width, budget);
@@ -1610,6 +1660,8 @@ mod schedules {
                 assert_eq!(canvas.pixels(), first.as_ref());
                 assert_eq!(canvas.width(), 1);
                 assert_eq!(canvas.height(), 1);
+                assert_eq!(canvas.pixel(0, 0).map(|c| [c.r, c.g, c.b, c.a]), Some(*first));
+                assert!(canvas.pixel(1, 0).is_none());
                 let mut words = [u32::MAX];
                 rgba_to_u32(first.as_ref(), &mut words).unwrap();
                 thread::yield_now();

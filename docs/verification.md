@@ -341,7 +341,7 @@ Verus 的公共契约不能直接引用不透明类型的私有字段。最初�
 | `src/platform.rs` | 宿主尺寸/DPI/重绘/光标契约与计数边界；未形式化证明 |
 | `src/pointer.rs` | 捕获/悬停/路径/事件归属和失效取消；未形式化证明 |
 | `src/resource.rs` | 单槽准入/退役与字节所有权方法有精确规格；真实资源存储、认证会话、全局唯一注册表、在途取消及并发发布仍未证明 |
-| `src/raster.rs` | 所有权导入与三项既有访问器有切片证据；Canvas 分配、像素索引、裁剪、混色及旧 new/resize 仍未证明 |
+| `src/raster.rs` | 所有权导入、三项既有访问器与 `pixel` 读取有切片证据；Canvas 分配、写入侧像素索引、裁剪、混色及旧 new/resize 仍未证明 |
 | `src/scene.rs` | 整树 ID、clone/apply/commit 原子性；版本与准入切片见证据，整体事务未证明 |
 | `src/scroll.rs` | 有限几何、范围夹取、链路传播和生命周期；未形式化证明 |
 | `src/scrollbar.rs` | 滚动条几何、拖动映射与裁剪/命中一致；未形式化证明 |
@@ -795,3 +795,22 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 六阶段均未执行，不能算通过。快照/运行状态位于local-text-hit-pending。
 新feature保持默认关闭、未验收。下一轮先轻量核查VM，恢复后从Verus开始，
 不重复旧存储Kani超时诊断，不把测试改到宿主，也不接管其他项目排期。
+
+
+## 2026-10-27：UI2 无头验收测试与 Canvas::pixel 全链补证
+
+### 本轮新增/修改代码的六步登记
+
+| 代码 | 步骤 | 规格 / 范围 | 命令 | 结果 |
+|---|---|---|---|---|
+| `tests/native_cpu_acceptance.rs`（仅测试） | Verus/Z3 | N/A：文件只含验收断言与像素采样辅助，无生产逻辑可提取；被测对象是固定版本第三方渲染器与原生适配器（后者义务另册） | — | N/A；替代证据：仅拉丁字体注入的负例使 4 项中 3 项按预期失败 |
+| 同上 | Proptest / Miri / cargo-fuzz / Kani / Loom | N/A：测试辅助不进入发行代码；被测渲染路径是大型第三方依赖（Blitz / Vello CPU），Miri 与 Kani 不可行；测试无并发 | — | N/A；替代证据同上，另有同帧重绘逐字节一致断言 |
+| `src/raster.rs` `Canvas::pixel`（移入独立标记区，`Color::new` 改为等价结构体字面量） | Verus/Z3 | UI-CANVAS-PIXEL-001：越界返回 None；在 `from_rgba8` 建立的紧密长度不变式下，返回值四通道等于 `(y*w+x)*4` 起四字节；索引运算无溢出 | `verify-version.py --kernel canvas-pixel` | proved：18 verified / 0 errors；反例「越界返回 Some」「绿/蓝通道交换」均以后置条件失败被拒 |
+| 同上 | Proptest | 宽整数独立规格 `assert_canvas_pixel`；1..8 尺寸、任意坐标、边界坐标 | `cargo test --manifest-path verification/read-boundary/Cargo.toml properties::`（`PROPTEST_RNG_SEED=12345`） | 通过（29 项） |
+| 同上 | Miri | 4 种尺寸 × 5×5 坐标（含 `u32::MAX`）原样提取代码 | `cargo +nightly miri test … memory::` | 通过 |
+| 同上 | cargo-fuzz | `read_boundary` 目标新增按输入长度构造的 1×n / n×1 画布读取 | `cargo fuzz run read_boundary`（20 秒，种子 12345） | 通过；本轮两目标 217301 / 1815980 次 |
+| 同上 | Kani | `canvas_pixel_read`：1..3×1..3 任意字节、任意 `u32` 坐标 | `cargo kani --manifest-path verification/read-boundary/Cargo.toml` | 29 项 SUCCESSFUL（新增 1 项） |
+| 同上 | Loom | 共享只读画布跨线程读取像素一致 | `schedules::shared_immutable_buffer_independent_cursors` | 通过；函数本身无同步原语，仅覆盖调用侧共享只读 |
+| `src/style.rs` `Color` | — | 仅新增 `COLOR TYPE` 提取标记，无语义变化 | — | 作为 canvas-pixel 依赖参与上述各步 |
+
+假设：`pixel` 的前置条件（像素缓冲长度 = 宽×高×4）由已证明的 `from_rgba8` 建立；`Canvas::new`/`resize` 建立该不变式仍未证明。整链报告 `complete=false` 的原因不变（capture-query 任意双键 Kani 原义务未解决）。

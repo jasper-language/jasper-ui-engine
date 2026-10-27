@@ -137,19 +137,6 @@ impl Canvas {
         }
     }
 
-    pub fn pixel(&self, x: u32, y: u32) -> Option<Color> {
-        if x >= self.width || y >= self.height {
-            return None;
-        }
-        let index = ((y as usize * self.width as usize) + x as usize) * 4;
-        Some(Color::new(
-            self.pixels[index],
-            self.pixels[index + 1],
-            self.pixels[index + 2],
-            self.pixels[index + 3],
-        ))
-    }
-
     pub fn to_ppm(&self) -> Vec<u8> {
         let mut out = format!("P6\n{} {}\n255\n", self.width, self.height).into_bytes();
         out.reserve(self.width as usize * self.height as usize * 3);
@@ -254,6 +241,25 @@ mod tests {
         assert_eq!(canvas.pixel(5, 5).unwrap(), Color::BLACK);
     }
 }
+
+// BEGIN VERIFIED CANVAS PIXEL READ KERNEL
+impl Canvas {
+    /// Reads one straight-alpha pixel; coordinates outside the framebuffer return None.
+    /// 读取一个像素；坐标越界返回 None，不夹取。
+    pub fn pixel(&self, x: u32, y: u32) -> Option<Color> {
+        if x >= self.width || y >= self.height {
+            return None;
+        }
+        let index = ((y as usize * self.width as usize) + x as usize) * 4;
+        Some(Color {
+            r: self.pixels[index],
+            g: self.pixels[index + 1],
+            b: self.pixels[index + 2],
+            a: self.pixels[index + 3],
+        })
+    }
+}
+// END VERIFIED CANVAS PIXEL READ KERNEL
 
 // BEGIN VERIFIED CANVAS IMPORT KERNEL
 impl Canvas {

@@ -70,6 +70,7 @@ pub enum Justify {
 }
 
 /// RGBA color; alpha is straight (not premultiplied).
+// BEGIN VERIFIED COLOR TYPE
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Color {
     pub r: u8,
@@ -77,6 +78,7 @@ pub struct Color {
     pub b: u8,
     pub a: u8,
 }
+// END VERIFIED COLOR TYPE
 
 impl Color {
     pub const TRANSPARENT: Self = Self {

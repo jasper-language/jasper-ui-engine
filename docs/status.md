@@ -305,3 +305,34 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 - `scripts/verify-ui.py` 的 Proptest 完成令牌过期：`desktop::tests` 在迁移中由 5 项增至 6 项，脚本仍要求精确的「5 passed」，导致假失败；已改为「6 passed」。
 - 六阶段链 `python3 scripts/verify-ui.py --verus <verus>` 实跑：Verus+Z3 / Proptest / Miri / cargo-fuzz（两目标各 20 秒：183616 与 1289932 次）/ Kani（28 项 SUCCESSFUL）/ Loom（1 项）均为 `passed_scoped_checks`。报告 `complete=false`：capture-query 任意双键 Kani 原义务仍未解决（单键 harness 仅为诊断）。该链范围不含新增 `native_adapter/` 代码，原生适配器仍未验收。
 - 已知遗留：默认特性下 `backend::submit_native_frame` 未使用告警（仅原生特性使用）。
+
+## 2026-10-27：原生 Blitz CPU 路径无头渲染验收（UI2）
+
+新增集成测试 `tests/native_cpu_acceptance.rs`（`native-blitz-cpu-pending`），经根入口 `engine::Engine` 完成「场景 → 布局 → CPU 绘制到宿主 RGBA 缓冲 → 断言」。场景 320×200：Flex 列容器（内边距 10、间距 8、背景）内含 Block 头部（2px 边框、背景、内边距 4，内有中英文字 `Hello 你好`）、Flex 行（两块定尺寸矩形，一块带 1px 边框）、中英文字说明 `Jasper 界面`（20px、指定颜色）。字体由宿主显式注入（`JASPER_UI_TEST_CJK_FONT`，本轮使用 Noto Sans CJK SC Regular，SIL OFL 1.1），测试不扫描系统字体。
+
+| 测试 | 断言 | 结果 |
+|---|---|---|
+| `layout_boxes_are_exact` | 7 个节点布局框精确相等；未知节点、错误归属、错误版本均返回 None | 通过 |
+| `fills_borders_and_backgrounds_sample_correctly` | 15 个采样点（根/头部背景、边框四角、矩形填充与边框、间隙）容差 ±2；同帧重绘逐字节一致 | 通过 |
+| `latin_and_han_text_leave_ink_only_where_glyphs_are` | 两段文字有墨迹、从行首开始、在 x<200 结束（其后无墨迹）；汉字在纯拉丁同行之外新增 ≥26 列墨迹（实测 32）；文字像素达到声明颜色（±8） | 通过 |
+| `legacy_layout_difference_table` | 同一场景在 LegacyEngine 上的布局差异锁定为下表 | 通过 |
+
+负例：改注入仅含拉丁字形的 DejaVu Sans 时，4 项中 3 项按预期失败（文字行高不符；汉字列仅 18 列为缺字框），说明文字断言不是空断言。
+
+原生与 LegacyEngine 布局框差异（只记录，不要求一致）：
+
+| 节点 | 原生 Blitz | LegacyEngine | 差异 |
+|---|---|---|---|
+| 1 根容器 | (0,0) 320×200 | 同 | 无 |
+| 2 Block 头部 | (10,10) 300×40 | 同 | 无 |
+| 3 头部文字 | (16,16) 288×24 | (16,16) 288×20 | 高度 24 vs 20：原生按真实字体行高，旧引擎为近似文字度量 |
+| 4 Flex 行 | (10,58) 300×60 | 同 | 无 |
+| 5 矩形 | (10,58) 100×60 | 同 | 无 |
+| 6 矩形 | (120,58) 120×60 | 同 | 无 |
+| 7 说明文字 | (10,126) 300×29 | (10,126) 300×25 | 高度 29 vs 25：同上 |
+
+回归：构建 VM 内默认 `cargo test` 全过（114 库 + 集成）；`native-blitz-cpu-pending` 全量 207 项通过（174 库 + 33 集成/文档，含本节 4 项；0 失败）。
+
+`examples/window.rs --once`：构建 VM 无显示服务器（未设 `DISPLAY`/`WAYLAND_DISPLAY`，未安装 Xvfb），winit 明确报错 `neither WAYLAND_DISPLAY nor WAYLAND_SOCKET nor DISPLAY is set` 并以退出码 1 结束；示例没有软件后端回退或静默跳过。真实窗口呈现仍未验证，需在有显示的宿主上执行。
+
+根入口状态：保留 “not yet accepted”。无头 CPU 路径已对上述场景实测通过，但原生适配器代码尚未进入六步验证链（义务清单仍为 candidate_not_accepted），真实窗口呈现也未验证；两者完成前不去掉该标记。
