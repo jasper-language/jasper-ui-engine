@@ -259,3 +259,41 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 六阶段均未执行，不能算通过。快照/运行状态位于local-text-hit-pending。
 新feature保持默认关闭、未验收。下一轮先轻量核查VM，恢复后从Verus开始，
 不重复旧存储Kani超时诊断，不把测试改到宿主，也不接管其他项目排期。
+
+## 2026-10-27：Blitz 迁移 WIP 整理与首轮验收
+
+本轮的输入是此前保留的未验收 WIP 提交（32 个文件改动、新增文档/验证/实验目录）。工作区已按任务要求整理，生产 Rust 语义未改写；下列结果只对应本轮明确列出的命令与源码状态。
+
+### 已实测通过
+
+| 检查 | 命令/范围 | 结果 |
+|---|---|---|
+| 默认构建 | `cargo build` | 通过 |
+| 默认测试 | `cargo test` | 140 项通过（114 库、25 集成、1 文档；0 失败） |
+| 全部目标 | `cargo test --all-targets` | 通过；未启用的原生/桌面示例按 `required-features` 跳过 |
+| 原生 CPU 候选测试 | `JASPER_UI_TEST_FONT=<font-file> cargo test --features native-blitz-cpu-pending` | 203 项通过（174 库、28 集成、1 文档；0 失败） |
+| 依赖钉扎检查 | `python3 scripts/check-blitz-native-dependencies.py` | 通过；根与诊断 crate 均解析到固定 Blitz 修订与归档摘要 |
+| 公开类型边界 | `python3 scripts/check-blitz-public-types.py target/doc/jasper_ui_engine.json` | 通过；后端返回类型与私有别名两个反例均被拒 |
+| 证明证据对应 | `python3 scripts/check-blitz-proof-mapping.py` | 通过；26 个映射内核与隐藏祖先辅助证明的源码/规格/日志摘要一致 |
+| 证据检查负例 | `python3 scripts/test-blitz-proof-mapping.py` | 通过；缺失证据、源码漂移与非 proved 报告均被拒 |
+| 版本内核复核 | `python3 scripts/verify-version.py --kernel version --verus <verus>` | 1 verified / 0 errors；错误版本反例被拒 |
+
+说明：
+
+- `native-blitz-cpu-pending` 测试按设计需要显式注入字体。未设置 `JASPER_UI_TEST_FONT` 时，58 项原生测试会以 `explicit injected test font required: NotPresent` 失败；这是缺少宿主字体输入，不是渲染或布局通过。设置字体后全部通过。
+- `check-blitz-proof-mapping.py` 依赖非版本的 `evidence/` 目录。本轮把保留的 `blitz-hidden-ancestry-proof-pending` 证据补入构建 VM 后才完整通过；从干净检出直接运行时，缺失证据会按脚本设计失败。
+- `check-blitz-public-types.py` 的输入是在构建 VM 内生成的 rustdoc JSON，不是仓库内预置文件。
+- `scripts/verify-ui.py` 的完整六阶段链本轮未执行，也不计为通过：其范围包含已知的 `capture-query` 双键 Kani 待验项，且与本轮整理/编译验收不同。不得用上表任何单项结果替代该链或整个原生适配器验收。
+
+### 公开内容整理
+
+- 全仓关键词扫描（本机路径、内部构建入口、内部任务/进度文档名）清零；命令与宿主注入字体改为由运行环境变量提供。
+- 删除被提交的 `verification/capture-slots/__pycache__/` 字节码；`.gitignore` 增加 Python 字节码、嵌套实验 crate 的 `target/` 与第三方构建产物。
+- `scripts/verify-in-vm.sh` 不再内嵌宿主路径，改为要求 `JASPER_UI_VM_RUN` 指向构建 VM 入口；已用一个 VM 内命令验证包装器可用。
+
+### 仍未验收
+
+- 整个原生 Blitz 适配器、根 `engine::Engine` 入口、真实窗口呈现与 Canvas 仍未验收；`verification/blitz-adapter/obligations.json` 中的逐方法义务保持原状态。
+- 上表的证明证据对应与版本内核复核只覆盖各自声明范围，不构成原生适配器或整仓证明。
+- `cargo fmt --check` 仍会报告 WIP 源码的格式差异；本轮不做大规模机械重排，以免把迁移审查混入无关改动。
+- 未发现需要写入「迁移卡点」的方向性阻塞：默认与原生 CPU 候选均在构建 VM 内编译、测试通过。

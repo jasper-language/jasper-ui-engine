@@ -7,6 +7,17 @@ if (( $# == 0 )); then
     exit 2
 fi
 ui_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+# The caller supplies the VM entry point; this public repository does not embed
+# host paths or private build-infrastructure names.
+vm_run=${JASPER_UI_VM_RUN:-}
+if [[ -z "$vm_run" ]]; then
+    echo 'Set JASPER_UI_VM_RUN to the build VM entry script.' >&2
+    exit 2
+fi
+if [[ ! -f "$vm_run" ]]; then
+    echo "Build VM entry script not found: $vm_run" >&2
+    exit 2
+fi
 # Lightweight source/configuration admission only; all compilation stays inside VM.
 python3 "$ui_root/scripts/check-blitz-native-dependencies.py" >/dev/null
 exec 9>/tmp/jasper-ui-rust-verification.lock
@@ -27,7 +38,7 @@ if (( ui_work_seconds < 1 || ui_work_seconds > 900 )); then
     exit 2
 fi
 ui_transport_seconds=$((ui_work_seconds + 120))
-timeout --kill-after=10s "${ui_transport_seconds}s" env VM_NICE=15 VM_KEEP_AWAKE=0 bash /home/auth/Documents/jasper/jasper-os-build/vm-run.sh \
+timeout --kill-after=10s "${ui_transport_seconds}s" env VM_NICE=15 VM_KEEP_AWAKE=0 bash "$vm_run" \
     "$ui_root" systemd-run --user --scope --quiet --expand-environment=no \
     --property=MemoryMax=3G --property=MemorySwapMax=0 --property=TasksMax=128 \
     env CARGO_BUILD_JOBS=1 JASPER_UI_VERIFICATION_VM=1 \

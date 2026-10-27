@@ -31,7 +31,7 @@ Keyman 内部 API 由其版本管理，不冻结为 Jasper 公共 API。现有 J
 
 ## #13 评审补充：公共文本/输入能力的归属（2026-10-24）
 
-评审来源：[公共文本与输入基础设施下沉](https://github.com/DarkMagier/jasper-internal/issues/13#issuecomment-6384584040)。这是一项长期架构评审输入，不代表已有实现或新增跨项目授权；本线继续只修改 UI Rust 与相关验证/文档，不接管公共服务、终端或内核实现。
+评审来源：公共文本与输入基础设施下沉议题的外部评审输入。这是一项长期架构评审输入，不代表已有实现或新增跨项目授权；本线继续只修改 UI Rust 与相关验证/文档，不接管公共服务、终端或内核实现。
 
 UI 是公共契约的消费者，不应成为 Unicode 索引、文档事务与通用输入会话的永久唯一所有者。公共协议候选 TextDocument / TextEditTransaction / TextInputSession / InputEngine / Candidate / Preedit 应独立于 Scene、Skia、Scintilla 与 Keyman/Rime 私有类型；这些名称仅为职责候选，尚未冻结公开 Rust API 或包名。UI 接口只负责焦点/目标身份映射、图形候选视图、编辑视图、指针捕获与图形宿主适配。共享核心不得共享不同应用/文档的会话状态；无 GUI/GPU/系统字体的契约验收须由公共核心工作线在未来负责，本线保留可注入接口及消费者测试。
 

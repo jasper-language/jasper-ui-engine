@@ -66,8 +66,8 @@ Jasper UI 的 **宿主无关 Native 引擎底座**（Rust）。它只负责底�
 
 ```bash
 cargo test
-scripts/verify-in-vm.sh env CARGO_PROFILE_DEV_DEBUG=0 CARGO_TARGET_DIR=experiments/blitz-host/target cargo +nightly run --locked --features native-blitz-cpu-pending --example hello -- /home/jasper/work/ui-fixtures/NotoSansCJK-Regular.ttc
-# 字体路径属于 VM 宿主；生成 hello.ppm，运行原生候选入口，整体验收仍未完成。
+JASPER_UI_VM_RUN=/path/to/vm-entry.sh scripts/verify-in-vm.sh env CARGO_PROFILE_DEV_DEBUG=0 CARGO_TARGET_DIR=experiments/blitz-host/target JASPER_UI_TEST_FONT=/path/in/vm/font.ttc cargo +nightly run --locked --features native-blitz-cpu-pending --example hello -- /path/in/vm/font.ttc
+# 字体由验证 VM 宿主注入（示例路径用占位符）；生成 hello.ppm，运行原生候选入口，整体验收仍未完成。
 ```
 
 原生鼠标/视觉更新/停用/退休示例为 `--features native-blitz-pending --example pointer -- FONT`，字体同样由 VM 宿主注入。通用按钮的焦点由 Framework 显式请求；该示例不声称触摸或 OS capture。旧触摸/capture 演示仅以 `--example legacy_pointer` 保留迁移对照。

@@ -16,8 +16,8 @@
 
 ```sh
 python3 scripts/editor-deps.py --prepare-only
-# 重型编译在既有 Jasper 构建 VM 内执行：
-VM_NICE=15 bash /home/auth/Documents/jasper/jasper-os-build/vm-run.sh jasper-ui-engine python3 scripts/editor-deps.py --jobs 2
+# 重型编译在外部构建 VM 内执行（入口脚本由运行环境通过 JASPER_UI_VM_RUN 提供）：
+JASPER_UI_VM_RUN=/path/to/vm-entry.sh VM_NICE=15 bash "$JASPER_UI_VM_RUN" jasper-ui-engine python3 scripts/editor-deps.py --jobs 2
 ```
 
 运行实际 Scintilla 文档核心测试、构建 Lexilla 静态/动态库，再运行 Lexilla 单元及 lexer 对照测试。日志、工具版本、命令、源/库哈希在 `evidence/editor-deps/`。需要 Python 3.12+、make、支持 C++20 的编译器（库本身 C++17；上游 lexer 测试 C++20）。测试只在 Linux 构建 VM 验证，其他宿主能力不能据此推定。

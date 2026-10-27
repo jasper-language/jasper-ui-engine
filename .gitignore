@@ -2,7 +2,15 @@
 *.ppm
 /evidence/
 
+# Build/test artefacts from nested candidate crates and verification harnesses.
+/experiments/*/target/
 /verification/**/target/
 /fuzz/target/
 /fuzz/corpus/
 /fuzz/artifacts/
+
+# Python bytecode produced by local validation scripts.
+__pycache__/
+*.py[cod]
+/third_party/*/dist/
+/third_party/*/target/
