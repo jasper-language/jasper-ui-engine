@@ -2,11 +2,11 @@
 use jasper_ui_read_verification::{
     assert_borrow, assert_bytes_slot, assert_canvas_import, assert_canvas_pixel, assert_capture_query,
     assert_command_modifier, assert_cursor, assert_endpoint, assert_focus_cleanup,
-    assert_damage_span, assert_focus_selection, assert_font_order, assert_frame_damage, assert_frame_reuse, assert_header, assert_hover_lifecycle, assert_input_retire,
+    assert_damage_convergence, assert_damage_rect, assert_damage_span, assert_damage_write, assert_focus_selection, assert_font_order, assert_frame_damage, assert_frame_reuse, assert_header, assert_hover_lifecycle, assert_input_retire,
     assert_keyboard_focus, assert_payload, assert_pixel_conversion, assert_pointer_order,
     assert_read, assert_resource, assert_rgb_word, assert_role, assert_scalars, assert_surface_row,
     assert_surface_span, assert_text_classes, assert_versions, assert_view, assert_view_copy,
-    assert_write, ResourceKey,
+    assert_segment, assert_write, FrameDamage, ResourceKey,
 };
 use libfuzzer_sys::fuzz_target;
 
@@ -129,6 +129,19 @@ fuzz_target!(|data: &[u8]| {
         assert_frame_damage(Some((fw, fh, &pixels[..packed])), fw, fh, &pixels[..packed]);
     }
     assert_frame_damage(Some((fw, fh, pixels)), fw, fh, pixels);
+    assert_damage_rect(len as u32, pos as u32, total as u32, (total >> 8) as u32, fw, fh);
+    assert_segment(pixels, len % 9, pos % 4, len % 11, total % 4, pos % 7, &data[..len % 5]);
+    if pixels.len() >= packed * 2 {
+        assert_damage_convergence(&pixels[..packed], &pixels[packed..packed * 2], fw, fh, total % 3);
+    }
+    let damage = match total % 3 {
+        0 => FrameDamage::Unchanged,
+        1 => FrameDamage::Full,
+        _ => FrameDamage::Rect { x: (len % 6) as u32, y: (pos % 6) as u32, width: (total % 6) as u32, height: (total / 7 % 6) as u32 },
+    };
+    if pixels.len() >= packed {
+        assert_damage_write(&pixels[..pixels.len() - packed], fw as usize * 4 + pos % 2, fw, fh, &pixels[pixels.len() - packed..], damage);
+    }
     assert_pixel_conversion(&data[24..], &[total as u32, pos as u32]);
     let aligned = &data[24..24 + (data.len() - 24) / 4 * 4];
     assert_pixel_conversion(aligned, &vec![0xa5a5a5a5; aligned.len() / 4]);

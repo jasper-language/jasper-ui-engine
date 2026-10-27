@@ -111,6 +111,35 @@ pub fn write_surface_row(
 }
 // END VERIFIED SURFACE WRITE KERNEL
 
+// BEGIN VERIFIED SURFACE SEGMENT WRITE KERNEL
+/// Copies `source` into one active row starting `offset` bytes into it, after complete surface
+/// validation; the segment must lie inside the active row (never in padding).
+/// 完整校验 Surface 后，把 `source` 写入一行有效字节中自 `offset` 起的片段；片段须落在有效行内（不得进入 padding）。
+/// Failure leaves every destination byte unchanged; success preserves all other bytes.
+/// 失败不修改任何目标字节；成功保留其余全部字节。
+pub fn write_surface_segment(
+    bytes: &mut [u8],
+    row_bytes: usize,
+    height: usize,
+    stride: usize,
+    row: usize,
+    offset: usize,
+    source: &[u8],
+) -> bool {
+    if offset > row_bytes || source.len() > row_bytes - offset {
+        return false;
+    }
+    match surface_row(bytes, row_bytes, height, stride, row) {
+        None => return false,
+        Some(_) => {}
+    }
+    let start = row * stride + offset;
+    let end = start + source.len();
+    bytes[start..end].copy_from_slice(source);
+    true
+}
+// END VERIFIED SURFACE SEGMENT WRITE KERNEL
+
 // BEGIN VERIFIED SURFACE VIEW KERNEL
 /// Checked, immutable RGBA8 surface view over host-injected bytes.
 /// 对宿主注入字节建立受检的只读 RGBA8 Surface 视图。
