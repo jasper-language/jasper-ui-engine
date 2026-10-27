@@ -72,6 +72,7 @@ impl TextEngine for SimpleTextEngine {
     }
 }
 
+// BEGIN VERIFIED TEXT CLASS KERNEL
 fn is_wide(ch: char) -> bool {
     matches!(ch as u32,
         0x1100..=0x115F
@@ -97,6 +98,7 @@ fn is_zero_width(ch: char) -> bool {
         | 0xE0100..=0xE01EF
     )
 }
+// END VERIFIED TEXT CLASS KERNEL
 
 #[cfg(test)]
 mod tests {

@@ -4,7 +4,9 @@
 //! Jasper UI Framework、UI IR、Jasper ABI 与 Web 后端不在这里。
 //!
 //! ```no_run
-//! use jasper_ui_engine::engine::Engine;
+//! // Explicit compatibility example; native callers use engine::Engine with native-blitz-pending.
+//! // 显式兼容示例；原生调用方启用 native-blitz-pending 后使用 engine::Engine。
+//! use jasper_ui_engine::engine::LegacyEngine as Engine;
 //! use jasper_ui_engine::backend::HeadlessBackend;
 //! use jasper_ui_engine::geometry::Size;
 //! use jasper_ui_engine::scene::{Node, NodeId, Scene};
@@ -26,11 +28,13 @@
 pub mod backend;
 pub mod batch;
 pub mod canvas;
+pub mod composition_identity;
 #[cfg(feature = "canvas-tiny-skia")]
 pub mod canvas_tiny_skia;
 #[cfg(feature = "desktop")]
 pub mod desktop;
 pub mod engine;
+mod legacy_engine;
 pub mod geometry;
 pub mod gesture;
 #[cfg(feature = "gpu")]
@@ -38,17 +42,20 @@ pub mod gpu_wgpu;
 pub mod graphics;
 pub mod hit_test;
 pub mod input;
+pub mod input_identity;
 pub mod keyboard;
 pub mod layout;
 pub mod paint;
 pub mod platform;
 pub mod pointer;
 pub mod raster;
+pub mod resource;
 pub mod scene;
 pub mod scroll;
 pub mod scrollbar;
 pub mod semantics;
 pub mod style;
+pub mod surface;
 pub mod text;
 #[cfg(feature = "real-text")]
 pub mod text_cosmic;
@@ -60,7 +67,9 @@ pub use canvas::{Canvas, CanvasHitRegion, CanvasOp};
 pub use canvas_tiny_skia::{render_canvas, CanvasRenderReport};
 #[cfg(feature = "desktop")]
 pub use desktop::{rgba_to_u32, DesktopInput, PixelError};
-pub use engine::{Engine, EngineError, FrameStats};
+pub use engine::{LegacyEngine, EngineError, FrameStats};
+#[cfg(feature="native-blitz-pending")]
+pub use engine::Engine;
 pub use geometry::{Edges, Point, Rect, Size};
 pub use gesture::{Gesture, GestureConfig, GestureRecognizer};
 #[cfg(feature = "gpu")]
@@ -90,3 +99,58 @@ pub use style::{Align, Color, Display, FlexDirection, Justify, Length, Style};
 pub use text::{SimpleTextEngine, TextEngine, TextMetrics};
 #[cfg(feature = "real-text")]
 pub use text_cosmic::CosmicTextEngine;
+
+
+// Pending third-party text adapter; full ordered verification remains required.
+#[cfg(feature = "text-parley-pending")]
+pub mod text_parley;
+
+// Root-owned native implementation; the diagnostic crate only consumes its facade.
+// 原生实现归根 crate 所有，诊断 crate 仅消费公开封装。
+#[cfg(feature="native-blitz-pending")]
+extern crate self as jasper_ui_engine;
+#[cfg(feature="native-blitz-pending")]
+#[path="native_adapter/native_view.rs"]
+mod native_view;
+#[cfg(feature="native-blitz-pending")]
+#[path="native_adapter/component_contract.rs"]
+mod component_contract;
+#[cfg(feature="native-blitz-pending")]
+#[path="native_adapter/update_contract.rs"]
+mod update_contract;
+#[cfg(feature="native-blitz-pending")]
+#[path="native_adapter/native_fonts.rs"]
+mod native_fonts;
+#[cfg(feature="native-blitz-pending")]
+#[path="native_adapter/cpu_budget.rs"]
+mod cpu_budget;
+#[cfg(feature="native-blitz-pending")]
+#[path="native_adapter/capture_policy.rs"]
+mod capture_policy;
+#[cfg(feature="native-blitz-pending")]
+#[path="native_adapter/native_scene.rs"]
+mod native_scene;
+#[cfg(feature="native-blitz-pending")]
+#[path="native_adapter/scene_events.rs"]
+mod scene_events;
+#[cfg(feature="native-blitz-pending")]
+#[path="native_adapter/pointer_host.rs"]
+mod pointer_host;
+#[cfg(feature="native-blitz-pending")]
+#[path="native_adapter/native_events.rs"]
+mod native_events;
+#[cfg(feature="native-blitz-pending")]
+#[path="native_adapter/native_keys.rs"]
+mod native_keys;
+#[cfg(feature="native-blitz-pending")]
+#[path="native_adapter/native_semantics.rs"]
+mod native_semantics;
+#[cfg(feature="native-blitz-pending")]
+#[path="native_adapter/view_slot.rs"]
+mod view_slot;
+#[cfg(feature="native-blitz-pending")]
+pub mod native {
+    use crate::{native_view,component_contract,update_contract,
+        native_scene,scene_events,pointer_host,native_events,native_keys,native_semantics};
+    include!("native_adapter/facade.rs");
+}

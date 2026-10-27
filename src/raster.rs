@@ -7,8 +7,10 @@ use std::path::Path;
 
 use crate::geometry::{Point, Rect};
 use crate::style::Color;
+use crate::surface::{rgba8_row_bytes, surface_span};
 
 /// RGBA8 software framebuffer.
+// BEGIN VERIFIED CANVAS STORAGE TYPE
 #[derive(Clone, Debug)]
 pub struct Canvas {
     width: u32,
@@ -16,6 +18,7 @@ pub struct Canvas {
     pixels: Vec<u8>,
     clip_stack: Vec<Rect>,
 }
+// END VERIFIED CANVAS STORAGE TYPE
 
 impl Canvas {
     pub fn new(width: u32, height: u32) -> Self {
@@ -27,18 +30,6 @@ impl Canvas {
             pixels: vec![0; width as usize * height as usize * 4],
             clip_stack: Vec::new(),
         }
-    }
-
-    pub fn width(&self) -> u32 {
-        self.width
-    }
-
-    pub fn height(&self) -> u32 {
-        self.height
-    }
-
-    pub fn pixels(&self) -> &[u8] {
-        &self.pixels
     }
 
     pub fn clear(&mut self, color: Color) {
@@ -263,3 +254,39 @@ mod tests {
         assert_eq!(canvas.pixel(5, 5).unwrap(), Color::BLACK);
     }
 }
+
+// BEGIN VERIFIED CANVAS IMPORT KERNEL
+impl Canvas {
+    /// Takes an exactly sized packed RGBA8 buffer without allocating pixel storage.
+    /// 接管尺寸精确匹配的紧密 RGBA8 缓冲，不分配像素存储。
+    /// Zero dimensions and length mismatches return the original buffer unchanged.
+    /// 零尺寸或长度不匹配时，原样返还输入缓冲；不归一化尺寸。
+    pub fn from_rgba8(width: u32, height: u32, pixels: Vec<u8>) -> Result<Self, Vec<u8>> {
+        let row_bytes = match rgba8_row_bytes(width, pixels.len()) {
+            Some(value) => value,
+            None => return Err(pixels),
+        };
+        match surface_span(row_bytes, height as usize, row_bytes, pixels.len()) {
+            Some(end) if end == pixels.len() => Ok(Self {
+                width,
+                height,
+                pixels,
+                clip_stack: Vec::new(),
+            }),
+            _ => Err(pixels),
+        }
+    }
+
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+
+    pub fn pixels(&self) -> &[u8] {
+        &self.pixels
+    }
+}
+// END VERIFIED CANVAS IMPORT KERNEL

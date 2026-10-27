@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+# Tiny original fixture only; not a licensed corpus or production vocabulary.
+# 仅为自有最小测试数据，不代表正式词库。
+---
+name: jasper_smoke
+version: '1'
+sort: original
+...
+你好	nihao	1000
+世界	shijie	1000

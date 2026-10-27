@@ -1,0 +1,12 @@
+[package]
+name = "jasper-ui-read-verification"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dev-dependencies]
+proptest = { version = "1.9", default-features = false, features = ["std"] }
+loom = "0.7.2"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(kani)'] }

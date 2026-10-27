@@ -12,3 +12,86 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Test
         run: cargo test --all-targets
+
+  ui-validation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.99.1
+      - name: Install pinned Verus with archive checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --max-time 180 --output "$RUNNER_TEMP/verus.zip" \
+            https://github.com/verus-lang/verus/releases/download/release/0.2026.10.18.7d82994/verus-0.2026.10.18.7d82994-x86-linux.zip
+          echo "e9af03732d4bdd32b93a8fcf471706739c24c1473fa5086618d96c47237845dd  $RUNNER_TEMP/verus.zip" | sha256sum --check
+          unzip -q "$RUNNER_TEMP/verus.zip" -d "$RUNNER_TEMP/verus"
+      - name: Install Linux desktop test prerequisites
+        run: sudo apt-get update && sudo apt-get install -y libwayland-dev libxkbcommon-dev libx11-dev
+      - name: Install pinned validation tools
+        run: |
+          rustup toolchain install nightly-2026-10-17 --profile minimal --component miri --component rust-src
+          cargo +1.99.1 install cargo-fuzz --version 0.13.2 --locked
+          cargo +1.99.1 install kani-verifier --version 0.68.0 --locked
+          cargo +1.99.1 kani setup
+      - name: Run ordered scoped validation chain
+        env:
+          RUSTUP_TOOLCHAIN: 1.99.1-x86_64-unknown-linux-gnu
+          CARGO_BUILD_JOBS: 2
+        run: python3 scripts/verify-ui.py --verus "$RUNNER_TEMP/verus/verus-x86-linux/verus"
+      - name: Keep proof inputs, output and source hashes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-scoped-validation
+          path: |
+            evidence/version-kernel/
+            evidence/decode-range-kernel/
+            evidence/transaction-gate-kernel/
+            evidence/byte-read-kernel/
+            evidence/cursor-read-kernel/
+            evidence/scalar-read-kernel/
+            evidence/header-read-kernel/
+            evidence/bounded-payload-kernel/
+            evidence/surface-row-kernel/
+            evidence/surface-span-kernel/
+            evidence/surface-borrow-kernel/
+            evidence/surface-write-kernel/
+            evidence/surface-view-kernel/
+            evidence/pixel-pack-kernel/
+            evidence/pixel-convert-kernel/
+            evidence/canvas-import-kernel/
+            evidence/resource-gate-kernel/
+            evidence/role-activation-kernel/
+            evidence/bytes-slot-kernel/
+            evidence/command-modifier-kernel/
+            evidence/text-class-kernel/
+            evidence/focus-cleanup-kernel/
+            evidence/keyboard-focus-kernel/
+            evidence/focus-select-kernel/
+            evidence/input-retire-kernel/
+            evidence/hover-update-kernel/
+            evidence/hover-retire-kernel/
+            evidence/pointer-order-kernel/
+            evidence/capture-query-kernel/
+            evidence/validation-chain/
+
+  editor-upstream:
+    # Archived by UI scope: editor services are external; retain recipe/evidence only.
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Verify pinned Scintilla and Lexilla sources and upstream tests
+        run: python3 scripts/editor-deps.py --jobs 2
+      - name: Preserve upstream dependency evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: editor-upstream-evidence
+          path: evidence/editor-deps/

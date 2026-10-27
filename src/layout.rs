@@ -12,7 +12,7 @@ use taffy::{AvailableSpace, TaffyTree};
 
 use crate::canvas::Canvas;
 use crate::geometry::{Edges, Point, Rect, Size};
-use crate::scene::{Node, NodeId, Scene};
+use crate::scene::{Node, NodeId, Scene, SceneError};
 use crate::style::{Align, Display, FlexDirection, Justify, Length, Style};
 use crate::text::TextEngine;
 
@@ -74,6 +74,9 @@ impl LayoutEngine for TaffyLayoutEngine {
         viewport: Size,
         text: &dyn TextEngine,
     ) -> Result<LayoutTree, LayoutError> {
+        // Do not let duplicate IDs overwrite entries in the Taffy identity map.
+        // 构建 Taffy 身份映射前拒绝重复 ID，避免后一个节点覆盖前一个节点。
+        scene.validate().map_err(LayoutError::InvalidScene)?;
         let viewport = Size::new(viewport.width.max(0.0), viewport.height.max(0.0));
         let mut tree: TaffyTree<TextContext> = TaffyTree::new();
         let mut taffy_ids: HashMap<NodeId, taffy::NodeId> = HashMap::new();
@@ -130,6 +133,9 @@ impl LayoutEngine for TaffyLayoutEngine {
 /// Layout failures.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LayoutError {
+    /// Scene identity validation failed before layout or text measurement.
+    /// 布局及文字测量前，场景身份检查失败。
+    InvalidScene(SceneError),
     Taffy(String),
     MissingNode(NodeId),
 }
@@ -339,6 +345,24 @@ mod tests {
                 .with_style(Style::default().size(Length::Px(200.0), Length::Px(100.0)))
                 .with_children(children),
         )
+    }
+
+    #[test]
+    fn rejects_direct_root_edits_with_duplicate_ids_before_measuring_text() {
+        struct MustNotMeasure;
+        impl TextEngine for MustNotMeasure {
+            fn measure(&self, _: &str, _: f32, _: Option<f32>) -> crate::text::TextMetrics {
+                panic!("invalid scene must be rejected before text measurement");
+            }
+        }
+        let mut scene = Scene::try_new(Node::container(NodeId(1))).unwrap();
+        scene.root.children.push(Node::text(NodeId(1), "duplicate"));
+        assert_eq!(
+            TaffyLayoutEngine.layout(&scene, Size::new(100.0, 100.0), &MustNotMeasure),
+            Err(LayoutError::InvalidScene(SceneError::DuplicateNode(
+                NodeId(1)
+            )))
+        );
     }
 
     #[test]

@@ -1,2 +1,8 @@
 /target
 *.ppm
+/evidence/
+
+/verification/**/target/
+/fuzz/target/
+/fuzz/corpus/
+/fuzz/artifacts/

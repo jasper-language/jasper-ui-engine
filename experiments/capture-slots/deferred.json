@@ -1,0 +1,15 @@
+{
+  "status": "deferred_unverified",
+  "reason": "User directed postponing the current unsuccessful capture-storage diagnostic to later overall replacement work; preserve proof debt and continue UI features.",
+  "production_migration_authorized_as_verified": false,
+  "stop_same_shape_kani_retries": true,
+  "scope": "Current capture-store double-key Kani diagnostic/backfill only; other new/modified Rust verification requirements unchanged.",
+  "resume": "After UI functional closure during overall replacement, or explicit user rescheduling.",
+  "evidence": [
+    "evidence/capture-slots-chain/report.json",
+    "evidence/capture-slots-partitioned/report.json",
+    "evidence/capture-harness-loop/report.json",
+    "evidence/capture-direct-fixture/report.json",
+    "evidence/capture-composition/report.json"
+  ]
+}

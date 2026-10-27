@@ -2,11 +2,13 @@
 //! 几何基础类型；全部使用 f32 逻辑像素，物理像素比例由宿主负责。
 
 /// A 2D point in logical pixels.
+// BEGIN VERIFIED GEOMETRY POINT TYPE
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Point {
     pub x: f32,
     pub y: f32,
 }
+// END VERIFIED GEOMETRY POINT TYPE
 
 impl Point {
     pub const ZERO: Self = Self { x: 0.0, y: 0.0 };
@@ -17,11 +19,13 @@ impl Point {
 }
 
 /// A width/height pair in logical pixels.
+// BEGIN VERIFIED GEOMETRY SIZE TYPE
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Size {
     pub width: f32,
     pub height: f32,
 }
+// END VERIFIED GEOMETRY SIZE TYPE
 
 impl Size {
     pub const ZERO: Self = Self {
@@ -39,11 +43,13 @@ impl Size {
 }
 
 /// An axis-aligned rectangle. `origin` is the top-left corner.
+// BEGIN VERIFIED GEOMETRY RECT TYPE
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Rect {
     pub origin: Point,
     pub size: Size,
 }
+// END VERIFIED GEOMETRY RECT TYPE
 
 impl Rect {
     pub const ZERO: Self = Self {

@@ -1,15 +1,49 @@
 //! Host-independent input model.
 //! 平台适配层把原始事件规范化到这里；手势/输入法由 Jasper UI 层后续实现。
 
-use std::collections::BTreeMap;
-
 use crate::geometry::{Point, Size};
 
 /// Stable pointer identity within one input session.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+// BEGIN VERIFIED POINTER ID TYPE
+#[derive(Clone, Copy, Debug, Default, Eq, Hash)]
 pub struct PointerId(pub u64);
+use core::cmp::Ordering;
+// END VERIFIED POINTER ID TYPE
+
+// BEGIN VERIFIED POINTER ORDER KERNEL
+// Explicit comparison keeps the original u64 identity and total ordering.
+// 显式比较保持原有 u64 身份及全序语义。
+impl PartialEq for PointerId {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
+}
+impl PartialOrd for PointerId {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        if self.0 < other.0 {
+            Some(Ordering::Less)
+        } else if self.0 > other.0 {
+            Some(Ordering::Greater)
+        } else {
+            Some(Ordering::Equal)
+        }
+    }
+}
+impl Ord for PointerId {
+    fn cmp(&self, other: &Self) -> Ordering {
+        if self.0 < other.0 {
+            Ordering::Less
+        } else if self.0 > other.0 {
+            Ordering::Greater
+        } else {
+            Ordering::Equal
+        }
+    }
+}
+// END VERIFIED POINTER ORDER KERNEL
 
 /// What produced the pointer event.
+// BEGIN VERIFIED POINTER KIND TYPES
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum PointerKind {
     Mouse,
@@ -41,7 +75,10 @@ pub enum MouseButton {
     Other(u16),
 }
 
+// END VERIFIED POINTER KIND TYPES
+
 /// Keyboard modifiers.
+// BEGIN VERIFIED MODIFIERS TYPE
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Modifiers {
     pub shift: bool,
@@ -49,6 +86,7 @@ pub struct Modifiers {
     pub alt: bool,
     pub meta: bool,
 }
+// END VERIFIED MODIFIERS TYPE
 
 /// Normalized pointer sample.
 ///
@@ -56,6 +94,7 @@ pub struct Modifiers {
 /// set pressure to 0.0/1.0 as appropriate. `tilt` is in degrees; `twist` is in
 /// degrees for pens that report barrel rotation. `contact` is the contact area
 /// in logical pixels (touch major/minor axes, or a small value for pens).
+// BEGIN VERIFIED POINTER EVENT TYPE
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct PointerEvent {
     pub pointer_id: PointerId,
@@ -73,14 +112,19 @@ pub struct PointerEvent {
     pub timestamp_millis: u64,
 }
 
+// END VERIFIED POINTER EVENT TYPE
+
 /// Keyboard key phase.
+// BEGIN VERIFIED KEY PHASE TYPE
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum KeyPhase {
     Down,
     Up,
 }
+// END VERIFIED KEY PHASE TYPE
 
 /// Normalized key event.
+// BEGIN VERIFIED KEY EVENT TYPE
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct KeyEvent {
     pub key: String,
@@ -88,8 +132,10 @@ pub struct KeyEvent {
     pub modifiers: Modifiers,
     pub repeat: bool,
 }
+// END VERIFIED KEY EVENT TYPE
 
 /// IME composition update. Offsets are UTF-8 byte offsets into the editor text.
+// BEGIN VERIFIED COMPOSITION EVENT TYPE
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CompositionEvent {
     pub text: String,
@@ -97,6 +143,18 @@ pub struct CompositionEvent {
     pub end: usize,
 }
 
+// END VERIFIED COMPOSITION EVENT TYPE
+
+// BEGIN VERIFIED PREEDIT EVENT TYPE
+/// Host preedit text and optional UTF-8 cursor/selection within that text.
+/// 宿主预编辑文本及其内部可选 UTF-8 光标/选区；不表示文档替换区间。
+pub struct PreeditEvent {
+    pub text: String,
+    pub cursor: Option<(usize, usize)>,
+}
+// END VERIFIED PREEDIT EVENT TYPE
+
+// BEGIN VERIFIED SCROLL FOCUS TYPES
 /// Scroll delta in logical pixels.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct ScrollEvent {
@@ -109,6 +167,9 @@ pub struct FocusEvent {
     pub focused: bool,
 }
 
+// END VERIFIED SCROLL FOCUS TYPES
+
+// BEGIN VERIFIED NORMALIZED INPUT TYPE
 /// All normalized input events.
 #[derive(Clone, Debug, PartialEq)]
 pub enum InputEvent {
@@ -116,15 +177,25 @@ pub enum InputEvent {
     Key(KeyEvent),
     Text(String),
     Composition(CompositionEvent),
+    /// Preedit-local coordinates; None hides the cursor, empty text clears preedit.
+    /// 预编辑局部坐标；None 隐藏光标，空文本表示清除预编辑。
+    Preedit { text: String, cursor: Option<(usize, usize)> },
     Scroll(ScrollEvent),
     Focus(FocusEvent),
+    /// IME availability lifecycle; disabling composition does not remove keyboard focus.
+    /// 输入法可用性生命周期；禁用组合不等于移除键盘焦点。
+    ImeEnabled(bool),
 }
+// END VERIFIED NORMALIZED INPUT TYPE
 
 /// Active pointer tracking for multi-touch and multi-pen input.
+// BEGIN VERIFIED POINTER TRACKER TYPE
 #[derive(Clone, Debug, Default)]
 pub struct PointerTracker {
     active: BTreeMap<PointerId, PointerEvent>,
 }
+use std::collections::BTreeMap;
+// END VERIFIED POINTER TRACKER TYPE
 
 impl PointerTracker {
     pub fn new() -> Self {

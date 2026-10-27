@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# Jasper UI test-only schema list; no downloaded dictionary.
+# Jasper UI 测试方案列表，不使用下载的词库。
+config_version: '1'
+schema_list:
+  - schema: jasper_smoke

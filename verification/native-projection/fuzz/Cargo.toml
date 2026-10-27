@@ -1,0 +1,73 @@
+[package]
+name = "jasper-ui-native-projection-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+[package.metadata]
+cargo-fuzz = true
+[workspace]
+[dependencies]
+libfuzzer-sys = "0.4"
+jasper-ui-native-projection-verification = { path = ".." }
+[[bin]]
+name = "projection"
+path = "fuzz_targets/projection.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "public_projection"
+path = "fuzz_targets/public_projection.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "public_close"
+path = "fuzz_targets/public_close.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "scene_close"
+path = "fuzz_targets/scene_close.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "visibility"
+path = "fuzz_targets/visibility.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "hidden_ancestry"
+path = "fuzz_targets/hidden_ancestry.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "capture_policy"
+path = "fuzz_targets/capture_policy.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "host_context"
+path = "fuzz_targets/host_context.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "snapshot_identity"
+path = "fuzz_targets/snapshot_identity.rs"
+test = false
+doc = false
+bench = false

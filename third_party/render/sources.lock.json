@@ -1,0 +1,47 @@
+{
+  "status": "pinned_sources_not_build_verified",
+  "dependencies": [
+    {
+      "name": "vello_cpu",
+      "version": "0.3.0",
+      "source": "https://static.crates.io/crates/vello_cpu/vello_cpu-0.3.0.crate",
+      "sha256": "ed1fec424fbba6acf6cbc78bb526447eb77590d95f40419d598870fe37535212",
+      "license": "Apache-2.0 OR MIT",
+      "archive": "dist/vello_cpu-0.3.0.crate"
+    },
+    {
+      "name": "parley",
+      "version": "0.12.0",
+      "source": "https://static.crates.io/crates/parley/parley-0.12.0.crate",
+      "sha256": "61bd0c0c1737f0b3d3726dc06b225083af213b61913e4fbae1670613a106c6ce",
+      "license": "Apache-2.0 OR MIT",
+      "archive": "dist/parley-0.12.0.crate"
+    },
+    {
+      "name": "fontique",
+      "version": "0.12.0",
+      "source": "https://static.crates.io/crates/fontique/fontique-0.12.0.crate",
+      "sha256": "bbf1df16263783918b7da396077521f92b729ef7c429444dfcf03581f1448b77",
+      "license": "Apache-2.0 OR MIT",
+      "archive": "dist/fontique-0.12.0.crate",
+      "role": "transitive API/source audit"
+    },
+    {
+      "name": "glifo",
+      "version": "0.4.0",
+      "source": "https://static.crates.io/crates/glifo/glifo-0.4.0.crate",
+      "sha256": "9f1218dedd5348c1b166ec3b8b3cbca49d2f527bd43b3fa072ea5123c523ed3f",
+      "license": "Apache-2.0 OR MIT",
+      "archive": "dist/glifo-0.4.0.crate",
+      "role": "transitive API/source audit"
+    },
+    {
+      "name": "vello_gpu",
+      "version": "0.3.0",
+      "source": "https://static.crates.io/crates/vello_gpu/vello_gpu-0.3.0.crate",
+      "sha256": "f0e01b02c55094a3bcfbf80d736221a74bc3f8914b566298b4ad3c9f05e7ac08",
+      "license": "Apache-2.0 OR MIT",
+      "archive": "dist/vello_gpu-0.3.0.crate"
+    }
+  ]
+}

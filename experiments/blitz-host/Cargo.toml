@@ -1,0 +1,27 @@
+[package]
+name = "jasper-ui-blitz-host-probe"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.91"
+publish = false
+
+[workspace]
+
+[dependencies]
+# Consumer-only dependency: runtime and private backend dependencies belong to the root engine.
+# 仅依赖根引擎；运行时和私有后端依赖归根引擎维护。
+jasper-ui-engine = { path = "../..", default-features = false, features = ["native-blitz-pending"] }
+
+[lib]
+# Actual native unit tests compile under the root engine, not this re-export shim.
+# 真实原生单测位于根引擎，此重导出层不冒充执行原生单测。
+test = false
+doctest = false
+
+[features]
+default = []
+cpu-pending = ["jasper-ui-engine/native-blitz-cpu-pending"]
+
+# Keep first native integration diagnostics within the existing VM memory budget.
+[profile.dev]
+debug = 0

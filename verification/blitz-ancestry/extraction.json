@@ -1,0 +1,23 @@
+{
+  "status": "candidate_not_accepted",
+  "source_sha256": "45087e05e520c9f4f90c75cdba53587e77d3928c0ca6e41e790698eee36f279e",
+  "body_sha256": "7195c7233f3baa8d4c20ffdc96552658e490251a4dd71ee49ec95c139d399116",
+  "proof_sha256": "3c4584d231e453edfb381f2e334da45b5b1f09969955985386c52b85fedbab2b",
+  "exact_extraction": "Only decreases annotation added; executable body equality checked",
+  "scope": "Actual BTreeMap ancestry loop termination and emitted runtime checks only; not functional reachability/topology preservation",
+  "verus": "0.2026.10.18.7d82994",
+  "verus_exit_code": 0,
+  "negative_control": "Removing production decrement rejected: decreases not satisfied",
+  "native_tests": 52,
+  "native_test_exit_code": 0,
+  "change": "Bound parent traversal by metadata entry count, retaining initial self-match even for empty map; cyclic absent-target metadata now fails closed",
+  "limits": [
+    "Well-formed acyclic topology and functional ancestor relation still need explicit specification/proof",
+    "No full six-stage acceptance claimed; native regression diagnostic is not Proptest/Miri/fuzz/Kani/Loom acceptance"
+  ],
+  "logs": [
+    "verus.log",
+    "no-decrement.log",
+    "native-suite.log"
+  ]
+}

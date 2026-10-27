@@ -1,0 +1,12 @@
+[package]
+name = "jasper-ui-native-projection-verification"
+version = "0.0.0"
+edition = "2021"
+publish = false
+[workspace]
+[dependencies]
+jasper-ui-input-identity-verification = { path = "../input-identity" }
+[dev-dependencies]
+proptest = { version = "=1.9.0", default-features = false, features = ["std"] }
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(kani)'] }

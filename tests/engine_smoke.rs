@@ -1,7 +1,7 @@
 //! End-to-end smoke test: scene -> layout -> paint -> batch -> software backend.
 
 use jasper_ui_engine::backend::HeadlessBackend;
-use jasper_ui_engine::engine::Engine;
+use jasper_ui_engine::engine::LegacyEngine as Engine;
 use jasper_ui_engine::geometry::Size;
 use jasper_ui_engine::scene::{Node, NodeId, Scene};
 use jasper_ui_engine::style::{Color, Length, Style};

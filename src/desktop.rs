@@ -13,30 +13,57 @@ use winit::keyboard::{Key, NamedKey};
 
 use crate::geometry::{Point, Size};
 use crate::input::{
-    CompositionEvent, FocusEvent, InputEvent, KeyEvent, KeyPhase, Modifiers, MouseButton,
+    FocusEvent, InputEvent, KeyEvent, KeyPhase, Modifiers, MouseButton,
     PointerEvent, PointerId, PointerKind, PointerPhase, ScrollEvent,
 };
+use crate::surface::rgb8_word;
+
+// BEGIN VERIFIED DESKTOP IME NORMALIZE KERNEL
+/// Keep preedit cursor coordinates separate from document replacement positions.
+/// 保留预编辑局部坐标及 None，不伪造文档替换范围。
+pub fn normalize_ime(event: &Ime) -> Option<InputEvent> {
+    match event {
+        Ime::Commit(text) => Some(InputEvent::Text(text.clone())),
+        Ime::Preedit(text, cursor) => Some(InputEvent::Preedit {
+            text: text.clone(), cursor: *cursor,
+        }),
+        Ime::Enabled => Some(InputEvent::ImeEnabled(true)),
+        Ime::Disabled => Some(InputEvent::ImeEnabled(false)),
+    }
+}
+// END VERIFIED DESKTOP IME NORMALIZE KERNEL
 
 const LINE_SCROLL_PX: f32 = 48.0;
 
+// BEGIN VERIFIED PIXEL ERROR TYPE
 /// Pixel conversion failures for software presentation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PixelError {
     LengthMismatch,
 }
+// END VERIFIED PIXEL ERROR TYPE
 
-/// Converts RGBA8 pixels to softbuffer's `0x00RRGGBB` words.
+// BEGIN VERIFIED PIXEL CONVERT KERNEL
+/// Converts RGBA8 pixels to softbuffer's `0x00RRGGBB` words, ignoring alpha as before.
+/// 将 RGBA8 转为 softbuffer 数值像素字；保持既有忽略 alpha 的行为。
 pub fn rgba_to_u32(pixels: &[u8], out: &mut [u32]) -> Result<(), PixelError> {
-    if pixels.len() != out.len().saturating_mul(4) {
+    // Compare the ratio first so even the length check cannot overflow.
+    // 先比较比例，确保长度检查本身也不会溢出；错误时尚未写入目标。
+    if out.len() > pixels.len() / 4 || pixels.len() != out.len() * 4 {
         return Err(PixelError::LengthMismatch);
     }
-    for (destination, source) in out.iter_mut().zip(pixels.as_chunks::<4>().0) {
-        *destination = ((source[0] as u32) << 16) | ((source[1] as u32) << 8) | source[2] as u32;
+    let mut index = 0usize;
+    while index < out.len() {
+        let base = index * 4;
+        out[index] = rgb8_word(pixels[base], pixels[base + 1], pixels[base + 2]);
+        index += 1;
     }
     Ok(())
 }
+// END VERIFIED PIXEL CONVERT KERNEL
 
 /// Stateful translator for one desktop window.
+// BEGIN VERIFIED DESKTOP INPUT TYPE
 pub struct DesktopInput {
     pointer_id: PointerId,
     position: Point,
@@ -44,6 +71,7 @@ pub struct DesktopInput {
     modifiers: Modifiers,
     start: Instant,
 }
+// END VERIFIED DESKTOP INPUT TYPE
 
 impl Default for DesktopInput {
     fn default() -> Self {
@@ -167,20 +195,11 @@ impl DesktopInput {
         out
     }
 
+    // BEGIN VERIFIED DESKTOP IME DELEGATE KERNEL
     pub fn ime(&mut self, event: &Ime) -> Option<InputEvent> {
-        match event {
-            Ime::Commit(text) => Some(InputEvent::Text(text.clone())),
-            Ime::Preedit(text, cursor) => {
-                let (start, end) = cursor.unwrap_or((0, text.len()));
-                Some(InputEvent::Composition(CompositionEvent {
-                    text: text.clone(),
-                    start,
-                    end,
-                }))
-            }
-            Ime::Enabled | Ime::Disabled => None,
-        }
+        normalize_ime(event)
     }
+    // END VERIFIED DESKTOP IME DELEGATE KERNEL
 
     fn pointer(
         &self,
@@ -298,12 +317,21 @@ mod tests {
         );
         assert_eq!(
             input.ime(&Ime::Preedit("ni".into(), Some((0, 2)))),
-            Some(InputEvent::Composition(CompositionEvent {
-                text: "ni".into(),
-                start: 0,
-                end: 2
-            }))
+            Some(InputEvent::Preedit { text: "ni".into(), cursor: Some((0,2)) })
         );
+    }
+
+    #[test]
+    fn preedit_preserves_absent_and_local_cursor() {
+        let mut input=DesktopInput::new();
+        for (text,cursor) in [("你好",None),("",None),("你好",Some((0,6))),("ni",Some((0,2)))] {
+            assert_eq!(input.ime(&Ime::Preedit(text.into(),cursor)),Some(InputEvent::Preedit{text:text.into(),cursor}));
+        }
+        assert_eq!(input.ime(&Ime::Enabled),Some(InputEvent::ImeEnabled(true)));assert_eq!(input.ime(&Ime::Disabled),Some(InputEvent::ImeEnabled(false)));
+        assert_eq!(input.translate(&WindowEvent::Ime(Ime::Preedit("你好".into(),None))),
+            vec![InputEvent::Preedit{text:"你好".into(),cursor:None}]);
+        assert_eq!(input.translate(&WindowEvent::Ime(Ime::Preedit("".into(),None))),
+            vec![InputEvent::Preedit{text:"".into(),cursor:None}]);
     }
 
     #[test]

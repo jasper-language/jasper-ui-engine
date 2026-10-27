@@ -1,0 +1,17 @@
+[package]
+name = "jasper-ui-view-slot-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+[package.metadata]
+cargo-fuzz = true
+[workspace]
+[dependencies]
+libfuzzer-sys = "0.4"
+jasper-ui-view-slot-verification = { path = ".." }
+[[bin]]
+name = "view_slot"
+path = "fuzz_targets/view_slot.rs"
+test = false
+doc = false
+bench = false
