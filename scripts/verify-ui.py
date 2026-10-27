@@ -24,7 +24,7 @@ if a.fuzz_seconds < 1:
 os.chdir(ROOT)
 out = ROOT / "evidence" / "validation-chain"
 out.mkdir(parents=True, exist_ok=True)
-report = {"started_at": datetime.now(timezone.utc).isoformat(), "scope": "six-stage read-boundary, version admission and surface row/span/borrow/write and scalar/header/payload-read and checked surface view/transfer and RGB packing/conversion and owned Canvas import/getter and resource gate/byte storage/keyboard role/modifier and approximate text classifier and focus cleanup/retirement slices; additional batch checks have partial proof coverage",
+report = {"started_at": datetime.now(timezone.utc).isoformat(), "scope": "six-stage read-boundary, version admission and surface row/span/borrow/write and scalar/header/payload-read and checked surface view/transfer and RGB packing/conversion and owned Canvas import/getter and Canvas pixel read and resource gate/byte storage/keyboard role/modifier and approximate text classifier and focus cleanup/retirement slices; additional batch checks have partial proof coverage",
           "slice_complete": False, "scoped_checks_complete": False,
           "acceptance_pending": ["capture-query: original arbitrary two-key Kani obligation is unresolved; single-key harness is diagnostic only"],
           "sources": {}, "stages": [], "complete": False}
@@ -50,7 +50,8 @@ for file, markers in [
     ("src/batch.rs", ["DECODE RANGE KERNEL", "BYTE READ KERNEL", "BATCH ERROR TYPE", "CURSOR READ KERNEL", "SCALAR READ KERNEL", "HEADER CONSTANTS TYPE", "HEADER READ KERNEL", "BOUNDED PAYLOAD KERNEL"]),
     ("src/surface.rs", ["SURFACE ROW KERNEL", "SURFACE SPAN KERNEL", "SURFACE BORROW KERNEL", "SURFACE WRITE KERNEL", "SURFACE VIEW KERNEL", "PIXEL PACK KERNEL"]),
     ("src/geometry.rs", ["GEOMETRY POINT TYPE", "GEOMETRY SIZE TYPE", "GEOMETRY RECT TYPE"]),
-    ("src/raster.rs", ["CANVAS STORAGE TYPE", "CANVAS IMPORT KERNEL"]),
+    ("src/raster.rs", ["CANVAS STORAGE TYPE", "CANVAS PIXEL READ KERNEL", "CANVAS IMPORT KERNEL"]),
+    ("src/style.rs", ["COLOR TYPE"]),
     ("src/text.rs", ["TEXT CLASS KERNEL"]),
     ("src/resource.rs", ["RESOURCE GATE KERNEL", "BYTES SLOT KERNEL"]),
     ("src/input.rs", ["MODIFIERS TYPE", "KEY PHASE TYPE", "KEY EVENT TYPE", "POINTER ID TYPE", "POINTER ORDER KERNEL", "POINTER KIND TYPES", "POINTER EVENT TYPE", "POINTER TRACKER TYPE"]),
@@ -76,7 +77,7 @@ for target in ["read_boundary", "batch_decode"]:
     for seed in (ROOT / "fuzz/seeds" / target).iterdir():
         shutil.copyfile(seed, corpora / target / seed.name)
 kernels = ["version", "decode-range", "transaction-gate", "byte-read", "cursor-read",
-           "scalar-read", "header-read", "bounded-payload", "surface-row", "surface-span", "surface-borrow", "surface-write", "surface-view", "pixel-pack", "pixel-convert", "canvas-import", "resource-gate", "role-activation", "bytes-slot", "command-modifier", "text-class", "focus-cleanup", "keyboard-focus", "focus-select", "input-retire", "hover-update", "hover-retire", "pointer-order", "capture-query"]
+           "scalar-read", "header-read", "bounded-payload", "surface-row", "surface-span", "surface-borrow", "surface-write", "surface-view", "pixel-pack", "pixel-convert", "canvas-import", "canvas-pixel", "resource-gate", "role-activation", "bytes-slot", "command-modifier", "text-class", "focus-cleanup", "keyboard-focus", "focus-select", "input-retire", "hover-update", "hover-retire", "pointer-order", "capture-query"]
 stages = [
     ("Verus+Z3", [[sys.executable, "scripts/verify-version.py", "--kernel", k, "--verus", a.verus] for k in kernels]),
     ("Proptest", [["cargo", "--version"], ["cargo", "test", "--locked", "--test", "batch_properties"],
@@ -156,9 +157,9 @@ for stage in report["stages"]:
     log_path = out / (stage["name"].replace("+", "-") + ".log")
     output = log_path.read_text()
     required = {
-        "Proptest": [("test result: ok. 2 passed", 3), ("test result: ok. 3 passed", 1), ("test result: ok. 28 passed", 1), ("test result: ok. 6 passed", 1)],
+        "Proptest": [("test result: ok. 2 passed", 3), ("test result: ok. 3 passed", 1), ("test result: ok. 29 passed", 1), ("test result: ok. 6 passed", 1)],
         "Miri": [("test result: ok. 2 passed", 4), ("test result: ok. 1 passed", 1)],
-        "Kani": [("VERIFICATION:- SUCCESSFUL", 28)],
+        "Kani": [("VERIFICATION:- SUCCESSFUL", 29)],
         "Loom": [("test result: ok. 1 passed", 1)],
     }
     matched = all(output.count(token) >= count for token, count in required.get(stage["name"], []))

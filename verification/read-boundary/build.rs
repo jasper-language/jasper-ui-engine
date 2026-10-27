@@ -40,8 +40,9 @@ fn main() {
         ),
         (
             "../../src/raster.rs",
-            &["CANVAS STORAGE TYPE", "CANVAS IMPORT KERNEL"][..],
+            &["CANVAS STORAGE TYPE", "CANVAS PIXEL READ KERNEL", "CANVAS IMPORT KERNEL"][..],
         ),
+        ("../../src/style.rs", &["COLOR TYPE"][..]),
         ("../../src/text.rs", &["TEXT CLASS KERNEL"][..]),
         (
             "../../src/resource.rs",

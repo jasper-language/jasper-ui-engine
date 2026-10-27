@@ -1,6 +1,6 @@
 #![no_main]
 use jasper_ui_read_verification::{
-    assert_borrow, assert_bytes_slot, assert_canvas_import, assert_capture_query,
+    assert_borrow, assert_bytes_slot, assert_canvas_import, assert_canvas_pixel, assert_capture_query,
     assert_command_modifier, assert_cursor, assert_endpoint, assert_focus_cleanup,
     assert_focus_selection, assert_header, assert_hover_lifecycle, assert_input_retire,
     assert_keyboard_focus, assert_payload, assert_pixel_conversion, assert_pointer_order,
@@ -109,6 +109,11 @@ fuzz_target!(|data: &[u8]| {
     assert_canvas_import(&data[24..], total as u32, pos as u32);
     if (data.len() - 24) % 4 == 0 {
         assert_canvas_import(&data[24..], 1, ((data.len() - 24) / 4) as u32);
+    }
+    if (data.len() - 24) % 4 == 0 && data.len() > 24 {
+        let pixels = ((data.len() - 24) / 4) as u32;
+        assert_canvas_pixel(&data[24..], 1, pixels, total as u32 % 2, pos as u32 % (pixels + 1));
+        assert_canvas_pixel(&data[24..], pixels, 1, len as u32, 0);
     }
     assert_pixel_conversion(&data[24..], &[total as u32, pos as u32]);
     let aligned = &data[24..24 + (data.len() - 24) / 4 * 4];

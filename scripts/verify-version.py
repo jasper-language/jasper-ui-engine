@@ -582,6 +582,39 @@ pub closed spec fn surface_view_model(view: &Rgba8SurfaceView) -> (Seq<u8>, u32,
         "mutations": [("wrong-import-width", "                width,", "                width: 0,"),
                       ("drop-error-bytes", "_ => Err(pixels),", "_ => Err(Vec::new()),")],
     },
+    "color-type": {"source": "src/style.rs", "marker": "COLOR", "suffix": "TYPE", "signature": None, "depends": [], "internal_only": True},
+    "canvas-pixel": {
+        "source": "src/raster.rs", "marker": "CANVAS PIXEL READ", "property": "UI-CANVAS-PIXEL-001",
+        "signature": "pub fn pixel(&self, x: u32, y: u32) -> Option<Color> {",
+        "contract": """pub fn pixel(&self, x: u32, y: u32) -> (result: Option<Color>)
+    requires canvas_model(self).2.len() == canvas_model(self).0 as int * canvas_model(self).1 as int * 4,
+    ensures match result {
+        None => x >= canvas_model(self).0 || y >= canvas_model(self).1,
+        Some(color) => x < canvas_model(self).0 && y < canvas_model(self).1
+            && color.r == canvas_model(self).2[(y as int * canvas_model(self).0 as int + x as int) * 4]
+            && color.g == canvas_model(self).2[(y as int * canvas_model(self).0 as int + x as int) * 4 + 1]
+            && color.b == canvas_model(self).2[(y as int * canvas_model(self).0 as int + x as int) * 4 + 2]
+            && color.a == canvas_model(self).2[(y as int * canvas_model(self).0 as int + x as int) * 4 + 3],
+    },
+{ reveal(canvas_model);""",
+        "extra_annotations": [
+            ("        let index = ((y as usize * self.width as usize) + x as usize) * 4;",
+             """        assert((y as int + 1) * (self.width as int) <= (self.height as int) * (self.width as int)) by(nonlinear_arith)
+            requires (y as int) < (self.height as int), 0 <= (self.width as int);
+        assert(y as int * self.width as int + self.width as int == (y as int + 1) * (self.width as int)) by(nonlinear_arith);
+        assert(self.pixels@.len() == self.pixels.len() as int);
+        assert(y as int * self.width as int + x as int + 1 <= self.width as int * self.height as int);
+        assert((y as int * self.width as int + x as int) * 4 + 4 <= self.width as int * self.height as int * 4) by(nonlinear_arith)
+            requires y as int * self.width as int + x as int + 1 <= self.width as int * self.height as int;
+        assert(0 <= y as int * self.width as int) by(nonlinear_arith) requires 0 <= y as int, 0 <= self.width as int;
+        let index = ((y as usize * self.width as usize) + x as usize) * 4;"""),
+        ],
+        "function_count": 1,
+        "depends": ["canvas-import", "color-type"], "evidence": "canvas-pixel-kernel",
+        "scope": "existing Canvas::pixel exact bounds rejection and RGBA channel read under the packed-length invariant that from_rgba8 establishes; not new/resize, blending or raster operations",
+        "mutations": [("out-of-range-some", "            return None;\n        }\n        assert((y as int + 1)", "            return Some(Color { r: 0, g: 0, b: 0, a: 0 });\n        }\n        assert((y as int + 1)"),
+                      ("swap-green-blue", "            g: self.pixels[index + 1],", "            g: self.pixels[index + 2],")],
+    },
     "role-type": {"source": "src/semantics.rs", "marker": "ROLE", "suffix": "TYPE", "signature": None, "depends": [], "internal_only": True},
     "role-activation": {
         "source": "src/keyboard.rs", "marker": "ROLE ACTIVATION", "property": "UI-ROLE-ACTIVATION-001",
