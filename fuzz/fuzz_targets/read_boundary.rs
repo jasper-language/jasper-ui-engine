@@ -2,7 +2,7 @@
 use jasper_ui_read_verification::{
     assert_borrow, assert_bytes_slot, assert_canvas_import, assert_canvas_pixel, assert_capture_query,
     assert_command_modifier, assert_cursor, assert_endpoint, assert_focus_cleanup,
-    assert_focus_selection, assert_font_order, assert_header, assert_hover_lifecycle, assert_input_retire,
+    assert_focus_selection, assert_font_order, assert_frame_reuse, assert_header, assert_hover_lifecycle, assert_input_retire,
     assert_keyboard_focus, assert_payload, assert_pixel_conversion, assert_pointer_order,
     assert_read, assert_resource, assert_rgb_word, assert_role, assert_scalars, assert_surface_row,
     assert_surface_span, assert_text_classes, assert_versions, assert_view, assert_view_copy,
@@ -118,6 +118,8 @@ fuzz_target!(|data: &[u8]| {
     let ids: Vec<u64> = data[24..].iter().take(16).map(|&b| (b % 8) as u64).collect();
     assert_font_order(&ids, len as u64 % 9, total);
     assert_font_order(&ids, len as u64, pos % 20);
+    assert_frame_reuse(total % 2 == 1, (len as u32, pos as u32, total), pos as u32, len as u32, total);
+    assert_frame_reuse(false, (len as u32, pos as u32, total), len as u32, pos as u32, total);
     assert_pixel_conversion(&data[24..], &[total as u32, pos as u32]);
     let aligned = &data[24..24 + (data.len() - 24) / 4 * 4];
     assert_pixel_conversion(aligned, &vec![0xa5a5a5a5; aligned.len() / 4]);

@@ -476,8 +476,8 @@
       "evidence": "evidence/blitz-font-order-pending/report.json"
     },
     "src/native_adapter/native_scene.rs": {
-      "source_sha256": "80f469d9e6f95b4d1fc5d943520152fe9b922cdb2af441816b076ae767aa30c1",
-      "own_methods": 43,
+      "source_sha256": "a2309797fdaa4835d2ba709b7a83eab1ef35536b8d96e4e22fbb75b85d95dd70",
+      "own_methods": 46,
       "implementation_proofs_complete": 12,
       "six_stage_acceptance_complete": 10,
       "scope": "Existing Scene/patch native mapping including per-node source scroll; owner-gated semantic metadata; OS bridge and full implementation proof pending",
@@ -531,6 +531,14 @@
       "scope": "Shared CPU packed-frame numeric admission only; not upstream scratch/allocator or rendering proof",
       "evidence": "evidence/cpu-frame-bytes-chain/report.json"
     },
+    "src/native_adapter/frame_schedule.rs": {
+      "source_sha256": "0f5294c560e0e21911cfa712670eda7b2b0134ca36a449e66e07098fe8477a85",
+      "own_methods": 1,
+      "implementation_proofs_complete": 1,
+      "six_stage_acceptance_complete": 1,
+      "scope": "On-demand frame reuse admission predicate only; damage-marking completeness is covered by integration tests, not proof; cache storage, painting and presentation unproved",
+      "evidence": "evidence/validation-chain/report.json"
+    },
     "src/native_adapter/capture_policy.rs": {
       "source_sha256": "e8d7e13d69b77f1d373cc2f7aa47d28872fbbab245b94d9b6d4349742edc6f8b",
       "own_methods": 1,
@@ -548,8 +556,8 @@
       "evidence": "evidence/blitz-framework-update-contract-pending/report.json"
     },
     "src/native_adapter/facade.rs": {
-      "source_sha256": "14f8d34de1449f595c9b0846c7cbbf2cf7c82de755b6f0943a9ac2321ac9c0d5",
-      "own_methods": 52,
+      "source_sha256": "a3fcdb01edbae09c8e28c93f399feff95d5b41be91818da0266ed5ed6ec1dd04",
+      "own_methods": 54,
       "implementation_proofs_complete": 4,
       "six_stage_acceptance_complete": 4,
       "scope": "Typed embedding-host library facade; application component semantics remain Scene/ScenePatch values, backend modules private",

@@ -47,6 +47,10 @@ fn main() {
             "../../src/native_adapter/native_fonts.rs",
             &["FONT ORDER KERNEL"][..],
         ),
+        (
+            "../../src/native_adapter/frame_schedule.rs",
+            &["FRAME REUSE KERNEL"][..],
+        ),
         ("../../src/text.rs", &["TEXT CLASS KERNEL"][..]),
         (
             "../../src/resource.rs",

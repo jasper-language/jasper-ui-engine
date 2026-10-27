@@ -232,6 +232,15 @@ impl SceneHostView {
         ->Result<(),jasper_ui_engine::backend::BackendError> {
         self.inner.render_to_backend(owner,version,backend,budget)
     }
+    /// On-demand scheduling: Some(true) while a possible visible change is unpainted; hosts
+    /// skip rendering on Some(false). A repeated render of an unchanged view reuses the last
+    /// painted frame. None for a foreign owner or a closed view.
+    /// 按需调度：存在尚未绘制的可能可见变化时为 Some(true)，宿主见 Some(false) 可跳过渲染；
+    /// 未变化视图的重复渲染复用上一帧。非归属方或已关闭视图返回 None。
+    pub fn needs_frame(&self,owner:u64)->Option<bool> {self.inner.needs_frame(owner)}
+    /// Force the next render to repaint, e.g. after the host lost its presentation surface.
+    /// 强制下一次渲染重绘，如宿主呈现表面丢失之后。
+    pub fn invalidate_frame(&mut self,owner:u64)->bool {self.inner.invalidate_frame_from_host(owner)}
     #[cfg(feature="cpu-pending")]
     pub fn render_to_surface(&mut self,owner:u64,version:u64,bytes:&mut [u8],stride:usize,budget:usize)->bool {
         self.inner.render_to_host_surface(owner,version,bytes,stride,budget)

@@ -388,6 +388,17 @@ pub fn assert_font_order(seen: &[u64], id: u64, count: usize) {
     assert_eq!(order, expected);
 }
 
+/// Independent frame-reuse oracle: reuse only a clean cache of identical extent whose
+/// length equals the admitted packed length; any invalidation forces a repaint.
+/// 独立帧复用规格：仅复用未失效、尺寸一致且长度等于准入紧凑长度的缓存；任何失效都强制重绘。
+pub fn assert_frame_reuse(dirty: bool, cached: (u32, u32, usize), width: u32, height: u32, expected: usize) {
+    let (cw, ch, len) = cached;
+    let same = (cw, ch, len) == (width, height, expected);
+    assert_eq!(frame_reuse_admits(dirty, cw, ch, len, width, height, expected), same && !dirty);
+    assert!(!frame_reuse_admits(true, cw, ch, len, width, height, expected));
+    assert_eq!(frame_reuse_admits(false, width, height, expected, width, height, expected), true);
+}
+
 /// Check exact resource transitions against an independent state tuple oracle.
 /// 用独立状态元组规格校验资源准入、撤销和再次签发。
 pub fn assert_resource(
@@ -1065,6 +1076,11 @@ mod kani_checks {
     }
 
     #[kani::proof]
+    fn frame_reuse_admission() {
+        assert_frame_reuse(kani::any(), (kani::any(), kani::any(), kani::any()), kani::any(), kani::any(), kani::any());
+    }
+
+    #[kani::proof]
     #[kani::unwind(6)]
     fn font_order_first_occurrence() {
         let seen: [u64; 4] = kani::any();
@@ -1316,6 +1332,14 @@ mod properties {
             assert_canvas_import(&packed[..packed.len()-1], small_width, small_height);
         }
         #[test]
+        fn frame_reuse_property(dirty in any::<bool>(), cw in 0u32..4, ch in 0u32..4, len in 0usize..80,
+                                w in 0u32..4, h in 0u32..4, wide in any::<(u32, u32, usize)>()) {
+            let expected = (w * h * 4) as usize;
+            assert_frame_reuse(dirty, (cw, ch, len), w, h, expected);
+            assert_frame_reuse(dirty, (w, h, expected), w, h, expected);
+            assert_frame_reuse(dirty, wide, wide.0, wide.1, wide.2);
+        }
+        #[test]
         fn font_order_property(seen in prop::collection::vec(0u64..6, 0..12), id in 0u64..8,
                                wide in any::<u64>(), count in any::<usize>(), small in 0usize..20) {
             assert_font_order(&seen, id, count);
@@ -1534,6 +1558,14 @@ mod memory {
                 }
             }
         }
+        for dirty in [false, true] {
+            for (w, h) in [(0, 0), (1, 1), (320, 200), (u32::MAX, u32::MAX)] {
+                for len in [0, 4, 256_000, usize::MAX] {
+                    assert_frame_reuse(dirty, (w, h, len), w, h, 256_000);
+                    assert_frame_reuse(dirty, (w, h.wrapping_add(1), len), w, h, len);
+                }
+            }
+        }
         for seen in [&[][..], &[3][..], &[3, 3][..], &[1, 2, 3, u64::MAX][..]] {
             for id in [0, 1, 3, u64::MAX] {
                 for count in [0, 1, 16, 17, usize::MAX] {
@@ -1714,6 +1746,8 @@ mod schedules {
                 assert_eq!(canvas.pixel(0, 0).map(|c| [c.r, c.g, c.b, c.a]), Some(*first));
                 assert!(canvas.pixel(1, 0).is_none());
                 assert_font_order(&[first[0] as u64, first[1] as u64], first[2] as u64, first[3] as usize);
+                assert_frame_reuse(first[0] & 1 == 1, (first[1] as u32, first[2] as u32, first[3] as usize),
+                    first[1] as u32, first[2] as u32, first[3] as usize);
                 let mut words = [u32::MAX];
                 rgba_to_u32(first.as_ref(), &mut words).unwrap();
                 thread::yield_now();

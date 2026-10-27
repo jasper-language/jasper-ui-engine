@@ -94,6 +94,8 @@ pub(crate) struct NativeScene {
     displayed:BTreeMap<NodeId,bool>,
     semantics:BTreeMap<NodeId,Semantics>,
     nodes:BTreeMap<NodeId,(blitz_dom::NodeId,Option<blitz_dom::NodeId>)>,
+    frame_dirty:bool,
+    frame_cache:Option<(u32,u32,Vec<u8>)>,
 }
 // END VERIFIED NATIVE SCENE TYPE
 impl NativeScene {
@@ -126,7 +128,8 @@ impl NativeScene {
             tree.append_children(html,&[body]);tree.append_children(root,&[html]);
         }
         let mut view=Self {document:ViewSlot::new(document),owner,scene_version:scene.version(),node_count:0,
-            nodes:BTreeMap::new(),semantics:BTreeMap::new(),parents:BTreeMap::new(),displayed:BTreeMap::new(),children:BTreeMap::new()};
+            nodes:BTreeMap::new(),semantics:BTreeMap::new(),parents:BTreeMap::new(),displayed:BTreeMap::new(),children:BTreeMap::new(),
+            frame_dirty:true,frame_cache:None};
         if !view.append_prepared_subtree(&scene.root,None,body,prepared) {return None;}
         if !view.sync_native_focus_participation() {return None;}
         view.document.as_mut()?.resolve(0.0);
@@ -192,6 +195,7 @@ impl NativeScene {
     }
     /// Preflight the complete ordered frame using temporary identity topology, not a Scene copy.
     pub(crate) fn apply_patches(&mut self,caller:u64,expected:u64,next:u64,patches:&[ScenePatch])->bool {
+        self.invalidate_frame();
         if !accepts_scene_update(self.owner,caller,self.scene_version,expected,next,
             patches.len(),self.document.is_open()) {return false;}
         let mut prepared=Vec::with_capacity(patches.len());
@@ -339,6 +343,7 @@ impl NativeScene {
     }
     pub(crate) fn pointer_input_from_host(&mut self,caller:u64,version:u64,input:&crate::scene_events::ScenePointerInput,
         sink:&mut impl FnMut(crate::scene_events::SceneEvent)->crate::native_events::NativeEventReply)->bool {
+        self.invalidate_frame();
         use blitz_traits::events::*;
         use crate::native_view::PointerAction;
         let (x,y)=input.position;let phase=input.phase;let pressed=input.primary_pressed;
@@ -369,6 +374,7 @@ impl NativeScene {
         input:&crate::native_keys::HostKeyInput<'_>,
         sink:&mut impl FnMut(crate::scene_events::SceneKeyEvent)->crate::native_events::NativeEventReply,
         focus:&mut impl FnMut(crate::scene_events::SceneFocusEvent))->bool {
+        self.invalidate_frame();
         use blitz_traits::events::UiEvent;
         if caller!=self.owner || version!=self.scene_version {return false;}
         let before=self.focused_node(caller,version);
@@ -444,6 +450,7 @@ impl NativeScene {
     /// Framework focus request; does not acquire OS focus or an external input lease.
     pub(crate) fn focus_from_host(&mut self,caller:u64,version:u64,id:NodeId,
         sink:&mut impl FnMut(crate::scene_events::SceneFocusEvent))->bool {
+        self.invalidate_frame();
         if caller!=self.owner || version!=self.scene_version
             || !self.focus_eligible(id) {return false;}
         let Some((element,_))=self.nodes.get(&id) else {return false;};let element=*element;
@@ -460,6 +467,7 @@ impl NativeScene {
     /// Idempotent native focus clear; external input/capture cancellation remains host-owned.
     pub(crate) fn clear_focus_from_host(&mut self,caller:u64,version:u64,
         sink:&mut impl FnMut(crate::scene_events::SceneFocusEvent))->bool {
+        self.invalidate_frame();
         if caller!=self.owner || version!=self.scene_version {return false;}
         let before=self.focused_node(caller,version);
         let Some(document)=self.document.as_mut() else {return false;};
@@ -470,6 +478,7 @@ impl NativeScene {
     /// Host deactivation cleanup only; host still owns capture release and native input protocols.
     pub(crate) fn deactivate_from_host(&mut self,caller:u64,version:u64,
         sink:&mut impl FnMut(crate::scene_events::SceneFocusEvent))->bool {
+        self.invalidate_frame();
         if caller!=self.owner || version!=self.scene_version {return false;}
         let before=self.focused_node(caller,version);
         let Some(document)=self.document.as_mut() else {return false;};
@@ -485,6 +494,7 @@ impl NativeScene {
     /// Host supplies physical surface extent and DPI; scene version is independent.
     /// Candidate scale bound matches text-view policy; no window/GPU/OS operation is owned here.
     pub(crate) fn set_viewport_from_host(&mut self,caller:u64,width:u32,height:u32,scale:f32)->bool {
+        self.invalidate_frame();
         if caller!=self.owner || !admits_native_dpi_scale_bits(scale.to_bits()) {return false;}
         let Some(document)=self.document.as_mut() else {return false;};
         let mut viewport=document.viewport().clone();
@@ -520,6 +530,7 @@ impl NativeScene {
     /// Host viewport scrolling is separate from per-node source SetScroll offsets.
     /// Host supplies valid extent and authenticates routing; Blitz owns scrolling/painting.
     pub(crate) fn set_viewport_scroll_from_host(&mut self,caller:u64,version:u64,x:f64,y:f64)->bool {
+        self.invalidate_frame();
         if caller!=self.owner || version!=self.scene_version || !x.is_finite() || !y.is_finite()
             || x<0.0 || y<0.0 || x>u32::MAX as f64 || y>u32::MAX as f64 {return false;}
         let Some(document)=self.document.as_mut() else {return false;};
@@ -531,12 +542,34 @@ impl NativeScene {
         let document=self.document.as_mut()?;
         let (width,height)=document.viewport().window_size;
         let bytes=crate::cpu_budget::cpu_frame_bytes(width,height,max_bytes)?;
+        if let Some((cached_width,cached_height,cached))=&self.frame_cache {
+            if crate::frame_schedule::frame_reuse_admits(self.frame_dirty,*cached_width,*cached_height,
+                cached.len(),width,height,bytes) {return Some(cached.clone());}
+        }
         let scale=document.viewport().scale_f64();
         let pixels=anyrender::render_to_buffer::<anyrender_vello_cpu::VelloCpuImageRenderer,_>(
             |scene|blitz_paint::paint_scene(scene,document,scale,width,height,0,0),width,height);
         if pixels.len()!=bytes {return None;}
+        self.frame_cache=Some((width,height,pixels.clone()));self.frame_dirty=false;
         Some(pixels)
     }
+    /// Some(true) while a possible visible change is not yet painted; None for a foreign
+    /// caller or retired view. Hosts skip render calls while this is Some(false).
+    /// 存在尚未绘制的可能可见变化时为 Some(true)；非归属调用方或已退役视图为 None。
+    pub(crate) fn needs_frame(&self,caller:u64)->Option<bool> {
+        if caller!=self.owner || !self.document.is_open() {return None;}
+        Some(self.frame_dirty)
+    }
+    /// Host-forced repaint (e.g. lost or replaced presentation surface).
+    /// 宿主强制重绘（如呈现表面丢失或更换）。
+    pub(crate) fn invalidate_frame_from_host(&mut self,caller:u64)->bool {
+        if caller!=self.owner || !self.document.is_open() {return false;}
+        self.invalidate_frame();true
+    }
+    /// Conservative damage: every mutating entry marks the view dirty before admission,
+    /// so a rejected call can only cause an extra paint, never a stale frame.
+    /// 保守失效：每个修改入口在准入前即标脏，被拒调用至多多绘一帧，绝不复用过期帧。
+    fn invalidate_frame(&mut self) {self.frame_dirty=true;}
     /// Copy backend RGBA8 bytes into a host-injected software surface, preserving padding.
     /// This is client buffer adaptation, not surface acquisition, IPC import or presentation.
     #[cfg(feature="cpu-pending")]
