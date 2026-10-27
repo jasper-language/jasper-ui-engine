@@ -49,7 +49,7 @@ fn main() {
         ),
         (
             "../../src/native_adapter/frame_schedule.rs",
-            &["FRAME REUSE KERNEL"][..],
+            &["FRAME REUSE KERNEL", "FRAME DAMAGE TYPE", "DAMAGE SPAN KERNEL", "FRAME DAMAGE KERNEL"][..],
         ),
         ("../../src/text.rs", &["TEXT CLASS KERNEL"][..]),
         (

@@ -33,7 +33,7 @@
 ## 未完成与外部协作
 
 - 场景文字的光标/选区/文本命中几何（根入口尚未暴露）、完整文本编辑与 IME 往返；双向文字、字重/斜体与字体族选择未验收。原生路径的文字光栅、多字体按序回退与折行已有无头实测（见 2026-10-27 UI3 节）。
-- 图片/SVG 解码、资源额度、圆角/阴影/变换；局部失效（区域重绘）、帧节拍/动画驱动与 GPU 路径的帧调度。原生 CPU 路径的整帧按需调度与上一帧复用已起步（见 2026-10-27 UI4 节）。
+- 图片/SVG 解码、资源额度、圆角/阴影/变换；区域重绘（只重绘损伤区域）、帧节拍/动画驱动与 GPU 路径的帧调度。原生 CPU 路径的整帧按需调度、上一帧复用（UI4）与相对上一帧的精确损伤矩形报告（UI5）已有无头实测。
 - GPU 渲染、系统无障碍桥、多窗口/DPI/触控/笔平台覆盖。
 - 版本化语义更新协议、代际句柄/所有权、Native ABI、完整宿主能力协商。
 - 系统内置 UI 服务适配、系统 Surface/输入/字体资源接入、多应用隔离与重连恢复。系统桌面是一等目标，软件路径不能依赖自带窗口栈。
@@ -369,3 +369,18 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 
 构建虚拟机复测：默认配置单元 114 项及全部集成测试通过；`native-blitz-cpu-pending` 单元 174 项及全部集成测试通过（`native_frame_schedule` 3/3）。复用准入内核完成六步链：Verus 1 verified/0 errors（忽略失效、忽略尺寸两个反例被拒）、Proptest 31 项、Miri、cargo-fuzz（11.4 万/120.1 万次）、Kani 31 个 harness 全过、Loom。`NativeScene` 增加帧状态字段后，scene-host-close、scene-snapshot-identity、scene-host-identity 三项既有 Verus 证明已按新类型重验通过，证明映射检查回到最新状态。整链报告仍为 `slice_complete=false`，原因是既有的 capture-query 双键 Kani 义务未闭合，与本切片无关。各入口的标脏是否完整由集成测试覆盖，没有证明。
 
+## 2026-10-27：原生路径帧损伤区域（UI5）
+
+根入口 `engine::Engine` 新增 `render_to_surface_with_damage(owner, version, bytes, stride, budget) -> Option<FrameDamage>`：照常整帧绘制并写入宿主 Surface，同时报告相对**本视图上一次产出帧**的损伤，供宿主只向合成器提交变化区域。`FrameDamage` 取值：`Unchanged`（逐像素一致，含复用缓存帧）、`Full`（首帧、视口尺寸变化、宿主 `invalidate_frame` 之后、上一次写入失败之后）、`Rect {x, y, width, height}`（覆盖全部变化像素的最小矩形，逐像素比较得出，不是保守估计）。拒绝（非归属方、过期版本、Surface 不合法、已关闭）返回 None。`invalidate_frame` 现在同时丢弃缓存帧，因此宿主丢失呈现表面后下一次报告必为 Full，而不会因像素相同报 Unchanged。这只是损伤报告：绘制仍是整帧（没有区域重绘），`render_to_backend` 路径不报告损伤，GPU 路径未接入。
+
+新增集成测试 `tests/native_frame_damage.rs`（`native-blitz-cpu-pending`，注入 `JASPER_UI_TEST_FONT`=DejaVu Sans），每次都与测试内独立的逐像素包围盒规格比对：
+
+| 测试 | 断言 | 实测 |
+|---|---|---|
+| `first_frame_full_then_exact_rect_for_local_update` | 首帧 Full；复用 Unchanged；矩形节点改色后损伤恰为该节点几何；节点加宽后损伤等于规格包围盒且覆盖新增列 | 改色 `Rect{0,0,40,30}`；40→70 px 加宽 `Rect{40,0,30,30}` |
+| `repaint_without_visible_change_is_unchanged` | 过期更新被拒但保守标脏，重绘结果逐像素一致，报告 Unchanged | 通过 |
+| `extent_change_host_invalidation_and_rejection` | 宿主失效后同像素仍为 Full；缩小与恢复视口均 Full；非归属方、过期版本、短 Surface、已关闭均为 None | 通过 |
+
+构建虚拟机复测：默认配置单元 114 项及全部集成测试通过；`native-blitz-cpu-pending` 单元 174 项及全部集成测试通过（`native_frame_damage` 3/3、`native_frame_schedule` 3/3）。区间扩展内核 `damage_span_extend` 完成六步链（Verus 1 verified/0 errors，两反例被拒）；扫描函数 `frame_damage` 的 Verus 阶段为 N/A（理由与替代证据见 `docs/verification.md` UI-FRAME-DAMAGE-001），其余五步对照独立穷举规格通过，不计为六阶段完成。整链结果见下段。
+
+整链 `scripts/verify-ui.py`：Verus/Z3、Proptest（读边界属性 33 项）、Miri、cargo-fuzz（两个目标各 21 秒，22.9 万/134.6 万次）、Kani（34 个 harness，含 `damage_span_hull` 与 2×2、窄条两个 `frame_damage` 有界 harness）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，与本切片无关。证明映射检查保持最新（`NativeScene` 类型未改动）。

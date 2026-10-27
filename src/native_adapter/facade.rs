@@ -17,6 +17,8 @@ pub mod host {
 use super::*;
 pub use jasper_ui_engine::input_identity::{UiInputBinding,UiInputContext,UiInputTicket};
 pub use jasper_ui_engine::composition_identity::UiCompositionToken;
+#[cfg(feature="cpu-pending")]
+pub use crate::frame_schedule::FrameDamage;
 /// External-service display client; no authoritative editor document or input engine.
 // BEGIN VERIFIED TEXT DISPLAY TYPE
 pub struct TextDisplayView {inner:native_view::NativeTextView}
@@ -244,6 +246,16 @@ impl SceneHostView {
     #[cfg(feature="cpu-pending")]
     pub fn render_to_surface(&mut self,owner:u64,version:u64,bytes:&mut [u8],stride:usize,budget:usize)->bool {
         self.inner.render_to_host_surface(owner,version,bytes,stride,budget)
+    }
+    /// `render_to_surface` that also reports damage relative to the previous frame this view
+    /// produced: Full for the first frame, after an extent change or `invalidate_frame`; None
+    /// when rejected. The whole frame is still painted and written.
+    /// 同 `render_to_surface`，并报告相对本视图上一帧的损伤：首帧、尺寸变化或 `invalidate_frame`
+    /// 之后为 Full；拒绝时为 None。仍整帧绘制与写入。
+    #[cfg(feature="cpu-pending")]
+    pub fn render_to_surface_with_damage(&mut self,owner:u64,version:u64,bytes:&mut [u8],stride:usize,budget:usize)
+        ->Option<FrameDamage> {
+        self.inner.render_to_host_surface_with_damage(owner,version,bytes,stride,budget)
     }
 
 }

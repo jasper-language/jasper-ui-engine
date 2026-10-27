@@ -399,6 +399,53 @@ pub fn assert_frame_reuse(dirty: bool, cached: (u32, u32, usize), width: u32, he
     assert_eq!(frame_reuse_admits(false, width, height, expected, width, height, expected), true);
 }
 
+/// Independent damage-span oracle: the result is the min/max hull of the old span and `at`.
+/// 独立损伤区间规格：结果为旧区间与 `at` 的最小/最大包络。
+pub fn assert_damage_span(span: Option<(u32, u32)>, at: u32) {
+    let expected = match span {
+        None => (at, at),
+        Some((lo, hi)) => (lo.min(at), hi.max(at)),
+    };
+    let result = damage_span_extend(span, at);
+    assert_eq!(result, expected);
+    assert!(result.0 <= at && at <= result.1);
+    assert_eq!(damage_span_extend(Some(result), at), result, "covering index is a fixed point");
+}
+
+/// Independent frame-damage oracle: per-pixel bounding box over a `width`-wide packed
+/// RGBA8 frame; anything not comparable is Full.
+/// 独立帧损伤规格：逐像素包围盒；不可比较者为 Full。
+pub fn assert_frame_damage(previous: Option<(u32, u32, &[u8])>, width: u32, height: u32, next: &[u8]) {
+    let comparable = match previous {
+        Some((pw, ph, bytes)) => pw == width && ph == height && width > 0
+            && bytes.len() == next.len()
+            && (width as u64).checked_mul(height as u64).and_then(|n| n.checked_mul(4)) == Some(next.len() as u64),
+        None => false,
+    };
+    let expected = if !comparable {
+        FrameDamage::Full
+    } else {
+        let before = previous.unwrap().2;
+        let mut hull: Option<(u32, u32, u32, u32)> = None;
+        for y in 0..height {
+            for x in 0..width {
+                let i = ((y as usize * width as usize) + x as usize) * 4;
+                if before[i..i + 4] != next[i..i + 4] {
+                    hull = Some(match hull {
+                        None => (x, y, x, y),
+                        Some((a, b, c, d)) => (a.min(x), b.min(y), c.max(x), d.max(y)),
+                    });
+                }
+            }
+        }
+        match hull {
+            None => FrameDamage::Unchanged,
+            Some((a, b, c, d)) => FrameDamage::Rect { x: a, y: b, width: c - a + 1, height: d - b + 1 },
+        }
+    };
+    assert_eq!(frame_damage(previous, width, height, next), expected);
+}
+
 /// Check exact resource transitions against an independent state tuple oracle.
 /// 用独立状态元组规格校验资源准入、撤销和再次签发。
 pub fn assert_resource(
@@ -1076,6 +1123,43 @@ mod kani_checks {
     }
 
     #[kani::proof]
+    fn damage_span_hull() {
+        assert_damage_span(kani::any(), kani::any());
+    }
+
+    /// Concrete extent, symbolic content: any subset of pixels changed in any lane to any value;
+    /// mismatched previous width, absent previous frame and a short next frame included.
+    fn frame_damage_for_extent(width: u32, height: u32) {
+        let len = (width * height * 4) as usize;
+        let before = [7u8; 16];
+        let mut after = before;
+        for pixel in 0..(width * height) as usize {
+            if kani::any() {
+                let lane: usize = kani::any();
+                kani::assume(lane < 4);
+                after[pixel * 4 + lane] = kani::any();
+            }
+        }
+        let previous_width: u32 = kani::any();
+        let next_len = if kani::any() { len.saturating_sub(4) } else { len };
+        let previous = if kani::any() { Some((previous_width, height, &before[..len])) } else { None };
+        assert_frame_damage(previous, width, height, &after[..next_len]);
+    }
+
+    #[kani::proof]
+    #[kani::unwind(18)]
+    fn frame_damage_bounding_box_2x2() {
+        frame_damage_for_extent(2, 2);
+    }
+
+    #[kani::proof]
+    #[kani::unwind(18)]
+    fn frame_damage_bounding_box_thin() {
+        let wide: bool = kani::any();
+        if wide { frame_damage_for_extent(2, 1) } else { frame_damage_for_extent(1, 2) }
+    }
+
+    #[kani::proof]
     fn frame_reuse_admission() {
         assert_frame_reuse(kani::any(), (kani::any(), kani::any(), kani::any()), kani::any(), kani::any(), kani::any());
     }
@@ -1332,6 +1416,29 @@ mod properties {
             assert_canvas_import(&packed[..packed.len()-1], small_width, small_height);
         }
         #[test]
+        fn damage_span_property(span in any::<Option<(u32, u32)>>(), at in any::<u32>(),
+                                lo in 0u32..8, hi in 0u32..8, small in 0u32..10) {
+            assert_damage_span(span, at);
+            assert_damage_span(Some((lo, hi)), small);
+            assert_damage_span(None, small);
+        }
+        #[test]
+        fn frame_damage_property(w in 0u32..5, h in 0u32..5, pw in 0u32..5,
+                                 before in prop::collection::vec(0u8..3, 0..90),
+                                 edits in prop::collection::vec((0usize..90, 1u8..3), 0..6)) {
+            let len = (w * h * 4) as usize;
+            let mut before = before;
+            before.resize(len, 1);
+            let mut after = before.clone();
+            for (at, delta) in edits {
+                if len > 0 { let i = at % len; after[i] = after[i].wrapping_add(delta); }
+            }
+            assert_frame_damage(Some((w, h, &before)), w, h, &after);
+            assert_frame_damage(Some((pw, h, &before)), w, h, &after);
+            assert_frame_damage(None, w, h, &after);
+            assert_frame_damage(Some((w, h, &before)), w, h, &after[..len.saturating_sub(1)]);
+        }
+        #[test]
         fn frame_reuse_property(dirty in any::<bool>(), cw in 0u32..4, ch in 0u32..4, len in 0usize..80,
                                 w in 0u32..4, h in 0u32..4, wide in any::<(u32, u32, usize)>()) {
             let expected = (w * h * 4) as usize;
@@ -1558,6 +1665,20 @@ mod memory {
                 }
             }
         }
+        for span in [None, Some((0, 0)), Some((3, 9)), Some((9, 3)), Some((0, u32::MAX))] {
+            for at in [0, 3, 5, 9, u32::MAX] {
+                assert_damage_span(span, at);
+            }
+        }
+        let base: Vec<u8> = (0..3 * 2 * 4).map(|i| i as u8).collect();
+        for touched in [None, Some(0), Some(5), Some(23)] {
+            let mut next = base.clone();
+            if let Some(i) = touched { next[i] ^= 0x80; }
+            assert_frame_damage(Some((3, 2, &base)), 3, 2, &next);
+            assert_frame_damage(Some((2, 3, &base)), 3, 2, &next);
+            assert_frame_damage(None, 3, 2, &next);
+            assert_frame_damage(Some((3, 2, &base[..20])), 3, 2, &next[..20]);
+        }
         for dirty in [false, true] {
             for (w, h) in [(0, 0), (1, 1), (320, 200), (u32::MAX, u32::MAX)] {
                 for len in [0, 4, 256_000, usize::MAX] {
@@ -1746,6 +1867,8 @@ mod schedules {
                 assert_eq!(canvas.pixel(0, 0).map(|c| [c.r, c.g, c.b, c.a]), Some(*first));
                 assert!(canvas.pixel(1, 0).is_none());
                 assert_font_order(&[first[0] as u64, first[1] as u64], first[2] as u64, first[3] as usize);
+                assert_damage_span(Some((first[0] as u32, first[1] as u32)), first[2] as u32);
+                assert_frame_damage(Some((1, 1, first.as_ref())), 1, 1, &[first[3], first[2], first[1], first[0]]);
                 assert_frame_reuse(first[0] & 1 == 1, (first[1] as u32, first[2] as u32, first[3] as usize),
                     first[1] as u32, first[2] as u32, first[3] as usize);
                 let mut words = [u32::MAX];
