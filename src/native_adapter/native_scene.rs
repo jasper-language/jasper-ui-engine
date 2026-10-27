@@ -99,11 +99,19 @@ pub(crate) struct NativeScene {
 impl NativeScene {
     /// Bounded snapshot import; Canvas remains unsupported.
     pub(crate) fn from_scene(owner:u64,scene:&Scene,font:&[u8],width:u32,height:u32)->Option<Self> {
+        Self::from_scene_with_context(owner,scene,crate::native_fonts::injected_font_context(font),width,height)
+    }
+    /// Host-ordered font stack; measurement and painting share the one Parley layout.
+    /// 宿主有序字体栈；测量与绘制共用同一份 Parley 布局。
+    pub(crate) fn from_scene_with_fonts(owner:u64,scene:&Scene,fonts:&[&[u8]],width:u32,height:u32)->Option<Self> {
+        Self::from_scene_with_context(owner,scene,crate::native_fonts::injected_font_stack(fonts)?,width,height)
+    }
+    fn from_scene_with_context(owner:u64,scene:&Scene,font_ctx:blitz_dom::FontContext,width:u32,height:u32)->Option<Self> {
         let prepared=prepare_subtree(&scene.root,0,&BTreeSet::new())?;
         // Existing identity validation runs only after depth/node admission.
         scene.validate().ok()?;
         let mut document=BaseDocument::new(DocumentConfig {
-            font_ctx:Some(crate::native_fonts::injected_font_context(font)),
+            font_ctx:Some(font_ctx),
             viewport:Some(Viewport {window_size:(width,height),..Viewport::default()}),
             ..DocumentConfig::default()
         });

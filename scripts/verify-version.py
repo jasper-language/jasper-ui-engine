@@ -615,6 +615,29 @@ pub closed spec fn surface_view_model(view: &Rgba8SurfaceView) -> (Seq<u8>, u32,
         "mutations": [("out-of-range-some", "            return None;\n        }\n        assert((y as int + 1)", "            return Some(Color { r: 0, g: 0, b: 0, a: 0 });\n        }\n        assert((y as int + 1)"),
                       ("swap-green-blue", "            g: self.pixels[index + 1],", "            g: self.pixels[index + 2],")],
     },
+    "font-order": {
+        "source": "src/native_adapter/native_fonts.rs", "marker": "FONT ORDER", "property": "UI-FONT-ORDER-001",
+        "signature": "pub fn font_stack_count_admits(count: usize) -> bool {",
+        "contract": """pub fn font_stack_count_admits(count: usize) -> (result: bool)
+    ensures result == (1 <= count && count <= 16),
+{""",
+        "extra_annotations": [
+            ("pub fn font_order_admits(seen: &[u64], id: u64) -> bool {",
+             """pub fn font_order_admits(seen: &[u64], id: u64) -> (result: bool)
+    ensures result == !seen@.contains(id),
+{"""),
+            ("    while index < seen.len() {",
+             """    while index < seen.len()
+        invariant index <= seen.len(), forall|j: int| 0 <= j < index ==> seen@[j] != id,
+        decreases seen.len() - index,
+    {"""),
+            ("            return false;", "            assert(seen@[index as int] == id);\n            return false;"),
+        ],
+        "function_count": 2, "depends": [], "evidence": "font-order-kernel",
+        "scope": "native injected font stack count admission and first-occurrence fallback-order predicate; not font parsing, upstream registration, family-name sorting or Parley fallback selection",
+        "mutations": [("admit-empty-stack", "count >= 1 && count", "count >= 0 && count"),
+                      ("admit-duplicate", "            return false;", "            return true;")],
+    },
     "role-type": {"source": "src/semantics.rs", "marker": "ROLE", "suffix": "TYPE", "signature": None, "depends": [], "internal_only": True},
     "role-activation": {
         "source": "src/keyboard.rs", "marker": "ROLE ACTIVATION", "property": "UI-ROLE-ACTIVATION-001",

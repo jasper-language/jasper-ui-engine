@@ -110,3 +110,9 @@
 ## 最新排程裁决（2026-10-24 12:00 UTC，覆盖此前宿主实装排期）
 
 用户明确：jasper-os 实际接入安排在 Canvas 之后。当前顺序为 UI Rust 主线（指针捕获取消、输入归属/生命周期、编辑及通用输入法接入）→ Canvas 接入与补齐 → jasper-os 对接。此时只维护系统宿主接口和可移植性约束，不做 jasper-os 集成，不修改其内核或排期。Keyman MIT / librime BSD 方案、Scintilla/Lexilla 暂用策略及自有 Rust 完整六阶段门槛不变；Fcitx 5 与 fcitx5-rime 不恢复。
+
+## Canvas 选型裁决（2026-10-27）
+
+用户明确：Canvas 选用现成的 Rust 方案，不投入大量资源自研。Canvas 改用 **Vello**，经 Blitz 已在用的 `anyrender` 画进同一场景（CPU：`vello_cpu` / `anyrender_vello_cpu`；GPU：`vello_gpu`），**取代**此前「暂用独立 Skia」的方案。Skia 实验与 `canvas-tiny-skia` 只作行为对照，不再投入。Canvas 仍排在最后，只做薄契约层（Canvas 2D 语义 → kurbo/peniko 路径、画刷与变换），不自写光栅。
+
+截至 2026-10-27 未找到可直接复用的独立「Canvas 2D on Vello」库；实现时以 Servo canvas 模块的 Vello CPU 后端作行为参考，只对照语义，不复制代码（该模块为 MPL-2.0）。预计 1–2 个切片。本段为选型与排程变更，尚未添加 Vello Canvas 依赖或实现任何 Canvas 绘制路径。

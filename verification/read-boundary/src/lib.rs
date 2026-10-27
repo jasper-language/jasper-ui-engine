@@ -362,6 +362,32 @@ pub fn assert_canvas_pixel(bytes: &[u8], width: u32, height: u32, x: u32, y: u32
     assert_eq!([color.r, color.g, color.b, color.a], bytes[index..index + 4]);
 }
 
+/// Allocation-free admission oracle (bounded-model-checking friendly).
+/// 无分配的准入规格（便于有界模型检查）。
+pub fn assert_font_admission(seen: &[u64], id: u64, count: usize) {
+    assert_eq!(MAX_INJECTED_FONTS, 16);
+    assert_eq!(font_stack_count_admits(count), (1..=16).contains(&count));
+    assert_eq!(font_order_admits(seen, id), !seen.iter().any(|&known| known == id));
+}
+
+/// Independent oracle for font stack admission and first-occurrence fallback order.
+/// 独立校验字体栈数量准入与首次出现回退顺序。
+pub fn assert_font_order(seen: &[u64], id: u64, count: usize) {
+    assert_font_admission(seen, id, count);
+    // Repeated admission keeps each id once, in host (first-seen) order.
+    // 重复准入后每个 id 只保留一次，顺序为宿主首次出现顺序。
+    let (mut order, mut expected) = (Vec::new(), Vec::<u64>::new());
+    for &next in seen.iter().chain(core::iter::once(&id)) {
+        if font_order_admits(&order, next) {
+            order.push(next);
+        }
+        if expected.iter().all(|&known| known != next) {
+            expected.push(next);
+        }
+    }
+    assert_eq!(order, expected);
+}
+
 /// Check exact resource transitions against an independent state tuple oracle.
 /// 用独立状态元组规格校验资源准入、撤销和再次签发。
 pub fn assert_resource(
@@ -1039,6 +1065,15 @@ mod kani_checks {
     }
 
     #[kani::proof]
+    #[kani::unwind(6)]
+    fn font_order_first_occurrence() {
+        let seen: [u64; 4] = kani::any();
+        let len: usize = kani::any();
+        kani::assume(len <= 4);
+        assert_font_admission(&seen[..len], kani::any(), kani::any());
+    }
+
+    #[kani::proof]
     #[kani::unwind(37)]
     fn canvas_pixel_read() {
         let bytes: [u8; 36] = kani::any();
@@ -1281,6 +1316,15 @@ mod properties {
             assert_canvas_import(&packed[..packed.len()-1], small_width, small_height);
         }
         #[test]
+        fn font_order_property(seen in prop::collection::vec(0u64..6, 0..12), id in 0u64..8,
+                               wide in any::<u64>(), count in any::<usize>(), small in 0usize..20) {
+            assert_font_order(&seen, id, count);
+            assert_font_order(&seen, wide, small);
+            if let Some(&first) = seen.first() {
+                assert_font_order(&seen, first, 16);
+            }
+        }
+        #[test]
         fn canvas_pixel_property(bytes in prop::collection::vec(any::<u8>(), 0..256),
                                  width in 1u32..8, height in 1u32..8, x in any::<u32>(), y in any::<u32>(),
                                  small_x in 0u32..9, small_y in 0u32..9) {
@@ -1490,6 +1534,13 @@ mod memory {
                 }
             }
         }
+        for seen in [&[][..], &[3][..], &[3, 3][..], &[1, 2, 3, u64::MAX][..]] {
+            for id in [0, 1, 3, u64::MAX] {
+                for count in [0, 1, 16, 17, usize::MAX] {
+                    assert_font_order(seen, id, count);
+                }
+            }
+        }
         let ramp: Vec<u8> = (0..48).collect();
         for (width, height) in [(1, 1), (2, 3), (3, 2), (4, 3)] {
             let len = (width * height * 4) as usize;
@@ -1662,6 +1713,7 @@ mod schedules {
                 assert_eq!(canvas.height(), 1);
                 assert_eq!(canvas.pixel(0, 0).map(|c| [c.r, c.g, c.b, c.a]), Some(*first));
                 assert!(canvas.pixel(1, 0).is_none());
+                assert_font_order(&[first[0] as u64, first[1] as u64], first[2] as u64, first[3] as usize);
                 let mut words = [u32::MAX];
                 rgba_to_u32(first.as_ref(), &mut words).unwrap();
                 thread::yield_now();

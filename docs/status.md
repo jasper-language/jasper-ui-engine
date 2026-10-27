@@ -32,7 +32,7 @@
 
 ## 未完成与外部协作
 
-- 真实文字光栅、共享字形布局、光标/选区/文本命中、完整文本编辑与 IME 往返。
+- 场景文字的光标/选区/文本命中几何（根入口尚未暴露）、完整文本编辑与 IME 往返；双向文字、字重/斜体与字体族选择未验收。原生路径的文字光栅、多字体按序回退与折行已有无头实测（见 2026-10-27 UI3 节）。
 - 图片/SVG 解码、资源额度、圆角/阴影/变换、按需帧调度与失效缓存。
 - GPU 渲染、系统无障碍桥、多窗口/DPI/触控/笔平台覆盖。
 - 版本化语义更新协议、代际句柄/所有权、Native ABI、完整宿主能力协商。
@@ -336,3 +336,21 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 `examples/window.rs --once`：构建 VM 无显示服务器（未设 `DISPLAY`/`WAYLAND_DISPLAY`，未安装 Xvfb），winit 明确报错 `neither WAYLAND_DISPLAY nor WAYLAND_SOCKET nor DISPLAY is set` 并以退出码 1 结束；示例没有软件后端回退或静默跳过。真实窗口呈现仍未验证，需在有显示的宿主上执行。
 
 根入口状态：保留 “not yet accepted”。无头 CPU 路径已对上述场景实测通过，但原生适配器代码尚未进入六步验证链（义务清单仍为 candidate_not_accepted），真实窗口呈现也未验证；两者完成前不去掉该标记。
+
+## 2026-10-27：原生路径真实文字光栅与共享字形布局（UI3）
+
+根入口新增 `engine::Engine::with_fonts(owner, scene, fonts, w, h)`：宿主按顺序注入多个字体文件（如先拉丁、后中日韩），文件之间按给定顺序回退；同一文件内（地区字体集）沿用族名字典序，不依赖上游 HashMap 迭代序。空栈、超过 `native::MAX_INJECTED_FONTS`（16）或任一文件未注册出字体族时返回 None，不静默跳过。单字体 `Engine::new` 行为不变。原生文字的测量（布局框）与绘制（Vello CPU 光栅）来自同一份 Blitz/Parley 布局。
+
+新增集成测试 `tests/native_text_layout.rs`（`native-blitz-cpu-pending`；注入 `JASPER_UI_TEST_LATIN_FONT`=DejaVu Sans、`JASPER_UI_TEST_CJK_FONT`=Noto Sans CJK，两个独立文件）：
+
+| 测试 | 断言 | 实测 |
+|---|---|---|
+| `fallback_follows_host_order` | 拉丁文字使用栈中首个覆盖文件：[拉丁,CJK] 帧与只注入拉丁逐字节一致，[CJK,拉丁] 帧与只注入 CJK 一致，两种顺序帧不同；汉字越过仅拉丁文件回退到 CJK | 行高 19 / 24；汉字墨迹 31 列（仅拉丁栈为缺字框 18 列） |
+| `stack_admission_rejects_explicitly` | 空栈、非字体字节、[拉丁, 非字体]、17 个文件均拒绝；16 个重复文件只登记一次族，帧与单文件一致 | 通过 |
+| `wrapped_lines_match_measured_box` | 120px 宽框内折行：框高 = 行数 × 单行高；每个测量行槽有墨迹；框外整帧无墨迹；更宽框行数更少 | 4 行 × 19 = 76 |
+| `mixed_script_wrap_stays_inside_box` | 中英混排折行：首/末墨迹行落在首/末行内，框外无墨迹 | 3 行 × 24 = 72 |
+| `font_size_and_colour_are_applied` | 32px 与 16px 的行高、墨迹高、墨迹宽比值在 1.7–2.3；完全覆盖像素达到声明颜色（±4） | 行高 38/19 = 2.0，墨迹宽 99/50 |
+
+构建虚拟机复测：默认配置单元 114 项及全部集成测试通过；`native-blitz-cpu-pending`（注入三份字体）单元 174 项及集成测试全部通过（`native_text_layout` 5/5、`native_cpu_acceptance` 4/4）。字体栈准入与首次出现回退序内核（`font_stack_count_admits`/`font_order_admits`）完成六步链：Verus 4 verified/0 errors（空栈准入、重复准入两反例被拒）、Proptest 30 项、Miri、cargo-fuzz（14.0 万/197.4 万次）、Kani 30 个 harness 全过、Loom；整链报告 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，不是本切片。字体集合注册与 Parley 回退选择本身不在证明范围。
+
+未完成：场景文字的命中/光标几何尚未经根入口暴露（`TextDisplayView` 仍为单字体）；字重/斜体/字体族选择、双向文字、行高样式未验收。根入口仍标记 not yet accepted。
