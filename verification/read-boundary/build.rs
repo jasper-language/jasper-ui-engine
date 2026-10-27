@@ -26,6 +26,7 @@ fn main() {
                 "SURFACE SPAN KERNEL",
                 "SURFACE BORROW KERNEL",
                 "SURFACE WRITE KERNEL",
+                "SURFACE SEGMENT WRITE KERNEL",
                 "SURFACE VIEW KERNEL",
                 "PIXEL PACK KERNEL",
             ][..],
@@ -49,7 +50,7 @@ fn main() {
         ),
         (
             "../../src/native_adapter/frame_schedule.rs",
-            &["FRAME REUSE KERNEL", "FRAME DAMAGE TYPE", "DAMAGE SPAN KERNEL", "FRAME DAMAGE KERNEL"][..],
+            &["FRAME REUSE KERNEL", "FRAME DAMAGE TYPE", "DAMAGE SPAN KERNEL", "FRAME DAMAGE KERNEL", "DAMAGE RECT KERNEL", "DAMAGE WRITE KERNEL"][..],
         ),
         ("../../src/text.rs", &["TEXT CLASS KERNEL"][..]),
         (

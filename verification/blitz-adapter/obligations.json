@@ -476,8 +476,8 @@
       "evidence": "evidence/blitz-font-order-pending/report.json"
     },
     "src/native_adapter/native_scene.rs": {
-      "source_sha256": "f70b3d1999711713ab22cba48696e3dd0481610cf02c09d9b03a11de19580067",
-      "own_methods": 48,
+      "source_sha256": "e5ea24182ddc56e840654ae8f05b3af61b7da9934d40d145d6801e78c0f97bf3",
+      "own_methods": 49,
       "implementation_proofs_complete": 12,
       "six_stage_acceptance_complete": 10,
       "scope": "Existing Scene/patch native mapping including per-node source scroll; owner-gated semantic metadata; OS bridge and full implementation proof pending",
@@ -532,11 +532,11 @@
       "evidence": "evidence/cpu-frame-bytes-chain/report.json"
     },
     "src/native_adapter/frame_schedule.rs": {
-      "source_sha256": "1cb2f6ea2594b780d881a334125c6ab5b9a49c005c2dec32e084e7bf6be218b3",
-      "own_methods": 3,
-      "implementation_proofs_complete": 2,
-      "six_stage_acceptance_complete": 2,
-      "scope": "On-demand frame reuse admission predicate and damage span extension (Verus + five stages); frame_damage row/column scan has Proptest/Miri/fuzz/Kani (extents up to 2x2)/Loom against a brute-force oracle but Verus N/A (iterator/slice-chunk loop), so it is not counted complete; damage-marking completeness is covered by integration tests, not proof; cache storage, painting and presentation unproved",
+      "source_sha256": "46a6481c17e7f8af919327db31c3e3d9fafb5642406d2be4558451481e5533ff",
+      "own_methods": 5,
+      "implementation_proofs_complete": 3,
+      "six_stage_acceptance_complete": 3,
+      "scope": "On-demand frame reuse admission predicate, damage span extension and damage rectangle admission (Verus + five stages); frame_damage row/column scan and write_damaged_frame damage-only surface write have Proptest/Miri/fuzz/Kani/Loom against independent oracles but Verus N/A (iterator/slice loops, enum match plus row loop), so they are not counted complete; damage-marking completeness is covered by integration tests, not proof; cache storage, painting and presentation unproved",
       "evidence": "evidence/validation-chain/report.json"
     },
     "src/native_adapter/capture_policy.rs": {
@@ -556,14 +556,14 @@
       "evidence": "evidence/blitz-framework-update-contract-pending/report.json"
     },
     "src/native_adapter/facade.rs": {
-      "source_sha256": "a9064a3bad2695372bc0a8a09938043597da2fe6047abf0d58444ebfe5a5f470",
-      "own_methods": 55,
+      "source_sha256": "173bd0a3e5f5f679362c3efc8a7e2879d28213da2c74809221fd59f82daf77ed",
+      "own_methods": 56,
       "implementation_proofs_complete": 4,
       "six_stage_acceptance_complete": 4,
       "scope": "Typed embedding-host library facade; application component semantics remain Scene/ScenePatch values, backend modules private",
       "evidence": "evidence/blitz-typed-library-pending/report.json",
       "latest_native_diagnostic": "evidence/blitz-native-backend-submit-pending/report.json",
-      "complete_scope": "TextDisplayView::update_version and close; SceneHostView::close and snapshot_identity logical projection only; other 47 facade methods pending",
+      "complete_scope": "TextDisplayView::update_version and close; SceneHostView::close and snapshot_identity logical projection only; other 48 facade methods pending",
       "proof_evidence": "evidence/text-display-version-chain/report.json",
       "close_proof_evidence": "evidence/text-display-close-chain/report.json",
       "scene_close_proof_evidence": "evidence/scene-host-close-chain/report.json",

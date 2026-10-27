@@ -33,7 +33,7 @@
 ## 未完成与外部协作
 
 - 场景文字的光标/选区/文本命中几何（根入口尚未暴露）、完整文本编辑与 IME 往返；双向文字、字重/斜体与字体族选择未验收。原生路径的文字光栅、多字体按序回退与折行已有无头实测（见 2026-10-27 UI3 节）。
-- 图片/SVG 解码、资源额度、圆角/阴影/变换；区域重绘（只重绘损伤区域）、帧节拍/动画驱动与 GPU 路径的帧调度。原生 CPU 路径的整帧按需调度、上一帧复用（UI4）与相对上一帧的精确损伤矩形报告（UI5）已有无头实测。
+- 图片/SVG 解码、资源额度、圆角/阴影/变换；区域重绘（只重绘损伤区域）、帧节拍/动画驱动与 GPU 路径的帧调度。原生 CPU 路径的整帧按需调度、上一帧复用（UI4）、相对上一帧的精确损伤矩形报告（UI5）与按损伤只写变化像素的宿主 Surface 写入（UI6）已有无头实测。
 - GPU 渲染、系统无障碍桥、多窗口/DPI/触控/笔平台覆盖。
 - 版本化语义更新协议、代际句柄/所有权、Native ABI、完整宿主能力协商。
 - 系统内置 UI 服务适配、系统 Surface/输入/字体资源接入、多应用隔离与重连恢复。系统桌面是一等目标，软件路径不能依赖自带窗口栈。
@@ -384,3 +384,18 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 构建虚拟机复测：默认配置单元 114 项及全部集成测试通过；`native-blitz-cpu-pending` 单元 174 项及全部集成测试通过（`native_frame_damage` 3/3、`native_frame_schedule` 3/3）。区间扩展内核 `damage_span_extend` 完成六步链（Verus 1 verified/0 errors，两反例被拒）；扫描函数 `frame_damage` 的 Verus 阶段为 N/A（理由与替代证据见 `docs/verification.md` UI-FRAME-DAMAGE-001），其余五步对照独立穷举规格通过，不计为六阶段完成。整链结果见下段。
 
 整链 `scripts/verify-ui.py`：Verus/Z3、Proptest（读边界属性 33 项）、Miri、cargo-fuzz（两个目标各 21 秒，22.9 万/134.6 万次）、Kani（34 个 harness，含 `damage_span_hull` 与 2×2、窄条两个 `frame_damage` 有界 harness）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，与本切片无关。证明映射检查保持最新（`NativeScene` 类型未改动）。
+
+## 2026-10-28：原生路径只写损伤区域的宿主 Surface 写入（UI6）
+
+根入口 `engine::Engine` 新增 `render_to_surface_damaged(owner, version, bytes, stride, budget) -> Option<FrameDamage>`：照常整帧绘制，但只把受损像素复制进宿主 Surface——`Full` 写全部有效行，`Rect` 只写矩形覆盖各行内的列片段，`Unchanged` 不写。宿主契约：`bytes` 必须仍持有本视图上一次产出的帧；双缓冲交换或丢失表面后须先调用 `invalidate_frame`（下一次为 `Full`）。Surface 准入（行长、stride、跨度）在绘制之前完成，非归属方、过期版本、Surface 不合法、已关闭均返回 None 且不写任何字节，也不推进损伤基准。写入由 `frame_schedule::write_damaged_frame` 完成：全部准入（Surface 几何、紧凑长度、矩形边界 `damage_rect_admits`）先于第一个字节写入；每行片段经新内核 `surface::write_surface_segment` 写入，该内核只写行内片段、不触碰 padding，失败时目标不变。绘制仍是整帧（没有区域重绘），没有帧节拍，GPU 路径未接入，`render_to_backend` 不报告损伤。
+
+新增集成测试 `tests/native_frame_damage_write.rs`（`native-blitz-cpu-pending`，注入 `JASPER_UI_TEST_FONT`=DejaVu Sans，Surface 每行带 8 字节 padding 哨兵）：
+
+| 测试 | 断言 | 实测 |
+|---|---|---|
+| `damaged_writes_match_full_writes_and_touch_only_the_rect` | 首帧 Full 后与整帧写入逐像素一致；Unchanged 时预先改写的像素保留；改色后报告 `Rect{0,0,40,30}`，矩形内被预先改写的像素被覆盖、矩形外被改写的像素保留，其余与整帧写入一致；加宽后仍收敛到整帧；全程 padding 不变 | 加宽 `Rect{40,0,30,30}`，复制 3600 / 64000 字节 |
+| `rejection_writes_nothing_and_buffer_swap_needs_invalidation` | 非归属方、过期版本、重叠 stride、短 Surface 均为 None 且字节不变；被拒调用不推进损伤基准（之后首次为 Full）；换新缓冲后 `invalidate_frame` 得 Full 且与整帧一致；关闭后 None | 通过 |
+
+构建虚拟机复测：默认配置单元 114 项及全部集成测试通过；`native-blitz-cpu-pending` 单元 174 项及全部集成测试通过（`native_frame_damage_write` 2/2）。`damage_rect_admits` 与 `write_surface_segment` 完成六步链：Verus 分别 1 与 3（含 surface_row/surface_span 依赖）verified/0 errors，接受空矩形/忽略纵向边界、省略复制/忽略 offset 四个反例均被拒。`write_damaged_frame` 的 Verus 阶段为 N/A（理由与替代证据见 `docs/verification.md` UI-DAMAGE-WRITE-001），其余五步对照独立规格通过，不计为六阶段完成；其 Kani harness 为固定几何（至多两像素）× 全部损伤种类与一组固定矩形（含越界、溢出），符号矩形坐标在 2×2 帧下耗尽 CBMC 内存，任意矩形由 Proptest（5×5 以内，含与 `frame_damage` 的端到端收敛）覆盖。
+
+整链 `scripts/verify-ui.py`：Verus/Z3、Proptest（读边界属性 36 项）、Miri、cargo-fuzz（两个目标各 20 秒，8.2 万/102.4 万次）、Kani（38 个 harness）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，与本切片无关。证明映射检查为最新；`obligations.json` 中三个文件的元数据哈希与方法计数在整链结束后更新（不改变被验证的源码）。

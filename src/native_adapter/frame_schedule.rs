@@ -1,5 +1,6 @@
 //! On-demand frame admission: a cached frame replaces a repaint only when provably current.
 //! 按需帧准入：仅当缓存帧确属当前状态时才以其代替重绘。
+use jasper_ui_engine::surface::{rgba8_row_bytes,surface_span,write_surface_segment};
 // BEGIN VERIFIED FRAME REUSE KERNEL
 /// True only when nothing was invalidated since the cached frame was painted and the cache
 /// has exactly the current extent and the admitted packed length.
@@ -62,3 +63,43 @@ pub fn frame_damage(previous:Option<(u32,u32,&[u8])>,width:u32,height:u32,next:&
     }
 }
 // END VERIFIED FRAME DAMAGE KERNEL
+
+// BEGIN VERIFIED DAMAGE RECT KERNEL
+/// True only for a nonempty rectangle lying entirely inside a `width`×`height` frame.
+/// 仅当矩形非空且完全落在 `width`×`height` 帧内时为真。
+pub fn damage_rect_admits(x: u32, y: u32, rect_width: u32, rect_height: u32, width: u32, height: u32) -> bool {
+    rect_width > 0 && rect_height > 0 && x <= width && rect_width <= width - x
+        && y <= height && rect_height <= height - y
+}
+// END VERIFIED DAMAGE RECT KERNEL
+
+// BEGIN VERIFIED DAMAGE WRITE KERNEL
+/// Writes into a host surface that already holds the previous frame only the pixels `damage`
+/// marks: Full writes every active row, Rect only the rectangle's segment of each covered row,
+/// Unchanged nothing. All admission (surface geometry, packed length, rectangle bounds)
+/// completes before the first byte is written, so false leaves the destination unchanged.
+/// 向已持有上一帧的宿主 Surface 只写入 `damage` 标出的像素：Full 写全部有效行，Rect 只写覆盖各行内
+/// 的矩形片段，Unchanged 不写。全部准入（Surface 几何、紧凑长度、矩形边界）先于首个字节写入完成，
+/// 故返回 false 时目标不变。
+pub fn write_damaged_frame(destination: &mut [u8], stride: usize, width: u32, height: u32,
+    pixels: &[u8], damage: FrameDamage) -> bool {
+    let Some(row_bytes) = rgba8_row_bytes(width, destination.len()) else { return false; };
+    let rows = height as usize;
+    if surface_span(row_bytes, rows, stride, destination.len()).is_none()
+        || row_bytes.checked_mul(rows) != Some(pixels.len()) {return false;}
+    let (x, y, rect_width, rect_height) = match damage {
+        FrameDamage::Unchanged => return true,
+        FrameDamage::Full => (0, 0, width, height),
+        FrameDamage::Rect {x, y, width: rect_width, height: rect_height} => (x, y, rect_width, rect_height),
+    };
+    if !damage_rect_admits(x, y, rect_width, rect_height, width, height) {return false;}
+    let (offset, span) = (x as usize * 4, rect_width as usize * 4);
+    for row in y as usize..(y + rect_height) as usize {
+        let start = row * row_bytes + offset;
+        if !write_surface_segment(destination, row_bytes, rows, stride, row, offset, &pixels[start..start + span]) {
+            return false;
+        }
+    }
+    true
+}
+// END VERIFIED DAMAGE WRITE KERNEL

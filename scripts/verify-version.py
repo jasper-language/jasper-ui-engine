@@ -666,6 +666,39 @@ pub closed spec fn surface_view_model(view: &Rgba8SurfaceView) -> (Seq<u8>, u32,
         "mutations": [("keep-low", "if at < lo { at } else { lo }", "lo"),
                       ("absent-span-from-zero", "None => (at, at)", "None => (0, at)")],
     },
+    "damage-rect": {
+        "source": "src/native_adapter/frame_schedule.rs", "marker": "DAMAGE RECT", "property": "UI-DAMAGE-RECT-001",
+        "signature": """pub fn damage_rect_admits(x: u32, y: u32, rect_width: u32, rect_height: u32, width: u32, height: u32) -> bool {""",
+        "contract": """pub fn damage_rect_admits(x: u32, y: u32, rect_width: u32, rect_height: u32, width: u32, height: u32) -> (result: bool)
+    ensures result == (rect_width > 0 && rect_height > 0
+        && x as int + rect_width as int <= width as int && y as int + rect_height as int <= height as int),
+{""",
+        "function_count": 1, "depends": [], "evidence": "damage-rect-kernel",
+        "scope": "damage rectangle admission (nonempty, fully inside the frame, no overflow) only; not the damage scan, the surface write loop or presentation",
+        "mutations": [("admit-empty-rect", "    rect_width > 0 && rect_height > 0 && x <= width", "    x <= width"),
+                      ("ignore-vertical-bound", "\n        && y <= height && rect_height <= height - y", "")],
+    },
+    "surface-segment": {
+        "source": "src/surface.rs", "marker": "SURFACE SEGMENT WRITE", "property": "UI-SURFACE-SEGMENT-001",
+        "signature": "pub fn write_surface_segment(\n    bytes: &mut [u8],\n    row_bytes: usize,\n    height: usize,\n    stride: usize,\n    row: usize,\n    offset: usize,\n    source: &[u8],\n) -> bool {",
+        "contract": """pub fn write_surface_segment(bytes: &mut [u8], row_bytes: usize, height: usize, stride: usize, row: usize, offset: usize, source: &[u8]) -> (result: bool)
+    ensures
+        final(bytes).len() == old(bytes).len(),
+        result == (offset as int + source.len() as int <= row_bytes as int && row < height && row_bytes > 0 && height > 0 && stride >= row_bytes
+            && (height as int - 1) * stride as int + row_bytes as int <= old(bytes).len() as int),
+        !result ==> final(bytes)@ == old(bytes)@,
+        result ==> forall|i: int| 0 <= i < old(bytes).len() ==> (
+            final(bytes)@[i] == if row as int * stride as int + offset as int <= i < row as int * stride as int + offset as int + source.len() as int {
+                source@[i - row as int * stride as int - offset as int]
+            } else {
+                old(bytes)@[i]
+            }),
+{""",
+        "depends": ["surface-borrow"], "evidence": "surface-segment-kernel",
+        "scope": "single synchronous in-row segment copy into a valid Rust mutable slice; exact source bytes, all other bytes (other rows, rest of row, padding) preserved, failure unchanged; not IPC permission or concurrent publication",
+        "mutations": [("skip-segment-write", "    bytes[start..end].copy_from_slice(source);", "    // deliberately omit the copy"),
+                      ("ignore-segment-offset", "let start = row * stride + offset;", "let start = row * stride;")],
+    },
     "role-type": {"source": "src/semantics.rs", "marker": "ROLE", "suffix": "TYPE", "signature": None, "depends": [], "internal_only": True},
     "role-activation": {
         "source": "src/keyboard.rs", "marker": "ROLE ACTIVATION", "property": "UI-ROLE-ACTIVATION-001",

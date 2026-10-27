@@ -257,6 +257,19 @@ impl SceneHostView {
         ->Option<FrameDamage> {
         self.inner.render_to_host_surface_with_damage(owner,version,bytes,stride,budget)
     }
+    /// Like `render_to_surface_with_damage`, but copies only the damaged pixels into `bytes`
+    /// (Full: every row; Rect: the rectangle; Unchanged: nothing). `bytes` must still hold the
+    /// frame this view produced last — after swapping or losing the buffer call
+    /// `invalidate_frame` first. None when rejected; nothing is written then. Painting is still
+    /// whole-frame.
+    /// 同 `render_to_surface_with_damage`，但只把受损像素复制进 `bytes`（Full 全部行、Rect 矩形、
+    /// Unchanged 不写）。`bytes` 必须仍持有本视图上一次产出的帧——换缓冲或丢失后先调用
+    /// `invalidate_frame`。拒绝时为 None 且不写任何字节。绘制仍为整帧。
+    #[cfg(feature="cpu-pending")]
+    pub fn render_to_surface_damaged(&mut self,owner:u64,version:u64,bytes:&mut [u8],stride:usize,budget:usize)
+        ->Option<FrameDamage> {
+        self.inner.render_to_host_surface_damaged(owner,version,bytes,stride,budget)
+    }
 
 }
 // BEGIN VERIFIED SCENE HOST CLOSE KERNEL

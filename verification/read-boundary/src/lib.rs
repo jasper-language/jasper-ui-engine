@@ -446,6 +446,84 @@ pub fn assert_frame_damage(previous: Option<(u32, u32, &[u8])>, width: u32, heig
     assert_eq!(frame_damage(previous, width, height, next), expected);
 }
 
+
+/// Independent in-row segment write oracle over widened integers.
+/// 宽整数下的独立行内片段写入规格。
+pub fn assert_segment(bytes: &[u8], row_bytes: usize, height: usize, stride: usize, row: usize,
+    offset: usize, source: &[u8]) {
+    let mut actual = bytes.to_vec();
+    let end = height.saturating_sub(1) as u128 * stride as u128 + row_bytes as u128;
+    let valid = row_bytes > 0 && height > 0 && stride >= row_bytes && row < height
+        && end <= bytes.len() as u128 && offset as u128 + source.len() as u128 <= row_bytes as u128;
+    assert_eq!(write_surface_segment(&mut actual, row_bytes, height, stride, row, offset, source), valid);
+    let start = row as u128 * stride as u128 + offset as u128;
+    for i in 0..bytes.len() {
+        let inside = valid && start <= i as u128 && (i as u128) < start + source.len() as u128;
+        let expected = if inside { source[(i as u128 - start) as usize] } else { bytes[i] };
+        assert_eq!(actual[i], expected);
+    }
+}
+
+/// Independent damage-rectangle admission oracle over widened integers.
+/// 宽整数下的独立损伤矩形准入规格。
+pub fn assert_damage_rect(x: u32, y: u32, rect_width: u32, rect_height: u32, width: u32, height: u32) {
+    let expected = rect_width > 0 && rect_height > 0
+        && x as u64 + rect_width as u64 <= width as u64 && y as u64 + rect_height as u64 <= height as u64;
+    assert_eq!(damage_rect_admits(x, y, rect_width, rect_height, width, height), expected);
+}
+
+/// Independent damage-only write oracle: when every admission holds, exactly the pixels
+/// inside the damage (all for Full, none for Unchanged) take the packed frame's values and
+/// every other byte (other pixels, padding, tail) is kept; otherwise nothing changes.
+/// 独立只写损伤规格：全部准入成立时，恰好损伤内像素（Full 全部、Unchanged 无）取紧凑帧值，
+/// 其余字节（其他像素、padding、尾部）保持；否则不变。
+pub fn assert_damage_write(destination: &[u8], stride: usize, width: u32, height: u32, pixels: &[u8],
+    damage: FrameDamage) {
+    let row = width as u128 * 4;
+    let surface = width > 0 && height > 0 && row <= destination.len() as u128 && stride as u128 >= row
+        && (height as u128 - 1) * stride as u128 + row <= destination.len() as u128
+        && row * height as u128 == pixels.len() as u128;
+    let rect = match damage {
+        FrameDamage::Unchanged => Some((0, 0, 0, 0)),
+        FrameDamage::Full => Some((0, 0, width, height)),
+        FrameDamage::Rect { x, y, width: w, height: h } => (w > 0 && h > 0
+            && x as u64 + w as u64 <= width as u64 && y as u64 + h as u64 <= height as u64).then_some((x, y, w, h)),
+    };
+    let valid = surface && rect.is_some();
+    let mut actual = destination.to_vec();
+    assert_eq!(write_damaged_frame(&mut actual, stride, width, height, pixels, damage), valid);
+    let mut expected = destination.to_vec();
+    if valid {
+        let (x0, y0, w, h) = rect.unwrap();
+        for y in y0..y0 + h {
+            for x in x0..x0 + w {
+                let to = y as usize * stride + x as usize * 4;
+                let from = (y as usize * width as usize + x as usize) * 4;
+                expected[to..to + 4].copy_from_slice(&pixels[from..from + 4]);
+            }
+        }
+    }
+    assert_eq!(actual, expected);
+}
+
+/// End-to-end: a surface holding `before` plus the damage `frame_damage` reports for `after`
+/// converges on `after`, padding untouched.
+/// 端到端：持有 `before` 的 Surface 经 `frame_damage` 报告的损伤写入后收敛到 `after`，padding 不变。
+pub fn assert_damage_convergence(before: &[u8], after: &[u8], width: u32, height: u32, padding: usize) {
+    let row = width as usize * 4;
+    let stride = row + padding;
+    let rows = height as usize;
+    if width == 0 || rows == 0 || before.len() != row * rows || after.len() != row * rows { return; }
+    let mut surface = vec![0xAB; stride * (rows - 1) + row];
+    for y in 0..rows { surface[y * stride..y * stride + row].copy_from_slice(&before[y * row..(y + 1) * row]); }
+    let damage = frame_damage(Some((width, height, before)), width, height, after);
+    assert_damage_write(&surface, stride, width, height, after, damage);
+    assert!(write_damaged_frame(&mut surface, stride, width, height, after, damage));
+    for y in 0..rows {
+        assert_eq!(&surface[y * stride..y * stride + row], &after[y * row..(y + 1) * row]);
+        if y + 1 < rows { assert!(surface[y * stride + row..(y + 1) * stride].iter().all(|b| *b == 0xAB)); }
+    }
+}
 /// Check exact resource transitions against an independent state tuple oracle.
 /// 用独立状态元组规格校验资源准入、撤销和再次签发。
 pub fn assert_resource(
@@ -1160,6 +1238,74 @@ mod kani_checks {
     }
 
     #[kani::proof]
+    fn damage_rect_admission() {
+        assert_damage_rect(kani::any(), kani::any(), kani::any(), kani::any(), kani::any(), kani::any());
+    }
+
+    #[kani::proof]
+    #[kani::unwind(10)]
+    fn eight_byte_segment_write() {
+        let bytes: [u8; 8] = kani::any();
+        let source: [u8; 2] = kani::any();
+        let take: bool = kani::any();
+        let row_bytes: u8 = kani::any();
+        let height: u8 = kani::any();
+        let stride: u8 = kani::any();
+        let offset: u8 = kani::any();
+        assert_segment(&bytes, row_bytes as usize, height as usize, stride as usize, kani::any(),
+            offset as usize, if take { &source[..] } else { &source[..1] });
+    }
+
+    /// Concrete geometry and damage per branch: every damage kind and a fixed set of rectangles
+    /// (inside, edge, whole, empty, out of bounds, overflowing). Content is concrete but pairwise
+    /// distinct, so any misplaced copy is observable. Symbolic rectangle coordinates made the
+    /// unrolled 64-bit offset arithmetic exceed the time/memory budget (2x2 exhausted CBMC
+    /// memory), so each case is a separate constant call; arbitrary rectangles up to 5x5 frames
+    /// are covered by Proptest.
+    /// 每个分支几何与损伤均固定：全部损伤种类与一组固定矩形（内部、边缘、整帧、空、越界、溢出）。
+    /// 内容固定但两两不同，任何错位复制都可观测。符号矩形坐标使展开后的 64 位偏移运算超出时间/内存
+    /// 预算（2×2 耗尽 CBMC 内存），故逐例常量调用；5×5 以内任意矩形由 Proptest 覆盖。
+    fn damage_write_case(width: u32, height: u32, padding: usize, cut: usize, short: bool) {
+        let stride = width as usize * 4 + padding;
+        let destination: [u8; 10] = core::array::from_fn(|i| 200 + i as u8);
+        let pixels: [u8; 8] = core::array::from_fn(|i| 100 + i as u8);
+        let dest_len = stride * (height as usize - 1) + width as usize * 4 - cut;
+        let packed = (width * height * 4) as usize - if short { 4 } else { 0 };
+        let (destination, pixels) = (&destination[..dest_len], &pixels[..packed]);
+        let rect = |x, y, w, h| FrameDamage::Rect { x, y, width: w, height: h };
+        match kani::any::<u8>() {
+            0 => assert_damage_write(destination, stride, width, height, pixels, FrameDamage::Unchanged),
+            1 => assert_damage_write(destination, stride, width, height, pixels, FrameDamage::Full),
+            2 => assert_damage_write(destination, stride, width, height, pixels, rect(0, 0, 1, 1)),
+            3 => assert_damage_write(destination, stride, width, height, pixels, rect(1, 0, 1, 1)),
+            4 => assert_damage_write(destination, stride, width, height, pixels, rect(0, 1, 1, 1)),
+            5 => assert_damage_write(destination, stride, width, height, pixels, rect(0, 0, width, height)),
+            6 => assert_damage_write(destination, stride, width, height, pixels, rect(0, 0, 0, 1)),
+            7 => assert_damage_write(destination, stride, width, height, pixels, rect(0, 0, 1, 0)),
+            8 => assert_damage_write(destination, stride, width, height, pixels, rect(0, 0, width + 1, 1)),
+            9 => assert_damage_write(destination, stride, width, height, pixels, rect(0, height, 1, 1)),
+            _ => assert_damage_write(destination, stride, width, height, pixels, rect(u32::MAX, 0, 2, 1)),
+        }
+    }
+
+    #[kani::proof]
+    #[kani::unwind(11)]
+    fn damage_only_write_thin() {
+        if kani::any() { damage_write_case(2, 1, 1, 0, false) } else { damage_write_case(1, 2, 1, 0, false) }
+    }
+
+    #[kani::proof]
+    #[kani::unwind(11)]
+    fn damage_only_write_rejections() {
+        match kani::any::<u8>() % 4 {
+            0 => damage_write_case(1, 2, 0, 1, false),
+            1 => damage_write_case(2, 1, 1, 0, true),
+            2 => damage_write_case(1, 2, 2, 0, false),
+            _ => damage_write_case(1, 1, 0, 0, false),
+        }
+    }
+
+    #[kani::proof]
     fn frame_reuse_admission() {
         assert_frame_reuse(kani::any(), (kani::any(), kani::any(), kani::any()), kani::any(), kani::any(), kani::any());
     }
@@ -1439,6 +1585,49 @@ mod properties {
             assert_frame_damage(Some((w, h, &before)), w, h, &after[..len.saturating_sub(1)]);
         }
         #[test]
+        fn damage_rect_property(x in any::<u32>(), y in any::<u32>(), w in any::<u32>(), h in any::<u32>(),
+                                width in any::<u32>(), height in any::<u32>(),
+                                sx in 0u32..6, sy in 0u32..6, sw in 0u32..6, sh in 0u32..6, fw in 0u32..6, fh in 0u32..6) {
+            assert_damage_rect(x, y, w, h, width, height);
+            assert_damage_rect(sx, sy, sw, sh, fw, fh);
+            assert_damage_rect(u32::MAX - sx, sy, sw, sh, u32::MAX, fh);
+        }
+        #[test]
+        fn segment_write_property(bytes in prop::collection::vec(any::<u8>(), 0..256),
+                                  source in prop::collection::vec(any::<u8>(), 0..12),
+                                  row_bytes in any::<usize>(), height in any::<usize>(),
+                                  stride in any::<usize>(), row in any::<usize>(), offset in any::<usize>(),
+                                  small_row in 0usize..4, small_offset in 0usize..16) {
+            assert_segment(&bytes, row_bytes, height, stride, row, offset, &source);
+            assert_segment(&bytes, 12, 4, 14, small_row, small_offset, &source);
+        }
+        #[test]
+        fn damage_write_property(w in 0u32..5, h in 0u32..5, padding in 0usize..3, extra in 0usize..3, cut in 0usize..3,
+                                 before in prop::collection::vec(any::<u8>(), 0..80),
+                                 edits in prop::collection::vec((0usize..80, 1u8..=255), 0..6),
+                                 kind in 0u8..3, x in 0u32..6, y in 0u32..6, rw in 0u32..6, rh in 0u32..6,
+                                 fill in any::<u8>()) {
+            let len = (w * h * 4) as usize;
+            let mut before = before;
+            before.resize(len, 3);
+            let mut after = before.clone();
+            for (at, delta) in edits {
+                if len > 0 { let i = at % len; after[i] = after[i].wrapping_add(delta); }
+            }
+            assert_damage_convergence(&before, &after, w, h, padding);
+            let stride = w as usize * 4 + padding;
+            let surface_len = (stride * h as usize + extra).saturating_sub(padding + cut);
+            let surface = vec![fill; surface_len];
+            let damage = match kind {
+                0 => FrameDamage::Unchanged,
+                1 => FrameDamage::Full,
+                _ => FrameDamage::Rect { x, y, width: rw, height: rh },
+            };
+            assert_damage_write(&surface, stride, w, h, &after, damage);
+            assert_damage_write(&surface, stride, w, h, &after[..len.saturating_sub(1)], damage);
+            assert_damage_write(&surface, stride.saturating_sub(1), w, h, &after, damage);
+        }
+        #[test]
         fn frame_reuse_property(dirty in any::<bool>(), cw in 0u32..4, ch in 0u32..4, len in 0usize..80,
                                 w in 0u32..4, h in 0u32..4, wide in any::<(u32, u32, usize)>()) {
             let expected = (w * h * 4) as usize;
@@ -1679,6 +1868,22 @@ mod memory {
             assert_frame_damage(None, 3, 2, &next);
             assert_frame_damage(Some((3, 2, &base[..20])), 3, 2, &next[..20]);
         }
+        for (x, y, w, h) in [(0, 0, 1, 1), (2, 1, 1, 1), (0, 0, 3, 2), (3, 0, 1, 1), (1, 1, 0, 1), (u32::MAX, 0, 2, 1)] {
+            assert_damage_rect(x, y, w, h, 3, 2);
+            let damage = FrameDamage::Rect { x, y, width: w, height: h };
+            assert_damage_write(&[0xEE; 3 * 4 * 2 + 2], 14, 3, 2, &base, damage);
+        }
+        assert_damage_write(&[0xEE; 26], 14, 3, 2, &base, FrameDamage::Full);
+        assert_damage_write(&[0xEE; 26], 14, 3, 2, &base, FrameDamage::Unchanged);
+        assert_damage_write(&[0xEE; 25], 14, 3, 2, &base, FrameDamage::Full);
+        let mut touched = base.clone();
+        touched[13] ^= 0x40;
+        assert_damage_convergence(&base, &touched, 3, 2, 2);
+        for offset in [0, 1, 2, 3, usize::MAX] {
+            for source in [&[][..], &[9][..], &[9, 8][..], &[9, 8, 7][..]] {
+                assert_segment(&[1, 2, 0xaa, 0xbb, 3, 4], 2, 2, 4, 1, offset, source);
+            }
+        }
         for dirty in [false, true] {
             for (w, h) in [(0, 0), (1, 1), (320, 200), (u32::MAX, u32::MAX)] {
                 for len in [0, 4, 256_000, usize::MAX] {
@@ -1868,6 +2073,8 @@ mod schedules {
                 assert!(canvas.pixel(1, 0).is_none());
                 assert_font_order(&[first[0] as u64, first[1] as u64], first[2] as u64, first[3] as usize);
                 assert_damage_span(Some((first[0] as u32, first[1] as u32)), first[2] as u32);
+                assert_damage_rect(first[0] as u32, first[1] as u32, first[2] as u32, first[3] as u32, 2, 2);
+                assert_segment(first.as_ref(), 2, 2, 2, 1, first[0] as usize % 3, &first[2..]);
                 assert_frame_damage(Some((1, 1, first.as_ref())), 1, 1, &[first[3], first[2], first[1], first[0]]);
                 assert_frame_reuse(first[0] & 1 == 1, (first[1] as u32, first[2] as u32, first[3] as usize),
                     first[1] as u32, first[2] as u32, first[3] as usize);

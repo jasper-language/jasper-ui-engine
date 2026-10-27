@@ -610,6 +610,27 @@ impl NativeScene {
         }
         damage
     }
+    /// Like `render_to_host_surface_with_damage`, but writes only the damaged pixels: the host
+    /// guarantees `destination` holds the frame this view produced last (otherwise it must
+    /// invalidate first, making the next damage Full). Surface admission precedes painting;
+    /// a failed write drops the cache so the next report is Full.
+    /// 同 `render_to_host_surface_with_damage`，但只写受损像素：宿主保证 `destination` 持有本视图
+    /// 上一次产出的帧（否则须先失效，使下一次为 Full）。Surface 准入先于绘制；写入失败丢弃缓存。
+    #[cfg(feature="cpu-pending")]
+    pub(crate) fn render_to_host_surface_damaged(&mut self,caller:u64,version:u64,destination:&mut [u8],stride:usize,max_render_bytes:usize)
+        ->Option<crate::frame_schedule::FrameDamage> {
+        use jasper_ui_engine::surface::{rgba8_row_bytes,surface_span};
+        if caller!=self.owner || version!=self.scene_version {return None;}
+        let (width,height)=self.document.as_ref()?.viewport().window_size;
+        let row_bytes=rgba8_row_bytes(width,destination.len())?;
+        surface_span(row_bytes,height as usize,stride,destination.len())?;
+        let (pixels,damage)=self.render_cpu_with_damage(caller,max_render_bytes)?;
+        if !crate::frame_schedule::write_damaged_frame(destination,stride,width,height,&pixels,damage) {
+            self.frame_cache=None;
+            return None;
+        }
+        Some(damage)
+    }
     /// Render through the native painter then the existing backend submission/presentation seam.
     /// 经原生绘制后接入既有后端提交/呈现接缝；不生成或重放旧 PaintOp。
     /// Backend submit/present failures propagate; external presentation rollback is not promised.
