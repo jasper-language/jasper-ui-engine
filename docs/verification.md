@@ -52,6 +52,8 @@ Loom 当前执行实际生产函数体的调用侧调度场景：两个线程共
 | UI-PIXEL-CONVERT-001 | `desktop::rgba_to_u32` | 所有长度的前置检查安全；成功全输出逐字精确、alpha 忽略；失败全目标保持；循环边界/终止 | 当前源码的 `evidence/pixel-convert-kernel/` 与全链；窗口/呈现生命周期不随之闭合 |
 | UI-FONT-ORDER-001 | `native_fonts::font_stack_count_admits/font_order_admits` | 字体栈数量 1..=16 准入充要；某族 id 仅首次出现时准入，先注入文件保持回退优先级 | proved，4 verified/0 errors，空栈准入/重复准入两反例被拒；以匹配源码的 `evidence/font-order-kernel/` 与六阶段报告为准；不涵盖字体解析、上游注册、族名排序与 Parley 回退选择 |
 | UI-FRAME-REUSE-001 | `frame_schedule::frame_reuse_admits` | 仅当未失效且缓存宽、高与当前一致、长度等于准入紧凑长度时复用（充要） | proved，1 verified/0 errors，忽略失效/忽略尺寸两反例被拒；以匹配源码的 `evidence/frame-reuse-kernel/` 与六阶段报告为准；不涵盖各入口标脏的完整性（由集成测试覆盖）、缓存存储、绘制与呈现 |
+| UI-DAMAGE-SPAN-001 | `frame_schedule::damage_span_extend` | 结果闭区间包含新下标；无旧区间时恰为该下标；有旧区间时覆盖旧区间且两端各取旧端点或新下标（最小包络） | proved，1 verified/0 errors，下端不扩展/空区间从零起两反例被拒；以匹配源码的 `evidence/damage-span-kernel/` 与六阶段报告为准；不涵盖逐行逐列扫描 |
+| UI-FRAME-DAMAGE-001 | `frame_schedule::frame_damage` | 同尺寸两帧的损伤恰为全部不同像素的最小包围矩形；无上一帧、尺寸或长度不符为 Full；逐像素一致为 Unchanged | Verus：N/A——切片分块迭代器与闭包查找循环不在当前 Verus 可验子集内，未改写为可验形式；替代证据：Proptest（5×5 以内任意改动、错宽、缺上一帧、短帧）与 Kani（2×2、2×1、1×2 全部像素子集与任意字节）均对照独立穷举包围盒规格，另有 Miri/fuzz/Loom；不计入六阶段完成数 |
 | UI-SURFACE-VIEW-001 | `Rgba8SurfaceView` 构造、row、width/height/stride | 构造充要条件、精确存储输入布局与字节视图；元数据/行访问一致；行传输精确且失败目标不变；字段私有 | 以当前源码匹配的 `evidence/surface-view-kernel/` 与六阶段报告为准；外部资源权限未涵盖 |
 | UI-SURFACE-WRITE-001 | `surface.rs::write_surface_row` 及只读准入依赖 | 成功精确写入有效行，保留其他行/padding/长度；失败目标完全不变；准入充要条件明确 | 以匹配源码的 `evidence/surface-write-kernel/` 和全链报告为准；不涵盖跨进程原子发布 |
 | UI-SURFACE-BORROW-001 | `surface.rs::surface_row` 与 surface_span | 整体跨度有效且 row 合法才返回精确有效行切片，不含 padding；非法输入拒绝，无越界 | 精确规格与实现映射已登记，结果以当前源码匹配的 `evidence/surface-borrow-kernel/` 和全链报告为准；不覆盖外部会话归属 |

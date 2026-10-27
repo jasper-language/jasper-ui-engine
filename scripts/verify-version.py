@@ -651,6 +651,21 @@ pub closed spec fn surface_view_model(view: &Rgba8SurfaceView) -> (Seq<u8>, u32,
         "mutations": [("ignore-dirty", "\n    !dirty && cached_width", "\n    cached_width"),
                       ("ignore-extent", "cached_width == width && cached_height == height && cached_len == expected\n", "cached_len == expected\n")],
     },
+    "damage-span": {
+        "source": "src/native_adapter/frame_schedule.rs", "marker": "DAMAGE SPAN", "property": "UI-DAMAGE-SPAN-001",
+        "signature": """pub fn damage_span_extend(span: Option<(u32, u32)>, at: u32) -> (u32, u32) {""",
+        "contract": """pub fn damage_span_extend(span: Option<(u32, u32)>, at: u32) -> (result: (u32, u32))
+    ensures
+        result.0 <= at && at <= result.1,
+        span matches None ==> result == (at, at),
+        span matches Some((lo, hi)) ==> result.0 <= lo && hi <= result.1
+            && (result.0 == lo || result.0 == at) && (result.1 == hi || result.1 == at),
+{""",
+        "function_count": 1, "depends": [], "evidence": "damage-span-kernel",
+        "scope": "inclusive damage span extension (smallest span covering the old span and the new index) only; not the row/column scan of frame_damage, painting or presentation",
+        "mutations": [("keep-low", "if at < lo { at } else { lo }", "lo"),
+                      ("absent-span-from-zero", "None => (at, at)", "None => (0, at)")],
+    },
     "role-type": {"source": "src/semantics.rs", "marker": "ROLE", "suffix": "TYPE", "signature": None, "depends": [], "internal_only": True},
     "role-activation": {
         "source": "src/keyboard.rs", "marker": "ROLE ACTIVATION", "property": "UI-ROLE-ACTIVATION-001",

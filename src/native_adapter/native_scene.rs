@@ -538,20 +538,30 @@ impl NativeScene {
     }
     #[cfg(feature="cpu-pending")]
     pub(crate) fn render_cpu(&mut self,caller:u64,max_bytes:usize)->Option<Vec<u8>> {
+        self.render_cpu_with_damage(caller,max_bytes).map(|(pixels,_)|pixels)
+    }
+    /// Damage is relative to the previous frame this view produced, not to host surface content.
+    /// 损伤相对本视图上一次产出的帧，而非宿主表面内容。
+    #[cfg(feature="cpu-pending")]
+    pub(crate) fn render_cpu_with_damage(&mut self,caller:u64,max_bytes:usize)
+        ->Option<(Vec<u8>,crate::frame_schedule::FrameDamage)> {
+        use crate::frame_schedule::{frame_damage,FrameDamage};
         if caller!=self.owner {return None;}
         let document=self.document.as_mut()?;
         let (width,height)=document.viewport().window_size;
         let bytes=crate::cpu_budget::cpu_frame_bytes(width,height,max_bytes)?;
         if let Some((cached_width,cached_height,cached))=&self.frame_cache {
             if crate::frame_schedule::frame_reuse_admits(self.frame_dirty,*cached_width,*cached_height,
-                cached.len(),width,height,bytes) {return Some(cached.clone());}
+                cached.len(),width,height,bytes) {return Some((cached.clone(),FrameDamage::Unchanged));}
         }
         let scale=document.viewport().scale_f64();
         let pixels=anyrender::render_to_buffer::<anyrender_vello_cpu::VelloCpuImageRenderer,_>(
             |scene|blitz_paint::paint_scene(scene,document,scale,width,height,0,0),width,height);
         if pixels.len()!=bytes {return None;}
+        let previous=self.frame_cache.as_ref().map(|(w,h,cached)|(*w,*h,cached.as_slice()));
+        let damage=frame_damage(previous,width,height,&pixels);
         self.frame_cache=Some((width,height,pixels.clone()));self.frame_dirty=false;
-        Some(pixels)
+        Some((pixels,damage))
     }
     /// Some(true) while a possible visible change is not yet painted; None for a foreign
     /// caller or retired view. Hosts skip render calls while this is Some(false).
@@ -564,6 +574,9 @@ impl NativeScene {
     /// 宿主强制重绘（如呈现表面丢失或更换）。
     pub(crate) fn invalidate_frame_from_host(&mut self,caller:u64)->bool {
         if caller!=self.owner || !self.document.is_open() {return false;}
+        // The host's copy is gone: the next damage report must be Full, not a pixel diff.
+        // 宿主副本已失效：下一次损伤必须为 Full，而非像素差分。
+        self.frame_cache=None;
         self.invalidate_frame();true
     }
     /// Conservative damage: every mutating entry marks the view dirty before admission,
@@ -579,6 +592,23 @@ impl NativeScene {
         let (width,height)=document.viewport().window_size;
         orchestrate_native_host_surface(width,height,destination,stride,max_render_bytes,
             |budget|self.render_cpu(caller,budget))
+    }
+    /// Same as `render_to_host_surface`, also reporting damage relative to the previous frame
+    /// this view produced. A failed write drops the cache so the next report is Full.
+    /// 同 `render_to_host_surface`，并报告相对本视图上一帧的损伤；写入失败则丢弃缓存，下次为 Full。
+    #[cfg(feature="cpu-pending")]
+    pub(crate) fn render_to_host_surface_with_damage(&mut self,caller:u64,version:u64,destination:&mut [u8],stride:usize,max_render_bytes:usize)
+        ->Option<crate::frame_schedule::FrameDamage> {
+        if caller!=self.owner || version!=self.scene_version {return None;}
+        let (width,height)=self.document.as_ref()?.viewport().window_size;
+        let mut damage=None;
+        let written=orchestrate_native_host_surface(width,height,destination,stride,max_render_bytes,
+            |budget|{let (pixels,found)=self.render_cpu_with_damage(caller,budget)?;damage=Some(found);Some(pixels)});
+        if !written {
+            if damage.is_some() {self.frame_cache=None;}
+            return None;
+        }
+        damage
     }
     /// Render through the native painter then the existing backend submission/presentation seam.
     /// 经原生绘制后接入既有后端提交/呈现接缝；不生成或重放旧 PaintOp。
