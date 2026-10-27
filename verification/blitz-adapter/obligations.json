@@ -468,16 +468,16 @@
       "evidence": "evidence/component-update-support-chain/report.json"
     },
     "src/native_adapter/native_fonts.rs": {
-      "source_sha256": "c2fdc9d2261f5a9edc34d98393a141d05ae52c598df8b0fc138c35c2b1ed8020",
-      "own_methods": 1,
-      "implementation_proofs_complete": 0,
-      "six_stage_acceptance_complete": 0,
-      "scope": "Deterministic injected collection generic-family configuration using upstream APIs; sorting/collection/constructor composition proof pending",
+      "source_sha256": "fe43aded7f68433793db60d80314dd0d73f77edf12001089cb82dbe6f5f759b3",
+      "own_methods": 5,
+      "implementation_proofs_complete": 2,
+      "six_stage_acceptance_complete": 2,
+      "scope": "Host-ordered injected font stack (file order, lexical family order within one file) through upstream APIs; font_stack_count_admits and font_order_admits are the verified kernel; collection/constructor composition proof pending",
       "evidence": "evidence/blitz-font-order-pending/report.json"
     },
     "src/native_adapter/native_scene.rs": {
-      "source_sha256": "fb132734f31640cff7255729db15efcb1381d7b68a53f5ff625ff27bf1569747",
-      "own_methods": 41,
+      "source_sha256": "80f469d9e6f95b4d1fc5d943520152fe9b922cdb2af441816b076ae767aa30c1",
+      "own_methods": 43,
       "implementation_proofs_complete": 12,
       "six_stage_acceptance_complete": 10,
       "scope": "Existing Scene/patch native mapping including per-node source scroll; owner-gated semantic metadata; OS bridge and full implementation proof pending",
@@ -548,8 +548,8 @@
       "evidence": "evidence/blitz-framework-update-contract-pending/report.json"
     },
     "src/native_adapter/facade.rs": {
-      "source_sha256": "03fdf2f52e687ca731f67b3c0e4bf15c7768134425aadcaf40114f0cf59258ed",
-      "own_methods": 51,
+      "source_sha256": "14f8d34de1449f595c9b0846c7cbbf2cf7c82de755b6f0943a9ac2321ac9c0d5",
+      "own_methods": 52,
       "implementation_proofs_complete": 4,
       "six_stage_acceptance_complete": 4,
       "scope": "Typed embedding-host library facade; application component semantics remain Scene/ScenePatch values, backend modules private",

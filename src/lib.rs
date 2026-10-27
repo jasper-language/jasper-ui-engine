@@ -152,5 +152,8 @@ mod view_slot;
 pub mod native {
     use crate::{native_view,component_contract,update_contract,
         native_scene,scene_events,pointer_host,native_events,native_keys,native_semantics};
+    /// Per-view limit for `engine::Engine::with_fonts`.
+    /// `engine::Engine::with_fonts` 每视图注入字体文件上限。
+    pub use crate::native_fonts::MAX_INJECTED_FONTS;
     include!("native_adapter/facade.rs");
 }

@@ -152,6 +152,12 @@ impl SceneHostView {
     pub fn new(owner:u64,scene:&Scene,font:&[u8],width:u32,height:u32)->Option<Self> {
         Some(Self {inner:native_scene::NativeScene::from_scene(owner,scene,font,width,height)?})
     }
+    /// Host-ordered fallback stack (e.g. Latin file then CJK file); None for an empty,
+    /// oversized (> MAX_INJECTED_FONTS) stack or a file that registers no font family.
+    /// 宿主有序回退栈（如先拉丁后中日韩文件）；空栈、超限或任一文件无字体族时返回 None。
+    pub fn with_fonts(owner:u64,scene:&Scene,fonts:&[&[u8]],width:u32,height:u32)->Option<Self> {
+        Some(Self {inner:native_scene::NativeScene::from_scene_with_fonts(owner,scene,fonts,width,height)?})
+    }
     pub fn apply(&mut self,owner:u64,expected:u64,next:u64,patches:&[ScenePatch])->bool {
         self.inner.apply_patches(owner,expected,next,patches)
     }
