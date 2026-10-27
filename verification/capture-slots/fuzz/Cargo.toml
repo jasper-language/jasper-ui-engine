@@ -1,0 +1,19 @@
+[package]
+name = "jasper-ui-capture-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+jasper-ui-capture-verification = { path = ".." }
+
+[[bin]]
+name = "capture_operations"
+path = "fuzz_targets/capture_operations.rs"
+test = false
+doc = false
+bench = false

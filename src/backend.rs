@@ -10,19 +10,28 @@ use crate::paint::PaintOp;
 use crate::raster::Canvas;
 
 /// A backend receives versioned batches and presents frames.
+// BEGIN VERIFIED NATIVE BACKEND TRAIT CONTRACT
 pub trait RenderBackend {
     fn resize(&mut self, size: Size);
     fn submit(&mut self, batch: &UiBatch) -> Result<(), BackendError>;
+    /// Consume a completed packed RGBA8 native frame; no legacy paint replay.
+    /// 接收已绘制的紧密 RGBA8 原生帧，不重放旧绘制算法；不支持时明确拒绝。
+    fn submit_rgba8(&mut self, _width:u32, _height:u32, _pixels:Vec<u8>) -> Result<(),BackendError> {
+        Err(BackendError::Unsupported("native RGBA8 frame submission"))
+    }
     fn present(&mut self) -> Result<(), BackendError>;
 }
+// END VERIFIED NATIVE BACKEND TRAIT CONTRACT
 
 /// Backend failures that callers can handle.
+// BEGIN VERIFIED NATIVE BACKEND ERROR TYPE
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum BackendError {
     Unsupported(&'static str),
     Invalid(String),
     Io(String),
 }
+// END VERIFIED NATIVE BACKEND ERROR TYPE
 
 impl From<io::Error> for BackendError {
     fn from(error: io::Error) -> Self {
@@ -30,11 +39,26 @@ impl From<io::Error> for BackendError {
     }
 }
 
+// BEGIN VERIFIED NATIVE BACKEND SUBMISSION KERNEL
+/// Submit one completed native frame and present it only after successful adoption.
+pub(crate) fn submit_native_frame(
+    backend: &mut impl RenderBackend,
+    width: u32,
+    height: u32,
+    pixels: Vec<u8>,
+) -> Result<(), BackendError> {
+    backend.submit_rgba8(width, height, pixels)?;
+    backend.present()
+}
+// END VERIFIED NATIVE BACKEND SUBMISSION KERNEL
+
 /// CPU backend for tests, CI and GPU-less hosts.
+// BEGIN VERIFIED NATIVE HEADLESS BACKEND TYPE
 #[derive(Clone, Debug)]
 pub struct HeadlessBackend {
     canvas: Canvas,
 }
+// END VERIFIED NATIVE HEADLESS BACKEND TYPE
 
 impl HeadlessBackend {
     pub fn new(width: u32, height: u32) -> Self {
@@ -55,6 +79,19 @@ impl HeadlessBackend {
         self.canvas.save_ppm(path)
     }
 }
+
+// BEGIN VERIFIED NATIVE HEADLESS BACKEND FORWARDING KERNEL
+impl HeadlessBackend {
+    fn submit_native_pixels(
+        &mut self,
+        width: u32,
+        height: u32,
+        pixels: Vec<u8>,
+    ) -> Result<(), BackendError> {
+        self.import_native_frame(width, height, pixels)
+    }
+}
+// END VERIFIED NATIVE HEADLESS BACKEND FORWARDING KERNEL
 
 impl RenderBackend for HeadlessBackend {
     fn resize(&mut self, size: Size) {
@@ -89,6 +126,12 @@ impl RenderBackend for HeadlessBackend {
             }
         }
         Ok(())
+    }
+
+    /// Adopt native pixels through the existing checked storage import, with no redraw algorithm.
+    /// 经既有已检查的存储导入接管原生像素；不执行旧光栅绘制，拒绝时保留前帧。
+    fn submit_rgba8(&mut self,width:u32,height:u32,pixels:Vec<u8>)->Result<(),BackendError> {
+        self.submit_native_pixels(width,height,pixels)
     }
 
     fn present(&mut self) -> Result<(), BackendError> {
@@ -137,3 +180,14 @@ mod tests {
         );
     }
 }
+
+// BEGIN VERIFIED NATIVE BACKEND FRAME IMPORT KERNEL
+impl HeadlessBackend {
+    fn import_native_frame(&mut self,width:u32,height:u32,pixels:Vec<u8>)->Result<(),BackendError> {
+        match Canvas::from_rgba8(width,height,pixels) {
+            Ok(canvas)=>{self.canvas=canvas;Ok(())},
+            Err(_)=>Err(BackendError::Invalid("invalid packed RGBA8 frame".into())),
+        }
+    }
+}
+// END VERIFIED NATIVE BACKEND FRAME IMPORT KERNEL

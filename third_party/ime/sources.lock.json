@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "dependencies": [
+    {
+      "name": "librime",
+      "version": "1.17.0",
+      "archive": "dist/librime-1.17.0.tgz",
+      "url": "https://codeload.github.com/rime/librime/tar.gz/refs/tags/1.17.0",
+      "sha256": "a60274da5d8b8a7187e6c7e9ba5023334ed7bdd182535e93c4e96de8cf188377",
+      "source_root": "librime-1.17.0",
+      "license": "BSD-3-Clause",
+      "license_source": "LICENSE",
+      "license_file": "licenses/librime-BSD-3-Clause.txt",
+      "proof_status": "unproved third-party native dependency"
+    },
+    {
+      "name": "keyman-core",
+      "role": "portable core of permissively licensed Keyman input methods system; Jasper host integration pending",
+      "version": "18.0.255",
+      "commit": "02d7ffe6008dac8d2fc21df7f9d5522c6070cc39",
+      "repository": "https://github.com/keymanapp/keyman",
+      "archive": "dist/jasper-keyman-core-18.0.255.tgz",
+      "archive_provenance": "git archive --prefix=keyman-18.0.255/ COMMIT core common/include common/cpp resources/build LICENSE.md VERSION.md; gzip -n; upstream files unmodified; selected source subtree, not whole application",
+      "sha256": "d7fb0d9003e608a3fdd91083d59bab055e8b24399fb680a885abf6a57d5cf749",
+      "source_root": "keyman-18.0.255",
+      "license": "MIT; bundled dependencies and data require separate review",
+      "license_source": "LICENSE.md",
+      "license_file": "licenses/keyman-MIT.md",
+      "proof_status": "unproved third-party native dependency; source import only; no framework runtime integration accepted"
+    }
+  ]
+}

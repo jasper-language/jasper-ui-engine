@@ -1,0 +1,10 @@
+[package]
+name = "jasper-ui-native-activation-verification"
+version = "0.0.0"
+edition = "2021"
+publish = false
+[workspace]
+[dev-dependencies]
+proptest = { version = "=1.9.0", default-features = false, features = ["std"] }
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(kani)'] }

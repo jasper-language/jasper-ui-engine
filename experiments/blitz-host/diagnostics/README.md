@@ -1,0 +1,1 @@
+Archived private CLI fixture and its historical checks. Not a Cargo target; do not resume editor/IME projects from it. The active CLI consumes only the typed library. Original failure evidence remains under evidence/.

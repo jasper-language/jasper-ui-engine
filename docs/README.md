@@ -22,6 +22,8 @@
 | [dependencies.md](dependencies.md) | 依赖选型、许可证、锁定策略 |
 | [roadmap.md](roadmap.md) | v0.1 → v1 的阶段、验收与“会变”的部分 |
 | [status.md](status.md) | 已实现/未实现/未验证的逐项状态 |
+| [verification.md](verification.md) | 数学证明硬门槛、性质登记、执行与信任边界 |
+| [batch-boundaries.md](batch-boundaries.md) | 语义更新/绘制/传输及内置/自带宿主边界 |
 | [size.md](size.md) | release 体积基线（rlib / 示例 / strip） |
 
 ## 重要声明
@@ -29,3 +31,5 @@
 - 这是 **v0.1 原型**，用于宿主/图形界面集成实验；**API 会改，不是稳定 ABI**。
 - Native 引擎只负责底层执行；Jasper UI Framework、UI IR、Jasper ABI、Web 后端不在本仓库。
 - 未实现的能力必须显式报错或标注，不用空实现/固定结果冒充完成。
+
+- [UI 宿主资源槽准入](resource-admission.md)：单槽代际生命周期与认证/存储边界。

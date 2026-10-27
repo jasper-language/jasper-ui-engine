@@ -1,0 +1,74 @@
+{
+  "packages": 200,
+  "upstream_git": [
+    {
+      "name": "blitz-dom",
+      "source": "git+https://github.com/DioxusLabs/blitz?rev=52739472460824ec7f1624ab135c09a4bbc99219#52739472460824ec7f1624ab135c09a4bbc99219"
+    },
+    {
+      "name": "blitz-html",
+      "source": "git+https://github.com/DioxusLabs/blitz?rev=52739472460824ec7f1624ab135c09a4bbc99219#52739472460824ec7f1624ab135c09a4bbc99219"
+    },
+    {
+      "name": "blitz-traits",
+      "source": "git+https://github.com/DioxusLabs/blitz?rev=52739472460824ec7f1624ab135c09a4bbc99219#52739472460824ec7f1624ab135c09a4bbc99219"
+    },
+    {
+      "name": "debug_timer",
+      "source": "git+https://github.com/DioxusLabs/blitz?rev=52739472460824ec7f1624ab135c09a4bbc99219#52739472460824ec7f1624ab135c09a4bbc99219"
+    },
+    {
+      "name": "selectors",
+      "source": "git+https://github.com/DioxusLabs/stylo?rev=d6502e0002e9c40c43a0a4776f9e7eb93be360e3#d6502e0002e9c40c43a0a4776f9e7eb93be360e3"
+    },
+    {
+      "name": "servo_arc",
+      "source": "git+https://github.com/DioxusLabs/stylo?rev=d6502e0002e9c40c43a0a4776f9e7eb93be360e3#d6502e0002e9c40c43a0a4776f9e7eb93be360e3"
+    },
+    {
+      "name": "stylo",
+      "source": "git+https://github.com/DioxusLabs/stylo?rev=d6502e0002e9c40c43a0a4776f9e7eb93be360e3#d6502e0002e9c40c43a0a4776f9e7eb93be360e3"
+    },
+    {
+      "name": "stylo_atoms",
+      "source": "git+https://github.com/DioxusLabs/stylo?rev=d6502e0002e9c40c43a0a4776f9e7eb93be360e3#d6502e0002e9c40c43a0a4776f9e7eb93be360e3"
+    },
+    {
+      "name": "stylo_derive",
+      "source": "git+https://github.com/DioxusLabs/stylo?rev=d6502e0002e9c40c43a0a4776f9e7eb93be360e3#d6502e0002e9c40c43a0a4776f9e7eb93be360e3"
+    },
+    {
+      "name": "stylo_dom",
+      "source": "git+https://github.com/DioxusLabs/stylo?rev=d6502e0002e9c40c43a0a4776f9e7eb93be360e3#d6502e0002e9c40c43a0a4776f9e7eb93be360e3"
+    },
+    {
+      "name": "stylo_malloc_size_of",
+      "source": "git+https://github.com/DioxusLabs/stylo?rev=d6502e0002e9c40c43a0a4776f9e7eb93be360e3#d6502e0002e9c40c43a0a4776f9e7eb93be360e3"
+    },
+    {
+      "name": "stylo_static_prefs",
+      "source": "git+https://github.com/DioxusLabs/stylo?rev=d6502e0002e9c40c43a0a4776f9e7eb93be360e3#d6502e0002e9c40c43a0a4776f9e7eb93be360e3"
+    },
+    {
+      "name": "stylo_taffy",
+      "source": "git+https://github.com/DioxusLabs/blitz?rev=52739472460824ec7f1624ab135c09a4bbc99219#52739472460824ec7f1624ab135c09a4bbc99219"
+    },
+    {
+      "name": "stylo_traits",
+      "source": "git+https://github.com/DioxusLabs/stylo?rev=d6502e0002e9c40c43a0a4776f9e7eb93be360e3#d6502e0002e9c40c43a0a4776f9e7eb93be360e3"
+    },
+    {
+      "name": "taffy",
+      "source": "git+https://github.com/DioxusLabs/taffy?rev=802e497b69689e1c93be2d16e9d53a973971bcb2#802e497b69689e1c93be2d16e9d53a973971bcb2"
+    },
+    {
+      "name": "to_shmem",
+      "source": "git+https://github.com/DioxusLabs/stylo?rev=d6502e0002e9c40c43a0a4776f9e7eb93be360e3#d6502e0002e9c40c43a0a4776f9e7eb93be360e3"
+    },
+    {
+      "name": "to_shmem_derive",
+      "source": "git+https://github.com/DioxusLabs/stylo?rev=d6502e0002e9c40c43a0a4776f9e7eb93be360e3#d6502e0002e9c40c43a0a4776f9e7eb93be360e3"
+    }
+  ],
+  "policy": "resolved inventory only; licenses and host applicability not fully audited"
+}

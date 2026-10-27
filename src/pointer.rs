@@ -6,6 +6,7 @@ use std::collections::BTreeMap;
 use crate::hit_test::hit_test_path;
 use crate::input::{InputError, PointerEvent, PointerId, PointerPhase, PointerTracker};
 use crate::layout::LayoutTree;
+use crate::resource::ResourceGate;
 use crate::scene::NodeId;
 
 /// Result of routing one pointer sample.
@@ -19,6 +20,7 @@ pub struct PointerRoute {
     pub captured: bool,
 }
 
+// BEGIN VERIFIED POINTER ROUTER TYPE
 #[derive(Clone, Debug)]
 struct Capture {
     target: Option<NodeId>,
@@ -31,6 +33,7 @@ pub struct PointerRouter {
     tracker: PointerTracker,
     captures: BTreeMap<PointerId, Capture>,
 }
+// END VERIFIED POINTER ROUTER TYPE
 
 impl PointerRouter {
     pub fn new() -> Self {
@@ -110,43 +113,71 @@ impl PointerRouter {
         }
     }
 
-    pub fn has_capture(&self, pointer_id: PointerId) -> bool {
-        self.captures.contains_key(&pointer_id)
-    }
-
     pub fn active_count(&self) -> usize {
         self.tracker.active_count()
     }
 }
 
+// BEGIN VERIFIED CAPTURE QUERY KERNEL
+impl PointerRouter {
+    pub fn has_capture(&self, pointer_id: PointerId) -> bool {
+        self.captures.contains_key(&pointer_id)
+    }
+
+    /// Returns the original captured node, including when current hit testing differs.
+    /// 返回捕获时的原目标，不按当前命中结果重新归属。
+    /// None means absent capture or a capture that started outside all nodes.
+    /// None 表示没有捕获或捕获起始于所有节点之外；用 has_capture 区分。
+    pub fn captured_target(&self, pointer_id: PointerId) -> Option<NodeId> {
+        if let Some(capture) = self.captures.get(&pointer_id) {
+            capture.target
+        } else {
+            None
+        }
+    }
+}
+// END VERIFIED CAPTURE QUERY KERNEL
+
 /// Mouse hover transition.
+// BEGIN VERIFIED HOVER CHANGE TYPE
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum HoverChange {
     Enter(NodeId),
     Leave(NodeId),
 }
+// END VERIFIED HOVER CHANGE TYPE
 
 /// Tracks which node the mouse is over and emits enter/leave only on changes.
 ///
 /// The caller feeds [`PointerRoute::target`] from hover samples; this keeps
 /// per-frame mouse moves from producing redundant host work.
+// BEGIN VERIFIED HOVER STORAGE TYPE
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct HoverTracker {
     current: Option<NodeId>,
 }
+// END VERIFIED HOVER STORAGE TYPE
 
 impl HoverTracker {
     pub fn new() -> Self {
         Self::default()
     }
+}
 
+// BEGIN VERIFIED HOVER UPDATE KERNEL
+impl HoverTracker {
     pub fn hovered(&self) -> Option<NodeId> {
         self.current
     }
 
     /// Returns `Leave(old)` then `Enter(new)` when the target changes.
     pub fn update(&mut self, target: Option<NodeId>) -> Vec<HoverChange> {
-        if target == self.current {
+        let unchanged = match (target, self.current) {
+            (None, None) => true,
+            (Some(next), Some(previous)) => next.0 == previous.0,
+            _ => false,
+        };
+        if unchanged {
             return Vec::new();
         }
         let mut out = Vec::new();
@@ -165,6 +196,22 @@ impl HoverTracker {
         self.update(None)
     }
 }
+// END VERIFIED HOVER UPDATE KERNEL
+
+// BEGIN VERIFIED HOVER RETIRE KERNEL
+impl HoverTracker {
+    /// Host close: retire admission and return the real hover leave intent once.
+    /// 宿主关闭：永久封闭准入，并取回真实悬停离开意图。
+    /// The host pairs ownership and gates every input; delivery remains its responsibility.
+    /// 宿主负责配对归属、所有输入入口准入检查和意图投递。
+    /// This does not cancel pointer capture, presses, gestures or IME composition.
+    /// 此方法不取消指针捕获、按压、手势或输入法组合。
+    pub fn retire_hover(&mut self, gate: &mut ResourceGate) -> Vec<HoverChange> {
+        gate.retire();
+        self.clear()
+    }
+}
+// END VERIFIED HOVER RETIRE KERNEL
 
 #[cfg(test)]
 mod tests {
@@ -213,6 +260,49 @@ mod tests {
             position: Point::new(x, y),
             ..Default::default()
         }
+    }
+
+    #[test]
+    fn captured_target_retains_original_owner_until_cancel() {
+        let tree = layout();
+        let mut router = PointerRouter::new();
+        assert_eq!(router.captured_target(PointerId(1)), None);
+        router
+            .route(event(1, PointerPhase::Down, 15.0, 15.0), &tree)
+            .unwrap();
+        router
+            .route(event(1, PointerPhase::Move, 90.0, 90.0), &tree)
+            .unwrap();
+        assert_eq!(router.captured_target(PointerId(1)), Some(NodeId(2)));
+        router
+            .route(event(1, PointerPhase::Cancel, 90.0, 90.0), &tree)
+            .unwrap();
+        assert!(!router.has_capture(PointerId(1)));
+        assert_eq!(router.captured_target(PointerId(1)), None);
+        router
+            .route(event(2, PointerPhase::Down, -1.0, -1.0), &tree)
+            .unwrap();
+        assert!(router.has_capture(PointerId(2)));
+        assert_eq!(router.captured_target(PointerId(2)), None);
+    }
+
+    #[test]
+    fn host_retirement_returns_hover_leave_once() {
+        let mut hover = HoverTracker::new();
+        assert_eq!(
+            hover.update(Some(NodeId(2))),
+            vec![HoverChange::Enter(NodeId(2))]
+        );
+        let mut gate = ResourceGate::new(7, 42);
+        let key = gate.issue(7).unwrap();
+        assert_eq!(
+            hover.retire_hover(&mut gate),
+            vec![HoverChange::Leave(NodeId(2))]
+        );
+        assert_eq!(hover.hovered(), None);
+        assert!(hover.retire_hover(&mut gate).is_empty());
+        assert!(!gate.allows(7, key));
+        assert_eq!(gate.issue(7), None);
     }
 
     #[test]

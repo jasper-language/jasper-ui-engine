@@ -1,0 +1,629 @@
+{
+  "status": "candidate_not_accepted",
+  "source": "src/native_adapter/native_view.rs",
+  "source_sha256": "b479a83ec5f13f059c52b57e3e4e014bf82bf192091b8fdbb77fd9a1ee5b5401",
+  "own_methods": 47,
+  "whole_method_implementation_proofs_complete": 3,
+  "ordered_gates": [
+    "Verus+Z3",
+    "Proptest",
+    "Miri",
+    "cargo-fuzz",
+    "Kani",
+    "Loom applicability/real concurrency"
+  ],
+  "methods": [
+    {
+      "name": "new",
+      "proof_obligation": "No upstream identity escapes; caller-supplied authenticated owner/context binds this display; font bytes are injected. Upstream construction/resolve may fail or panic and is TCB.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic is not a gate substitute"
+    },
+    {
+      "name": "apply_display_snapshot_from_host",
+      "proof_obligation": "Rejected expected/next identity leaves backend and context unchanged; successful updates clear transient selection/preedit and adopt next context. Mutation/resolve panic outcome remains unspecified and must not be called atomic.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic is not a gate substitute"
+    },
+    {
+      "name": "set_preedit_from_host",
+      "proof_obligation": "Persistent UiCompositionSlot must accept exact originating token and live binding; owner context must match before native text mutation; cancelled/stale serial rejects without changing successor.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic is not a gate substitute"
+    },
+    {
+      "name": "set_selection_from_host",
+      "proof_obligation": "No mutation on failed identity/lease/boundary; sorted endpoints use real range predicate but anchor/focus direction preserved; root remains private.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic is not a gate substitute"
+    },
+    {
+      "name": "hit_display_text_from_host",
+      "proof_obligation": "Reject unauthorized/closed/nonfinite/out-of-viewport input; translate logical viewport point by current document scroll with finite/representability checks; return only matching-root UTF8 offset. Pinned upstream geometry is TCB; own float conversion proof pending.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic is not a gate substitute"
+    },
+    {
+      "name": "close_focus_from_host",
+      "proof_obligation": "Rejected close leaves successor binding/display unchanged; exact close revokes before clear; native panic rollback and external cancel ACK excluded.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic is not a gate substitute",
+      "native_focus_cleanup": "Now clears Blitz focus after binding closure; complete implementation proof still pending."
+    },
+    {
+      "name": "set_preedit_display",
+      "proof_obligation": "Closed slot rejects; no authoritative editor state; backend text node update/resolve remains TCB.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic is not a gate substitute"
+    },
+    {
+      "name": "set_appearance",
+      "proof_obligation": "Zero font size and closed slot reject before mutation; typed fields map to declared private properties; no backend strings escape.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic is not a gate substitute"
+    },
+    {
+      "name": "set_content_flow",
+      "proof_obligation": "Closed slot rejects; Row/Column and gap map exactly; no layout algorithm implemented.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic is not a gate substitute"
+    },
+    {
+      "name": "resize",
+      "proof_obligation": "Closed slot rejects; physical dimensions update while host scale/zoom/color scheme preserved; upstream resolve TCB.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic is not a gate substitute"
+    },
+    {
+      "name": "set_host_scale",
+      "proof_obligation": "Nonfinite/out-of-candidate-interval [1/64,64]/closed input rejects before mutation; viewport size and other fields preserved. Actual float bound implementation proof pending; not a claim of all upstream geometry safety.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic is not a gate substitute"
+    },
+    {
+      "name": "host_scale",
+      "proof_obligation": "Open slot reads current upstream scale; closed returns None.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic is not a gate substitute"
+    },
+    {
+      "name": "render_cpu",
+      "proof_obligation": "Checked output extent guards upstream u32 expression and caller output budget; closed rejected; scratch allocations/format and rendering remain TCB.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic is not a gate substitute"
+    },
+    {
+      "name": "viewport_size",
+      "proof_obligation": "Open slot reads host viewport dimensions; closed returns None.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic is not a gate substitute"
+    },
+    {
+      "name": "close",
+      "proof_obligation": "Delegates actual ViewSlot logical retirement; second close false; external threads/tasks and native destructor not proved.",
+      "implementation_proof": "proved for logical normal-return ownership/correlation retirement and metadata frame",
+      "ordered_acceptance": "complete for this logical scope only",
+      "evidence": "evidence/text-display-close-chain/report.json"
+    },
+    {
+      "name": "apply_component_update",
+      "proof_obligation": "Caller/context and expected UI sequence must match; rejected dispatch preserves sequence and backend; successful dispatch advances exactly once; exhaustion rejects before backend mutation. No claim of backend panic rollback.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic is not a gate substitute"
+    },
+    {
+      "name": "set_accessible_label",
+      "proof_obligation": "Closed slot rejects before mutation; Some maps exact label, None removes attribute; no OS accessibility implementation claimed.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete"
+    },
+    {
+      "name": "accessible_label",
+      "proof_obligation": "Borrowed exact label returned from live backend node, None after close/attribute removal; no reference escapes backend lifetime.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete"
+    },
+    {
+      "name": "component_version",
+      "proof_obligation": "Live view exposes independent UI update sequence; closed view returns None.",
+      "implementation_proof": "Exact getter proved with exact own field declaration and opaque third-party field types; UI-NATIVE-COMPONENT-VERSION-001, 26 verified including dependencies, two negative controls rejected.",
+      "ordered_acceptance": "Scoped six-stage evidence recorded; Loom not applicable with actual-method rationale. evidence/native-component-version-chain/report.json. Other native methods excluded."
+    },
+    {
+      "name": "selected_display_text_from_host",
+      "proof_obligation": "Return no text without matching view owner and live binding admission or after close; selected text content corresponds to current display selection under upstream extraction contract; no clipboard side effects.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete"
+    },
+    {
+      "name": "set_scroll_from_host",
+      "proof_obligation": "Reject invalid coordinates/identity/lease/closed view before viewport mutation; map admitted logical position exactly under upstream setter contract; host valid extent precondition explicit.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete"
+    },
+    {
+      "name": "scroll_position",
+      "proof_obligation": "Live view returns exact upstream logical scroll pair; closed returns None.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete"
+    },
+    {
+      "name": "begin_preedit_from_host",
+      "proof_obligation": "Live owner/binding required; return current accepted correlation or cancel stale prior correlation, clear its native display, then issue fresh serial. No serial reset or old pixels exposed before successor payload; failure/panic composition proof pending.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete"
+    },
+    {
+      "name": "cancel_preedit_from_host",
+      "proof_obligation": "Exact owned active token cancels before display clear; stale/foreign/closed cancellation preserves successor; no external service cancel ACK claimed.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete"
+    },
+    {
+      "name": "pointer_from_host",
+      "proof_obligation": "Owner/context and finite coordinate rejection before backend mutation; exact phase and coordinate mapping; backend effects are upstream TCB. Host capture and callback semantics remain pending.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native tests do not replace the six gates"
+    },
+    {
+      "name": "pointer_with_events_from_host",
+      "proof_obligation": "Owner/context/coordinate/closed rejection before callback; typed target projection and phase mapping; event reply reaches upstream state; callback panic/reentrancy semantics remain pending.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic only"
+    },
+    {
+      "name": "focus_from_host",
+      "proof_obligation": "Owner/context and active lease before focus mutation; idempotent target focus; no OS focus request.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic only"
+    },
+    {
+      "name": "key_from_host",
+      "proof_obligation": "Admission plus exact native focus before dispatch/callback; key/code and down/up mapping; text None prevents direct commit path; callback effects/panic pending.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic only"
+    },
+    {
+      "name": "focus_from_host_with_events",
+      "proof_obligation": "Admitted owner before mutation/callback; notify only native text-view focus transition after successful projection/cleanup, with originating ticket. Callback panic/reentrancy and implementation composition remain pending.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic only"
+    },
+    {
+      "name": "close_focus_from_host_with_events",
+      "proof_obligation": "Admitted owner before mutation/callback; notify only native text-view focus transition after successful projection/cleanup, with originating ticket. Callback panic/reentrancy and implementation composition remain pending.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic only"
+    },
+    {
+      "name": "host_context_matches",
+      "proof_obligation": "Exact native session/context projection to existing five-dimensional owner predicate; false has no side effects.",
+      "implementation_proof": "proved exact production method with actual root predicate",
+      "ordered_acceptance": "scoped complete; no backend access/authentication/lifecycle proof",
+      "evidence": "evidence/native-host-context-chain/report.json"
+    },
+    {
+      "name": "pointer_with_capture_from_host",
+      "proof_obligation": "Owner and coordinate gate before callback/backend mutation; only bridge-recorded Jasper part overrides Framework target; no backend ID escapes; upstream default targeting excluded.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic only"
+    },
+    {
+      "name": "new_button",
+      "proof_obligation": "Typed button factory delegates to native constructor with no caller-supplied markup or backend type.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic only"
+    },
+    {
+      "name": "new_with_kind",
+      "proof_obligation": "Exact typed element construction, injected fonts/resources and owner context; backend construction/resolve in third-party boundary, own lifecycle mapping unproved.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic only"
+    },
+    {
+      "name": "set_button_caption",
+      "proof_obligation": "Only native button caption mutates; reject text views unchanged; no external text service mutation; caller update sequence commits only on success.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic only"
+    },
+    {
+      "name": "set_button_disabled",
+      "proof_obligation": "Button-only versioned disabled state, external text-view rejection unchanged, native focus cleanup without external binding revocation; callback/lifecycle composition remains pending.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic only"
+    },
+    {
+      "name": "button_pointer_from_host",
+      "proof_obligation": "Admitted owner and native button kind before event dispatch; activation callback receives own context only; reject foreign/text/closed view.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic only"
+    },
+    {
+      "name": "dispatch_pointer_from_host",
+      "proof_obligation": "Shared finite-coordinate and owner gate before Blitz event dispatch; callback/activation target projection and replies compose correctly; full implementation proof pending.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic only"
+    },
+    {
+      "name": "button_enter_from_host",
+      "proof_obligation": "Native button kind, owner/current focus, disabled state and provisional key-policy gate precede activation; no IME commit or text mutation; callback composition pending.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic only"
+    },
+    {
+      "name": "semantics_from_host",
+      "proof_obligation": "Owner gate before text/metadata reads; own role/name/disabled/native-focus/version mapping; empty label distinct from absent; no backend identity escapes.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic only"
+    },
+    {
+      "name": "activate_from_host",
+      "proof_obligation": "Admitted live enabled button semantics and matching component version precede callback; no key/pointer synthesis; host authorization and replay policy remain external.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic only"
+    },
+    {
+      "name": "apply_component_update_with_focus_events",
+      "proof_obligation": "Live owner and active focus binding precede versioned mutation; rejected updates emit no event; actual native focus transition reported exactly once without revoking external service lease. Callback panic composition pending.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic only"
+    },
+    {
+      "name": "apply_component_batch",
+      "proof_obligation": "Entire preflight precedes native mutations; shared mapper applies declared order, one upstream resolve and one version successor. No backend panic rollback. Full loop/composition proof pending.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic only"
+    },
+    {
+      "name": "apply_component_value",
+      "proof_obligation": "Shared private typed native mapping; only caller preflight controls batch mutation; setter outcome and backend exceptions require implementation composition proof.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic only"
+    },
+    {
+      "name": "apply_component_batch_with_focus_events",
+      "proof_obligation": "Admitted focus owner gate before full frame; no notifications on rejection; one notification for final actual native focus transition; no service lease revocation or panic rollback.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic only"
+    },
+    {
+      "name": "dispatch_pointer_modifiers_from_host",
+      "proof_obligation": "Owner/context and finite coordinates gate before dispatch; common modifier values retained in native sample and Framework projection; capture and backend side effects require explicit composition proof.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic is not a gate substitute"
+    },
+    {
+      "name": "cancel_capture_from_host",
+      "proof_obligation": "Reject different owner/target/generation/document before callbacks or backend/host state changes; exact revision emits Cancel once, successor cleanup suppresses stale callbacks; closed same-lineage view admits host release.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic is not a gate substitute"
+    }
+  ],
+  "scoped_dependencies": [
+    "UI-VIEW-OWNER-001",
+    "UI-SNAPSHOT-ADMISSION-001",
+    "UI-INPUT-PAYLOAD-001",
+    "UI-COMPOSITION-RANGE-001",
+    "UI-VIEW-LIFETIME-001",
+    "UI-VIEW-READ-001",
+    "UI-VIEW-WRITE-001",
+    "UI-UPDATE-NEXT-001"
+  ],
+  "trust_boundary": [
+    "pinned Blitz mutator/style/resolve/layout/selection",
+    "AnyRender/Vello CPU allocation and paint",
+    "injected font parser and shaping",
+    "host authentication, unique generations and external revision identities"
+  ],
+  "next_priority": "implementation-level composition specifications for existing adapter; do not count another native diagnostic or this inventory as feature completion",
+  "test_module_excluded_from_production_method_count": "cfg(test) native_view::tests",
+  "scoped_dependency_evidence": {
+    "composition-current-token": "evidence/composition-current-token-chain/report.json",
+    "native-activation-admission": "evidence/native-activation-chain/report.json",
+    "component-update-support": "evidence/component-update-support-chain/report.json",
+    "scene-work-capacity": "evidence/scene-work-capacity-chain/report.json",
+    "scene-update-admission": "evidence/scene-update-admission-chain/report.json",
+    "source-insert-index": "evidence/source-insert-index-chain/report.json"
+  },
+  "proof_correspondence_check": "python3 scripts/check-blitz-proof-mapping.py (metadata only; not acceptance)",
+  "native_diagnostics": {
+    "appearance_input_state": "evidence/blitz-appearance-input-state-pending/report.json",
+    "pointer_events": "evidence/blitz-pointer-events-pending/report.json",
+    "key_modifiers": "evidence/blitz-key-modifiers-pending/report.json",
+    "focus_notifications": "evidence/blitz-focus-notifications-pending/report.json",
+    "pointer_coordinates": "evidence/blitz-pointer-coordinates-pending/report.json",
+    "typed_button": "evidence/blitz-typed-button-pending/report.json",
+    "button_disabled": "evidence/blitz-button-disabled-pending/report.json",
+    "button_activation": "evidence/blitz-button-activation-pending/report.json",
+    "button_enter": "evidence/blitz-button-enter-pending/report.json",
+    "semantic_action": "evidence/blitz-semantic-action-pending/report.json",
+    "component_focus": "evidence/blitz-update-focus-pending/report.json",
+    "capture_activation": "evidence/blitz-capture-activation-pending/report.json",
+    "component_frame": "evidence/blitz-component-frame-pending/report.json",
+    "component_frame_focus": "evidence/blitz-component-frame-focus-pending/report.json",
+    "frame_single_resolve": "evidence/blitz-frame-single-resolve-pending/report.json",
+    "component_preflight_proof": "evidence/blitz-frame-preflight-proof-pending/report.json",
+    "component_contract": "evidence/blitz-component-contract-pending/report.json",
+    "font_order": "evidence/blitz-font-order-pending/report.json",
+    "existing_scene": "evidence/blitz-existing-scene-pending/report.json",
+    "scene_patches": "evidence/blitz-scene-patches-pending/report.json",
+    "scene_semantics": "evidence/blitz-scene-semantics-pending/report.json",
+    "scene_host_metrics": "evidence/blitz-scene-host-metrics-pending/report.json",
+    "scene_prototype": "evidence/blitz-scene-prototype-pending/report.json",
+    "scene_events": "evidence/blitz-scene-events-pending/report.json",
+    "scene_activation_owner": "evidence/blitz-scene-activation-owner-pending/report.json",
+    "scene_focus": "evidence/blitz-scene-focus-pending/report.json",
+    "scene_focus_visibility": "evidence/blitz-scene-focus-visibility-pending/report.json",
+    "scene_focus_events": "evidence/blitz-scene-focus-events-pending/report.json",
+    "scene_retirement": "evidence/blitz-scene-retirement-pending/report.json",
+    "scene_leaf_remove": "evidence/blitz-scene-remove-pending/report.json",
+    "scene_subtree_remove": "evidence/blitz-scene-subtree-remove-pending/report.json",
+    "scene_single_insert": "evidence/blitz-scene-insert-pending/report.json",
+    "scene_mixed_frame": "evidence/blitz-scene-mixed-frame-pending/report.json",
+    "host_software_surface": "evidence/blitz-host-software-surface-pending/report.json",
+    "scene_semantic_action": "evidence/blitz-scene-semantic-action-pending/report.json",
+    "scene_viewport_scroll": "evidence/blitz-scene-viewport-scroll-pending/report.json",
+    "scene_prototype_migration": "evidence/blitz-scene-prototype-migration-pending/report.json",
+    "scene_semantic_hierarchy": "evidence/blitz-scene-semantic-hierarchy-pending/report.json",
+    "ancestry_bounded": "evidence/blitz-ancestry-bounded-pending/report.json",
+    "typed_host_library": "evidence/blitz-typed-library-pending/report.json",
+    "public_focus_lifecycle": "evidence/blitz-public-focus-lifecycle-pending/report.json",
+    "public_prototype": "evidence/blitz-public-prototype-pending/report.json",
+    "public_pointer": "evidence/blitz-public-pointer-pending/report.json",
+    "public_text_client": "evidence/blitz-public-text-client-pending/report.json",
+    "public_text_focus_key": "evidence/blitz-public-text-focus-key-pending/report.json",
+    "public_update_frame": "evidence/blitz-public-update-frame-pending/report.json",
+    "public_text_capture": "evidence/blitz-public-capture-pending/report.json",
+    "public_text_viewport": "evidence/blitz-public-text-viewport-pending/report.json",
+    "public_text_hit": "evidence/blitz-public-text-hit-pending/report.json",
+    "public_client_prototype": "evidence/blitz-public-client-prototype-pending/report.json",
+    "source_semantics": "evidence/blitz-source-semantics-pending/report.json",
+    "semantic_prototype": "evidence/blitz-semantic-prototype-pending/report.json",
+    "semantic_topology": "evidence/blitz-semantic-topology-pending/report.json",
+    "semantic_boundary": "evidence/blitz-semantic-boundary-pending/report.json",
+    "hidden_pointer_activation": "evidence/blitz-hidden-pointer-activation-pending/report.json",
+    "semantic_role_updates": "evidence/blitz-semantic-role-update-pending/report.json",
+    "semantic_native_attributes": "evidence/blitz-semantic-native-attributes-pending/report.json",
+    "snapshot_identity": "evidence/scene-snapshot-identity-pending/native.log",
+    "public_scene_identity": "evidence/blitz-public-scene-identity-pending/report.json",
+    "public_scene_focus_query": "evidence/blitz-public-scene-focus-query-pending/report.json",
+    "initial_tab": "evidence/blitz-initial-tab-pending/report.json",
+    "initial_tab_prototype": "evidence/blitz-initial-tab-prototype-pending/report.json",
+    "initial_tab_composition": "evidence/blitz-initial-tab-composition-pending/report.json",
+    "current_public_boundary": "evidence/blitz-current-public-boundary-pending/report.json",
+    "shared_key_conversion": "evidence/blitz-shared-key-conversion-pending/report.json",
+    "key_conversion_metadata": "evidence/blitz-key-conversion-metadata-pending/report.json",
+    "scene_pointer_buttons": "evidence/blitz-scene-pointer-buttons-pending/report.json",
+    "pointer_button_prototype": "evidence/blitz-pointer-button-prototype-pending/report.json",
+    "source_box_sizing": "evidence/blitz-source-box-sizing-pending/report.json",
+    "source_root_viewport": "evidence/blitz-source-root-viewport-pending/report.json",
+    "root_layout_lifecycle": "evidence/blitz-root-layout-lifecycle-pending/report.json",
+    "reused_pressed_node": "evidence/blitz-reused-pressed-node-pending/report.json",
+    "scene_cancelled_up": "evidence/blitz-scene-cancelled-up-pending/report.json",
+    "text_cancel_press_identity": "evidence/blitz-text-cancel-press-identity-pending/report.json",
+    "scene_cancel_prototype": "evidence/blitz-scene-cancel-prototype-pending/report.json",
+    "scene_duplicate_up": "evidence/blitz-scene-duplicate-up-pending/report.json",
+    "terminal_press_prototype": "evidence/blitz-terminal-press-prototype-pending/report.json",
+    "scene_deactivation": "evidence/blitz-scene-deactivation-pending/report.json",
+    "deactivation_prototype": "evidence/blitz-deactivation-prototype-pending/report.json",
+    "unmapped_up_default": "evidence/blitz-unmapped-up-default-pending/report.json",
+    "lifecycle_public_boundary": "evidence/blitz-lifecycle-public-boundary-pending/report.json",
+    "deactivation_hover": "evidence/blitz-deactivation-hover-pending/report.json",
+    "public_node_bounds": "evidence/blitz-public-node-bounds-pending/report.json",
+    "node_bounds_prototype": "evidence/blitz-node-bounds-prototype-pending/report.json",
+    "node_bounds_public_boundary": "evidence/blitz-node-bounds-public-boundary-pending/report.json",
+    "nested_scroll_bounds": "evidence/blitz-nested-scroll-bounds-pending/report.json",
+    "scroll_bounds_recovery": "evidence/blitz-scroll-bounds-recovery-pending/report.json",
+    "visual_frame_state": "evidence/blitz-visual-frame-state-pending/report.json",
+    "text_button_terminal_up": "evidence/blitz-text-button-terminal-up-pending/report.json",
+    "text_terminal_up_routing": "evidence/blitz-text-terminal-up-routing-pending/report.json",
+    "framework_update_contract": "evidence/blitz-framework-update-contract-pending/report.json"
+  },
+  "whole_method_six_stage_acceptance_complete": 3,
+  "additional_candidate_modules": {
+    "src/native_adapter/pointer_host.rs": {
+      "source_sha256": "3bb77fd2e8e9e3ec785d0c52b1d297a6bfb9859ed57329ec983b2dd1889f1fc2",
+      "own_methods": 16,
+      "implementation_proofs_complete": 0,
+      "six_stage_acceptance_complete": 0,
+      "evidence": "evidence/blitz-idle-focus-owner-pending/report.json",
+      "scope": "Client capture lifecycle and separate typed pointer/activation sinks; count excludes two external host trait declarations; full verification pending",
+      "admission_order_obligation": "Reject wrong view/session/context before binding allocation and any host capture side effect; implementation proof pending",
+      "release_delivery_obligation": "Native Up rejection must not be reported as successful merely because host release could succeed; retain grant for explicit cancel/retirement. Formal composition proof pending.",
+      "focus_owner_obligation": "Bridge session and view owner/context admission must precede focus closure even when no pointer grant exists; no foreign lease revocation or notification.",
+      "latest_native_diagnostic": "evidence/blitz-capture-cancel-owner-pending/report.json"
+    },
+    "src/native_adapter/native_events.rs": {
+      "source_sha256": "81471ce2c7607aadeb9c34099bc7eb40f710de7b0dad185b0dc2c36821b1c320",
+      "own_methods": 1,
+      "implementation_proofs_complete": 0,
+      "six_stage_acceptance_complete": 0,
+      "scope": "FrameworkEventHandler::handle_event, typed projection and response mapping",
+      "evidence": "evidence/blitz-capture-activation-pending/report.json",
+      "latest_native_diagnostic": "evidence/blitz-text-button-terminal-up-pending/report.json"
+    },
+    "src/native_adapter/native_keys.rs": {
+      "source_sha256": "bff26d87cbe105c1bdd0bb460f16a45e5209705f654b2315b01ae51d8a6841c0",
+      "own_methods": 2,
+      "implementation_proofs_complete": 0,
+      "six_stage_acceptance_complete": 0,
+      "scope": "FrameworkKeyHandler::handle_event and shared private native_command_key conversion; full implementation acceptance pending",
+      "evidence": "evidence/blitz-key-modifiers-pending/report.json",
+      "latest_native_diagnostic": "evidence/blitz-key-conversion-metadata-pending/report.json"
+    },
+    "src/native_adapter/native_semantics.rs": {
+      "source_sha256": "30961093169f79f4e155fa5e2c16006f73b462b81231cf8019df02f2e5f68d46",
+      "own_methods": 1,
+      "status": "Exact eligibility predicate proved; own DTO declarations; no OS bridge",
+      "evidence": "evidence/native-activation-chain/report.json",
+      "implementation_proofs_complete": 1,
+      "six_stage_acceptance_complete": 1
+    },
+    "src/native_adapter/component_contract.rs": {
+      "source_sha256": "508ed84d90d225c6c3aa787271f1f0c33bcff1f600447930715ab07f21d9437d",
+      "own_methods": 1,
+      "implementation_proofs_complete": 1,
+      "six_stage_acceptance_complete": 1,
+      "scope": "Exact own update support predicate and own declarations; module private, crate-limited re-export",
+      "evidence": "evidence/component-update-support-chain/report.json"
+    },
+    "src/native_adapter/native_fonts.rs": {
+      "source_sha256": "c2fdc9d2261f5a9edc34d98393a141d05ae52c598df8b0fc138c35c2b1ed8020",
+      "own_methods": 1,
+      "implementation_proofs_complete": 0,
+      "six_stage_acceptance_complete": 0,
+      "scope": "Deterministic injected collection generic-family configuration using upstream APIs; sorting/collection/constructor composition proof pending",
+      "evidence": "evidence/blitz-font-order-pending/report.json"
+    },
+    "src/native_adapter/native_scene.rs": {
+      "source_sha256": "fb132734f31640cff7255729db15efcb1381d7b68a53f5ff625ff27bf1569747",
+      "own_methods": 41,
+      "implementation_proofs_complete": 12,
+      "six_stage_acceptance_complete": 10,
+      "scope": "Existing Scene/patch native mapping including per-node source scroll; owner-gated semantic metadata; OS bridge and full implementation proof pending",
+      "evidence": "evidence/scene-work-capacity-chain/report.json",
+      "complete_scope": "scene_work_fits, accepts_scene_update, source_insert_index, native frame orchestration, native DPI-scale bit admission, native host-surface orchestration and close logical owner/slot retirement only; native tree/focus/mutation methods unaccepted; snapshot_identity stored metadata projection accepted separately; semantic_role_update_preserves_tag predicate accepted separately",
+      "latest_native_diagnostic": "evidence/native-host-surface-orchestration-chain/report.json",
+      "ancestry_stage1": "evidence/blitz-ancestry-proof-capability/report.json",
+      "ancestry_termination_only": "evidence/blitz-ancestry-bounded-pending/report.json",
+      "ancestry_functional_stage1": "evidence/blitz-ancestry-functional-pending/report.json",
+      "ancestry_conditional_functional": "evidence/blitz-ancestry-key-model-pending/report.json",
+      "ancestry_functional_stage1_latest": "evidence/blitz-node-id-comparison-pending/report.json",
+      "ancestry_ordered_acceptance": "evidence/blitz-ancestry-chain/report.json",
+      "ancestry_kani_retry": "evidence/blitz-ancestry-kani-direct-pending/report.json",
+      "close_proof_evidence": "evidence/scene-host-close-chain/report.json",
+      "visibility_stage1": "evidence/blitz-scene-visibility-bounded-pending/report.json",
+      "visibility_ordered_acceptance": "evidence/native-map-ordered-replay/report.json",
+      "hidden_ancestry_stage1": "evidence/blitz-hidden-ancestry-proof-pending/report.json",
+      "hidden_ancestry_ordered_acceptance": "evidence/native-map-ordered-replay/report.json",
+      "semantic_update_obligation": "Typed semantic updates preflight whole frame and stable native tag, clear prior role/attributes, update focus participation; full implementation proof pending.",
+      "snapshot_identity_stage1": "evidence/scene-snapshot-identity-kernel/report.json",
+      "snapshot_identity_ordered_acceptance": "evidence/scene-snapshot-identity-chain/report.json",
+      "semantic_tag_stage1": "evidence/semantic-role-tag-kernel/report.json",
+      "semantic_tag_native_diagnostic": "evidence/blitz-semantic-tag-integration-pending/native.log",
+      "semantic_tag_ordered_acceptance": "evidence/semantic-role-native-class-chain/report.json",
+      "named_additional_scoped_acceptance": {
+        "source_visible": "read-only stored-map bounded walk; scoped ordered acceptance complete",
+        "source_hidden_ancestry": "read-only accumulated hiding walk; scoped ordered acceptance complete",
+        "admits_native_dpi_scale_bits": "all f32 bit patterns correspond exactly to finite inclusive [1/64,64] admission; scoped ordered acceptance complete",
+        "orchestrate_native_host_surface": "surface admission precedes the renderer; exact packed active rows are copied while host padding is preserved; scoped ordered acceptance complete"
+      },
+      "ancestry_ordered_acceptance_latest": "evidence/native-subtree-ordered-replay/report.json",
+      "ancestry_ordered_acceptance_status": "incomplete: SAT memory exhaustion under fixed3G (default/object8), Z3 SMT conversion map::at/status6; all original inputs and checks retained",
+      "latest_read_only_map_acceptance": "evidence/native-map-ordered-replay/report.json",
+      "native_dpi_scale_ordered_acceptance": "evidence/native-dpi-scale-admission-chain/report.json",
+      "native_host_surface_ordered_acceptance": "evidence/native-host-surface-orchestration-chain/report.json"
+    },
+    "src/native_adapter/scene_events.rs": {
+      "source_sha256": "c004b0dee8cf221e8b32d7b92c49c9e68377fda8fe0ca20317a84ec161a5bffb",
+      "own_methods": 3,
+      "implementation_proofs_complete": 0,
+      "six_stage_acceptance_complete": 0,
+      "scope": "SceneEventHandler native target chain to own NodeId/version projection, button activation and reply mapping; not platform capture; SceneKeyHandler projects admitted native command keys and callback reply",
+      "evidence": "evidence/blitz-scene-activation-owner-pending/report.json",
+      "latest_native_diagnostic": "evidence/blitz-reused-pressed-node-pending/report.json"
+    },
+    "src/native_adapter/cpu_budget.rs": {
+      "source_sha256": "52ce83cfc331dbfeb1bb71fbfd9709df4425838ddfdf5b7f48b74a97b359fa1c",
+      "own_methods": 1,
+      "implementation_proofs_complete": 1,
+      "six_stage_acceptance_complete": 1,
+      "scope": "Shared CPU packed-frame numeric admission only; not upstream scratch/allocator or rendering proof",
+      "evidence": "evidence/cpu-frame-bytes-chain/report.json"
+    },
+    "src/native_adapter/capture_policy.rs": {
+      "source_sha256": "e8d7e13d69b77f1d373cc2f7aa47d28872fbbab245b94d9b6d4349742edc6f8b",
+      "own_methods": 1,
+      "implementation_proofs_complete": 1,
+      "six_stage_acceptance_complete": 1,
+      "scope": "Cancellation route decision only; native/host effects excluded",
+      "evidence": "evidence/capture-cancel-policy-chain/report.json"
+    },
+    "src/native_adapter/update_contract.rs": {
+      "source_sha256": "b9c73ac1d2ad1047653d87bba58f75209f1171655691815994ac31336e76b150",
+      "own_methods": 0,
+      "implementation_proofs_complete": 0,
+      "six_stage_acceptance_complete": 0,
+      "scope": "Borrowed declaration only; host/Signal/runtime-free payload; actual consumer wrapper and full mutation path pending acceptance",
+      "evidence": "evidence/blitz-framework-update-contract-pending/report.json"
+    },
+    "src/native_adapter/facade.rs": {
+      "source_sha256": "03fdf2f52e687ca731f67b3c0e4bf15c7768134425aadcaf40114f0cf59258ed",
+      "own_methods": 51,
+      "implementation_proofs_complete": 4,
+      "six_stage_acceptance_complete": 4,
+      "scope": "Typed embedding-host library facade; application component semantics remain Scene/ScenePatch values, backend modules private",
+      "evidence": "evidence/blitz-typed-library-pending/report.json",
+      "latest_native_diagnostic": "evidence/blitz-native-backend-submit-pending/report.json",
+      "complete_scope": "TextDisplayView::update_version and close; SceneHostView::close and snapshot_identity logical projection only; other 47 facade methods pending",
+      "proof_evidence": "evidence/text-display-version-chain/report.json",
+      "close_proof_evidence": "evidence/text-display-close-chain/report.json",
+      "scene_close_proof_evidence": "evidence/scene-host-close-chain/report.json",
+      "scene_identity_evidence": "evidence/scene-host-identity-chain/report.json"
+    },
+    "experiments/blitz-host/src/lib.rs": {
+      "source_sha256": "87eeea3acf25aaa4dda6df849a2a4457fca9e0fcaada21dd2729d92431af1d7d",
+      "own_methods": 0,
+      "implementation_proofs_complete": 0,
+      "six_stage_acceptance_complete": 0,
+      "scope": "Consumer-only re-export of root native facade; no adapter modules or own runtime methods"
+    }
+  },
+  "six_stage_complete_scope": "component_version and host_context_matches read-only projections; close logical normal-return retirement only; not whole native adapter acceptance",
+  "unresolved_correctness": [],
+  "native_close_logical_scope": "evidence/text-display-close-chain/report.json",
+  "root_native_entry": {
+    "status": "candidate_not_accepted",
+    "feature": "native-blitz-pending",
+    "cpu_feature": "native-blitz-cpu-pending",
+    "entry": "jasper_ui_engine::engine::Engine",
+    "shared_facade": "src/native_adapter/facade.rs",
+    "acceptance": "Existing scoped source proofs follow exact bodies; root wiring/native mutation/whole entry not accepted",
+    "evidence": "evidence/blitz-root-engine-entry-pending/report.json",
+    "prototype_migration_evidence": "evidence/blitz-prototype-root-migration-pending/report.json",
+    "backend_submission_evidence": "evidence/blitz-native-backend-submit-pending/report.json",
+    "new_backend_method_obligations": {
+      "RenderBackend::submit_rgba8": "Default Unsupported result and no-presentation sequencing accepted in the scoped submission chain",
+      "HeadlessBackend::submit_rgba8": "Delegates to the scoped accepted submit_native_pixels forwarding helper and accepted frame-state import kernel",
+      "submit_native_frame": "Exact synchronous submit→conditional present sequencing and error-variant propagation accepted; backend internals excluded",
+      "NativeScene::render_to_backend": "Exact orchestration seam accepts owner/version/open/extent/budget before one renderer call, checks packed length, then uses accepted submit_native_frame sequencing; third-party renderer correctness remains explicit TCB",
+      "HeadlessBackend::import_native_frame": "Scoped logical frame-state theorem and ordered validation complete; see evidence/native-backend-frame-chain/report.json"
+    },
+    "backend_frame_import_acceptance": "evidence/native-backend-frame-chain/report.json",
+    "backend_submission_order_acceptance": "evidence/native-backend-submission-chain/report.json",
+    "headless_backend_forwarding_acceptance": "evidence/native-headless-forwarding-chain/report.json",
+    "native_frame_orchestration_acceptance": "evidence/native-frame-orchestration-chain/report.json",
+    "source_directory": "src/native_adapter",
+    "source_relocation_evidence": "evidence/blitz-native-source-migration/report.json",
+    "first_candidate_alias": "jasper_ui_engine::engine::BlitzEngine",
+    "legacy_entry": "jasper_ui_engine::engine::LegacyEngine",
+    "native_default_feature_enabled": false,
+    "implicit_legacy_Engine_fallback": false,
+    "canonical_entry_evidence": "evidence/blitz-canonical-engine-migration/report.json"
+  },
+  "root_hello_example_migration": {
+    "status": "candidate_not_accepted",
+    "source": "examples/hello.rs",
+    "evidence": "evidence/blitz-root-hello-migration/report.json",
+    "remaining": "example orchestration ordered acceptance, remaining callers, default Engine migration"
+  },
+  "root_window_example_migration": {
+    "status": "candidate_not_accepted",
+    "source": "examples/window.rs",
+    "scope": "root native CPU frame, explicit host font, physical viewport and DPI, host surface presentation and suspension",
+    "remaining": [
+      "ordered implementation acceptance and actual VM window execution",
+      "real display service unavailable in restricted VM",
+      "six-stage acceptance for example orchestration",
+      "native input forwarding and external capture not implemented by window sample"
+    ],
+    "evidence": "evidence/blitz-root-window-migration/report.json"
+  },
+  "root_pointer_example_migration": {
+    "status": "candidate_not_accepted",
+    "source": "examples/pointer.rs",
+    "legacy_compatibility": "examples/legacy_pointer.rs",
+    "evidence": "evidence/blitz-root-pointer-migration/report.json",
+    "remaining": "six-stage example orchestration acceptance and full interaction/host capture migration"
+  }
+}

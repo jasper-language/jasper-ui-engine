@@ -1,0 +1,27 @@
+[package]
+name = "jasper-ui-skia-cpu-probe"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# Integration experiment only; not part of the engine dependency graph.
+# 仅供接入实验，不进入引擎依赖图。
+[dependencies]
+skia-safe = { version = "=0.153.3", features = ["textlayout"] }
+jasper-ui-engine = { path = "../..", default-features = false }
+
+[[bin]]
+name = "skia-native-smoke"
+path = "src/main.rs"
+
+[[bin]]
+name = "skia-engine-frame"
+path = "src/engine_frame.rs"
+
+[[bin]]
+name = "skia-text-paragraph"
+path = "src/text_paragraph.rs"
+
+[[bin]]
+name = "skia-scene-text"
+path = "src/scene_text.rs"

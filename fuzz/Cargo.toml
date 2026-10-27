@@ -1,0 +1,27 @@
+[package]
+name = "jasper-ui-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+jasper-ui-engine = { path = "..", default-features = false }
+jasper-ui-read-verification = { path = "../verification/read-boundary" }
+
+[[bin]]
+name = "read_boundary"
+path = "fuzz_targets/read_boundary.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "batch_decode"
+path = "fuzz_targets/batch_decode.rs"
+test = false
+doc = false
+bench = false

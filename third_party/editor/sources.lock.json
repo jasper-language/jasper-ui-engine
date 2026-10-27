@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "dependencies": [
+    {
+      "name": "scintilla",
+      "version": "5.6.7",
+      "archive": "dist/scintilla567.tgz",
+      "url": "https://www.scintilla.org/scintilla567.tgz",
+      "sha256": "19e4476706750056f86ca70974810e4a5b08e73477e13f7d9fae78243606f6a7",
+      "source_root": "scintilla",
+      "license_file": "License-Scintilla.txt",
+      "proof_status": "unproved third-party C++ trusted dependency"
+    },
+    {
+      "name": "lexilla",
+      "version": "5.5.4",
+      "archive": "dist/lexilla554.tgz",
+      "url": "https://www.scintilla.org/lexilla554.tgz",
+      "sha256": "fcd9ef74236a12359d1039827c93dbf827aa476c46f9fd6eef60bb96db1af2f6",
+      "source_root": "lexilla",
+      "license_file": "License-Lexilla.txt",
+      "proof_status": "unproved third-party C++ trusted dependency"
+    }
+  ]
+}

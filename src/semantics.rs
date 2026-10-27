@@ -5,6 +5,7 @@ use crate::input::{KeyEvent, KeyPhase};
 use crate::scene::{Node, NodeId, NodeKind, Scene};
 
 /// Coarse accessibility role. Jasper UI may add roles later; unknown values stay explicit.
+// BEGIN VERIFIED ROLE TYPE
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Role {
     #[default]
@@ -26,8 +27,10 @@ pub enum Role {
     ScrollView,
     Unknown,
 }
+// END VERIFIED ROLE TYPE
 
 /// Semantics supplied by the Jasper UI layer for one node.
+// BEGIN VERIFIED SCENE SEMANTICS TYPE
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Semantics {
     pub role: Role,
@@ -38,6 +41,7 @@ pub struct Semantics {
     pub focusable: bool,
     pub hidden: bool,
 }
+// END VERIFIED SCENE SEMANTICS TYPE
 
 impl Semantics {
     pub fn role(mut self, role: Role) -> Self {
@@ -158,11 +162,13 @@ fn collect_focusables(node: &SemanticsNode, out: &mut Vec<NodeId>) {
 }
 
 /// Focus order and current focus for one scene snapshot.
+// BEGIN VERIFIED FOCUS STORAGE TYPE
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct FocusManager {
     order: Vec<NodeId>,
     focused: Option<NodeId>,
 }
+// END VERIFIED FOCUS STORAGE TYPE
 
 impl FocusManager {
     pub fn new(tree: &SemanticsTree) -> Self {
@@ -170,27 +176,6 @@ impl FocusManager {
             order: tree.focusables(),
             focused: None,
         }
-    }
-
-    pub fn order(&self) -> &[NodeId] {
-        &self.order
-    }
-
-    pub fn focused(&self) -> Option<NodeId> {
-        self.focused
-    }
-
-    pub fn focus(&mut self, node_id: NodeId) -> Result<(), FocusError> {
-        if self.order.contains(&node_id) {
-            self.focused = Some(node_id);
-            Ok(())
-        } else {
-            Err(FocusError::NotFocusable(node_id))
-        }
-    }
-
-    pub fn blur(&mut self) {
-        self.focused = None;
     }
 
     pub fn focus_next(&mut self) -> Option<NodeId> {
@@ -234,10 +219,12 @@ impl FocusManager {
 }
 
 /// Focus failures.
+// BEGIN VERIFIED FOCUS ERROR TYPE
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum FocusError {
     NotFocusable(NodeId),
 }
+// END VERIFIED FOCUS ERROR TYPE
 
 #[cfg(test)]
 mod tests {
@@ -304,3 +291,52 @@ mod tests {
         );
     }
 }
+
+// BEGIN VERIFIED FOCUS SELECT KERNEL
+impl FocusManager {
+    pub fn focus(&mut self, node_id: NodeId) -> Result<(), FocusError> {
+        let mut index = 0;
+        while index < self.order.len() {
+            if self.order[index].0 == node_id.0 {
+                self.focused = Some(node_id);
+                return Ok(());
+            }
+            index += 1;
+        }
+        Err(FocusError::NotFocusable(node_id))
+    }
+}
+// END VERIFIED FOCUS SELECT KERNEL
+
+// BEGIN VERIFIED FOCUS CLEANUP KERNEL
+impl FocusManager {
+    pub fn order(&self) -> &[NodeId] {
+        &self.order
+    }
+
+    pub fn focused(&self) -> Option<NodeId> {
+        self.focused
+    }
+
+    pub fn blur(&mut self) {
+        self.focused = None;
+    }
+}
+// END VERIFIED FOCUS CLEANUP KERNEL
+
+// BEGIN VERIFIED FOCUS ELIGIBILITY KERNEL
+impl FocusManager {
+    /// Check eligibility without moving focus; used before committing a paired input binding.
+    /// 不移动焦点的资格预检，用于提交配对输入绑定之前；不触发宿主回调。
+    pub fn can_focus(&self, node_id: NodeId) -> bool {
+        let mut index = 0;
+        while index < self.order.len() {
+            if self.order[index].0 == node_id.0 {
+                return true;
+            }
+            index += 1;
+        }
+        false
+    }
+}
+// END VERIFIED FOCUS ELIGIBILITY KERNEL
