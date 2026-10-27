@@ -124,6 +124,9 @@ mod native_fonts;
 #[cfg(feature="native-blitz-pending")]
 #[path="native_adapter/cpu_budget.rs"]
 mod cpu_budget;
+#[cfg(feature="cpu-pending")]
+#[path="native_adapter/frame_schedule.rs"]
+mod frame_schedule;
 #[cfg(feature="native-blitz-pending")]
 #[path="native_adapter/capture_policy.rs"]
 mod capture_policy;

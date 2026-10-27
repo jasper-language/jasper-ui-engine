@@ -51,6 +51,7 @@ Loom 当前执行实际生产函数体的调用侧调度场景：两个线程共
 | UI-PIXEL-PACK-001 | `surface::rgb8_word` | 精确 RGB 数值权重、高字节为零、无运算溢出 | 当前源码的 `evidence/pixel-pack-kernel/` 与全链证据；不规定原生字节序/alpha 混色 |
 | UI-PIXEL-CONVERT-001 | `desktop::rgba_to_u32` | 所有长度的前置检查安全；成功全输出逐字精确、alpha 忽略；失败全目标保持；循环边界/终止 | 当前源码的 `evidence/pixel-convert-kernel/` 与全链；窗口/呈现生命周期不随之闭合 |
 | UI-FONT-ORDER-001 | `native_fonts::font_stack_count_admits/font_order_admits` | 字体栈数量 1..=16 准入充要；某族 id 仅首次出现时准入，先注入文件保持回退优先级 | proved，4 verified/0 errors，空栈准入/重复准入两反例被拒；以匹配源码的 `evidence/font-order-kernel/` 与六阶段报告为准；不涵盖字体解析、上游注册、族名排序与 Parley 回退选择 |
+| UI-FRAME-REUSE-001 | `frame_schedule::frame_reuse_admits` | 仅当未失效且缓存宽、高与当前一致、长度等于准入紧凑长度时复用（充要） | proved，1 verified/0 errors，忽略失效/忽略尺寸两反例被拒；以匹配源码的 `evidence/frame-reuse-kernel/` 与六阶段报告为准；不涵盖各入口标脏的完整性（由集成测试覆盖）、缓存存储、绘制与呈现 |
 | UI-SURFACE-VIEW-001 | `Rgba8SurfaceView` 构造、row、width/height/stride | 构造充要条件、精确存储输入布局与字节视图；元数据/行访问一致；行传输精确且失败目标不变；字段私有 | 以当前源码匹配的 `evidence/surface-view-kernel/` 与六阶段报告为准；外部资源权限未涵盖 |
 | UI-SURFACE-WRITE-001 | `surface.rs::write_surface_row` 及只读准入依赖 | 成功精确写入有效行，保留其他行/padding/长度；失败目标完全不变；准入充要条件明确 | 以匹配源码的 `evidence/surface-write-kernel/` 和全链报告为准；不涵盖跨进程原子发布 |
 | UI-SURFACE-BORROW-001 | `surface.rs::surface_row` 与 surface_span | 整体跨度有效且 row 合法才返回精确有效行切片，不含 padding；非法输入拒绝，无越界 | 精确规格与实现映射已登记，结果以当前源码匹配的 `evidence/surface-borrow-kernel/` 和全链报告为准；不覆盖外部会话归属 |

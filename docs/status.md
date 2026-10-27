@@ -33,7 +33,7 @@
 ## 未完成与外部协作
 
 - 场景文字的光标/选区/文本命中几何（根入口尚未暴露）、完整文本编辑与 IME 往返；双向文字、字重/斜体与字体族选择未验收。原生路径的文字光栅、多字体按序回退与折行已有无头实测（见 2026-10-27 UI3 节）。
-- 图片/SVG 解码、资源额度、圆角/阴影/变换、按需帧调度与失效缓存。
+- 图片/SVG 解码、资源额度、圆角/阴影/变换；局部失效（区域重绘）、帧节拍/动画驱动与 GPU 路径的帧调度。原生 CPU 路径的整帧按需调度与上一帧复用已起步（见 2026-10-27 UI4 节）。
 - GPU 渲染、系统无障碍桥、多窗口/DPI/触控/笔平台覆盖。
 - 版本化语义更新协议、代际句柄/所有权、Native ABI、完整宿主能力协商。
 - 系统内置 UI 服务适配、系统 Surface/输入/字体资源接入、多应用隔离与重连恢复。系统桌面是一等目标，软件路径不能依赖自带窗口栈。
@@ -354,3 +354,18 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 构建虚拟机复测：默认配置单元 114 项及全部集成测试通过；`native-blitz-cpu-pending`（注入三份字体）单元 174 项及集成测试全部通过（`native_text_layout` 5/5、`native_cpu_acceptance` 4/4）。字体栈准入与首次出现回退序内核（`font_stack_count_admits`/`font_order_admits`）完成六步链：Verus 4 verified/0 errors（空栈准入、重复准入两反例被拒）、Proptest 30 项、Miri、cargo-fuzz（14.0 万/197.4 万次）、Kani 30 个 harness 全过、Loom；整链报告 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，不是本切片。字体集合注册与 Parley 回退选择本身不在证明范围。
 
 未完成：场景文字的命中/光标几何尚未经根入口暴露（`TextDisplayView` 仍为单字体）；字重/斜体/字体族选择、双向文字、行高样式未验收。根入口仍标记 not yet accepted。
+
+## 2026-10-27：原生路径按需帧调度起步（UI4）
+
+根入口 `engine::Engine` 新增 `needs_frame(owner) -> Option<bool>` 与 `invalidate_frame(owner) -> bool`。视图在每个可能改变画面的入口（场景更新、指针、按键、焦点设置/清除、停用、视口尺寸/缩放、视口滚动）进入准入检查之前即标记失效：被拒调用至多多绘一帧，不会复用过期帧。`needs_frame` 为 `Some(false)` 时宿主可跳过渲染；对未变化视图重复调用 `render_to_surface`/`render_to_backend` 时，复用上一次绘制的紧凑帧而不重新绘制。复用条件（未失效、缓存尺寸与当前视口一致、长度等于本次准入的紧凑长度）由 `frame_schedule::frame_reuse_admits` 决定。非归属方或已关闭视图：`needs_frame` 返回 None，`invalidate_frame` 返回 false，渲染不会返回缓存。这只是整帧粒度的调度：没有区域失效、帧节拍或动画驱动，GPU 路径尚未接入。
+
+新增集成测试 `tests/native_frame_schedule.rs`（`native-blitz-cpu-pending`，注入 `JASPER_UI_TEST_FONT`=DejaVu Sans）：
+
+| 测试 | 断言 | 实测 |
+|---|---|---|
+| `unchanged_view_needs_no_frame_and_reuses_pixels` | 首帧必须绘制；绘制后 `Some(false)`；重复渲染逐字节一致；非归属方无法使其失效；`invalidate_frame` 后重新绘制，结果与原帧一致 | 160×100 首帧绘制 4.9 ms，复用 26 µs（调试构建、构建虚拟机，仅作量级参考） |
+| `scene_update_invalidates_and_repaints` | 样式更新后需要新帧且像素变为新颜色（不复用缓存）；过期版本的更新被拒，但仍保守标脏，重绘结果不变 | 通过 |
+| `viewport_pointer_and_close_drive_scheduling` | 视口缩小/恢复后都需要新帧，恢复后的整帧与最初一致；指针移动、视口滚动标脏；关闭后返回 None，不再返回缓存帧 | 通过 |
+
+构建虚拟机复测：默认配置单元 114 项及全部集成测试通过；`native-blitz-cpu-pending` 单元 174 项及全部集成测试通过（`native_frame_schedule` 3/3）。复用准入内核完成六步链：Verus 1 verified/0 errors（忽略失效、忽略尺寸两个反例被拒）、Proptest 31 项、Miri、cargo-fuzz（11.4 万/120.1 万次）、Kani 31 个 harness 全过、Loom。`NativeScene` 增加帧状态字段后，scene-host-close、scene-snapshot-identity、scene-host-identity 三项既有 Verus 证明已按新类型重验通过，证明映射检查回到最新状态。整链报告仍为 `slice_complete=false`，原因是既有的 capture-query 双键 Kani 义务未闭合，与本切片无关。各入口的标脏是否完整由集成测试覆盖，没有证明。
+
