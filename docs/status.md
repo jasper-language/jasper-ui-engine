@@ -297,3 +297,11 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 - 上表的证明证据对应与版本内核复核只覆盖各自声明范围，不构成原生适配器或整仓证明。
 - `cargo fmt --check` 仍会报告 WIP 源码的格式差异；本轮不做大规模机械重排，以免把迁移审查混入无关改动。
 - 未发现需要写入「迁移卡点」的方向性阻塞：默认与原生 CPU 候选均在构建 VM 内编译、测试通过。
+
+### 2026-10-27 复核（独立重跑）
+
+- 在构建 VM 内独立重跑：`cargo build`、`cargo test`（114 库 + 集成全部通过）、`JASPER_UI_TEST_FONT=<DejaVuSans.ttf> cargo test --features native-blitz-cpu-pending`（174 库 + 集成全部通过，0 失败）、`check-blitz-native-dependencies.py`、`test-blitz-proof-mapping.py` 均通过，与上表一致。
+- 依赖合规补正：`proptest` 由 `1.9` 改为精确钉扎 `=1.12.0`（与锁文件一致）；新增可选依赖（Blitz 三件、anyrender、vello、parley、fontique、keyboard-types）补记入 `THIRD_PARTY_LICENSES.md`，均为 MIT/Apache-2.0 双许可，按 Apache-2.0 使用。
+- `scripts/verify-ui.py` 的 Proptest 完成令牌过期：`desktop::tests` 在迁移中由 5 项增至 6 项，脚本仍要求精确的「5 passed」，导致假失败；已改为「6 passed」。
+- 六阶段链 `python3 scripts/verify-ui.py --verus <verus>` 实跑：Verus+Z3 / Proptest / Miri / cargo-fuzz（两目标各 20 秒：183616 与 1289932 次）/ Kani（28 项 SUCCESSFUL）/ Loom（1 项）均为 `passed_scoped_checks`。报告 `complete=false`：capture-query 任意双键 Kani 原义务仍未解决（单键 harness 仅为诊断）。该链范围不含新增 `native_adapter/` 代码，原生适配器仍未验收。
+- 已知遗留：默认特性下 `backend::submit_native_frame` 未使用告警（仅原生特性使用）。
