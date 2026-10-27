@@ -64,7 +64,7 @@ name = "window"
 required-features = ["desktop", "native-blitz-cpu-pending"]
 
 [dev-dependencies]
-proptest = { version = "1.9", default-features = false, features = ["std"] }
+proptest = { version = "=1.12.0", default-features = false, features = ["std"] }
 
 [[example]]
 name = "hello"

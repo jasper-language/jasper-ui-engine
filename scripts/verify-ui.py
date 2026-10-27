@@ -156,7 +156,7 @@ for stage in report["stages"]:
     log_path = out / (stage["name"].replace("+", "-") + ".log")
     output = log_path.read_text()
     required = {
-        "Proptest": [("test result: ok. 2 passed", 3), ("test result: ok. 3 passed", 1), ("test result: ok. 28 passed", 1), ("test result: ok. 5 passed", 1)],
+        "Proptest": [("test result: ok. 2 passed", 3), ("test result: ok. 3 passed", 1), ("test result: ok. 28 passed", 1), ("test result: ok. 6 passed", 1)],
         "Miri": [("test result: ok. 2 passed", 4), ("test result: ok. 1 passed", 1)],
         "Kani": [("VERIFICATION:- SUCCESSFUL", 28)],
         "Loom": [("test result: ok. 1 passed", 1)],
