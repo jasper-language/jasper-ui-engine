@@ -35,7 +35,7 @@
 
 - 场景文字的完整文本编辑与 IME 往返、选区高亮绘制与预编辑几何（光标/命中几何见 UI8 节、选区几何见 UI9 节）；双向文字、字重/斜体与字体族选择未验收。原生路径的文字光栅、多字体按序回退与折行已有无头实测（见 2026-10-27 UI3 节）。
 - 图片/SVG 解码、资源额度、圆角/阴影/变换；区域重绘（只重绘损伤区域）、真实垂直同步来源、动画/过渡驱动与 GPU 路径的帧调度。原生 CPU 路径的整帧按需调度、上一帧复用（UI4）、相对上一帧的精确损伤矩形报告（UI5）、按损伤只写变化像素的宿主 Surface 写入（UI6）与按宿主刷新时钟的帧节拍决定（UI7）已有无头实测。
-- GPU 窗口/表面呈现、device-lost 恢复、GPU 损伤与局部重绘、真实硬件 GPU 验收（原生无头 GPU 渲染见 UI10 节）；系统无障碍桥（AccessKit/平台 API 接入、增量更新事件、平台动作路由、文本无障碍接口；宿主无关的无障碍树快照见 UI11 节）、多窗口/DPI/触控/笔平台覆盖。
+- GPU 窗口/表面呈现、device-lost 恢复、GPU 损伤与局部重绘、真实硬件 GPU 验收（原生无头 GPU 渲染见 UI10 节）；系统无障碍桥（AccessKit/平台 API 接入、平台动作路由、文本无障碍接口；宿主无关的无障碍树快照见 UI11 节、快照间增量更新与回放见 UI12 节）、多窗口/DPI/触控/笔平台覆盖。
 - 版本化语义更新协议、代际句柄/所有权、Native ABI、完整宿主能力协商。
 - 系统内置 UI 服务适配、系统 Surface/输入/字体资源接入、多应用隔离与重连恢复。系统桌面是一等目标，软件路径不能依赖自带窗口栈。
 - Jasper 组件/状态/主题规则/导航、Element/Reconciler/UI IR，以及 Web DOM/SSR 等由对应语义层/后端提供，本仓库不复制第二套实现。
@@ -485,3 +485,17 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 | `hidden_root_foreign_and_closed_are_explicit` | 非归属方、未来版本 None；根隐藏为空树且无焦点；关闭后 None | 通过 |
 
 构建虚拟机复测：默认配置单元 114 项及全部集成测试通过；`native-blitz-cpu-pending`（注入三份字体）单元 174 项及全部集成测试通过（`native_accessibility_tree` 4/4）。`access_actions` 完成六步链：Verus 2 verified/0 errors（含类型；禁用仍可聚焦、任意角色可激活两反例被拒）。整链 `scripts/verify-ui.py`：Verus/Z3、Proptest（读边界属性 41 项）、Miri、cargo-fuzz（两个目标各 21 秒，13.0 万/206.9 万次）、Kani（46 个 harness）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，与本切片无关。可见性剔除、遍历与焦点投影由集成测试覆盖，没有证明。证明映射检查为最新；`obligations.json` 新增 `access_tree.rs` 条目，`native_scene.rs`/`facade.rs` 的元数据哈希与方法计数在整链结束后更新（不改变被验证的源码）。
+
+## 2026-10-28：原生路径无障碍增量更新（UI12）
+
+平台无障碍桥不必每个版本重建整棵树：`AccessibilityTree::update_since(&previous)` 给出同一视图从较旧（或同版本）快照到较新快照的 `AccessibilityUpdate { from_version, scene_version, nodes, removed, root, focused, focus_changed }`，形如维护镜像的桥（AccessKit TreeUpdate 风格）所需。`nodes` 为新增或内容有变的节点（完整内容、按新树顺序），可见子节点变化的父节点、焦点标记翻转的节点、几何变化的节点都计为变更；`removed` 为离开树的节点（按旧树顺序）；`previous` 更新时为 None。`AccessibilityTree::apply(&update)` 在镜像上回放并从根重建深度优先源顺序，更新基于其他版本、移除不存在节点、子节点缺失/重复/不可达、焦点不在树中时为 None，镜像不变。每个节点的差别由新内核 `access_tree::access_change` 分类（Absent/Added/Removed/Unchanged/Changed）。本切片仍不接 AccessKit crate 或平台 API，也不提供平台动作路由与文本无障碍接口；不检测把不同视图的树混用。
+
+新增集成测试 `tests/native_accessibility_update.rs`（`native-blitz-pending`，注入 `JASPER_UI_TEST_FONT`=DejaVu Sans）。每一步都核对：回放结果等于新树，且 `nodes`/`removed` 恰为内容不同/消失的节点。
+
+| 测试 | 断言 | 实测 |
+|---|---|---|
+| `same_version_is_an_empty_update` | 同一快照之差为空更新；从空镜像出发更新携带整棵树 | 空；全量 [1,2,3,4,5,6] |
+| `engine_updates_replay_through_incremental_updates` | 真实引擎依次：改状态值、移动焦点、隐藏分组、插入节点并删除焦点按钮、隐藏根；逐步回放链与一次跨版本回放都等于最新树 | 改值仅 [6]；聚焦仅 [3]、焦点变化；隐藏分组 变更 [1]、移除 [4,5]；删除焦点按钮后焦点 None；隐藏根全部移除、根 None |
+| `reversed_mismatched_and_inconsistent_updates_are_rejected` | 旧于 previous、镜像版本不符、移除不存在节点、缺失子节点、重复子节点、悬空子节点、不可达节点、焦点不在树中均为 None；失败后镜像仍可正确回放 | 通过 |
+
+构建虚拟机复测：默认配置单元 114 项及全部集成测试通过；`native-blitz-cpu-pending`（注入三份字体）单元 174 项及全部集成测试通过（`native_accessibility_update` 3/3、`native_accessibility_tree` 4/4）。`access_change` 完成六步链：Verus 2 verified/0 errors（含类型；把移除判为新增、忽略内容相等两反例被拒）。整链 `scripts/verify-ui.py`：Verus/Z3、Proptest（读边界属性 42 项）、Miri、cargo-fuzz（两个目标各 21 秒，19.9 万/170.4 万次）、Kani（47 个 harness）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，与本切片无关。树差、回放与顺序重建由集成测试覆盖，没有证明。证明映射检查为最新；`obligations.json` 中 `access_tree.rs`/`facade.rs` 的元数据哈希与计数在整链结束后更新（不改变被验证的源码）。

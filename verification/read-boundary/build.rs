@@ -59,7 +59,7 @@ fn main() {
         ),
         (
             "../../src/native_adapter/access_tree.rs",
-            &["ACCESS ACTIONS TYPE", "ACCESS ACTIONS KERNEL"][..],
+            &["ACCESS ACTIONS TYPE", "ACCESS ACTIONS KERNEL", "ACCESS CHANGE TYPE", "ACCESS CHANGE KERNEL"][..],
         ),
         (
             "../../src/native_adapter/gpu_render.rs",
