@@ -128,6 +128,9 @@ mod cpu_budget;
 #[path="native_adapter/frame_schedule.rs"]
 mod frame_schedule;
 #[cfg(feature="native-blitz-pending")]
+#[path="native_adapter/text_geometry.rs"]
+mod text_geometry;
+#[cfg(feature="native-blitz-pending")]
 #[path="native_adapter/capture_policy.rs"]
 mod capture_policy;
 #[cfg(feature="native-blitz-pending")]

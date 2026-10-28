@@ -174,6 +174,24 @@ impl SceneHostView {
     pub fn node_bounds(&self,owner:u64,version:u64,node:NodeId)->Option<Rect> {
         self.inner.node_bounds_from_host(owner,version,node)
     }
+    /// UTF-8 offset in a text node's source text nearest a view-local logical point, from the
+    /// same native layout that paints it; for caret placement, not an occlusion-aware hit test.
+    /// None for a non-text/hidden node, a stale version, a node with its own scroll, or a layout
+    /// whose text differs from the source (e.g. collapsed whitespace).
+    /// 文字节点源文本中离视图局部逻辑点最近的 UTF-8 偏移，取自绘制所用的同一原生布局；用于放置光标，
+    /// 不是考虑遮挡的命中测试。非文字/隐藏节点、过期版本、自身有滚动、或布局文本与源文本不同（如空白折叠）
+    /// 时为 None。
+    pub fn text_offset_at(&self,owner:u64,version:u64,node:NodeId,x:f32,y:f32)->Option<usize> {
+        self.inner.text_offset_from_host(owner,version,node,x,y)
+    }
+    /// Caret rectangle `width` logical px wide before a source-text UTF-8 offset (end included),
+    /// in node_bounds coordinates. None for a non-boundary or out-of-range offset and the
+    /// text_offset_at rejections.
+    /// 源文本 UTF-8 偏移（含末尾）之前、宽 `width` 逻辑像素的光标矩形，坐标同 node_bounds。
+    /// 非字符边界或越界偏移，以及 text_offset_at 的各拒绝情形为 None。
+    pub fn text_caret(&self,owner:u64,version:u64,node:NodeId,offset:usize,width:f32)->Option<Rect> {
+        self.inner.text_caret_from_host(owner,version,node,offset,width)
+    }
     pub fn semantics(&self,owner:u64,version:u64)->Option<SceneSemanticsSnapshot> {
         self.inner.semantics_snapshot_from_host(owner,version)
     }

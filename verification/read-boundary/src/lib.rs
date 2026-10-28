@@ -507,6 +507,20 @@ pub fn assert_frame_pace(dirty: bool, presented: Option<u64>, origin: u64, inter
     }
 }
 
+/// Independent source-text offset oracle: a layout offset maps only for an identical-length
+/// layout, an in-range offset (end included) and a character boundary.
+/// 独立源文本偏移规格：仅当布局长度相同、偏移在范围内（含末尾）且为字符边界时才映射。
+pub fn assert_text_offset(layout_len: usize, source_len: usize, offset: usize, on_boundary: bool) {
+    let expected = if layout_len != source_len {
+        false
+    } else if offset > source_len {
+        false
+    } else {
+        on_boundary
+    };
+    assert_eq!(text_offset_admits(layout_len, source_len, offset, on_boundary), expected);
+}
+
 /// Independent damage-rectangle admission oracle over widened integers.
 /// 宽整数下的独立损伤矩形准入规格。
 pub fn assert_damage_rect(x: u32, y: u32, rect_width: u32, rect_height: u32, width: u32, height: u32) {
@@ -1331,6 +1345,11 @@ mod kani_checks {
     }
 
     #[kani::proof]
+    fn text_offset_admission() {
+        assert_text_offset(kani::any(), kani::any(), kani::any(), kani::any());
+    }
+
+    #[kani::proof]
     fn damage_rect_admission() {
         assert_damage_rect(kani::any(), kani::any(), kani::any(), kani::any(), kani::any(), kani::any());
     }
@@ -1689,6 +1708,14 @@ mod properties {
             assert_frame_pace(true, Some(u64::MAX - sp), so, u64::MAX - si, u64::MAX - sn);
         }
         #[test]
+        fn text_offset_property(layout_len in any::<usize>(), source_len in any::<usize>(), offset in any::<usize>(),
+                                boundary in any::<bool>(), small in 0usize..8, delta in 0usize..3) {
+            assert_text_offset(layout_len, source_len, offset, boundary);
+            assert_text_offset(small, small, small + delta, boundary);
+            assert_text_offset(small + delta, small, small, boundary);
+            assert_text_offset(usize::MAX, usize::MAX, usize::MAX - small, boundary);
+        }
+        #[test]
         fn damage_rect_property(x in any::<u32>(), y in any::<u32>(), w in any::<u32>(), h in any::<u32>(),
                                 width in any::<u32>(), height in any::<u32>(),
                                 sx in 0u32..6, sy in 0u32..6, sw in 0u32..6, sh in 0u32..6, fw in 0u32..6, fh in 0u32..6) {
@@ -1979,6 +2006,12 @@ mod memory {
                     assert_frame_pace(true, presented, origin, interval, now);
                     assert_frame_pace(false, presented, origin, interval, now);
                 }
+            }
+        }
+        for (layout_len, source_len) in [(0, 0), (3, 3), (3, 4), (4, 3), (usize::MAX, usize::MAX)] {
+            for offset in [0, 2, 3, 4, usize::MAX] {
+                assert_text_offset(layout_len, source_len, offset, true);
+                assert_text_offset(layout_len, source_len, offset, false);
             }
         }
         for (x, y, w, h) in [(0, 0, 1, 1), (2, 1, 1, 1), (0, 0, 3, 2), (3, 0, 1, 1), (1, 1, 0, 1), (u32::MAX, 0, 2, 1)] {

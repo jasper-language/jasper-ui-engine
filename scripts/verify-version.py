@@ -719,6 +719,17 @@ pub closed spec fn surface_view_model(view: &Rgba8SurfaceView) -> (Seq<u8>, u32,
         "mutations": [("render-twice-per-period", "Some(last) => last >= tick,", "Some(last) => last > tick,"),
                       ("wake-when-clean", "        return Some(FramePace::Idle);", "        return Some(FramePace::RenderNow(now));")],
     },
+    "text-offset": {
+        "source": "src/native_adapter/text_geometry.rs", "marker": "TEXT OFFSET", "property": "UI-TEXT-OFFSET-001",
+        "signature": """pub fn text_offset_admits(layout_len: usize, source_len: usize, offset: usize, on_boundary: bool) -> bool {""",
+        "contract": """pub fn text_offset_admits(layout_len: usize, source_len: usize, offset: usize, on_boundary: bool) -> (result: bool)
+    ensures result == (layout_len == source_len && offset <= source_len && on_boundary),
+{""",
+        "function_count": 1, "depends": [], "evidence": "text-offset-kernel",
+        "scope": "layout-to-source text offset admission (identical length, in range with end included, character boundary) only; not the Parley caret/hit geometry, text equality or coordinate mapping",
+        "mutations": [("ignore-length-mismatch", "\n    layout_len == source_len && offset", "\n    offset"),
+                      ("exclude-text-end", "offset <= source_len && on_boundary\n}", "offset < source_len && on_boundary\n}")],
+    },
     "damage-rect": {
         "source": "src/native_adapter/frame_schedule.rs", "marker": "DAMAGE RECT", "property": "UI-DAMAGE-RECT-001",
         "signature": """pub fn damage_rect_admits(x: u32, y: u32, rect_width: u32, rect_height: u32, width: u32, height: u32) -> bool {""",

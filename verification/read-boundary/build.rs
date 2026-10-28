@@ -54,6 +54,10 @@ fn main() {
         ),
         ("../../src/text.rs", &["TEXT CLASS KERNEL"][..]),
         (
+            "../../src/native_adapter/text_geometry.rs",
+            &["TEXT OFFSET KERNEL"][..],
+        ),
+        (
             "../../src/resource.rs",
             &["RESOURCE GATE KERNEL", "BYTES SLOT KERNEL"][..],
         ),

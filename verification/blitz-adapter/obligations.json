@@ -476,8 +476,8 @@
       "evidence": "evidence/blitz-font-order-pending/report.json"
     },
     "src/native_adapter/native_scene.rs": {
-      "source_sha256": "e5ea24182ddc56e840654ae8f05b3af61b7da9934d40d145d6801e78c0f97bf3",
-      "own_methods": 49,
+      "source_sha256": "ed327add997814d6ae459929272b0bbce4d0eb4a137c0ea6470f23c419d35602",
+      "own_methods": 52,
       "implementation_proofs_complete": 12,
       "six_stage_acceptance_complete": 10,
       "scope": "Existing Scene/patch native mapping including per-node source scroll; owner-gated semantic metadata; OS bridge and full implementation proof pending",
@@ -539,6 +539,14 @@
       "scope": "On-demand frame reuse admission predicate, damage span extension, damage rectangle admission, refresh-clock frame tick and frame pacing decision (Verus + five stages; tick/pace Kani on bounded clock domains); frame_damage row/column scan and write_damaged_frame damage-only surface write have Proptest/Miri/fuzz/Kani/Loom against independent oracles but Verus N/A (iterator/slice loops, enum match plus row loop), so they are not counted complete; damage-marking completeness is covered by integration tests, not proof; cache storage, painting and presentation unproved",
       "evidence": "evidence/validation-chain/report.json"
     },
+    "src/native_adapter/text_geometry.rs": {
+      "source_sha256": "874511852bf8065723aacffae67cb5c7e3bd5f5775bc29bc2adee71d22b73505",
+      "own_methods": 1,
+      "implementation_proofs_complete": 1,
+      "six_stage_acceptance_complete": 1,
+      "scope": "Layout-to-source text offset admission (identical length, in range with end included, character boundary) (Verus + five stages); layout/source text equality, Parley caret/hit geometry and coordinate mapping in native_scene are covered by integration tests, not proof",
+      "evidence": "evidence/validation-chain/report.json"
+    },
     "src/native_adapter/capture_policy.rs": {
       "source_sha256": "e8d7e13d69b77f1d373cc2f7aa47d28872fbbab245b94d9b6d4349742edc6f8b",
       "own_methods": 1,
@@ -556,14 +564,14 @@
       "evidence": "evidence/blitz-framework-update-contract-pending/report.json"
     },
     "src/native_adapter/facade.rs": {
-      "source_sha256": "23da67dc7fe7547ac37e7fa91329d37e84b8aad94e2515cb6cd246ff20be3188",
-      "own_methods": 57,
+      "source_sha256": "eea92843508faf05512136990a86fca5dfe0cdea5eb39f0c95e3a95a2a751b14",
+      "own_methods": 59,
       "implementation_proofs_complete": 4,
       "six_stage_acceptance_complete": 4,
       "scope": "Typed embedding-host library facade; application component semantics remain Scene/ScenePatch values, backend modules private",
       "evidence": "evidence/blitz-typed-library-pending/report.json",
       "latest_native_diagnostic": "evidence/blitz-native-backend-submit-pending/report.json",
-      "complete_scope": "TextDisplayView::update_version and close; SceneHostView::close and snapshot_identity logical projection only; other 49 facade methods pending",
+      "complete_scope": "TextDisplayView::update_version and close; SceneHostView::close and snapshot_identity logical projection only; other 51 facade methods pending",
       "proof_evidence": "evidence/text-display-version-chain/report.json",
       "close_proof_evidence": "evidence/text-display-close-chain/report.json",
       "scene_close_proof_evidence": "evidence/scene-host-close-chain/report.json",
