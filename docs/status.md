@@ -527,3 +527,19 @@ GPU 路径与 CPU 路径改为共用同一帧缓存与损伤基准（此前 GPU 
 | `gpu_rejection_writes_nothing_and_keeps_the_baseline` | 非归属方、过期版本、重叠 stride、短 Surface 均 `Rejected` 且字节不变；拒绝不移动基准（随后 Unchanged）；换缓冲后 `invalidate_frame` 得 Full 且与原帧一致；关闭后 `Rejected` | 通过 |
 
 构建虚拟机复测：默认配置 25 个测试套件共 140 项通过；`native-blitz-cpu-pending,gpu-pending`（注入三份字体）25 个套件共 247 项通过（单元 174 项，`native_gpu_frame_damage` 3/3、`native_gpu_render` 3/3，GPU 与 CPU 仍为 238/64000 像素差、最大通道差 1）。本切片未新增内核：所改代码是 GPU 渲染与已证明内核之间的编排，六步链各阶段对其为 N/A（理由与替代证据见 `docs/verification.md` UI-GPU-DAMAGE-001），不计为六阶段完成。整链 `scripts/verify-ui.py`：Verus/Z3、Proptest（读边界属性 43 项）、Miri、cargo-fuzz（两个目标各 21 秒，18.9 万/144.5 万次）、Kani（48 个 harness）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，与本切片无关。
+
+## 2026-10-29：TextDisplayView 宿主有序多字体回退栈（UI16）
+
+根入口 `TextDisplayView` 新增 `with_fonts(owner, context, fonts, text, width, height) -> Option<Self>`，与 `Engine::with_fonts` 一致：宿主按序注入多个字体文件（如先拉丁、后中日韩），Parley 按宿主顺序回退。准入复用已证明的 `native_fonts::injected_font_stack`（`font_stack_count_admits`/`font_order_admits`，UI-FONT-ORDER-001）：空栈、超过 `MAX_INJECTED_FONTS`、任一文件不登记任何字体族时返回 None，在构建任何文档之前拒绝，不静默跳过。单字体 `new` 行为不变（内部改为与多字体共用同一视图树构造）。测量、命中（`hit`）与绘制共用同一份 Parley 布局。
+
+新增集成测试 `tests/native_text_display_fonts.rs`（`native-blitz-cpu-pending`，注入 `JASPER_UI_TEST_LATIN_FONT`=DejaVu Sans 与 `JASPER_UI_TEST_CJK_FONT`=Noto Sans CJK）：
+
+| 测试 | 断言 | 实测 |
+|---|---|---|
+| `fallback_follows_host_order` | 拉丁文字在 [拉丁, CJK] 下帧与只注入拉丁一致，在 [CJK, 拉丁] 下与只注入 CJK 一致，两种顺序帧不同；汉字在 [拉丁, CJK] 下回退到 CJK（帧等于只注入 CJK），与只注入拉丁的缺字框帧不同且墨迹更宽 | 汉字墨迹列 62 vs 缺字框 35 |
+| `stack_admission_rejects_explicitly` | 空栈、非字体字节、[拉丁, 非字体]、[非字体, CJK]、超限栈均 None；满额重复同一文件帧与单文件一致；单字体 `new` 帧等于单文件栈；非归属方渲染被拒 | 通过 |
+| `hit_uses_the_fallback_layout` | 逐列扫描一行：命中偏移均为 UTF-8 边界、自左向右不减、覆盖 0 到文本末尾；越过拉丁前缀的位置两种字体栈一致，汉字段终点随字形宽度变化 | 通过 |
+
+构建虚拟机复测：默认配置 140 项通过；`native-blitz-cpu-pending`（注入三份字体）26 个套件共 244 项通过（单元 174 项，`native_text_display_fonts` 3/3）。本切片未新增内核：所改代码是上游 Blitz/fontique 构造之上的编排，六步链各阶段对其为 N/A（理由与替代证据见 `docs/verification.md` UI-TEXT-DISPLAY-FONTS-001），不计为六阶段完成。整链 `scripts/verify-ui.py`：Verus/Z3、Proptest（读边界属性 43 项）、Miri、cargo-fuzz（两个目标各 21 秒，18.5 万/201.5 万次）、Kani（48 个 harness）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，与本切片无关。
+
+未完成：字重/斜体/字体族选择、按钮的多字体公开入口、双向文字验收。根入口仍标记 not yet accepted。

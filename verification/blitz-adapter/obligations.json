@@ -1,8 +1,8 @@
 {
   "status": "candidate_not_accepted",
   "source": "src/native_adapter/native_view.rs",
-  "source_sha256": "b479a83ec5f13f059c52b57e3e4e014bf82bf192091b8fdbb77fd9a1ee5b5401",
-  "own_methods": 47,
+  "source_sha256": "680807a6e34aadc277a211971ccd2ccdce10abea60b3c323cb11d1e842b5ec8f",
+  "own_methods": 49,
   "whole_method_implementation_proofs_complete": 3,
   "ordered_gates": [
     "Verus+Z3",
@@ -215,10 +215,22 @@
       "ordered_acceptance": "incomplete; native diagnostic only"
     },
     {
+      "name": "new_with_fonts",
+      "proof_obligation": "Font stack admission is delegated to injected_font_stack (proved font_stack_count_admits/font_order_admits); empty, oversized or family-less stacks yield None before any document is built. Upstream construction/resolve may fail or panic and is TCB.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "N/A for all six stages (UI-TEXT-DISPLAY-FONTS-001): orchestration over upstream Blitz/fontique; integration evidence tests/native_text_display_fonts.rs"
+    },
+    {
       "name": "new_with_kind",
       "proof_obligation": "Exact typed element construction, injected fonts/resources and owner context; backend construction/resolve in third-party boundary, own lifecycle mapping unproved.",
       "implementation_proof": "pending",
       "ordered_acceptance": "incomplete; native diagnostic only"
+    },
+    {
+      "name": "new_with_context",
+      "proof_obligation": "Builds the fixed html/body/text/preedit tree with the supplied font context only; single-font and font-stack constructors share it. Upstream construction/resolve may fail or panic and is TCB.",
+      "implementation_proof": "pending",
+      "ordered_acceptance": "incomplete; native diagnostic is not a gate substitute"
     },
     {
       "name": "set_button_caption",
@@ -588,14 +600,14 @@
       "evidence": "evidence/blitz-framework-update-contract-pending/report.json"
     },
     "src/native_adapter/facade.rs": {
-      "source_sha256": "4df4bb30aafe631038445fd3161243bdec64f0ebe7dc1464d631b6798ae95f9a",
-      "own_methods": 66,
+      "source_sha256": "3d6231733b312dc9ddca140dab6860ec6981b75f11e937fc3b0b9e9c75bf24c9",
+      "own_methods": 67,
       "implementation_proofs_complete": 4,
       "six_stage_acceptance_complete": 4,
       "scope": "Typed embedding-host library facade; application component semantics remain Scene/ScenePatch values, backend modules private",
       "evidence": "evidence/blitz-typed-library-pending/report.json",
       "latest_native_diagnostic": "evidence/blitz-native-backend-submit-pending/report.json",
-      "complete_scope": "TextDisplayView::update_version and close; SceneHostView::close and snapshot_identity logical projection only; other 52 facade methods pending",
+      "complete_scope": "TextDisplayView::update_version and close; SceneHostView::close and snapshot_identity logical projection only; other 53 facade methods pending",
       "proof_evidence": "evidence/text-display-version-chain/report.json",
       "close_proof_evidence": "evidence/text-display-close-chain/report.json",
       "scene_close_proof_evidence": "evidence/scene-host-close-chain/report.json",
