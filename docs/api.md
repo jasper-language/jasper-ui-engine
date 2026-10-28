@@ -12,6 +12,8 @@ Framework 产生 `native::SceneUpdate { expected_version, next_version, patches 
 
 原生 CPU 入口 `Engine::render_to_backend` 在归属/版本/存活/预算准入后，复用原生绘制并调用既有 `RenderBackend::submit_rgba8`、成功后才调用 `present`。默认后端明确返回 Unsupported；HeadlessBackend 接管已经绘制的像素，不重放 PaintOp。字节按上游输出原样保存，不提供宿主 alpha/合成转换或外部呈现回滚；旧 UiBatch 序列化格式不变。此新增编排与包装尚未完成有序证明验收。
 
+帧调度（`native-blitz-cpu-pending`）：`needs_frame` / `invalidate_frame` 报告与强制待绘状态；`render_to_surface_with_damage` 报告相对上一帧的 `FrameDamage`；`render_to_surface_damaged` 只把损伤像素写入宿主 Surface；`frame_pace(owner, presented, origin, interval, now)` 按宿主刷新时钟返回 `FramePace::{Idle, WaitUntil(t), RenderNow(tick)}`，每周期至多一帧、不追帧，时钟与垂直同步来源归宿主，本方法不绘制也不等待。
+
 `native` 及 Rust 类型名仍为候选，不冻结 Jasper 子命名空间。完整整帧/生命周期/浮点证明尚缺；该入口存在不等于默认后端迁移或六阶段验收完成。
 
 `Engine` 仅在原生 feature 启用时存在；未启用时不会静默选用旧执行链。此前原生名称 `BlitzEngine` 保留为同一实现的兼容重导出。旧引擎明确名为 `LegacyEngine`，旧统计与错误只描述兼容路径。

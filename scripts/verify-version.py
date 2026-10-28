@@ -666,6 +666,59 @@ pub closed spec fn surface_view_model(view: &Rgba8SurfaceView) -> (Seq<u8>, u32,
         "mutations": [("keep-low", "if at < lo { at } else { lo }", "lo"),
                       ("absent-span-from-zero", "None => (at, at)", "None => (0, at)")],
     },
+    "frame-tick": {
+        "source": "src/native_adapter/frame_schedule.rs", "marker": "FRAME TICK", "property": "UI-FRAME-TICK-001",
+        "signature": """pub fn frame_tick_at(origin: u64, interval: u64, now: u64) -> Option<u64> {""",
+        "contract": """pub fn frame_tick_at(origin: u64, interval: u64, now: u64) -> (result: Option<u64>)
+    ensures
+        (result matches None) == (interval == 0 || now < origin),
+        result matches Some(t) ==> origin <= t && t <= now && now - t < interval
+            && (t - origin) % (interval as int) == 0
+            && t == now - (now - origin) % (interval as int),
+{""",
+        "extra_annotations": [
+            ("    Some(now - (now - origin) % interval)",
+             """    proof {
+        let e = (now - origin) as int;
+        let d = interval as int;
+        vstd::arithmetic::div_mod::lemma_fundamental_div_mod(e, d);
+        vstd::arithmetic::div_mod::lemma_mod_pos_bound(e, d);
+        vstd::arithmetic::div_mod::lemma_mod_multiples_basic(e / d, d);
+        vstd::arithmetic::mul::lemma_mul_is_commutative(d, e / d);
+    }
+    Some(now - (now - origin) % interval)"""),
+        ],
+        "function_count": 1, "depends": [], "evidence": "frame-tick-kernel",
+        "scope": "refresh-period start (latest origin + k*interval not after now) and its None cases only; not the clock source, vsync or presentation timing",
+        "mutations": [("unaligned-now", "    Some(now - (now - origin) % interval)", "    Some(now)"),
+                      ("stale-origin", "    Some(now - (now - origin) % interval)", "    Some(origin)")],
+    },
+    "frame-pace-type": {"source": "src/native_adapter/frame_schedule.rs", "marker": "FRAME PACE", "suffix": "TYPE", "signature": None, "depends": [], "internal_only": True},
+    "frame-pace": {
+        "source": "src/native_adapter/frame_schedule.rs", "marker": "FRAME PACE", "property": "UI-FRAME-PACE-001",
+        "signature": """pub fn frame_pace(dirty: bool, presented: Option<u64>, origin: u64, interval: u64, now: u64) -> Option<FramePace> {""",
+        "contract": """pub fn frame_pace(dirty: bool, presented: Option<u64>, origin: u64, interval: u64, now: u64) -> (result: Option<FramePace>)
+    ensures
+        interval == 0 ==> result matches None,
+        interval > 0 && !dirty ==> result == Some(FramePace::Idle),
+        interval > 0 && dirty && now < origin ==> result == Some(FramePace::WaitUntil(origin)),
+        interval > 0 && dirty && origin <= now ==> ({
+            let tick = now - (now - origin) % (interval as int);
+            let already = presented matches Some(last) && last >= tick;
+            if !already {
+                result == Some(FramePace::RenderNow(tick as u64))
+            } else if tick + interval <= u64::MAX {
+                result == Some(FramePace::WaitUntil((tick + interval) as u64))
+            } else {
+                result matches None
+            }
+        }),
+{""",
+        "function_count": 1, "depends": ["frame-tick", "frame-pace-type"], "evidence": "frame-pace-kernel",
+        "scope": "per-period frame pacing decision (idle when clean, wait before first tick, one RenderNow per period, missed periods skipped, overflow rejected); not needs_frame completeness, the host clock, vsync or painting",
+        "mutations": [("render-twice-per-period", "Some(last) => last >= tick,", "Some(last) => last > tick,"),
+                      ("wake-when-clean", "        return Some(FramePace::Idle);", "        return Some(FramePace::RenderNow(now));")],
+    },
     "damage-rect": {
         "source": "src/native_adapter/frame_schedule.rs", "marker": "DAMAGE RECT", "property": "UI-DAMAGE-RECT-001",
         "signature": """pub fn damage_rect_admits(x: u32, y: u32, rect_width: u32, rect_height: u32, width: u32, height: u32) -> bool {""",

@@ -103,3 +103,65 @@ pub fn write_damaged_frame(destination: &mut [u8], stride: usize, width: u32, he
     true
 }
 // END VERIFIED DAMAGE WRITE KERNEL
+
+// BEGIN VERIFIED FRAME TICK KERNEL
+/// Start of the display refresh period containing `now`: the latest `origin + k·interval`
+/// (k ≥ 0) not after `now`. None for a zero interval or before the first tick.
+/// 包含 `now` 的刷新周期起点：不晚于 `now` 的最大 `origin + k·interval`（k ≥ 0）；
+/// 周期为零或首个节拍之前为 None。
+pub fn frame_tick_at(origin: u64, interval: u64, now: u64) -> Option<u64> {
+    if interval == 0 || now < origin {
+        return None;
+    }
+    Some(now - (now - origin) % interval)
+}
+// END VERIFIED FRAME TICK KERNEL
+
+// BEGIN VERIFIED FRAME PACE TYPE
+/// Pacing decision for one view against a host refresh clock (host-chosen time unit).
+/// 视图相对宿主刷新时钟的节拍决定（时间单位由宿主决定）。
+#[derive(Clone,Copy,Debug,PartialEq,Eq)]
+pub enum FramePace {
+    /// No unpainted change: do not wake for this view.
+    /// 无待绘变化：不必为本视图唤醒。
+    Idle,
+    /// A frame is due, but this period already presented one or the first tick is ahead:
+    /// wake at this tick.
+    /// 有待绘变化，但本周期已呈现过或首个节拍未到：在此节拍唤醒。
+    WaitUntil(u64),
+    /// Render and present now for this tick, then pass it back as `presented`.
+    /// 立即为此节拍绘制并呈现，之后将其作为 `presented` 传回。
+    RenderNow(u64),
+}
+// END VERIFIED FRAME PACE TYPE
+
+// BEGIN VERIFIED FRAME PACE KERNEL
+/// At most one frame per refresh period; missed periods are skipped, never caught up.
+/// `presented` is the tick of the last frame the host presented for this view. None for a
+/// zero interval or when the next tick would overflow the clock.
+/// 每个刷新周期至多一帧；错过的周期直接跳过，不追帧。`presented` 为宿主上次为本视图呈现帧的
+/// 节拍。周期为零或下一节拍超出时钟范围时为 None。
+pub fn frame_pace(dirty: bool, presented: Option<u64>, origin: u64, interval: u64, now: u64) -> Option<FramePace> {
+    if interval == 0 {
+        return None;
+    }
+    if !dirty {
+        return Some(FramePace::Idle);
+    }
+    let tick = match frame_tick_at(origin, interval, now) {
+        Some(tick) => tick,
+        None => return Some(FramePace::WaitUntil(origin)),
+    };
+    let already = match presented {
+        Some(last) => last >= tick,
+        None => false,
+    };
+    if !already {
+        return Some(FramePace::RenderNow(tick));
+    }
+    if tick > u64::MAX - interval {
+        return None;
+    }
+    Some(FramePace::WaitUntil(tick + interval))
+}
+// END VERIFIED FRAME PACE KERNEL

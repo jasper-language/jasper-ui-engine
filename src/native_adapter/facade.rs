@@ -18,7 +18,7 @@ use super::*;
 pub use jasper_ui_engine::input_identity::{UiInputBinding,UiInputContext,UiInputTicket};
 pub use jasper_ui_engine::composition_identity::UiCompositionToken;
 #[cfg(feature="cpu-pending")]
-pub use crate::frame_schedule::FrameDamage;
+pub use crate::frame_schedule::{FrameDamage,FramePace};
 /// External-service display client; no authoritative editor document or input engine.
 // BEGIN VERIFIED TEXT DISPLAY TYPE
 pub struct TextDisplayView {inner:native_view::NativeTextView}
@@ -243,6 +243,19 @@ impl SceneHostView {
     /// Force the next render to repaint, e.g. after the host lost its presentation surface.
     /// 强制下一次渲染重绘，如宿主呈现表面丢失之后。
     pub fn invalidate_frame(&mut self,owner:u64)->bool {self.inner.invalidate_frame_from_host(owner)}
+    /// Refresh-clock pacing on top of `needs_frame`: RenderNow(tick) at most once per period
+    /// (`origin + k·interval`), WaitUntil(t) when this period already presented a frame or the
+    /// first tick is ahead, Idle when nothing is unpainted. `presented` is the tick the host
+    /// last presented for this view. None for a foreign owner, a closed view, a zero interval
+    /// or clock overflow. Does not paint or wait; the host owns the clock and vsync source.
+    /// 在 `needs_frame` 之上按刷新时钟定节拍：每周期（`origin + k·interval`）至多一次
+    /// RenderNow(tick)；本周期已呈现或首个节拍未到时 WaitUntil(t)；无待绘变化为 Idle。
+    /// `presented` 为宿主上次为本视图呈现的节拍。非归属方、已关闭视图、周期为零或时钟溢出时为
+    /// None。本方法不绘制也不等待；时钟与垂直同步来源归宿主。
+    #[cfg(feature="cpu-pending")]
+    pub fn frame_pace(&self,owner:u64,presented:Option<u64>,origin:u64,interval:u64,now:u64)->Option<FramePace> {
+        crate::frame_schedule::frame_pace(self.inner.needs_frame(owner)?,presented,origin,interval,now)
+    }
     #[cfg(feature="cpu-pending")]
     pub fn render_to_surface(&mut self,owner:u64,version:u64,bytes:&mut [u8],stride:usize,budget:usize)->bool {
         self.inner.render_to_host_surface(owner,version,bytes,stride,budget)

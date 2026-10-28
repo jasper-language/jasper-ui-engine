@@ -50,7 +50,7 @@ fn main() {
         ),
         (
             "../../src/native_adapter/frame_schedule.rs",
-            &["FRAME REUSE KERNEL", "FRAME DAMAGE TYPE", "DAMAGE SPAN KERNEL", "FRAME DAMAGE KERNEL", "DAMAGE RECT KERNEL", "DAMAGE WRITE KERNEL"][..],
+            &["FRAME REUSE KERNEL", "FRAME DAMAGE TYPE", "DAMAGE SPAN KERNEL", "FRAME DAMAGE KERNEL", "DAMAGE RECT KERNEL", "DAMAGE WRITE KERNEL", "FRAME TICK KERNEL", "FRAME PACE TYPE", "FRAME PACE KERNEL"][..],
         ),
         ("../../src/text.rs", &["TEXT CLASS KERNEL"][..]),
         (

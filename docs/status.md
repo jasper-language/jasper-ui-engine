@@ -33,7 +33,7 @@
 ## 未完成与外部协作
 
 - 场景文字的光标/选区/文本命中几何（根入口尚未暴露）、完整文本编辑与 IME 往返；双向文字、字重/斜体与字体族选择未验收。原生路径的文字光栅、多字体按序回退与折行已有无头实测（见 2026-10-27 UI3 节）。
-- 图片/SVG 解码、资源额度、圆角/阴影/变换；区域重绘（只重绘损伤区域）、帧节拍/动画驱动与 GPU 路径的帧调度。原生 CPU 路径的整帧按需调度、上一帧复用（UI4）、相对上一帧的精确损伤矩形报告（UI5）与按损伤只写变化像素的宿主 Surface 写入（UI6）已有无头实测。
+- 图片/SVG 解码、资源额度、圆角/阴影/变换；区域重绘（只重绘损伤区域）、真实垂直同步来源、动画/过渡驱动与 GPU 路径的帧调度。原生 CPU 路径的整帧按需调度、上一帧复用（UI4）、相对上一帧的精确损伤矩形报告（UI5）、按损伤只写变化像素的宿主 Surface 写入（UI6）与按宿主刷新时钟的帧节拍决定（UI7）已有无头实测。
 - GPU 渲染、系统无障碍桥、多窗口/DPI/触控/笔平台覆盖。
 - 版本化语义更新协议、代际句柄/所有权、Native ABI、完整宿主能力协商。
 - 系统内置 UI 服务适配、系统 Surface/输入/字体资源接入、多应用隔离与重连恢复。系统桌面是一等目标，软件路径不能依赖自带窗口栈。
@@ -399,3 +399,20 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 构建虚拟机复测：默认配置单元 114 项及全部集成测试通过；`native-blitz-cpu-pending` 单元 174 项及全部集成测试通过（`native_frame_damage_write` 2/2）。`damage_rect_admits` 与 `write_surface_segment` 完成六步链：Verus 分别 1 与 3（含 surface_row/surface_span 依赖）verified/0 errors，接受空矩形/忽略纵向边界、省略复制/忽略 offset 四个反例均被拒。`write_damaged_frame` 的 Verus 阶段为 N/A（理由与替代证据见 `docs/verification.md` UI-DAMAGE-WRITE-001），其余五步对照独立规格通过，不计为六阶段完成；其 Kani harness 为固定几何（至多两像素）× 全部损伤种类与一组固定矩形（含越界、溢出），符号矩形坐标在 2×2 帧下耗尽 CBMC 内存，任意矩形由 Proptest（5×5 以内，含与 `frame_damage` 的端到端收敛）覆盖。
 
 整链 `scripts/verify-ui.py`：Verus/Z3、Proptest（读边界属性 36 项）、Miri、cargo-fuzz（两个目标各 20 秒，8.2 万/102.4 万次）、Kani（38 个 harness）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，与本切片无关。证明映射检查为最新；`obligations.json` 中三个文件的元数据哈希与方法计数在整链结束后更新（不改变被验证的源码）。
+
+## 2026-10-28：原生路径帧节拍（UI7）
+
+根入口 `engine::Engine` 新增 `frame_pace(owner, presented, origin, interval, now) -> Option<FramePace>`：在 `needs_frame` 之上，按宿主刷新时钟（`origin + k·interval`，时间单位由宿主决定）给出帧准入决定。`Idle`：没有待绘变化，不必为本视图唤醒（无论时钟走到哪里）；`WaitUntil(t)`：有待绘变化，但本周期已呈现过（`presented` ≥ 本周期节拍）或首个节拍未到，在 t 唤醒；`RenderNow(tick)`：本周期绘制并呈现，之后把 tick 作为 `presented` 传回。每周期至多一帧，宿主停顿错过的周期直接跳过、不追帧。非归属方、已关闭视图、周期为零、下一节拍超出 u64 时为 None。决定由两个纯内核完成：`frame_schedule::frame_tick_at`（包含 now 的周期起点）与 `frame_schedule::frame_pace`。本方法不绘制也不等待；真实垂直同步来源、动画/过渡驱动与 GPU 帧调度不在本切片。
+
+新增集成测试 `tests/native_frame_pace.rs`（`native-blitz-cpu-pending`，注入 `JASPER_UI_TEST_FONT`=DejaVu Sans，周期 16 666 667 ns）：
+
+| 测试 | 断言 | 结果 |
+|---|---|---|
+| `one_frame_per_period_and_idle_when_clean` | 首节拍前 WaitUntil(origin)；第 3 周期内 RenderNow(该周期节拍)；绘制后无变化为 Idle（100 个周期后仍 Idle）；同周期内改色得 WaitUntil(下一节拍)，到点 RenderNow；绘制后 `needs_frame` 为 false | 通过 |
+| `missed_periods_are_skipped_not_caught_up` | 上次呈现在第 2 周期、宿主停顿到第 13 周期中段：恰一次 RenderNow(第 13 周期节拍)，绘制后 Idle | 通过 |
+| `foreign_closed_and_invalid_clock_are_rejected` | 非归属方、周期为零、下一节拍溢出均为 None；宿主 `invalidate_frame` 后本周期 RenderNow；关闭后 None | 通过 |
+
+构建虚拟机复测：默认配置单元 114 项及全部集成测试通过；`native-blitz-cpu-pending` 单元 174 项及全部集成测试通过（`native_frame_pace` 3/3）。`frame_tick_at` 与 `frame_pace` 完成六步链：Verus 分别 1 与 3（含依赖）verified/0 errors，四个反例均被拒。Kani 对 64 位符号取模在全宽域下超时（单 harness 超过 270 秒），因此改为有界域：时钟取零或 u64::MAX 附近、now 与 origin 相差有界，另有周期取 u64::MAX 附近的 harness 覆盖溢出分支（四个 harness 分别约 97、1、11、2 秒）；全宽域由 Proptest 与 fuzz 覆盖。
+
+
+整链 `scripts/verify-ui.py`：Verus/Z3、Proptest（读边界属性 37 项）、Miri、cargo-fuzz（两个目标各 21 秒，10.6 万/138.5 万次）、Kani（42 个 harness）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，与本切片无关。证明映射检查为最新；`obligations.json` 中两个文件的元数据哈希与方法计数在整链结束后更新（不改变被验证的源码）。
