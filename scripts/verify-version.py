@@ -770,6 +770,23 @@ pub closed spec fn surface_view_model(view: &Rgba8SurfaceView) -> (Seq<u8>, u32,
         "mutations": [("focus-when-disabled", "AccessActions { focus: focusable && !disabled,", "AccessActions { focus: focusable,"),
                       ("activate-any-role", "activate: is_button && !disabled }", "activate: !disabled }")],
     },
+    "access-change-type": {"source": "src/native_adapter/access_tree.rs", "marker": "ACCESS CHANGE", "suffix": "TYPE", "signature": None, "depends": [], "internal_only": True},
+    "access-change": {
+        "source": "src/native_adapter/access_tree.rs", "marker": "ACCESS CHANGE", "property": "UI-ACCESS-CHANGE-001",
+        "signature": """pub fn access_change(in_previous: bool, in_next: bool, equal: bool) -> AccessChange {""",
+        "contract": """pub fn access_change(in_previous: bool, in_next: bool, equal: bool) -> (result: AccessChange)
+    ensures
+        !in_previous && !in_next ==> result == AccessChange::Absent,
+        !in_previous && in_next ==> result == AccessChange::Added,
+        in_previous && !in_next ==> result == AccessChange::Removed,
+        in_previous && in_next && equal ==> result == AccessChange::Unchanged,
+        in_previous && in_next && !equal ==> result == AccessChange::Changed,
+{""",
+        "function_count": 1, "depends": ["access-change-type"], "evidence": "access-change-kernel",
+        "scope": "classification of one node between two accessibility trees (Absent/Added/Removed/Unchanged/Changed; equality decides only when present in both) only; not the tree difference, content comparison, replay or traversal in access_tree",
+        "mutations": [("added-when-removed", "if in_previous { AccessChange::Removed } else { AccessChange::Absent }", "if in_previous { AccessChange::Added } else { AccessChange::Absent }"),
+                      ("ignore-equality", "    } else if equal {\n        AccessChange::Unchanged", "    } else if true {\n        AccessChange::Unchanged")],
+    },
     "damage-rect": {
         "source": "src/native_adapter/frame_schedule.rs", "marker": "DAMAGE RECT", "property": "UI-DAMAGE-RECT-001",
         "signature": """pub fn damage_rect_admits(x: u32, y: u32, rect_width: u32, rect_height: u32, width: u32, height: u32) -> bool {""",

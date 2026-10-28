@@ -567,6 +567,23 @@ pub fn assert_access_actions(is_button: bool, focusable: bool, disabled: bool) {
     assert_eq!(actions.activate, is_button && !disabled);
 }
 
+/// Independent node-change oracle: absence in the newer tree wins, then absence in the older
+/// tree; content equality decides only for nodes in both.
+/// 独立节点差别规格：新树中没有优先，其次旧树中没有；内容相等只对两树都有的节点起作用。
+pub fn assert_access_change(in_previous: bool, in_next: bool, equal: bool) {
+    let expected = match (in_previous, in_next) {
+        (false, false) => AccessChange::Absent,
+        (false, true) => AccessChange::Added,
+        (true, false) => AccessChange::Removed,
+        (true, true) => if equal { AccessChange::Unchanged } else { AccessChange::Changed },
+    };
+    assert_eq!(access_change(in_previous, in_next, equal), expected);
+    // Equality is irrelevant unless the node is in both trees.
+    if !(in_previous && in_next) {
+        assert_eq!(access_change(in_previous, in_next, !equal), expected);
+    }
+}
+
 /// Independent damage-rectangle admission oracle over widened integers.
 /// 宽整数下的独立损伤矩形准入规格。
 pub fn assert_damage_rect(x: u32, y: u32, rect_width: u32, rect_height: u32, width: u32, height: u32) {
@@ -1411,6 +1428,11 @@ mod kani_checks {
     }
 
     #[kani::proof]
+    fn access_change_rules() {
+        assert_access_change(kani::any(), kani::any(), kani::any());
+    }
+
+    #[kani::proof]
     fn damage_rect_admission() {
         assert_damage_rect(kani::any(), kani::any(), kani::any(), kani::any(), kani::any(), kani::any());
     }
@@ -1795,6 +1817,10 @@ mod properties {
             assert_access_actions(button, focusable, disabled);
         }
         #[test]
+        fn access_change_property(previous in any::<bool>(), next in any::<bool>(), equal in any::<bool>()) {
+            assert_access_change(previous, next, equal);
+        }
+        #[test]
         fn damage_rect_property(x in any::<u32>(), y in any::<u32>(), w in any::<u32>(), h in any::<u32>(),
                                 width in any::<u32>(), height in any::<u32>(),
                                 sx in 0u32..6, sy in 0u32..6, sw in 0u32..6, sh in 0u32..6, fw in 0u32..6, fh in 0u32..6) {
@@ -2105,6 +2131,7 @@ mod memory {
         }
         for bits in 0u8..8 {
             assert_access_actions(bits & 1 == 1, bits & 2 == 2, bits & 4 == 4);
+            assert_access_change(bits & 1 == 1, bits & 2 == 2, bits & 4 == 4);
         }
         for (x, y, w, h) in [(0, 0, 1, 1), (2, 1, 1, 1), (0, 0, 3, 2), (3, 0, 1, 1), (1, 1, 0, 1), (u32::MAX, 0, 2, 1)] {
             assert_damage_rect(x, y, w, h, 3, 2);
@@ -2313,6 +2340,7 @@ mod schedules {
                 assert_damage_span(Some((first[0] as u32, first[1] as u32)), first[2] as u32);
                 assert_damage_rect(first[0] as u32, first[1] as u32, first[2] as u32, first[3] as u32, 2, 2);
                 assert_frame_tick(first[0] as u64, first[1] as u64, first[2] as u64);
+                assert_access_change(first[0] & 1 == 1, first[1] & 1 == 1, first[2] & 1 == 1);
                 assert_frame_pace(first[3] & 1 == 1, Some(first[0] as u64), first[1] as u64, first[2] as u64, first[3] as u64);
                 assert_segment(first.as_ref(), 2, 2, 2, 1, first[0] as usize % 3, &first[2..]);
                 assert_frame_damage(Some((1, 1, first.as_ref())), 1, 1, &[first[3], first[2], first[1], first[0]]);

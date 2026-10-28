@@ -548,11 +548,11 @@
       "evidence": "evidence/validation-chain/report.json"
     },
     "src/native_adapter/access_tree.rs": {
-      "source_sha256": "dfaf93c22c033eadc82843054da6e2b007cb94d4a142f9a67b93e08612e133fd",
-      "own_methods": 1,
-      "implementation_proofs_complete": 1,
-      "six_stage_acceptance_complete": 1,
-      "scope": "Accessibility actions of a node in the visible tree (focus iff enabled and focusable, activate iff enabled button) (Verus + five stages) and own AccessibilityTree/AccessibilityNode declarations; visibility pruning, traversal order, node_bounds geometry and focus projection in native_scene are covered by tests/native_accessibility_tree.rs, not proof; no platform accessibility API",
+      "source_sha256": "83b68d9a7682a5076c3ab413993c1474b523ebeb66a4df8b8ef901bc4d0fde8f",
+      "own_methods": 6,
+      "implementation_proofs_complete": 2,
+      "six_stage_acceptance_complete": 2,
+      "scope": "Accessibility actions of a node in the visible tree (focus iff enabled and focusable, activate iff enabled button) and per-node change classification between two trees (Absent/Added/Removed/Unchanged/Changed) (Verus + five stages), own AccessibilityTree/AccessibilityNode/AccessibilityUpdate declarations; visibility pruning, traversal order, node_bounds geometry and focus projection in native_scene are covered by tests/native_accessibility_tree.rs, tree difference/replay (update_since, apply, root, is_empty) by tests/native_accessibility_update.rs, not proof; no platform accessibility API",
       "evidence": "evidence/validation-chain/report.json"
     },
     "src/native_adapter/gpu_render.rs": {
@@ -580,7 +580,7 @@
       "evidence": "evidence/blitz-framework-update-contract-pending/report.json"
     },
     "src/native_adapter/facade.rs": {
-      "source_sha256": "ff4f62fab5b3a785cde7803ed3dafc0fc825832815f35879e40d1fba174e9f80",
+      "source_sha256": "7ad2937a07529ae33e9f60d51b65e202560b3a01019f069028a670a4a23fa0d0",
       "own_methods": 63,
       "implementation_proofs_complete": 4,
       "six_stage_acceptance_complete": 4,

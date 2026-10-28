@@ -19,7 +19,7 @@ pub use jasper_ui_engine::input_identity::{UiInputBinding,UiInputContext,UiInput
 pub use jasper_ui_engine::composition_identity::UiCompositionToken;
 #[cfg(feature="cpu-pending")]
 pub use crate::frame_schedule::{FrameDamage,FramePace};
-pub use crate::access_tree::{AccessActions,AccessibilityNode,AccessibilityTree};
+pub use crate::access_tree::{AccessActions,AccessibilityNode,AccessibilityTree,AccessibilityUpdate};
 #[cfg(feature="gpu-pending")]
 pub use crate::gpu_render::{GpuRenderer,GpuFrameError};
 /// External-service display client; no authoritative editor document or input engine.
