@@ -464,6 +464,49 @@ pub fn assert_segment(bytes: &[u8], row_bytes: usize, height: usize, stride: usi
     }
 }
 
+/// Independent refresh-tick oracle by characterization: the tick is the unique instant at or
+/// after `origin`, aligned to `interval`, in `(now - interval, now]`.
+/// 刻画式独立刷新节拍规格：节拍是 `origin` 之后、按 `interval` 对齐、落在 `(now - interval, now]`
+/// 中的唯一时刻。
+pub fn assert_frame_tick(origin: u64, interval: u64, now: u64) {
+    let result = frame_tick_at(origin, interval, now);
+    if interval == 0 || now < origin {
+        assert_eq!(result, None);
+        return;
+    }
+    let t = result.expect("aligned tick exists");
+    assert!(origin <= t && t <= now && now - t < interval);
+    assert_eq!((t - origin) % interval, 0);
+}
+
+/// Independent frame-pacing oracle: idle when clean, wait for the first tick, one RenderNow
+/// per period (the characterized tick), otherwise the next tick unless it leaves u64.
+/// 独立帧节拍规格：无变化为 Idle，首节拍前等待，每周期一次 RenderNow（刻画所得节拍），
+/// 否则等待下一节拍（超出 u64 为 None）。
+pub fn assert_frame_pace(dirty: bool, presented: Option<u64>, origin: u64, interval: u64, now: u64) {
+    let result = frame_pace(dirty, presented, origin, interval, now);
+    let expected = if interval == 0 {
+        None
+    } else if !dirty {
+        Some(FramePace::Idle)
+    } else if now < origin {
+        Some(FramePace::WaitUntil(origin))
+    } else {
+        assert_frame_tick(origin, interval, now);
+        let tick = frame_tick_at(origin, interval, now).expect("tick characterized above");
+        if !matches!(presented, Some(last) if last >= tick) {
+            Some(FramePace::RenderNow(tick))
+        } else {
+            tick.checked_add(interval).map(FramePace::WaitUntil)
+        }
+    };
+    assert_eq!(result, expected);
+    if let Some(FramePace::RenderNow(tick)) = result {
+        // Presenting that tick ends the period: asking again never renders twice.
+        assert!(!matches!(frame_pace(dirty, Some(tick), origin, interval, now), Some(FramePace::RenderNow(_))));
+    }
+}
+
 /// Independent damage-rectangle admission oracle over widened integers.
 /// 宽整数下的独立损伤矩形准入规格。
 pub fn assert_damage_rect(x: u32, y: u32, rect_width: u32, rect_height: u32, width: u32, height: u32) {
@@ -1237,6 +1280,56 @@ mod kani_checks {
         if wide { frame_damage_for_extent(2, 1) } else { frame_damage_for_extent(1, 2) }
     }
 
+    /// A clock value either near zero or near u64::MAX, so both ends of the range are covered.
+    /// 时钟值取零附近或 u64::MAX 附近，覆盖两端。
+    fn clock() -> u64 {
+        let low: u16 = kani::any();
+        if kani::any() { low as u64 } else { u64::MAX - low as u64 }
+    }
+
+    /// `base` moved by a small symbolic distance either way (no wrap): keeps `now - origin`
+    /// narrow so the 64-bit divider stays tractable; full-width symbolic `%` timed out.
+    /// `base` 向任一方向移动较小的符号距离（不回绕）：使 `now - origin` 位宽较窄、64 位除法器可解；
+    /// 全宽符号 `%` 超时。
+    fn near(base: u64) -> u64 {
+        near_by(base, kani::any::<u16>() as u64)
+    }
+
+    fn near_by(base: u64, delta: u64) -> u64 {
+        let moved = if kani::any() { base.checked_add(delta) } else { base.checked_sub(delta) };
+        kani::assume(moved.is_some());
+        moved.unwrap()
+    }
+
+    #[kani::proof]
+    fn frame_tick_alignment() {
+        let origin = clock();
+        assert_frame_tick(origin, kani::any::<u16>() as u64, near(origin));
+    }
+
+    #[kani::proof]
+    fn frame_tick_alignment_wide_period() {
+        let interval = if kani::any() { u64::MAX } else { u64::MAX - kani::any::<u8>() as u64 };
+        assert_frame_tick(clock(), interval, clock());
+    }
+
+    #[kani::proof]
+    fn frame_pace_decision() {
+        // Narrower than the tick harness: this one runs the divider four times.
+        // 比节拍 harness 更窄：此处除法器执行四次。
+        let origin = clock();
+        let now = near_by(origin, kani::any::<u8>() as u64);
+        let presented = if kani::any() { Some(near_by(now, kani::any::<u8>() as u64)) } else { None };
+        assert_frame_pace(kani::any(), presented, origin, kani::any::<u8>() as u64, now);
+    }
+
+    #[kani::proof]
+    fn frame_pace_overflow() {
+        let interval = u64::MAX - kani::any::<u8>() as u64;
+        let presented = if kani::any() { Some(clock()) } else { None };
+        assert_frame_pace(true, presented, clock(), interval, clock());
+    }
+
     #[kani::proof]
     fn damage_rect_admission() {
         assert_damage_rect(kani::any(), kani::any(), kani::any(), kani::any(), kani::any(), kani::any());
@@ -1585,6 +1678,17 @@ mod properties {
             assert_frame_damage(Some((w, h, &before)), w, h, &after[..len.saturating_sub(1)]);
         }
         #[test]
+        fn frame_pace_property(dirty in any::<bool>(), presented in any::<Option<u64>>(), origin in any::<u64>(),
+                               interval in any::<u64>(), now in any::<u64>(), so in 0u64..50, si in 0u64..9,
+                               sn in 0u64..200, sp in 0u64..200) {
+            assert_frame_tick(origin, interval, now);
+            assert_frame_tick(so, si, sn);
+            assert_frame_tick(u64::MAX - so, si, u64::MAX - sn);
+            assert_frame_pace(dirty, presented, origin, interval, now);
+            assert_frame_pace(dirty, Some(sp), so, si, sn);
+            assert_frame_pace(true, Some(u64::MAX - sp), so, u64::MAX - si, u64::MAX - sn);
+        }
+        #[test]
         fn damage_rect_property(x in any::<u32>(), y in any::<u32>(), w in any::<u32>(), h in any::<u32>(),
                                 width in any::<u32>(), height in any::<u32>(),
                                 sx in 0u32..6, sy in 0u32..6, sw in 0u32..6, sh in 0u32..6, fw in 0u32..6, fh in 0u32..6) {
@@ -1868,6 +1972,15 @@ mod memory {
             assert_frame_damage(None, 3, 2, &next);
             assert_frame_damage(Some((3, 2, &base[..20])), 3, 2, &next[..20]);
         }
+        for (origin, interval) in [(0, 0), (0, 1), (5, 3), (100, 16), (u64::MAX - 1, u64::MAX - 1)] {
+            for now in [0, 4, 5, 7, 8, 100, 115, 116, u64::MAX - 1, u64::MAX] {
+                assert_frame_tick(origin, interval, now);
+                for presented in [None, Some(0), Some(5), Some(100), Some(u64::MAX)] {
+                    assert_frame_pace(true, presented, origin, interval, now);
+                    assert_frame_pace(false, presented, origin, interval, now);
+                }
+            }
+        }
         for (x, y, w, h) in [(0, 0, 1, 1), (2, 1, 1, 1), (0, 0, 3, 2), (3, 0, 1, 1), (1, 1, 0, 1), (u32::MAX, 0, 2, 1)] {
             assert_damage_rect(x, y, w, h, 3, 2);
             let damage = FrameDamage::Rect { x, y, width: w, height: h };
@@ -2074,6 +2187,8 @@ mod schedules {
                 assert_font_order(&[first[0] as u64, first[1] as u64], first[2] as u64, first[3] as usize);
                 assert_damage_span(Some((first[0] as u32, first[1] as u32)), first[2] as u32);
                 assert_damage_rect(first[0] as u32, first[1] as u32, first[2] as u32, first[3] as u32, 2, 2);
+                assert_frame_tick(first[0] as u64, first[1] as u64, first[2] as u64);
+                assert_frame_pace(first[3] & 1 == 1, Some(first[0] as u64), first[1] as u64, first[2] as u64, first[3] as u64);
                 assert_segment(first.as_ref(), 2, 2, 2, 1, first[0] as usize % 3, &first[2..]);
                 assert_frame_damage(Some((1, 1, first.as_ref())), 1, 1, &[first[3], first[2], first[1], first[0]]);
                 assert_frame_reuse(first[0] & 1 == 1, (first[1] as u32, first[2] as u32, first[3] as usize),
