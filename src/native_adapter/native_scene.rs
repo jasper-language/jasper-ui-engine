@@ -709,6 +709,42 @@ impl NativeScene {
         }
         Some(damage)
     }
+    /// Native GPU frame as compact RGBA8 (premultiplied alpha, as Vello hybrid emits). The CPU
+    /// frame cache no longer describes the last produced frame, so it is dropped: the next CPU
+    /// damage report is Full.
+    /// 原生 GPU 帧，紧凑 RGBA8（Vello hybrid 输出的预乘 alpha）。CPU 帧缓存不再对应最近产出的帧，
+    /// 故丢弃：下一次 CPU 损伤报告为 Full。
+    #[cfg(feature="gpu-pending")]
+    pub(crate) fn render_gpu(&mut self,caller:u64,version:u64,gpu:&mut crate::gpu_render::GpuRenderer,max_bytes:usize)
+        ->Result<Vec<u8>,crate::gpu_render::GpuFrameError> {
+        use crate::gpu_render::GpuFrameError;
+        if caller!=self.owner || version!=self.scene_version {return Err(GpuFrameError::Rejected);}
+        let document=self.document.as_mut().ok_or(GpuFrameError::Rejected)?;
+        let (width,height)=document.viewport().window_size;
+        let bytes=crate::cpu_budget::cpu_frame_bytes(width,height,max_bytes).ok_or(GpuFrameError::Rejected)?;
+        let scale=document.viewport().scale_f64();
+        self.frame_cache=None;self.frame_dirty=true;
+        let pixels=gpu.render(width,height,|scene|blitz_paint::paint_scene(scene,document,scale,width,height,0,0))?;
+        if pixels.len()!=bytes {return Err(GpuFrameError::Readback(format!("expected {bytes} bytes, read {}",pixels.len())));}
+        self.frame_dirty=false;
+        Ok(pixels)
+    }
+    /// GPU frame copied into a host-injected software surface; surface admission precedes
+    /// any GPU work and a failed write leaves the view dirty.
+    /// GPU 帧复制进宿主注入的软件 Surface；Surface 准入先于任何 GPU 工作，写入失败视图保持待绘。
+    #[cfg(feature="gpu-pending")]
+    pub(crate) fn render_gpu_to_host_surface(&mut self,caller:u64,version:u64,gpu:&mut crate::gpu_render::GpuRenderer,
+        destination:&mut [u8],stride:usize,max_render_bytes:usize)->Result<(),crate::gpu_render::GpuFrameError> {
+        use crate::gpu_render::GpuFrameError;
+        if caller!=self.owner || version!=self.scene_version {return Err(GpuFrameError::Rejected);}
+        let (width,height)=self.document.as_ref().ok_or(GpuFrameError::Rejected)?.viewport().window_size;
+        let mut failure=None;
+        let written=orchestrate_native_host_surface(width,height,destination,stride,max_render_bytes,
+            |budget|self.render_gpu(caller,version,gpu,budget).map_err(|error|failure=Some(error)).ok());
+        if written {return Ok(());}
+        self.invalidate_frame();
+        Err(failure.unwrap_or(GpuFrameError::Rejected))
+    }
     /// Render through the native painter then the existing backend submission/presentation seam.
     /// 经原生绘制后接入既有后端提交/呈现接缝；不生成或重放旧 PaintOp。
     /// Backend submit/present failures propagate; external presentation rollback is not promised.

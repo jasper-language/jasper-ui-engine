@@ -127,6 +127,9 @@ mod cpu_budget;
 #[cfg(feature="cpu-pending")]
 #[path="native_adapter/frame_schedule.rs"]
 mod frame_schedule;
+#[cfg(feature="gpu-pending")]
+#[path="native_adapter/gpu_render.rs"]
+mod gpu_render;
 #[cfg(feature="native-blitz-pending")]
 #[path="native_adapter/text_geometry.rs"]
 mod text_geometry;

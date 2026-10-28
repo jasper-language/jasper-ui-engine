@@ -19,6 +19,8 @@ pub use jasper_ui_engine::input_identity::{UiInputBinding,UiInputContext,UiInput
 pub use jasper_ui_engine::composition_identity::UiCompositionToken;
 #[cfg(feature="cpu-pending")]
 pub use crate::frame_schedule::{FrameDamage,FramePace};
+#[cfg(feature="gpu-pending")]
+pub use crate::gpu_render::{GpuRenderer,GpuFrameError};
 /// External-service display client; no authoritative editor document or input engine.
 // BEGIN VERIFIED TEXT DISPLAY TYPE
 pub struct TextDisplayView {inner:native_view::NativeTextView}
@@ -252,6 +254,23 @@ impl SceneHostView {
     }
     pub fn set_viewport_scroll(&mut self,owner:u64,version:u64,x:f64,y:f64)->bool {
         self.inner.set_viewport_scroll_from_host(owner,version,x,y)
+    }
+    /// Native GPU frame (Vello hybrid on wgpu) read back as compact premultiplied RGBA8. Err(Rejected)
+    /// for a foreign owner, stale version, closed view or over-budget extent; device/render/readback
+    /// failures are reported, never replaced by a CPU frame. Drops the CPU frame cache.
+    /// 原生 GPU 帧（wgpu 上的 Vello hybrid），读回为紧凑预乘 RGBA8。非归属方、过期版本、已关闭视图或
+    /// 超额尺寸为 Err(Rejected)；设备/渲染/读回失败如实报告，绝不以 CPU 帧顶替。会丢弃 CPU 帧缓存。
+    #[cfg(feature="gpu-pending")]
+    pub fn render_gpu(&mut self,owner:u64,version:u64,gpu:&mut GpuRenderer,budget:usize)->Result<Vec<u8>,GpuFrameError> {
+        self.inner.render_gpu(owner,version,gpu,budget)
+    }
+    /// `render_gpu` copied into a host software surface (stride/padding preserved); surface
+    /// admission precedes GPU work.
+    /// `render_gpu` 写入宿主软件 Surface（保留 stride/padding）；Surface 准入先于 GPU 工作。
+    #[cfg(feature="gpu-pending")]
+    pub fn render_gpu_to_surface(&mut self,owner:u64,version:u64,gpu:&mut GpuRenderer,bytes:&mut [u8],stride:usize,budget:usize)
+        ->Result<(),GpuFrameError> {
+        self.inner.render_gpu_to_host_surface(owner,version,gpu,bytes,stride,budget)
     }
     /// Native CPU frame to an embedding backend; unsupported backends return an explicit error.
     /// 原生 CPU 帧提交至嵌入后端；不支持的后端返回明确错误，呈现责任仍归宿主。

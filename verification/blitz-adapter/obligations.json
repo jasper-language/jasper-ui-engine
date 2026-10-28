@@ -476,8 +476,8 @@
       "evidence": "evidence/blitz-font-order-pending/report.json"
     },
     "src/native_adapter/native_scene.rs": {
-      "source_sha256": "42d096ab394b48a36f006675e658788f5c7a849cd162fbb7db3ac844f883a908",
-      "own_methods": 53,
+      "source_sha256": "81977e296c2dd15bdaddf93727ed852c3fc861a21df002d375d381eaec47e4f1",
+      "own_methods": 55,
       "implementation_proofs_complete": 12,
       "six_stage_acceptance_complete": 10,
       "scope": "Existing Scene/patch native mapping including per-node source scroll; owner-gated semantic metadata; OS bridge and full implementation proof pending",
@@ -547,6 +547,14 @@
       "scope": "Layout-to-source text offset admission (identical length, in range with end included, character boundary) and text range admission (ordered, both ends on boundaries) (Verus + five stages); layout/source text equality, Parley caret/hit/selection geometry and coordinate mapping in native_scene are covered by integration tests, not proof",
       "evidence": "evidence/validation-chain/report.json"
     },
+    "src/native_adapter/gpu_render.rs": {
+      "source_sha256": "e11c6aace201bf8ff2ea8e56ea485a7bcaef7753275af1142a7d1d5cf4d0b058",
+      "own_methods": 6,
+      "implementation_proofs_complete": 1,
+      "six_stage_acceptance_complete": 1,
+      "scope": "GPU readback buffer layout (extent admission shared with the CPU path, rows padded to 256 bytes, buffer = padded row x height) (Verus + five stages); wgpu device/adapter, Vello hybrid rendering, texture copy and buffer mapping are a third-party trust boundary covered by tests/native_gpu_render.rs, not proof",
+      "evidence": "evidence/validation-chain/report.json"
+    },
     "src/native_adapter/capture_policy.rs": {
       "source_sha256": "e8d7e13d69b77f1d373cc2f7aa47d28872fbbab245b94d9b6d4349742edc6f8b",
       "own_methods": 1,
@@ -564,8 +572,8 @@
       "evidence": "evidence/blitz-framework-update-contract-pending/report.json"
     },
     "src/native_adapter/facade.rs": {
-      "source_sha256": "ccf2f7aaa75e736c90f1a1f72d28c8130db222b5cb2e40a7a0a96acd4359a60b",
-      "own_methods": 60,
+      "source_sha256": "8f096df07b4c2711c755ee74bb5ef55952119878b107dd28b92ddfba9f2c9e58",
+      "own_methods": 62,
       "implementation_proofs_complete": 4,
       "six_stage_acceptance_complete": 4,
       "scope": "Typed embedding-host library facade; application component semantics remain Scene/ScenePatch values, backend modules private",

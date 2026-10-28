@@ -741,6 +741,23 @@ pub closed spec fn surface_view_model(view: &Rgba8SurfaceView) -> (Seq<u8>, u32,
         "mutations": [("accept-reversed-range", "\n    layout_len == source_len && start <= end && end", "\n    layout_len == source_len && end"),
                       ("ignore-end-boundary", "start_on_boundary && end_on_boundary\n}", "start_on_boundary\n}")],
     },
+    "gpu-readback": {
+        "source": "src/native_adapter/gpu_render.rs", "marker": "GPU READBACK LAYOUT", "property": "UI-GPU-READBACK-001",
+        "signature": """pub fn gpu_readback_layout(width: u32, height: u32) -> Option<(u32, u64)> {""",
+        "contract": """pub fn gpu_readback_layout(width: u32, height: u32) -> (result: Option<(u32, u64)>)
+    ensures
+        (width == 0 || height == 0 || width > 65535 || height > 65535) ==> result matches None,
+        (0 < width <= 65535 && 0 < height <= 65535) ==> (result matches Some((padded, bytes))
+            && padded % 256 == 0 && padded >= width * 4 && padded < width * 4 + 256
+            && bytes == padded * height),
+{""",
+        "extra_annotations": [("    Some((padded, padded as u64 * height as u64))",
+            "    assert(padded as int * height as int <= 262144 * 65535) by (nonlinear_arith) requires 0 <= padded as int, padded as int <= 262144, 0 <= height as int, height as int <= 65535;\n    Some((padded, padded as u64 * height as u64))")],
+        "function_count": 1, "depends": [], "evidence": "gpu-readback-kernel",
+        "scope": "GPU readback buffer layout (extent admission shared with the CPU path, rows padded to the 256-byte copy alignment, buffer size) only; not the wgpu copy, mapping, device or Vello rendering",
+        "mutations": [("drop-row-padding", "    let padded = (width * 4 + 255) / 256 * 256;", "    let padded = width * 4;"),
+                      ("admit-oversize-height", "height > 65535 {", "height > 65536 {")],
+    },
     "damage-rect": {
         "source": "src/native_adapter/frame_schedule.rs", "marker": "DAMAGE RECT", "property": "UI-DAMAGE-RECT-001",
         "signature": """pub fn damage_rect_admits(x: u32, y: u32, rect_width: u32, rect_height: u32, width: u32, height: u32) -> bool {""",
