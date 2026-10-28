@@ -58,6 +58,10 @@ fn main() {
             &["TEXT OFFSET KERNEL", "TEXT RANGE KERNEL"][..],
         ),
         (
+            "../../src/native_adapter/gpu_render.rs",
+            &["GPU READBACK LAYOUT KERNEL"][..],
+        ),
+        (
             "../../src/resource.rs",
             &["RESOURCE GATE KERNEL", "BYTES SLOT KERNEL"][..],
         ),

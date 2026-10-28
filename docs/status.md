@@ -26,7 +26,8 @@
 | 滚动与滚动条 | `scroll.rs`、`scrollbar.rs` | 逐级消费/残余 delta、clamp/fling、几何/拖动/绘制；无回弹/自动隐藏/完整平台主题 |
 | 桌面输入映射 | `desktop.rs`、`desktop` | winit 鼠标/键盘/滚轮/IME/焦点规范化；映射与路由不等于完整编辑器 |
 | 桌面窗口/软件呈现 | `examples/window.rs` | winit + softbuffer 色块窗口；示例把输入打印到 stderr，尚无状态驱动交互闭环 |
-| GPU 选择与枚举 | `graphics.rs`、`gpu_wgpu.rs`、`gpu` | 策略、回退说明与真实适配器枚举；无 GPU 绘制管线或 device-lost 恢复 |
+| GPU 选择与枚举 | `graphics.rs`、`gpu_wgpu.rs`、`gpu` | 策略、回退说明与真实适配器枚举；旧引擎无 GPU 绘制管线或 device-lost 恢复 |
+| 原生 GPU 无头渲染 | `native_adapter/gpu_render.rs`、`gpu-pending` | Vello hybrid 于 wgpu 离屏渲染并读回，仅在软件 Vulkan（llvmpipe）实测；无窗口呈现、device-lost 恢复、GPU 损伤或真实硬件验收（见 UI10 节） |
 | 流水线 | `engine.rs` | 每帧完整布局/绘制/编码/提交/呈现，无完整增量失效与调度 |
 | 最小宿主接口 | `platform.rs` | 尺寸/缩放/重绘/光标；不等于完整 UiHost 或已可用的系统内置服务 |
 
@@ -34,7 +35,7 @@
 
 - 场景文字的完整文本编辑与 IME 往返、选区高亮绘制与预编辑几何（光标/命中几何见 UI8 节、选区几何见 UI9 节）；双向文字、字重/斜体与字体族选择未验收。原生路径的文字光栅、多字体按序回退与折行已有无头实测（见 2026-10-27 UI3 节）。
 - 图片/SVG 解码、资源额度、圆角/阴影/变换；区域重绘（只重绘损伤区域）、真实垂直同步来源、动画/过渡驱动与 GPU 路径的帧调度。原生 CPU 路径的整帧按需调度、上一帧复用（UI4）、相对上一帧的精确损伤矩形报告（UI5）、按损伤只写变化像素的宿主 Surface 写入（UI6）与按宿主刷新时钟的帧节拍决定（UI7）已有无头实测。
-- GPU 渲染、系统无障碍桥、多窗口/DPI/触控/笔平台覆盖。
+- GPU 窗口/表面呈现、device-lost 恢复、GPU 损伤与局部重绘、真实硬件 GPU 验收（原生无头 GPU 渲染见 UI10 节）；系统无障碍桥、多窗口/DPI/触控/笔平台覆盖。
 - 版本化语义更新协议、代际句柄/所有权、Native ABI、完整宿主能力协商。
 - 系统内置 UI 服务适配、系统 Surface/输入/字体资源接入、多应用隔离与重连恢复。系统桌面是一等目标，软件路径不能依赖自带窗口栈。
 - Jasper 组件/状态/主题规则/导航、Element/Reconciler/UI IR，以及 Web DOM/SSR 等由对应语义层/后端提供，本仓库不复制第二套实现。
@@ -51,7 +52,7 @@
 | 文字显示/编辑 | unsupported | unsupported | unsupported | 外部后端 |
 | 平台输入 | unsupported，测试可注入事件 | native 映射；完整交互未接 | unsupported | 外部后端 |
 | 系统无障碍 | unsupported | unsupported | unsupported | 外部后端 |
-| GPU 绘制 | unsupported | unsupported，仅枚举 | unsupported | 外部后端 |
+| GPU 绘制 | 原生路径无头离屏（`gpu-pending`），仅软件 Vulkan 实测 | unsupported，仅枚举 | unsupported | 外部后端 |
 
 ## 证据与下一步
 
@@ -453,3 +454,19 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 构建虚拟机复测：默认配置单元 114 项及全部集成测试通过；`native-blitz-cpu-pending`（注入三份字体）单元 174 项及全部集成测试通过（`native_text_selection` 5/5、`native_text_geometry` 6/6）。没有引入新 crate。`text_range_admits` 的 Verus 阶段 1 verified/0 errors（接受反向区间、忽略终点边界两反例被拒）。
 
 整链 `scripts/verify-ui.py`：Verus/Z3、Proptest（读边界属性 39 项）、Miri、cargo-fuzz（两个目标各 21 秒，16.7 万/131.5 万次）、Kani（44 个 harness，`text_range_admission` 为全域符号输入，并与两端偏移准入交叉核对）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，与本切片无关。`obligations.json` 中 native_scene/facade/text_geometry 的元数据哈希与方法计数在整链启动前更新。Parley 选区几何与坐标换算本身不在证明范围，由上表集成测试覆盖。
+
+## 2026-10-28：原生路径 GPU 无头渲染（UI10）
+
+新增特性 `gpu-pending`（含 `native-blitz-cpu-pending`）：根原生路径经与 CPU 路径相同的 Blitz 绘制、同一 anyrender 场景接口，画进 Vello hybrid（`vello_gpu`，经 `anyrender_vello_hybrid`）并在 wgpu 上离屏渲染，再读回为紧凑预乘 RGBA8。`GpuRenderer::new_headless()` 不带呈现表面取得适配器（wgpu 默认/环境变量选择）并创建设备，`adapter_info()` 返回适配器名与后端；渲染器、目标纹理与读回缓冲跨帧复用，尺寸变化时重建。根入口 `engine::Engine` 新增 `render_gpu(owner, version, &mut gpu, budget) -> Result<Vec<u8>, GpuFrameError>` 与 `render_gpu_to_surface(owner, version, &mut gpu, bytes, stride, budget)`：非归属方、过期版本、已关闭视图、超额尺寸以及（写 Surface 时）不合法的 Surface 为 `Rejected`，且 Surface 准入先于任何 GPU 工作；无适配器、设备、渲染（wgpu 校验错误域）与读回失败分别报告，**绝不以 CPU 帧顶替**。GPU 帧会丢弃 CPU 帧缓存，下一次 CPU 损伤报告为 `Full`；成功后 `needs_frame` 清零。读回布局由新内核 `gpu_render::gpu_readback_layout` 决定（尺寸准入同 CPU 路径，行填充到 256 字节），去填充复用已证明的 `surface::surface_row`。
+
+新增集成测试 `tests/native_gpu_render.rs`（构建虚拟机，适配器 llvmpipe（LLVM 21.1.8）/Vulkan，即软件 Vulkan；注入 Noto Sans CJK）：
+
+| 测试 | 断言 | 实测 |
+|---|---|---|
+| `gpu_frame_matches_cpu_frame` | 7 个不透明填充/边框采样点 GPU 与 CPU 逐像素一致；差异只出现在标题文字框内、通道差 ≤1、少于 1% 像素；墨迹首末列与 CPU 一致 | 238/64000 像素不同，最大通道差 1；墨迹列 GPU 66 / CPU 66 |
+| `gpu_surface_write_preserves_padding_and_rejects_before_gpu_work` | 带 16 字节 padding 的 Surface 逐行等于紧凑帧且 padding 不变；短 Surface、非归属方、过期版本、额度差 1 字节均为 Rejected 且不写 | 通过 |
+| `gpu_frame_schedules_and_resizes` | GPU 帧后 `needs_frame` 为 false、下一次 CPU 损伤为 Full；视口改为 160×100 后 GPU 帧长度与背景像素正确；关闭后 Rejected | 通过 |
+
+构建虚拟机复测：默认配置单元 114 项及全部集成测试通过；`native-blitz-cpu-pending`（注入三份字体，拉丁为 DejaVu Sans）单元 174 项及全部集成测试通过；`gpu-pending` 单元 174 项与 `native_gpu_render` 3/3 通过。新增直接依赖 `anyrender_vello_hybrid` =0.11.0、`wgpu_context` =0.10.0、`vello_common` =0.3.0、`rustc-hash` =2.1.3，并把既有可选依赖 `wgpu`、`pollster` 改为精确钉扎（=30.0.1、=0.4.0，锁文件版本不变），均已登记许可。
+
+整链 `scripts/verify-ui.py`：Verus/Z3（`gpu_readback_layout` 2 verified/0 errors，去掉行填充、放宽高度上限两反例被拒）、Proptest（读边界属性 40 项）、Miri、cargo-fuzz（两个目标各 21 秒，11.4 万/172.8 万次）、Kani（45 个 harness，`gpu_readback_layout_admission` 为全域符号输入）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，与本切片无关。`obligations.json` 中 native_scene/facade 元数据在整链结束后更新，并新增 gpu_render 条目。wgpu 设备、Vello hybrid 渲染、纹理拷贝与缓冲映射为第三方信任边界，由上表集成测试覆盖，不在证明范围。未做：窗口/表面呈现、device-lost 恢复、GPU 损伤与局部重绘、真实硬件 GPU 验收、Canvas。

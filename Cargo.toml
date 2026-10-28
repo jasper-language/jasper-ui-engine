@@ -21,8 +21,8 @@ cosmic-text = { version = "0.19.0", optional = true, default-features = false, f
 # Desktop windowing/input host. Optional so headless and jasper-os builds stay light.
 winit = { version = "0.30.13", optional = true }
 # Real adapter enumeration for the desktop GPU host; the selection policy stays host-neutral.
-wgpu = { version = "30.0.1", optional = true }
-pollster = { version = "0.4.0", optional = true }
+wgpu = { version = "=30.0.1", optional = true }
+pollster = { version = "=0.4.0", optional = true }
 softbuffer = { version = "0.4.8", optional = true }
 
 # Replacement stack candidates: source-pinned, build/acceptance pending.
@@ -40,6 +40,12 @@ fontique = { version = "=0.12.0", default-features = false, optional = true }
 keyboard-types = { version = "=0.8.3", optional = true }
 anyrender = { version = "=0.14.0", optional = true }
 anyrender_vello_cpu = { version = "=0.18.0", default-features = false, optional = true }
+# GPU path through the same anyrender scene: Vello hybrid (vello_gpu) on wgpu.
+# GPU 路径经同一 anyrender 场景：Vello hybrid（vello_gpu）于 wgpu。
+anyrender_vello_hybrid = { version = "=0.11.0", optional = true }
+wgpu_context = { version = "=0.10.0", optional = true }
+vello_common = { version = "=0.3.0", optional = true }
+rustc-hash = { version = "=2.1.3", optional = true }
 
 [features]
 default = []
@@ -47,6 +53,8 @@ native-blitz-pending = ["dep:blitz-dom", "dep:blitz-traits", "dep:fontique", "de
 native-blitz-cpu-pending = ["native-blitz-pending", "cpu-pending"]
 # Shared source uses this internal cfg in both crates.
 cpu-pending = ["native-blitz-pending", "dep:blitz-paint", "dep:anyrender", "dep:anyrender_vello_cpu"]
+# Native GPU candidate: headless offscreen render + readback; adapter supplied by the platform.
+gpu-pending = ["cpu-pending", "dep:anyrender_vello_hybrid", "dep:vello_gpu", "dep:wgpu_context", "dep:vello_common", "dep:rustc-hash", "dep:wgpu", "dep:pollster"]
 text-parley-pending = ["dep:parley"]
 render-vello-cpu-pending = ["text-parley-pending", "dep:vello_cpu"]
 render-vello-gpu-pending = ["text-parley-pending", "dep:vello_gpu"]

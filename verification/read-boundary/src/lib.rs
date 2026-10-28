@@ -537,6 +537,23 @@ pub fn assert_text_range(layout_len: usize, source_len: usize, start: usize, end
     assert_eq!(expected, both && start <= end);
 }
 
+/// Independent GPU readback layout oracle over widened integers: admitted extents are the
+/// CPU-path ones, rows pad to the next multiple of 256 bytes and the buffer is padded × height.
+/// 独立 GPU 读回布局规格（加宽整数）：准入尺寸与 CPU 路径相同，行填充到下一个 256 字节倍数，
+/// 缓冲为填充行 × 高度。
+pub fn assert_gpu_readback_layout(width: u32, height: u32) {
+    let result = gpu_readback_layout(width, height);
+    if width == 0 || height == 0 || width > 65535 || height > 65535 {
+        assert_eq!(result, None);
+        return;
+    }
+    let (padded, bytes) = result.expect("admitted extent has a readback layout");
+    let row = width as u64 * 4;
+    assert_eq!(padded as u64 % 256, 0);
+    assert!(padded as u64 >= row && (padded as u64) < row + 256);
+    assert_eq!(bytes as u128, padded as u128 * height as u128);
+}
+
 /// Independent damage-rectangle admission oracle over widened integers.
 /// 宽整数下的独立损伤矩形准入规格。
 pub fn assert_damage_rect(x: u32, y: u32, rect_width: u32, rect_height: u32, width: u32, height: u32) {
@@ -1371,6 +1388,11 @@ mod kani_checks {
     }
 
     #[kani::proof]
+    fn gpu_readback_layout_admission() {
+        assert_gpu_readback_layout(kani::any(), kani::any());
+    }
+
+    #[kani::proof]
     fn damage_rect_admission() {
         assert_damage_rect(kani::any(), kani::any(), kani::any(), kani::any(), kani::any(), kani::any());
     }
@@ -1745,6 +1767,12 @@ mod properties {
             assert_text_range(usize::MAX, usize::MAX, usize::MAX - a, usize::MAX - b, sb, eb);
         }
         #[test]
+        fn gpu_readback_layout_property(width in any::<u32>(), height in any::<u32>(), w in 0u32..70000, h in 0u32..70000) {
+            assert_gpu_readback_layout(width, height);
+            assert_gpu_readback_layout(w, h);
+            assert_gpu_readback_layout(65535 - w % 65536, 65535 - h % 65536);
+        }
+        #[test]
         fn damage_rect_property(x in any::<u32>(), y in any::<u32>(), w in any::<u32>(), h in any::<u32>(),
                                 width in any::<u32>(), height in any::<u32>(),
                                 sx in 0u32..6, sy in 0u32..6, sw in 0u32..6, sh in 0u32..6, fw in 0u32..6, fh in 0u32..6) {
@@ -2049,6 +2077,9 @@ mod memory {
                     assert_text_range(layout_len, source_len, start, end, sb, eb);
                 }
             }
+        }
+        for (width, height) in [(0, 1), (1, 0), (1, 1), (63, 2), (64, 2), (65, 2), (320, 200), (65535, 65535), (65536, 1), (1, 65536), (u32::MAX, u32::MAX)] {
+            assert_gpu_readback_layout(width, height);
         }
         for (x, y, w, h) in [(0, 0, 1, 1), (2, 1, 1, 1), (0, 0, 3, 2), (3, 0, 1, 1), (1, 1, 0, 1), (u32::MAX, 0, 2, 1)] {
             assert_damage_rect(x, y, w, h, 3, 2);
