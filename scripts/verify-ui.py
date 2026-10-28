@@ -56,6 +56,7 @@ for file, markers in [
     ("src/native_adapter/frame_schedule.rs", ["FRAME REUSE KERNEL", "FRAME DAMAGE TYPE", "DAMAGE SPAN KERNEL", "FRAME DAMAGE KERNEL", "DAMAGE RECT KERNEL", "DAMAGE WRITE KERNEL", "FRAME TICK KERNEL", "FRAME PACE TYPE", "FRAME PACE KERNEL"]),
     ("src/text.rs", ["TEXT CLASS KERNEL"]),
     ("src/native_adapter/text_geometry.rs", ["TEXT OFFSET KERNEL", "TEXT RANGE KERNEL"]),
+    ("src/native_adapter/access_tree.rs", ["ACCESS ACTIONS TYPE", "ACCESS ACTIONS KERNEL"]),
     ("src/native_adapter/gpu_render.rs", ["GPU READBACK LAYOUT KERNEL"]),
     ("src/resource.rs", ["RESOURCE GATE KERNEL", "BYTES SLOT KERNEL"]),
     ("src/input.rs", ["MODIFIERS TYPE", "KEY PHASE TYPE", "KEY EVENT TYPE", "POINTER ID TYPE", "POINTER ORDER KERNEL", "POINTER KIND TYPES", "POINTER EVENT TYPE", "POINTER TRACKER TYPE"]),
@@ -81,7 +82,7 @@ for target in ["read_boundary", "batch_decode"]:
     for seed in (ROOT / "fuzz/seeds" / target).iterdir():
         shutil.copyfile(seed, corpora / target / seed.name)
 kernels = ["version", "decode-range", "transaction-gate", "byte-read", "cursor-read",
-           "scalar-read", "header-read", "bounded-payload", "surface-row", "surface-span", "surface-borrow", "surface-write", "surface-segment", "surface-view", "pixel-pack", "pixel-convert", "canvas-import", "canvas-pixel", "font-order", "frame-reuse", "damage-span", "damage-rect", "frame-tick", "frame-pace", "text-offset", "text-range", "gpu-readback", "resource-gate", "role-activation", "bytes-slot", "command-modifier", "text-class", "focus-cleanup", "keyboard-focus", "focus-select", "input-retire", "hover-update", "hover-retire", "pointer-order", "capture-query"]
+           "scalar-read", "header-read", "bounded-payload", "surface-row", "surface-span", "surface-borrow", "surface-write", "surface-segment", "surface-view", "pixel-pack", "pixel-convert", "canvas-import", "canvas-pixel", "font-order", "frame-reuse", "damage-span", "damage-rect", "frame-tick", "frame-pace", "text-offset", "text-range", "access-actions", "gpu-readback", "resource-gate", "role-activation", "bytes-slot", "command-modifier", "text-class", "focus-cleanup", "keyboard-focus", "focus-select", "input-retire", "hover-update", "hover-retire", "pointer-order", "capture-query"]
 stages = [
     ("Verus+Z3", [[sys.executable, "scripts/verify-version.py", "--kernel", k, "--verus", a.verus] for k in kernels]),
     ("Proptest", [["cargo", "--version"], ["cargo", "test", "--locked", "--test", "batch_properties"],
@@ -161,9 +162,9 @@ for stage in report["stages"]:
     log_path = out / (stage["name"].replace("+", "-") + ".log")
     output = log_path.read_text()
     required = {
-        "Proptest": [("test result: ok. 2 passed", 3), ("test result: ok. 3 passed", 1), ("test result: ok. 40 passed", 1), ("test result: ok. 6 passed", 1)],
+        "Proptest": [("test result: ok. 2 passed", 3), ("test result: ok. 3 passed", 1), ("test result: ok. 41 passed", 1), ("test result: ok. 6 passed", 1)],
         "Miri": [("test result: ok. 2 passed", 4), ("test result: ok. 1 passed", 1)],
-        "Kani": [("VERIFICATION:- SUCCESSFUL", 45)],
+        "Kani": [("VERIFICATION:- SUCCESSFUL", 46)],
         "Loom": [("test result: ok. 1 passed", 1)],
     }
     matched = all(output.count(token) >= count for token, count in required.get(stage["name"], []))

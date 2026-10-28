@@ -134,6 +134,9 @@ mod gpu_render;
 #[path="native_adapter/text_geometry.rs"]
 mod text_geometry;
 #[cfg(feature="native-blitz-pending")]
+#[path="native_adapter/access_tree.rs"]
+mod access_tree;
+#[cfg(feature="native-blitz-pending")]
 #[path="native_adapter/capture_policy.rs"]
 mod capture_policy;
 #[cfg(feature="native-blitz-pending")]

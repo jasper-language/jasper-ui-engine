@@ -605,6 +605,28 @@ impl NativeScene {
         }
         Some(crate::scene_events::SceneSemanticsSnapshot {scene_version:version,root,nodes})
     }
+    /// Visible accessibility tree with node_bounds geometry, scene focus and admitted actions;
+    /// hidden or undisplayed subtrees are pruned. Traversal is bounded by the node count.
+    pub(crate) fn accessibility_tree_from_host(&self,caller:u64,version:u64)->Option<crate::access_tree::AccessibilityTree> {
+        use crate::access_tree::{access_actions,AccessibilityNode,AccessibilityTree};
+        if caller!=self.owner || version!=self.scene_version || !self.document.is_open() {return None;}
+        let root=self.parents.iter().find_map(|(id,parent)|parent.is_none().then_some(*id))?;
+        let focused=self.focused_node(caller,version).filter(|id|self.source_visible(*id));
+        let mut nodes=Vec::new();
+        let mut pending=if self.source_visible(root) {vec![root]} else {Vec::new()};
+        while let Some(id)=pending.pop() {
+            if nodes.len()>=self.semantics.len() {return None;}
+            let semantics=self.semantics.get(&id)?;
+            let children:Vec<NodeId>=self.children.get(&id)?.iter().copied()
+                .filter(|child|self.source_visible(*child)).collect();
+            pending.extend(children.iter().rev());
+            nodes.push(AccessibilityNode {node:id,role:semantics.role,label:semantics.label.clone(),
+                description:semantics.description.clone(),value:semantics.value.clone(),disabled:semantics.disabled,
+                bounds:self.node_bounds_from_host(caller,version,id),focused:focused==Some(id),
+                actions:access_actions(semantics.role==Role::Button,semantics.focusable,semantics.disabled),children});
+        }
+        Some(AccessibilityTree {scene_version:version,nodes,focused})
+    }
     /// Host viewport scrolling is separate from per-node source SetScroll offsets.
     /// Host supplies valid extent and authenticates routing; Blitz owns scrolling/painting.
     pub(crate) fn set_viewport_scroll_from_host(&mut self,caller:u64,version:u64,x:f64,y:f64)->bool {

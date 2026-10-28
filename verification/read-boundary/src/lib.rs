@@ -554,6 +554,19 @@ pub fn assert_gpu_readback_layout(width: u32, height: u32) {
     assert_eq!(bytes as u128, padded as u128 * height as u128);
 }
 
+/// Independent accessibility-action oracle: a disabled node offers nothing; otherwise focus
+/// follows focusability and activation follows the button role.
+/// 独立无障碍动作规格：禁用节点无动作；否则聚焦取决于可聚焦性，激活取决于按钮角色。
+pub fn assert_access_actions(is_button: bool, focusable: bool, disabled: bool) {
+    let actions = access_actions(is_button, focusable, disabled);
+    let expected = if disabled { (false, false) } else { (focusable, is_button) };
+    assert_eq!((actions.focus, actions.activate), expected);
+    // Same answer as the engine's admission rules: focus needs focusable and enabled, activation
+    // needs an enabled button.
+    assert_eq!(actions.focus, focusable && !disabled);
+    assert_eq!(actions.activate, is_button && !disabled);
+}
+
 /// Independent damage-rectangle admission oracle over widened integers.
 /// 宽整数下的独立损伤矩形准入规格。
 pub fn assert_damage_rect(x: u32, y: u32, rect_width: u32, rect_height: u32, width: u32, height: u32) {
@@ -1393,6 +1406,11 @@ mod kani_checks {
     }
 
     #[kani::proof]
+    fn access_actions_rules() {
+        assert_access_actions(kani::any(), kani::any(), kani::any());
+    }
+
+    #[kani::proof]
     fn damage_rect_admission() {
         assert_damage_rect(kani::any(), kani::any(), kani::any(), kani::any(), kani::any(), kani::any());
     }
@@ -1773,6 +1791,10 @@ mod properties {
             assert_gpu_readback_layout(65535 - w % 65536, 65535 - h % 65536);
         }
         #[test]
+        fn access_actions_property(button in any::<bool>(), focusable in any::<bool>(), disabled in any::<bool>()) {
+            assert_access_actions(button, focusable, disabled);
+        }
+        #[test]
         fn damage_rect_property(x in any::<u32>(), y in any::<u32>(), w in any::<u32>(), h in any::<u32>(),
                                 width in any::<u32>(), height in any::<u32>(),
                                 sx in 0u32..6, sy in 0u32..6, sw in 0u32..6, sh in 0u32..6, fw in 0u32..6, fh in 0u32..6) {
@@ -2080,6 +2102,9 @@ mod memory {
         }
         for (width, height) in [(0, 1), (1, 0), (1, 1), (63, 2), (64, 2), (65, 2), (320, 200), (65535, 65535), (65536, 1), (1, 65536), (u32::MAX, u32::MAX)] {
             assert_gpu_readback_layout(width, height);
+        }
+        for bits in 0u8..8 {
+            assert_access_actions(bits & 1 == 1, bits & 2 == 2, bits & 4 == 4);
         }
         for (x, y, w, h) in [(0, 0, 1, 1), (2, 1, 1, 1), (0, 0, 3, 2), (3, 0, 1, 1), (1, 1, 0, 1), (u32::MAX, 0, 2, 1)] {
             assert_damage_rect(x, y, w, h, 3, 2);

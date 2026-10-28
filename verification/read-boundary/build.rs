@@ -58,6 +58,10 @@ fn main() {
             &["TEXT OFFSET KERNEL", "TEXT RANGE KERNEL"][..],
         ),
         (
+            "../../src/native_adapter/access_tree.rs",
+            &["ACCESS ACTIONS TYPE", "ACCESS ACTIONS KERNEL"][..],
+        ),
+        (
             "../../src/native_adapter/gpu_render.rs",
             &["GPU READBACK LAYOUT KERNEL"][..],
         ),

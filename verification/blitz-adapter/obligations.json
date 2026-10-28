@@ -476,8 +476,8 @@
       "evidence": "evidence/blitz-font-order-pending/report.json"
     },
     "src/native_adapter/native_scene.rs": {
-      "source_sha256": "81977e296c2dd15bdaddf93727ed852c3fc861a21df002d375d381eaec47e4f1",
-      "own_methods": 55,
+      "source_sha256": "77a9cc4371cb84799962940dc4b8611f7656c2137447517c73020cff15f02354",
+      "own_methods": 56,
       "implementation_proofs_complete": 12,
       "six_stage_acceptance_complete": 10,
       "scope": "Existing Scene/patch native mapping including per-node source scroll; owner-gated semantic metadata; OS bridge and full implementation proof pending",
@@ -547,6 +547,14 @@
       "scope": "Layout-to-source text offset admission (identical length, in range with end included, character boundary) and text range admission (ordered, both ends on boundaries) (Verus + five stages); layout/source text equality, Parley caret/hit/selection geometry and coordinate mapping in native_scene are covered by integration tests, not proof",
       "evidence": "evidence/validation-chain/report.json"
     },
+    "src/native_adapter/access_tree.rs": {
+      "source_sha256": "dfaf93c22c033eadc82843054da6e2b007cb94d4a142f9a67b93e08612e133fd",
+      "own_methods": 1,
+      "implementation_proofs_complete": 1,
+      "six_stage_acceptance_complete": 1,
+      "scope": "Accessibility actions of a node in the visible tree (focus iff enabled and focusable, activate iff enabled button) (Verus + five stages) and own AccessibilityTree/AccessibilityNode declarations; visibility pruning, traversal order, node_bounds geometry and focus projection in native_scene are covered by tests/native_accessibility_tree.rs, not proof; no platform accessibility API",
+      "evidence": "evidence/validation-chain/report.json"
+    },
     "src/native_adapter/gpu_render.rs": {
       "source_sha256": "e11c6aace201bf8ff2ea8e56ea485a7bcaef7753275af1142a7d1d5cf4d0b058",
       "own_methods": 6,
@@ -572,8 +580,8 @@
       "evidence": "evidence/blitz-framework-update-contract-pending/report.json"
     },
     "src/native_adapter/facade.rs": {
-      "source_sha256": "8f096df07b4c2711c755ee74bb5ef55952119878b107dd28b92ddfba9f2c9e58",
-      "own_methods": 62,
+      "source_sha256": "ff4f62fab5b3a785cde7803ed3dafc0fc825832815f35879e40d1fba174e9f80",
+      "own_methods": 63,
       "implementation_proofs_complete": 4,
       "six_stage_acceptance_complete": 4,
       "scope": "Typed embedding-host library facade; application component semantics remain Scene/ScenePatch values, backend modules private",
