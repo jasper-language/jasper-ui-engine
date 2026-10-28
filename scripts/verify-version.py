@@ -758,6 +758,18 @@ pub closed spec fn surface_view_model(view: &Rgba8SurfaceView) -> (Seq<u8>, u32,
         "mutations": [("drop-row-padding", "    let padded = (width * 4 + 255) / 256 * 256;", "    let padded = width * 4;"),
                       ("admit-oversize-height", "height > 65535 {", "height > 65536 {")],
     },
+    "access-actions-type": {"source": "src/native_adapter/access_tree.rs", "marker": "ACCESS ACTIONS", "suffix": "TYPE", "signature": None, "depends": [], "internal_only": True},
+    "access-actions": {
+        "source": "src/native_adapter/access_tree.rs", "marker": "ACCESS ACTIONS", "property": "UI-ACCESS-ACTIONS-001",
+        "signature": """pub fn access_actions(is_button: bool, focusable: bool, disabled: bool) -> AccessActions {""",
+        "contract": """pub fn access_actions(is_button: bool, focusable: bool, disabled: bool) -> (result: AccessActions)
+    ensures result.focus == (focusable && !disabled), result.activate == (is_button && !disabled),
+{""",
+        "function_count": 1, "depends": ["access-actions-type"], "evidence": "access-actions-kernel",
+        "scope": "accessibility actions of a node already in the visible tree (focus iff enabled and focusable, activate iff enabled button) only; not visibility pruning, traversal, geometry or the focus/activate entry points themselves",
+        "mutations": [("focus-when-disabled", "AccessActions { focus: focusable && !disabled,", "AccessActions { focus: focusable,"),
+                      ("activate-any-role", "activate: is_button && !disabled }", "activate: !disabled }")],
+    },
     "damage-rect": {
         "source": "src/native_adapter/frame_schedule.rs", "marker": "DAMAGE RECT", "property": "UI-DAMAGE-RECT-001",
         "signature": """pub fn damage_rect_admits(x: u32, y: u32, rect_width: u32, rect_height: u32, width: u32, height: u32) -> bool {""",

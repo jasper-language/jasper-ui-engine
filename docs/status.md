@@ -35,7 +35,7 @@
 
 - 场景文字的完整文本编辑与 IME 往返、选区高亮绘制与预编辑几何（光标/命中几何见 UI8 节、选区几何见 UI9 节）；双向文字、字重/斜体与字体族选择未验收。原生路径的文字光栅、多字体按序回退与折行已有无头实测（见 2026-10-27 UI3 节）。
 - 图片/SVG 解码、资源额度、圆角/阴影/变换；区域重绘（只重绘损伤区域）、真实垂直同步来源、动画/过渡驱动与 GPU 路径的帧调度。原生 CPU 路径的整帧按需调度、上一帧复用（UI4）、相对上一帧的精确损伤矩形报告（UI5）、按损伤只写变化像素的宿主 Surface 写入（UI6）与按宿主刷新时钟的帧节拍决定（UI7）已有无头实测。
-- GPU 窗口/表面呈现、device-lost 恢复、GPU 损伤与局部重绘、真实硬件 GPU 验收（原生无头 GPU 渲染见 UI10 节）；系统无障碍桥、多窗口/DPI/触控/笔平台覆盖。
+- GPU 窗口/表面呈现、device-lost 恢复、GPU 损伤与局部重绘、真实硬件 GPU 验收（原生无头 GPU 渲染见 UI10 节）；系统无障碍桥（AccessKit/平台 API 接入、增量更新事件、平台动作路由、文本无障碍接口；宿主无关的无障碍树快照见 UI11 节）、多窗口/DPI/触控/笔平台覆盖。
 - 版本化语义更新协议、代际句柄/所有权、Native ABI、完整宿主能力协商。
 - 系统内置 UI 服务适配、系统 Surface/输入/字体资源接入、多应用隔离与重连恢复。系统桌面是一等目标，软件路径不能依赖自带窗口栈。
 - Jasper 组件/状态/主题规则/导航、Element/Reconciler/UI IR，以及 Web DOM/SSR 等由对应语义层/后端提供，本仓库不复制第二套实现。
@@ -470,3 +470,18 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 构建虚拟机复测：默认配置单元 114 项及全部集成测试通过；`native-blitz-cpu-pending`（注入三份字体，拉丁为 DejaVu Sans）单元 174 项及全部集成测试通过；`gpu-pending` 单元 174 项与 `native_gpu_render` 3/3 通过。新增直接依赖 `anyrender_vello_hybrid` =0.11.0、`wgpu_context` =0.10.0、`vello_common` =0.3.0、`rustc-hash` =2.1.3，并把既有可选依赖 `wgpu`、`pollster` 改为精确钉扎（=30.0.1、=0.4.0，锁文件版本不变），均已登记许可。
 
 整链 `scripts/verify-ui.py`：Verus/Z3（`gpu_readback_layout` 2 verified/0 errors，去掉行填充、放宽高度上限两反例被拒）、Proptest（读边界属性 40 项）、Miri、cargo-fuzz（两个目标各 21 秒，11.4 万/172.8 万次）、Kani（45 个 harness，`gpu_readback_layout_admission` 为全域符号输入）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，与本切片无关。`obligations.json` 中 native_scene/facade 元数据在整链结束后更新，并新增 gpu_render 条目。wgpu 设备、Vello hybrid 渲染、纹理拷贝与缓冲映射为第三方信任边界，由上表集成测试覆盖，不在证明范围。未做：窗口/表面呈现、device-lost 恢复、GPU 损伤与局部重绘、真实硬件 GPU 验收、Canvas。
+
+## 2026-10-28：原生路径无障碍树快照（UI11）
+
+根入口 `engine::Engine` 新增 `accessibility_tree(owner, version) -> Option<AccessibilityTree>`，作为系统无障碍桥的第一步：引擎给出宿主无关的树，平台桥（AccessKit、AT-SPI、UIA 或系统无障碍服务）据此构建各自的树。`nodes` 为可见节点，按源顺序深度优先、根在首位；每个节点含 Framework 原样语义（role、label、description、value、disabled，不从后端 DOM 或显示文字重算）、与 `node_bounds` 相同的视图局部几何、场景内焦点标记、动作 `AccessActions { focus, activate }` 与可见子节点。隐藏（semantics.hidden）或未显示（display: none）的节点连同子树剔除，根本身不可见时为空树；焦点节点不可见时 `focused` 为 None。非归属方、过期版本、已关闭视图返回 None。遍历以节点数为上界。动作由新内核 `access_tree::access_actions` 决定（启用且可聚焦 → focus，启用的按钮 → activate），与 `focus`/`activate` 入口的准入规则一致。本切片不调用任何平台无障碍 API，没有 AccessKit 依赖、屏幕坐标换算、增量更新事件、平台动作路由或文本无障碍接口。
+
+新增集成测试 `tests/native_accessibility_tree.rs`（`native-blitz-pending`，注入 `JASPER_UI_TEST_FONT`=DejaVu Sans）：
+
+| 测试 | 断言 | 实测 |
+|---|---|---|
+| `visible_nodes_carry_semantics_geometry_and_order` | 顺序为源顺序深度优先，隐藏组与 display:none 组（含子树）剔除；语义原样；每个节点几何等于 `node_bounds`；动作按规则；初始无焦点 | 节点 [1,2,3,4,9,10]；根 0,0,240×200；按钮 80×30 |
+| `reported_actions_match_engine_admission` | 对树中每个节点实际调用 `activate`/`focus`，结果与报告的动作逐一相等；聚焦后树中恰一个焦点节点；被剔除节点两种动作均被拒 | 通过 |
+| `updates_reshape_the_tree_and_hiding_drops_focus` | 语义更新取消隐藏后子树出现、改名生效、旧版本 None；隐藏焦点按钮后该节点与焦点一并消失 | [1,2,3,4,5,6,9,10] → [1,2,5,6,9,10] |
+| `hidden_root_foreign_and_closed_are_explicit` | 非归属方、未来版本 None；根隐藏为空树且无焦点；关闭后 None | 通过 |
+
+构建虚拟机复测：默认配置单元 114 项及全部集成测试通过；`native-blitz-cpu-pending`（注入三份字体）单元 174 项及全部集成测试通过（`native_accessibility_tree` 4/4）。`access_actions` 完成六步链：Verus 2 verified/0 errors（含类型；禁用仍可聚焦、任意角色可激活两反例被拒）。整链 `scripts/verify-ui.py`：Verus/Z3、Proptest（读边界属性 41 项）、Miri、cargo-fuzz（两个目标各 21 秒，13.0 万/206.9 万次）、Kani（46 个 harness）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，与本切片无关。可见性剔除、遍历与焦点投影由集成测试覆盖，没有证明。证明映射检查为最新；`obligations.json` 新增 `access_tree.rs` 条目，`native_scene.rs`/`facade.rs` 的元数据哈希与方法计数在整链结束后更新（不改变被验证的源码）。

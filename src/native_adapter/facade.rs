@@ -19,6 +19,7 @@ pub use jasper_ui_engine::input_identity::{UiInputBinding,UiInputContext,UiInput
 pub use jasper_ui_engine::composition_identity::UiCompositionToken;
 #[cfg(feature="cpu-pending")]
 pub use crate::frame_schedule::{FrameDamage,FramePace};
+pub use crate::access_tree::{AccessActions,AccessibilityNode,AccessibilityTree};
 #[cfg(feature="gpu-pending")]
 pub use crate::gpu_render::{GpuRenderer,GpuFrameError};
 /// External-service display client; no authoritative editor document or input engine.
@@ -205,6 +206,16 @@ impl SceneHostView {
     }
     pub fn semantics(&self,owner:u64,version:u64)->Option<SceneSemanticsSnapshot> {
         self.inner.semantics_snapshot_from_host(owner,version)
+    }
+    /// Accessibility tree for a platform bridge: visible nodes in depth-first source order with
+    /// Framework semantics, node_bounds geometry, scene focus and the focus/activate actions this
+    /// engine admits; hidden or undisplayed subtrees are left out. None for a non-owner, a stale
+    /// version or a closed view. No platform accessibility API is called.
+    /// 供平台无障碍桥消费的无障碍树：可见节点按源顺序深度优先，含 Framework 语义、node_bounds 几何、
+    /// 场景焦点与本引擎准入的 focus/activate 动作；隐藏或未显示的子树剔除。非归属方、过期版本或已关闭
+    /// 视图为 None。不调用任何平台无障碍 API。
+    pub fn accessibility_tree(&self,owner:u64,version:u64)->Option<AccessibilityTree> {
+        self.inner.accessibility_tree_from_host(owner,version)
     }
     pub fn activate(&self,owner:u64,version:u64,node:NodeId,sink:&mut impl FnMut(SceneActivationEvent))->bool {
         self.inner.activate_from_host(owner,version,node,sink)
