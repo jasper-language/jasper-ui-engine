@@ -731,25 +731,39 @@ impl NativeScene {
         }
         Some(damage)
     }
-    /// Native GPU frame as compact RGBA8 (premultiplied alpha, as Vello hybrid emits). The CPU
-    /// frame cache no longer describes the last produced frame, so it is dropped: the next CPU
-    /// damage report is Full.
-    /// 原生 GPU 帧，紧凑 RGBA8（Vello hybrid 输出的预乘 alpha）。CPU 帧缓存不再对应最近产出的帧，
-    /// 故丢弃：下一次 CPU 损伤报告为 Full。
+    /// Native GPU frame as compact RGBA8 (premultiplied alpha, as Vello hybrid emits).
+    /// 原生 GPU 帧，紧凑 RGBA8（Vello hybrid 输出的预乘 alpha）。
     #[cfg(feature="gpu-pending")]
     pub(crate) fn render_gpu(&mut self,caller:u64,version:u64,gpu:&mut crate::gpu_render::GpuRenderer,max_bytes:usize)
         ->Result<Vec<u8>,crate::gpu_render::GpuFrameError> {
+        self.render_gpu_with_damage(caller,version,gpu,max_bytes).map(|(pixels,_)|pixels)
+    }
+    /// GPU frames share the frame cache with CPU frames: an unchanged view reuses the last
+    /// produced frame without GPU work, and damage is relative to the last produced frame,
+    /// whichever path painted it. A device/render/readback failure keeps the previous
+    /// baseline (nothing new was produced) and leaves the view dirty.
+    /// GPU 帧与 CPU 帧共用帧缓存：未变化视图不做 GPU 工作而复用最近产出的帧；损伤相对最近产出
+    /// 的帧，无论由哪条路径绘制。设备/渲染/读回失败时保留原基准（未产出新帧），视图保持待绘。
+    #[cfg(feature="gpu-pending")]
+    pub(crate) fn render_gpu_with_damage(&mut self,caller:u64,version:u64,gpu:&mut crate::gpu_render::GpuRenderer,max_bytes:usize)
+        ->Result<(Vec<u8>,crate::frame_schedule::FrameDamage),crate::gpu_render::GpuFrameError> {
+        use crate::frame_schedule::{frame_damage,FrameDamage};
         use crate::gpu_render::GpuFrameError;
         if caller!=self.owner || version!=self.scene_version {return Err(GpuFrameError::Rejected);}
         let document=self.document.as_mut().ok_or(GpuFrameError::Rejected)?;
         let (width,height)=document.viewport().window_size;
         let bytes=crate::cpu_budget::cpu_frame_bytes(width,height,max_bytes).ok_or(GpuFrameError::Rejected)?;
+        if let Some((cached_width,cached_height,cached))=&self.frame_cache {
+            if crate::frame_schedule::frame_reuse_admits(self.frame_dirty,*cached_width,*cached_height,
+                cached.len(),width,height,bytes) {return Ok((cached.clone(),FrameDamage::Unchanged));}
+        }
         let scale=document.viewport().scale_f64();
-        self.frame_cache=None;self.frame_dirty=true;
         let pixels=gpu.render(width,height,|scene|blitz_paint::paint_scene(scene,document,scale,width,height,0,0))?;
         if pixels.len()!=bytes {return Err(GpuFrameError::Readback(format!("expected {bytes} bytes, read {}",pixels.len())));}
-        self.frame_dirty=false;
-        Ok(pixels)
+        let previous=self.frame_cache.as_ref().map(|(w,h,cached)|(*w,*h,cached.as_slice()));
+        let damage=frame_damage(previous,width,height,&pixels);
+        self.frame_cache=Some((width,height,pixels.clone()));self.frame_dirty=false;
+        Ok((pixels,damage))
     }
     /// GPU frame copied into a host-injected software surface; surface admission precedes
     /// any GPU work and a failed write leaves the view dirty.
@@ -757,15 +771,51 @@ impl NativeScene {
     #[cfg(feature="gpu-pending")]
     pub(crate) fn render_gpu_to_host_surface(&mut self,caller:u64,version:u64,gpu:&mut crate::gpu_render::GpuRenderer,
         destination:&mut [u8],stride:usize,max_render_bytes:usize)->Result<(),crate::gpu_render::GpuFrameError> {
+        self.render_gpu_to_host_surface_with_damage(caller,version,gpu,destination,stride,max_render_bytes).map(|_|())
+    }
+    /// `render_gpu_to_host_surface` that also reports damage relative to the last produced
+    /// frame. A frame produced but not written drops the cache so the next report is Full.
+    /// 同 `render_gpu_to_host_surface`，并报告相对最近产出帧的损伤；已产出未写入则丢弃缓存，下次为 Full。
+    #[cfg(feature="gpu-pending")]
+    pub(crate) fn render_gpu_to_host_surface_with_damage(&mut self,caller:u64,version:u64,gpu:&mut crate::gpu_render::GpuRenderer,
+        destination:&mut [u8],stride:usize,max_render_bytes:usize)
+        ->Result<crate::frame_schedule::FrameDamage,crate::gpu_render::GpuFrameError> {
         use crate::gpu_render::GpuFrameError;
         if caller!=self.owner || version!=self.scene_version {return Err(GpuFrameError::Rejected);}
         let (width,height)=self.document.as_ref().ok_or(GpuFrameError::Rejected)?.viewport().window_size;
-        let mut failure=None;
+        let mut failure=None;let mut damage=None;
         let written=orchestrate_native_host_surface(width,height,destination,stride,max_render_bytes,
-            |budget|self.render_gpu(caller,version,gpu,budget).map_err(|error|failure=Some(error)).ok());
-        if written {return Ok(());}
+            |budget|match self.render_gpu_with_damage(caller,version,gpu,budget) {
+                Ok((pixels,found))=>{damage=Some(found);Some(pixels)}
+                Err(error)=>{failure=Some(error);None}
+            });
+        if written {if let Some(damage)=damage {return Ok(damage);}}
+        if damage.is_some() {self.frame_cache=None;}
         self.invalidate_frame();
         Err(failure.unwrap_or(GpuFrameError::Rejected))
+    }
+    /// Like `render_gpu_to_host_surface_with_damage`, but writes only the damaged pixels; the
+    /// host guarantees `destination` holds the frame this view produced last (otherwise it
+    /// invalidates first). Surface admission precedes GPU work; a rejected or failed call
+    /// writes nothing, and a failed write drops the cache so the next report is Full.
+    /// 同 `render_gpu_to_host_surface_with_damage`，但只写受损像素；宿主保证 `destination` 持有本视图
+    /// 上一次产出的帧（否则先失效）。Surface 准入先于 GPU 工作；被拒或失败不写任何字节，写入失败丢弃缓存。
+    #[cfg(feature="gpu-pending")]
+    pub(crate) fn render_gpu_to_host_surface_damaged(&mut self,caller:u64,version:u64,gpu:&mut crate::gpu_render::GpuRenderer,
+        destination:&mut [u8],stride:usize,max_render_bytes:usize)
+        ->Result<crate::frame_schedule::FrameDamage,crate::gpu_render::GpuFrameError> {
+        use crate::gpu_render::GpuFrameError;
+        use jasper_ui_engine::surface::{rgba8_row_bytes,surface_span};
+        if caller!=self.owner || version!=self.scene_version {return Err(GpuFrameError::Rejected);}
+        let (width,height)=self.document.as_ref().ok_or(GpuFrameError::Rejected)?.viewport().window_size;
+        let row_bytes=rgba8_row_bytes(width,destination.len()).ok_or(GpuFrameError::Rejected)?;
+        surface_span(row_bytes,height as usize,stride,destination.len()).ok_or(GpuFrameError::Rejected)?;
+        let (pixels,damage)=self.render_gpu_with_damage(caller,version,gpu,max_render_bytes)?;
+        if !crate::frame_schedule::write_damaged_frame(destination,stride,width,height,&pixels,damage) {
+            self.frame_cache=None;self.invalidate_frame();
+            return Err(GpuFrameError::Rejected);
+        }
+        Ok(damage)
     }
     /// Render through the native painter then the existing backend submission/presentation seam.
     /// 经原生绘制后接入既有后端提交/呈现接缝；不生成或重放旧 PaintOp。

@@ -61,6 +61,9 @@ fn gpu_frame_matches_cpu_frame() {
     let mut engine=Engine::new(OWNER,&source,&font,W,H).expect("native import");
     let mut gpu=gpu();
     let cpu=cpu_frame(&mut engine,v);
+    // Frames share one cache: force a GPU repaint instead of reusing the CPU frame.
+    // 帧共用缓存：强制 GPU 重绘，而非复用 CPU 帧。
+    assert!(engine.invalidate_frame(OWNER));
     let frame=engine.render_gpu(OWNER,v,&mut gpu,BUDGET).expect("gpu frame");
     assert_eq!(frame.len(),cpu.len());
     // Opaque fills and borders are exact on both paths.
@@ -125,12 +128,13 @@ fn gpu_frame_schedules_and_resizes() {
     let mut engine=Engine::new(OWNER,&source,&font,W,H).expect("native import");
     let mut gpu=gpu();
     assert_eq!(engine.needs_frame(OWNER),Some(true));
-    engine.render_gpu(OWNER,v,&mut gpu,BUDGET).expect("gpu frame");
+    let frame=engine.render_gpu(OWNER,v,&mut gpu,BUDGET).expect("gpu frame");
     assert_eq!(engine.needs_frame(OWNER),Some(false));
-    // The CPU cache no longer describes the last produced frame: the next CPU damage is Full.
-    // CPU 缓存不再对应最近产出的帧：下一次 CPU 损伤为 Full。
+    // The GPU frame is the last produced frame: an unchanged CPU render reuses it.
+    // GPU 帧即最近产出的帧：未变化时 CPU 渲染复用它。
     let mut bytes=vec![0;(W*H*4) as usize];
-    assert_eq!(engine.render_to_surface_with_damage(OWNER,v,&mut bytes,(W*4) as usize,BUDGET),Some(FrameDamage::Full));
+    assert_eq!(engine.render_to_surface_with_damage(OWNER,v,&mut bytes,(W*4) as usize,BUDGET),Some(FrameDamage::Unchanged));
+    assert_eq!(bytes,frame);
     assert!(engine.set_viewport(OWNER,160,100,1.0));
     let small=engine.render_gpu(OWNER,v,&mut gpu,BUDGET).expect("resized gpu frame");
     assert_eq!(small.len(),160*100*4);

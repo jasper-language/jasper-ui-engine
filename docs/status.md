@@ -457,7 +457,7 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 
 ## 2026-10-28：原生路径 GPU 无头渲染（UI10）
 
-新增特性 `gpu-pending`（含 `native-blitz-cpu-pending`）：根原生路径经与 CPU 路径相同的 Blitz 绘制、同一 anyrender 场景接口，画进 Vello hybrid（`vello_gpu`，经 `anyrender_vello_hybrid`）并在 wgpu 上离屏渲染，再读回为紧凑预乘 RGBA8。`GpuRenderer::new_headless()` 不带呈现表面取得适配器（wgpu 默认/环境变量选择）并创建设备，`adapter_info()` 返回适配器名与后端；渲染器、目标纹理与读回缓冲跨帧复用，尺寸变化时重建。根入口 `engine::Engine` 新增 `render_gpu(owner, version, &mut gpu, budget) -> Result<Vec<u8>, GpuFrameError>` 与 `render_gpu_to_surface(owner, version, &mut gpu, bytes, stride, budget)`：非归属方、过期版本、已关闭视图、超额尺寸以及（写 Surface 时）不合法的 Surface 为 `Rejected`，且 Surface 准入先于任何 GPU 工作；无适配器、设备、渲染（wgpu 校验错误域）与读回失败分别报告，**绝不以 CPU 帧顶替**。GPU 帧会丢弃 CPU 帧缓存，下一次 CPU 损伤报告为 `Full`；成功后 `needs_frame` 清零。读回布局由新内核 `gpu_render::gpu_readback_layout` 决定（尺寸准入同 CPU 路径，行填充到 256 字节），去填充复用已证明的 `surface::surface_row`。
+新增特性 `gpu-pending`（含 `cpu-pending`；`native-blitz-cpu-pending` 门控的集成测试须同时开启该特性）：根原生路径经与 CPU 路径相同的 Blitz 绘制、同一 anyrender 场景接口，画进 Vello hybrid（`vello_gpu`，经 `anyrender_vello_hybrid`）并在 wgpu 上离屏渲染，再读回为紧凑预乘 RGBA8。`GpuRenderer::new_headless()` 不带呈现表面取得适配器（wgpu 默认/环境变量选择）并创建设备，`adapter_info()` 返回适配器名与后端；渲染器、目标纹理与读回缓冲跨帧复用，尺寸变化时重建。根入口 `engine::Engine` 新增 `render_gpu(owner, version, &mut gpu, budget) -> Result<Vec<u8>, GpuFrameError>` 与 `render_gpu_to_surface(owner, version, &mut gpu, bytes, stride, budget)`：非归属方、过期版本、已关闭视图、超额尺寸以及（写 Surface 时）不合法的 Surface 为 `Rejected`，且 Surface 准入先于任何 GPU 工作；无适配器、设备、渲染（wgpu 校验错误域）与读回失败分别报告，**绝不以 CPU 帧顶替**。GPU 帧会丢弃 CPU 帧缓存，下一次 CPU 损伤报告为 `Full`（UI15 起改为共用帧缓存，见下文）；成功后 `needs_frame` 清零。读回布局由新内核 `gpu_render::gpu_readback_layout` 决定（尺寸准入同 CPU 路径，行填充到 256 字节），去填充复用已证明的 `surface::surface_row`。
 
 新增集成测试 `tests/native_gpu_render.rs`（构建虚拟机，适配器 llvmpipe（LLVM 21.1.8）/Vulkan，即软件 Vulkan；注入 Noto Sans CJK）：
 
@@ -513,3 +513,17 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 | `action_requests_reach_focus_and_activate_only_when_offered` | 逐节点 Click/Focus 恰按树中报告的动作准入并到达 focus/activate；禁用按钮点击与聚焦、文字点击、不支持的动作、未知节点、非归属方、过期版本、其他树、携带数据、隐藏子树十类拒绝且无事件、焦点不变 | 通过 |
 
 构建虚拟机复测：默认配置单元 114 项及全部集成测试通过；`native-blitz-cpu-pending`（注入三份字体）单元 174 项及全部集成测试通过；`accesskit-pending` 单元 163 项及全部集成测试通过（`native_accesskit_bridge` 3/3）。`access_request_admits` 完成六步链：Verus 2 verified/0 errors（含类型；用 activate 判 Focus、准入不支持请求两反例被拒）。整链 `scripts/verify-ui.py`：Verus/Z3、Proptest（读边界属性 43 项）、Miri、cargo-fuzz（两个目标各 21 秒，10.4 万/103.1 万次）、Kani（48 个 harness）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，与本切片无关。转换与路由由集成测试覆盖，没有证明。证明映射检查为最新；`obligations.json` 新增 `access_kit.rs` 条目，`facade.rs` 的元数据哈希与方法计数在整链结束后更新（不改变被验证的源码）。
+
+## 2026-10-28：原生路径 GPU 帧损伤与只写损伤区域（UI15）
+
+GPU 路径与 CPU 路径改为共用同一帧缓存与损伤基准（此前 GPU 帧会丢弃 CPU 缓存）。`render_gpu` 在视图未失效、尺寸与预算一致时经已证明的 `frame_reuse_admits` 复用最近产出的帧，**不做 GPU 工作**；否则 GPU 绘制读回后经 `frame_damage` 与上一帧（无论由哪条路径绘制）逐像素比较，再入缓存。设备/渲染/读回失败保留原基准、视图保持待绘。根入口 `engine::Engine` 新增 `render_gpu_to_surface_with_damage` 与 `render_gpu_to_surface_damaged`（返回 `Result<FrameDamage, GpuFrameError>`），语义对应 CPU 同名方法；`_damaged` 的 Surface 准入先于 GPU 工作，经已证明的 `write_damaged_frame` 只写受损像素，被拒或写入失败不写任何字节（写入失败丢弃缓存，下一次为 Full）。契约变化：未变化视图上 `render_gpu` 会返回最近产出的 CPU 帧，需强制 GPU 重绘时先 `invalidate_frame`（`tests/native_gpu_render.rs` 相应调整）。绘制仍为整帧；没有区域重绘、窗口呈现与 device-lost 恢复。
+
+新增集成测试 `tests/native_gpu_frame_damage.rs`（`gpu-pending`，注入 `JASPER_UI_TEST_FONT`=DejaVu Sans；构建虚拟机 llvmpipe/Vulkan），损伤均与测试内独立的逐像素包围盒规格比对：
+
+| 测试 | 断言 | 实测 |
+|---|---|---|
+| `gpu_damage_is_exact_and_damaged_writes_touch_only_the_rect` | 首帧 Full；干净视图 `render_gpu` 复用已产出帧；Unchanged 不写；改色损伤等于独立包围盒，矩形内被预先改写像素被覆盖、矩形外保留，padding 不变；加宽后损伤覆盖新增列且整帧写入收敛 | 改色 `Rect{0,0,40,30}` |
+| `gpu_and_cpu_frames_share_one_damage_baseline` | CPU 帧 → 场景变化 → GPU 帧的损伤等于两帧包围盒；GPU 帧 → 变化 → CPU 帧同理；均覆盖改色矩形 | 两次均 `Rect{0,0,44,46}`（含两路径文字抗锯齿差异） |
+| `gpu_rejection_writes_nothing_and_keeps_the_baseline` | 非归属方、过期版本、重叠 stride、短 Surface 均 `Rejected` 且字节不变；拒绝不移动基准（随后 Unchanged）；换缓冲后 `invalidate_frame` 得 Full 且与原帧一致；关闭后 `Rejected` | 通过 |
+
+构建虚拟机复测：默认配置 25 个测试套件共 140 项通过；`native-blitz-cpu-pending,gpu-pending`（注入三份字体）25 个套件共 247 项通过（单元 174 项，`native_gpu_frame_damage` 3/3、`native_gpu_render` 3/3，GPU 与 CPU 仍为 238/64000 像素差、最大通道差 1）。本切片未新增内核：所改代码是 GPU 渲染与已证明内核之间的编排，六步链各阶段对其为 N/A（理由与替代证据见 `docs/verification.md` UI-GPU-DAMAGE-001），不计为六阶段完成。整链 `scripts/verify-ui.py`：Verus/Z3、Proptest（读边界属性 43 项）、Miri、cargo-fuzz（两个目标各 21 秒，18.9 万/144.5 万次）、Kani（48 个 harness）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，与本切片无关。

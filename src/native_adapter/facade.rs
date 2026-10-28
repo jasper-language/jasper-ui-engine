@@ -286,9 +286,12 @@ impl SceneHostView {
     }
     /// Native GPU frame (Vello hybrid on wgpu) read back as compact premultiplied RGBA8. Err(Rejected)
     /// for a foreign owner, stale version, closed view or over-budget extent; device/render/readback
-    /// failures are reported, never replaced by a CPU frame. Drops the CPU frame cache.
+    /// failures are reported, never replaced by a CPU frame. GPU and CPU frames share one frame
+    /// cache: an unchanged view reuses the last produced frame (from either path) without GPU
+    /// work — call `invalidate_frame` first to force a GPU repaint.
     /// 原生 GPU 帧（wgpu 上的 Vello hybrid），读回为紧凑预乘 RGBA8。非归属方、过期版本、已关闭视图或
-    /// 超额尺寸为 Err(Rejected)；设备/渲染/读回失败如实报告，绝不以 CPU 帧顶替。会丢弃 CPU 帧缓存。
+    /// 超额尺寸为 Err(Rejected)；设备/渲染/读回失败如实报告，绝不以 CPU 帧顶替。GPU 与 CPU 帧共用
+    /// 帧缓存：未变化视图不做 GPU 工作而复用最近产出的帧（任一路径）；需强制 GPU 重绘时先 `invalidate_frame`。
     #[cfg(feature="gpu-pending")]
     pub fn render_gpu(&mut self,owner:u64,version:u64,gpu:&mut GpuRenderer,budget:usize)->Result<Vec<u8>,GpuFrameError> {
         self.inner.render_gpu(owner,version,gpu,budget)
@@ -300,6 +303,26 @@ impl SceneHostView {
     pub fn render_gpu_to_surface(&mut self,owner:u64,version:u64,gpu:&mut GpuRenderer,bytes:&mut [u8],stride:usize,budget:usize)
         ->Result<(),GpuFrameError> {
         self.inner.render_gpu_to_host_surface(owner,version,gpu,bytes,stride,budget)
+    }
+    /// `render_gpu_to_surface` that also reports damage relative to the last frame this view
+    /// produced on either path (Full for the first frame, after an extent change or
+    /// `invalidate_frame`). The whole frame is still painted and written.
+    /// 同 `render_gpu_to_surface`，并报告相对本视图最近产出帧（任一路径）的损伤（首帧、尺寸变化或
+    /// `invalidate_frame` 之后为 Full）。仍整帧绘制与写入。
+    #[cfg(feature="gpu-pending")]
+    pub fn render_gpu_to_surface_with_damage(&mut self,owner:u64,version:u64,gpu:&mut GpuRenderer,bytes:&mut [u8],stride:usize,budget:usize)
+        ->Result<FrameDamage,GpuFrameError> {
+        self.inner.render_gpu_to_host_surface_with_damage(owner,version,gpu,bytes,stride,budget)
+    }
+    /// Like `render_gpu_to_surface_with_damage`, but copies only the damaged pixels into
+    /// `bytes`, which must still hold the frame this view produced last (after swapping or
+    /// losing the buffer call `invalidate_frame` first). Rejected or failed calls write nothing.
+    /// 同 `render_gpu_to_surface_with_damage`，但只把受损像素复制进 `bytes`；`bytes` 必须仍持有本视图
+    /// 上一次产出的帧（换缓冲或丢失后先 `invalidate_frame`）。被拒或失败不写任何字节。
+    #[cfg(feature="gpu-pending")]
+    pub fn render_gpu_to_surface_damaged(&mut self,owner:u64,version:u64,gpu:&mut GpuRenderer,bytes:&mut [u8],stride:usize,budget:usize)
+        ->Result<FrameDamage,GpuFrameError> {
+        self.inner.render_gpu_to_host_surface_damaged(owner,version,gpu,bytes,stride,budget)
     }
     /// Native CPU frame to an embedding backend; unsupported backends return an explicit error.
     /// 原生 CPU 帧提交至嵌入后端；不支持的后端返回明确错误，呈现责任仍归宿主。
