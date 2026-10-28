@@ -584,6 +584,22 @@ pub fn assert_access_change(in_previous: bool, in_next: bool, equal: bool) {
     }
 }
 
+/// Independent action-request oracle: a request is admitted only by the matching reported
+/// action; unsupported requests never are, whatever the node offers.
+/// 独立动作请求规格：请求只由对应的已报告动作准入；不支持的请求无论节点提供什么都不准入。
+pub fn assert_access_request(kind: u8, focus: bool, activate: bool) {
+    let request = match kind % 3 {
+        0 => AccessRequest::Focus,
+        1 => AccessRequest::Activate,
+        _ => AccessRequest::Unsupported,
+    };
+    let expected = (request == AccessRequest::Focus && focus) || (request == AccessRequest::Activate && activate);
+    assert_eq!(access_request_admits(request, focus, activate), expected);
+    // Offering both actions admits every supported request and still no unsupported one.
+    assert_eq!(access_request_admits(request, true, true), request != AccessRequest::Unsupported);
+    assert!(!access_request_admits(request, false, false));
+}
+
 /// Independent damage-rectangle admission oracle over widened integers.
 /// 宽整数下的独立损伤矩形准入规格。
 pub fn assert_damage_rect(x: u32, y: u32, rect_width: u32, rect_height: u32, width: u32, height: u32) {
@@ -1433,6 +1449,11 @@ mod kani_checks {
     }
 
     #[kani::proof]
+    fn access_request_rules() {
+        assert_access_request(kani::any(), kani::any(), kani::any());
+    }
+
+    #[kani::proof]
     fn damage_rect_admission() {
         assert_damage_rect(kani::any(), kani::any(), kani::any(), kani::any(), kani::any(), kani::any());
     }
@@ -1821,6 +1842,10 @@ mod properties {
             assert_access_change(previous, next, equal);
         }
         #[test]
+        fn access_request_property(kind in any::<u8>(), focus in any::<bool>(), activate in any::<bool>()) {
+            assert_access_request(kind, focus, activate);
+        }
+        #[test]
         fn damage_rect_property(x in any::<u32>(), y in any::<u32>(), w in any::<u32>(), h in any::<u32>(),
                                 width in any::<u32>(), height in any::<u32>(),
                                 sx in 0u32..6, sy in 0u32..6, sw in 0u32..6, sh in 0u32..6, fw in 0u32..6, fh in 0u32..6) {
@@ -2132,6 +2157,7 @@ mod memory {
         for bits in 0u8..8 {
             assert_access_actions(bits & 1 == 1, bits & 2 == 2, bits & 4 == 4);
             assert_access_change(bits & 1 == 1, bits & 2 == 2, bits & 4 == 4);
+            assert_access_request(bits >> 1, bits & 1 == 1, bits & 4 == 4);
         }
         for (x, y, w, h) in [(0, 0, 1, 1), (2, 1, 1, 1), (0, 0, 3, 2), (3, 0, 1, 1), (1, 1, 0, 1), (u32::MAX, 0, 2, 1)] {
             assert_damage_rect(x, y, w, h, 3, 2);
@@ -2341,6 +2367,7 @@ mod schedules {
                 assert_damage_rect(first[0] as u32, first[1] as u32, first[2] as u32, first[3] as u32, 2, 2);
                 assert_frame_tick(first[0] as u64, first[1] as u64, first[2] as u64);
                 assert_access_change(first[0] & 1 == 1, first[1] & 1 == 1, first[2] & 1 == 1);
+                assert_access_request(first[3], first[0] & 2 == 2, first[1] & 2 == 2);
                 assert_frame_pace(first[3] & 1 == 1, Some(first[0] as u64), first[1] as u64, first[2] as u64, first[3] as u64);
                 assert_segment(first.as_ref(), 2, 2, 2, 1, first[0] as usize % 3, &first[2..]);
                 assert_frame_damage(Some((1, 1, first.as_ref())), 1, 1, &[first[3], first[2], first[1], first[0]]);

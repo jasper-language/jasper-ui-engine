@@ -787,6 +787,21 @@ pub closed spec fn surface_view_model(view: &Rgba8SurfaceView) -> (Seq<u8>, u32,
         "mutations": [("added-when-removed", "if in_previous { AccessChange::Removed } else { AccessChange::Absent }", "if in_previous { AccessChange::Added } else { AccessChange::Absent }"),
                       ("ignore-equality", "    } else if equal {\n        AccessChange::Unchanged", "    } else if true {\n        AccessChange::Unchanged")],
     },
+    "access-request-type": {"source": "src/native_adapter/access_kit.rs", "marker": "ACCESS REQUEST", "suffix": "TYPE", "signature": None, "depends": [], "internal_only": True},
+    "access-request": {
+        "source": "src/native_adapter/access_kit.rs", "marker": "ACCESS REQUEST", "property": "UI-ACCESS-REQUEST-001",
+        "signature": """pub fn access_request_admits(request: AccessRequest, focus: bool, activate: bool) -> bool {""",
+        "contract": """pub fn access_request_admits(request: AccessRequest, focus: bool, activate: bool) -> (result: bool)
+    ensures
+        request == AccessRequest::Focus ==> result == focus,
+        request == AccessRequest::Activate ==> result == activate,
+        request == AccessRequest::Unsupported ==> !result,
+{""",
+        "function_count": 1, "depends": ["access-request-type"], "evidence": "access-request-kernel",
+        "scope": "admission of one AccessKit action request against the actions the accessibility tree reports for its target (Focus iff focus, Activate iff activate, anything else never) only; not the AccessKit action mapping, target lookup, tree conversion or the focus/activate entry points",
+        "mutations": [("focus-by-activate", "AccessRequest::Focus => focus,", "AccessRequest::Focus => activate,"),
+                      ("admit-unsupported", "AccessRequest::Unsupported => false,", "AccessRequest::Unsupported => true,")],
+    },
     "damage-rect": {
         "source": "src/native_adapter/frame_schedule.rs", "marker": "DAMAGE RECT", "property": "UI-DAMAGE-RECT-001",
         "signature": """pub fn damage_rect_admits(x: u32, y: u32, rect_width: u32, rect_height: u32, width: u32, height: u32) -> bool {""",

@@ -62,6 +62,10 @@ fn main() {
             &["ACCESS ACTIONS TYPE", "ACCESS ACTIONS KERNEL", "ACCESS CHANGE TYPE", "ACCESS CHANGE KERNEL"][..],
         ),
         (
+            "../../src/native_adapter/access_kit.rs",
+            &["ACCESS REQUEST TYPE", "ACCESS REQUEST KERNEL"][..],
+        ),
+        (
             "../../src/native_adapter/gpu_render.rs",
             &["GPU READBACK LAYOUT KERNEL"][..],
         ),

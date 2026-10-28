@@ -2,7 +2,7 @@
 use jasper_ui_read_verification::{
     assert_borrow, assert_bytes_slot, assert_canvas_import, assert_canvas_pixel, assert_capture_query,
     assert_command_modifier, assert_cursor, assert_endpoint, assert_focus_cleanup,
-    assert_damage_convergence, assert_damage_rect, assert_damage_span, assert_damage_write, assert_focus_selection, assert_font_order, assert_frame_damage, assert_frame_pace, assert_frame_reuse, assert_frame_tick, assert_gpu_readback_layout, assert_header, assert_access_actions, assert_access_change, assert_text_offset, assert_text_range, assert_hover_lifecycle, assert_input_retire,
+    assert_damage_convergence, assert_damage_rect, assert_damage_span, assert_damage_write, assert_focus_selection, assert_font_order, assert_frame_damage, assert_frame_pace, assert_frame_reuse, assert_frame_tick, assert_gpu_readback_layout, assert_header, assert_access_actions, assert_access_change, assert_access_request, assert_text_offset, assert_text_range, assert_hover_lifecycle, assert_input_retire,
     assert_keyboard_focus, assert_payload, assert_pixel_conversion, assert_pointer_order,
     assert_read, assert_resource, assert_rgb_word, assert_role, assert_scalars, assert_surface_row,
     assert_surface_span, assert_text_classes, assert_versions, assert_view, assert_view_copy,
@@ -136,6 +136,7 @@ fuzz_target!(|data: &[u8]| {
     assert_text_range(len % 9, len % 9, pos % 11, total % 11, data[2] & 2 == 2, data[3] & 2 == 2);
     assert_access_actions(data[0] & 2 == 2, data[1] & 2 == 2, data[2] & 4 == 4);
     assert_access_change(data[0] & 8 == 8, data[1] & 8 == 8, data[2] & 8 == 8);
+    assert_access_request(data[3], data[0] & 16 == 16, data[1] & 16 == 16);
     assert_gpu_readback_layout(len as u32, total as u32);
     assert_gpu_readback_layout((len % 70000) as u32, (pos % 70000) as u32);
     assert_frame_tick(total as u64, pos as u64, len as u64);
