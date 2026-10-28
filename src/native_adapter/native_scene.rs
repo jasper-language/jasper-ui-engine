@@ -516,6 +516,62 @@ impl NativeScene {
             || rect.width<0.0 || rect.height<0.0 {return None;}
         Some(jasper_ui_engine::geometry::Rect::new(rect.x as f32,rect.y as f32,rect.width as f32,rect.height as f32))
     }
+    /// Inline layout of a source text node with its first line-box origin in view-local logical
+    /// coordinates. None unless the text's inline root (the element, or the anonymous block a
+    /// flex/grid element wraps it in) lays out exactly the source text (collapsed whitespace has
+    /// no source mapping), or when the element has its own nonzero scroll (same pinned-geometry
+    /// limit as node_bounds).
+    fn source_text_layout(&self,caller:u64,version:u64,id:NodeId)
+        ->Option<(&blitz_dom::node::TextLayout,&str,f64,f64)> {
+        if caller!=self.owner || version!=self.scene_version || !self.source_visible(id) {return None;}
+        let (element,Some(text))=self.nodes.get(&id)? else {return None;};
+        let document=self.document.as_ref()?;
+        let scroll=document.get_node(*element)?.scroll_offset();
+        if scroll.x!=0.0 || scroll.y!=0.0 {return None;}
+        // A flex/grid element wraps its text in an anonymous inline root; the exact text check
+        // below rejects any root that also lays out other content.
+        let root=document.get_node(*text)?.inline_root_ancestor()?;
+        let layout=root.element_data()?.inline_layout_data.as_deref()?;
+        let source=document.get_node(*text)?.text_data()?.content.as_str();
+        if layout.text!=source {return None;}
+        let rect=document.get_client_bounding_rect(root.id)?;
+        let edges=root.final_layout();
+        let x=rect.x+edges.border.left as f64+edges.padding.left as f64;
+        let y=rect.y+edges.border.top as f64+edges.padding.top as f64+layout.block_offset as f64;
+        if !x.is_finite() || !y.is_finite() {return None;}
+        Some((layout,source,x,y))
+    }
+    /// Source-text UTF-8 offset nearest a view-local logical point, projected onto this node's
+    /// own text layout (caret placement, not an occlusion-aware hit test).
+    pub(crate) fn text_offset_from_host(&self,caller:u64,version:u64,id:NodeId,x:f32,y:f32)->Option<usize> {
+        if !x.is_finite() || !y.is_finite() {return None;}
+        let (text,source,origin_x,origin_y)=self.source_text_layout(caller,version,id)?;
+        let scale=text.layout.scale() as f64;
+        let (local_x,local_y)=((x as f64-origin_x)*scale,(y as f64-origin_y)*scale);
+        if !local_x.is_finite() || !local_y.is_finite()
+            || local_x.abs()>f32::MAX as f64 || local_y.abs()>f32::MAX as f64 {return None;}
+        let offset=parley::Cursor::from_point(&text.layout,local_x as f32,local_y as f32).index();
+        crate::text_geometry::text_offset_admits(text.text.len(),source.len(),offset,source.is_char_boundary(offset))
+            .then_some(offset)
+    }
+    /// Caret rectangle (`width` logical px wide) before a source-text UTF-8 offset, in the same
+    /// view-local logical coordinates as node_bounds. A soft line-break offset attaches to the
+    /// following line (downstream affinity).
+    pub(crate) fn text_caret_from_host(&self,caller:u64,version:u64,id:NodeId,offset:usize,width:f32)
+        ->Option<jasper_ui_engine::geometry::Rect> {
+        if !width.is_finite() || width<0.0 {return None;}
+        let (text,source,origin_x,origin_y)=self.source_text_layout(caller,version,id)?;
+        if !crate::text_geometry::text_offset_admits(text.text.len(),source.len(),offset,source.is_char_boundary(offset)) {
+            return None;
+        }
+        let scale=text.layout.scale() as f64;
+        if !(scale>0.0) || !scale.is_finite() {return None;}
+        let caret=parley::Cursor::from_byte_index(&text.layout,offset,parley::Affinity::Downstream)
+            .geometry(&text.layout,(width as f64*scale) as f32);
+        let rect=[origin_x+caret.x0/scale,origin_y+caret.y0/scale,(caret.x1-caret.x0)/scale,(caret.y1-caret.y0)/scale];
+        if rect.iter().any(|value|!value.is_finite() || value.abs()>f32::MAX as f64) || rect[2]<0.0 || rect[3]<0.0 {return None;}
+        Some(jasper_ui_engine::geometry::Rect::new(rect[0] as f32,rect[1] as f32,rect[2] as f32,rect[3] as f32))
+    }
     /// Versioned host-neutral semantic hierarchy, containing no backend identity.
     pub(crate) fn semantics_snapshot_from_host(&self,caller:u64,version:u64)->Option<crate::scene_events::SceneSemanticsSnapshot> {
         if caller!=self.owner || version!=self.scene_version || !self.document.is_open() {return None;}

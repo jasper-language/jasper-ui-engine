@@ -416,3 +416,22 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 
 
 整链 `scripts/verify-ui.py`：Verus/Z3、Proptest（读边界属性 37 项）、Miri、cargo-fuzz（两个目标各 21 秒，10.6 万/138.5 万次）、Kani（42 个 harness）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，与本切片无关。证明映射检查为最新；`obligations.json` 中两个文件的元数据哈希与方法计数在整链结束后更新（不改变被验证的源码）。
+
+## 2026-10-28：原生路径场景文字命中与光标几何（UI8）
+
+根入口 `engine::Engine` 新增 `text_offset_at(owner, version, node, x, y) -> Option<usize>` 与 `text_caret(owner, version, node, offset, width) -> Option<Rect>`：文字节点源文本中的 UTF-8 偏移与视图局部逻辑坐标（与 `node_bounds` 同一坐标系）互相映射，几何取自绘制该文字所用的同一份 Blitz/Parley 布局。`text_offset_at` 把点投影到该节点自身的文字布局上，返回最近的光标位置（落在行首之前/行尾之后时夹到两端）；这是放置光标用的投影，不是考虑遮挡的命中测试。`text_caret` 返回偏移之前、宽 `width` 逻辑像素的光标矩形（含文本末尾；软折行处的偏移归下一行）。flex/grid 元素会把文字包进匿名行内根，两种情形都支持。拒绝（返回 None）：非归属方、过期版本、非文字/未知/隐藏节点、已关闭视图、非有限坐标、负或非有限宽度、非字符边界或越界偏移、元素自身有非零滚动（与 `node_bounds` 同一固定版本限制），以及布局文本与源文本不一致（例如连续空白被折叠，此时布局偏移没有对应的源偏移）。布局偏移到源偏移的准入由新内核 `text_geometry::text_offset_admits` 判定。没有选区几何、双向文字验收、输入法预编辑几何，`TextDisplayView` 仍为单字体。
+
+新增集成测试 `tests/native_text_geometry.rs`（`native-blitz-cpu-pending`，注入 `JASPER_UI_TEST_LATIN_FONT`=DejaVu Sans、`JASPER_UI_TEST_CJK_FONT`=Noto Sans CJK）：
+
+| 测试 | 断言 | 实测 |
+|---|---|---|
+| `caret_and_offset_round_trip_on_one_line` | 「Hello 你好 world」每个字符边界：光标在节点框内、宽 1、同一行严格右移；光标中心点映射回同一偏移；行首前/行尾后夹到 0 与末尾；汉字内部偏移、越界偏移拒绝 | 通过 |
+| `caret_columns_enclose_painted_ink` | 「WWW」CPU 帧：全部墨迹列落在首尾光标之间（±1 像素抗锯齿），相邻光标之间每格都有墨迹，墨迹行落在光标行框内 | 通过 |
+| `wrapped_carets_follow_lines_and_padding` | 140px 宽、7px 内边距的折行文字：首光标位于内边距边缘；行逐行向下、等距；每个偏移往返一致；框高 = 行数 × 行高 + 内边距 | 至少 3 行，行距一致 |
+| `update_moves_geometry_and_rejections_are_explicit` | 文字更新后旧版本拒绝、新文字延长行而原偏移光标不变；各拒绝情形为 None；宽度 0 合法；隐藏、关闭后为 None | 通过 |
+| `collapsed_whitespace_has_no_source_mapping` | 「a   b」被折叠后拒绝；「a b」可映射 | 通过 |
+| `hidpi_scale_keeps_logical_geometry` | 视口缩放 2.0 后光标横坐标不变（±0.6），高度等于该缩放下单行框高，往返一致 | 单行高 1x 为 24、2x 为 23（上游按设备像素布局，取整不同） |
+
+构建虚拟机复测：默认配置单元 114 项及全部集成测试通过；`native-blitz-cpu-pending`（注入三份字体）单元 174 项及全部集成测试通过（`native_text_geometry` 6/6）。`parley`（=0.12.0，已登记，Cargo.lock 中唯一版本）改为随 `native-blitz-pending` 直接启用，用于调用光标几何 API，没有引入新 crate。`text_offset_admits` 的 Verus 阶段 1 verified/0 errors（忽略长度不符、排除文本末尾两反例被拒）。
+
+整链 `scripts/verify-ui.py`：Verus/Z3、Proptest（读边界属性 38 项）、Miri、cargo-fuzz（两个目标各 21 秒，8.1 万/108.7 万次）、Kani（43 个 harness，`text_offset_admission` 为全域符号输入）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，与本切片无关。证明映射检查为最新（`NativeScene` 类型未改动）；`obligations.json` 中 native_scene/facade 的元数据哈希与方法计数在整链结束后更新，并新增 text_geometry 条目。文字布局、Parley 光标/命中几何与坐标换算本身不在证明范围，由上表集成测试覆盖。

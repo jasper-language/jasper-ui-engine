@@ -43,7 +43,7 @@ anyrender_vello_cpu = { version = "=0.18.0", default-features = false, optional 
 
 [features]
 default = []
-native-blitz-pending = ["dep:blitz-dom", "dep:blitz-traits", "dep:fontique", "dep:keyboard-types"]
+native-blitz-pending = ["dep:blitz-dom", "dep:blitz-traits", "dep:fontique", "dep:keyboard-types", "dep:parley"]
 native-blitz-cpu-pending = ["native-blitz-pending", "cpu-pending"]
 # Shared source uses this internal cfg in both crates.
 cpu-pending = ["native-blitz-pending", "dep:blitz-paint", "dep:anyrender", "dep:anyrender_vello_cpu"]
