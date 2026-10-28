@@ -46,10 +46,24 @@ impl NativeTextView {
         Self::new_with_kind(session,context,font_bytes,caption,width,height,NativeElementKind::Button)
     }
 
+    /// Host-ordered fallback stack (e.g. Latin file then CJK file); None for an empty,
+    /// oversized (> MAX_INJECTED_FONTS) stack or a file that registers no font family.
+    /// 宿主有序回退栈；空栈、超限或任一文件无字体族时返回 None，不静默跳过。
+    pub(crate) fn new_with_fonts(session: u64, context: UiInputContext, fonts: &[&[u8]], text: &str, width: u32, height: u32) -> Option<Self> {
+        let font_ctx=crate::native_fonts::injected_font_stack(fonts)?;
+        Some(Self::new_with_context(session,context,font_ctx,text,width,height,NativeElementKind::Text))
+    }
+
     fn new_with_kind(session: u64, context: UiInputContext, font_bytes: &[u8], text: &str,
         width: u32, height: u32, kind: NativeElementKind) -> Self {
+        let font_ctx=crate::native_fonts::injected_font_context(font_bytes);
+        Self::new_with_context(session,context,font_ctx,text,width,height,kind)
+    }
+
+    fn new_with_context(session: u64, context: UiInputContext, font_ctx: blitz_dom::FontContext, text: &str,
+        width: u32, height: u32, kind: NativeElementKind) -> Self {
         let mut document = BaseDocument::new(DocumentConfig {
-            font_ctx: Some(crate::native_fonts::injected_font_context(font_bytes)),
+            font_ctx: Some(font_ctx),
             viewport: Some(Viewport { window_size: (width, height), ..Viewport::default() }),
             ..DocumentConfig::default()
         });

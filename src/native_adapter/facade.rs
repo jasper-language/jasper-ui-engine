@@ -36,6 +36,13 @@ impl TextDisplayView {
     pub fn new(owner:u64,context:UiInputContext,font:&[u8],text:&str,width:u32,height:u32)->Self {
         Self {inner:native_view::NativeTextView::new(owner,context,font,text,width,height)}
     }
+    /// Host-ordered fallback stack (e.g. Latin file then CJK file); None for an empty,
+    /// oversized (> MAX_INJECTED_FONTS) stack or a file that registers no font family.
+    /// Measurement, hit testing and painting share the one Parley layout.
+    /// 宿主有序回退栈；空栈、超限或任一文件无字体族时返回 None；测量、命中与绘制共用同一布局。
+    pub fn with_fonts(owner:u64,context:UiInputContext,fonts:&[&[u8]],text:&str,width:u32,height:u32)->Option<Self> {
+        Some(Self {inner:native_view::NativeTextView::new_with_fonts(owner,context,fonts,text,width,height)?})
+    }
     pub fn focus(&mut self,binding:&UiInputBinding,owner:u64,ticket:UiInputTicket,sink:&mut impl FnMut(TextFocusEvent))->bool {
         self.inner.focus_from_host_with_events(binding,owner,ticket,sink)
     }
