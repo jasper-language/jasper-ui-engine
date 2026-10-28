@@ -521,6 +521,22 @@ pub fn assert_text_offset(layout_len: usize, source_len: usize, offset: usize, o
     assert_eq!(text_offset_admits(layout_len, source_len, offset, on_boundary), expected);
 }
 
+/// Independent source-text range oracle: a layout range maps only for an identical-length
+/// layout, an ordered range ending in range (end included) and character boundaries at both ends.
+/// 独立源文本区间规格：仅当布局长度相同、区间有序且终点在范围内（含末尾）、两端均为字符边界时才映射。
+pub fn assert_text_range(layout_len: usize, source_len: usize, start: usize, end: usize, start_on_boundary: bool, end_on_boundary: bool) {
+    let expected = if layout_len != source_len || start > end || end > source_len {
+        false
+    } else {
+        start_on_boundary && end_on_boundary
+    };
+    assert_eq!(text_range_admits(layout_len, source_len, start, end, start_on_boundary, end_on_boundary), expected);
+    // A range admits exactly when both ends admit as offsets and the range is ordered.
+    let both = text_offset_admits(layout_len, source_len, start, start_on_boundary)
+        && text_offset_admits(layout_len, source_len, end, end_on_boundary);
+    assert_eq!(expected, both && start <= end);
+}
+
 /// Independent damage-rectangle admission oracle over widened integers.
 /// 宽整数下的独立损伤矩形准入规格。
 pub fn assert_damage_rect(x: u32, y: u32, rect_width: u32, rect_height: u32, width: u32, height: u32) {
@@ -1350,6 +1366,11 @@ mod kani_checks {
     }
 
     #[kani::proof]
+    fn text_range_admission() {
+        assert_text_range(kani::any(), kani::any(), kani::any(), kani::any(), kani::any(), kani::any());
+    }
+
+    #[kani::proof]
     fn damage_rect_admission() {
         assert_damage_rect(kani::any(), kani::any(), kani::any(), kani::any(), kani::any(), kani::any());
     }
@@ -1716,6 +1737,14 @@ mod properties {
             assert_text_offset(usize::MAX, usize::MAX, usize::MAX - small, boundary);
         }
         #[test]
+        fn text_range_property(layout_len in any::<usize>(), source_len in any::<usize>(), start in any::<usize>(), end in any::<usize>(),
+                               sb in any::<bool>(), eb in any::<bool>(), small in 0usize..8, a in 0usize..10, b in 0usize..10) {
+            assert_text_range(layout_len, source_len, start, end, sb, eb);
+            assert_text_range(small, small, a, b, sb, eb);
+            assert_text_range(small + 1, small, a, b, sb, eb);
+            assert_text_range(usize::MAX, usize::MAX, usize::MAX - a, usize::MAX - b, sb, eb);
+        }
+        #[test]
         fn damage_rect_property(x in any::<u32>(), y in any::<u32>(), w in any::<u32>(), h in any::<u32>(),
                                 width in any::<u32>(), height in any::<u32>(),
                                 sx in 0u32..6, sy in 0u32..6, sw in 0u32..6, sh in 0u32..6, fw in 0u32..6, fh in 0u32..6) {
@@ -2012,6 +2041,13 @@ mod memory {
             for offset in [0, 2, 3, 4, usize::MAX] {
                 assert_text_offset(layout_len, source_len, offset, true);
                 assert_text_offset(layout_len, source_len, offset, false);
+            }
+        }
+        for (layout_len, source_len) in [(0, 0), (3, 3), (3, 4), (usize::MAX, usize::MAX)] {
+            for (start, end) in [(0, 0), (0, 3), (2, 1), (3, 3), (1, 4), (0, usize::MAX)] {
+                for (sb, eb) in [(true, true), (true, false), (false, true)] {
+                    assert_text_range(layout_len, source_len, start, end, sb, eb);
+                }
             }
         }
         for (x, y, w, h) in [(0, 0, 1, 1), (2, 1, 1, 1), (0, 0, 3, 2), (3, 0, 1, 1), (1, 1, 0, 1), (u32::MAX, 0, 2, 1)] {

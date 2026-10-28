@@ -192,6 +192,15 @@ impl SceneHostView {
     pub fn text_caret(&self,owner:u64,version:u64,node:NodeId,offset:usize,width:f32)->Option<Rect> {
         self.inner.text_caret_from_host(owner,version,node,offset,width)
     }
+    /// Selection rectangles for the source-text UTF-8 range [start, end) (start ≤ end), per
+    /// laid-out line in node_bounds coordinates, from the layout that paints the text; an empty
+    /// range gives no rectangles. None for a reversed, non-boundary or out-of-range range and the
+    /// text_offset_at rejections.
+    /// 源文本 UTF-8 区间 [start, end)（start ≤ end）的选区矩形，逐行、坐标同 node_bounds，取自绘制所用
+    /// 布局；空区间无矩形。反向、非字符边界或越界区间，以及 text_offset_at 的各拒绝情形为 None。
+    pub fn text_selection(&self,owner:u64,version:u64,node:NodeId,start:usize,end:usize)->Option<Vec<Rect>> {
+        self.inner.text_selection_from_host(owner,version,node,start,end)
+    }
     pub fn semantics(&self,owner:u64,version:u64)->Option<SceneSemanticsSnapshot> {
         self.inner.semantics_snapshot_from_host(owner,version)
     }

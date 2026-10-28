@@ -32,7 +32,7 @@
 
 ## 未完成与外部协作
 
-- 场景文字的光标/选区/文本命中几何（根入口尚未暴露）、完整文本编辑与 IME 往返；双向文字、字重/斜体与字体族选择未验收。原生路径的文字光栅、多字体按序回退与折行已有无头实测（见 2026-10-27 UI3 节）。
+- 场景文字的完整文本编辑与 IME 往返、选区高亮绘制与预编辑几何（光标/命中几何见 UI8 节、选区几何见 UI9 节）；双向文字、字重/斜体与字体族选择未验收。原生路径的文字光栅、多字体按序回退与折行已有无头实测（见 2026-10-27 UI3 节）。
 - 图片/SVG 解码、资源额度、圆角/阴影/变换；区域重绘（只重绘损伤区域）、真实垂直同步来源、动画/过渡驱动与 GPU 路径的帧调度。原生 CPU 路径的整帧按需调度、上一帧复用（UI4）、相对上一帧的精确损伤矩形报告（UI5）、按损伤只写变化像素的宿主 Surface 写入（UI6）与按宿主刷新时钟的帧节拍决定（UI7）已有无头实测。
 - GPU 渲染、系统无障碍桥、多窗口/DPI/触控/笔平台覆盖。
 - 版本化语义更新协议、代际句柄/所有权、Native ABI、完整宿主能力协商。
@@ -435,3 +435,21 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 构建虚拟机复测：默认配置单元 114 项及全部集成测试通过；`native-blitz-cpu-pending`（注入三份字体）单元 174 项及全部集成测试通过（`native_text_geometry` 6/6）。`parley`（=0.12.0，已登记，Cargo.lock 中唯一版本）改为随 `native-blitz-pending` 直接启用，用于调用光标几何 API，没有引入新 crate。`text_offset_admits` 的 Verus 阶段 1 verified/0 errors（忽略长度不符、排除文本末尾两反例被拒）。
 
 整链 `scripts/verify-ui.py`：Verus/Z3、Proptest（读边界属性 38 项）、Miri、cargo-fuzz（两个目标各 21 秒，8.1 万/108.7 万次）、Kani（43 个 harness，`text_offset_admission` 为全域符号输入）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，与本切片无关。证明映射检查为最新（`NativeScene` 类型未改动）；`obligations.json` 中 native_scene/facade 的元数据哈希与方法计数在整链结束后更新，并新增 text_geometry 条目。文字布局、Parley 光标/命中几何与坐标换算本身不在证明范围，由上表集成测试覆盖。
+
+## 2026-10-28：原生路径场景文字选区几何（UI9）
+
+根入口 `engine::Engine` 新增 `text_selection(owner, version, node, start, end) -> Option<Vec<Rect>>`：文字节点源文本 UTF-8 区间 [start, end)（start ≤ end）映射为逐行选区矩形，坐标与 `node_bounds`、`text_caret` 相同，几何取自绘制该文字所用的同一份 Blitz/Parley 布局。每个布局行至少一个矩形，高度为该行行框；空区间返回空列表。起点按下游、终点按上游归属，因此恰好止于软折行处的区间不会在下一行产生空框。拒绝（返回 None）沿用 UI8 的全部情形（非归属方、过期版本、非文字/未知/隐藏节点、已关闭视图、元素自身滚动、布局文本与源文本不一致），另加反向区间、任一端非字符边界或越界。区间准入由新内核 `text_geometry::text_range_admits` 判定。只提供几何，不绘制选区高亮；没有双向文字验收与输入法预编辑几何。
+
+新增集成测试 `tests/native_text_selection.rs`（`native-blitz-cpu-pending`，注入 `JASPER_UI_TEST_LATIN_FONT`=DejaVu Sans、`JASPER_UI_TEST_CJK_FONT`=Noto Sans CJK）：
+
+| 测试 | 断言 | 实测 |
+|---|---|---|
+| `single_line_selection_spans_caret_to_caret` | 「Hello 你好 world」全部字符边界对：空区间无矩形；非空区间恰一个矩形，左右边与起止光标横坐标一致（±0.01），纵向与光标行框一致 | 105 个非空区间全部通过 |
+| `wrapped_selection_has_one_rect_per_line` | 140px 宽、7px 内边距的折行文字：全选矩形数 = 光标行数，各行起于内边距边缘、纵向与该行光标一致；跨软折行区间为「首行尾段 + 次行首段」两矩形，端点与光标一致；止于软折行的区间只占一行 | 至少 3 行，通过 |
+| `selection_encloses_painted_ink` | 「WWW」CPU 帧：全部墨迹像素落在全选矩形内（±1 像素抗锯齿）；中间字形的选区严格位于全选内且含墨迹 | 通过 |
+| `empty_ranges_and_rejections_are_explicit` | 空区间为空列表；反向、汉字内部、越界区间拒绝；非归属方/容器/未知节点拒绝；文字更新后旧版本拒绝、原区间矩形不变、新区间更宽；隐藏、关闭、空白折叠为 None | 通过 |
+| `hidpi_scale_keeps_logical_selection` | 视口缩放 2.0 后全选左右边不变（±0.6），高度等于该缩放下单行框高；尾段选区起点与光标一致 | 通过 |
+
+构建虚拟机复测：默认配置单元 114 项及全部集成测试通过；`native-blitz-cpu-pending`（注入三份字体）单元 174 项及全部集成测试通过（`native_text_selection` 5/5、`native_text_geometry` 6/6）。没有引入新 crate。`text_range_admits` 的 Verus 阶段 1 verified/0 errors（接受反向区间、忽略终点边界两反例被拒）。
+
+整链 `scripts/verify-ui.py`：Verus/Z3、Proptest（读边界属性 39 项）、Miri、cargo-fuzz（两个目标各 21 秒，16.7 万/131.5 万次）、Kani（44 个 harness，`text_range_admission` 为全域符号输入，并与两端偏移准入交叉核对）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，与本切片无关。`obligations.json` 中 native_scene/facade/text_geometry 的元数据哈希与方法计数在整链启动前更新。Parley 选区几何与坐标换算本身不在证明范围，由上表集成测试覆盖。

@@ -476,8 +476,8 @@
       "evidence": "evidence/blitz-font-order-pending/report.json"
     },
     "src/native_adapter/native_scene.rs": {
-      "source_sha256": "ed327add997814d6ae459929272b0bbce4d0eb4a137c0ea6470f23c419d35602",
-      "own_methods": 52,
+      "source_sha256": "42d096ab394b48a36f006675e658788f5c7a849cd162fbb7db3ac844f883a908",
+      "own_methods": 53,
       "implementation_proofs_complete": 12,
       "six_stage_acceptance_complete": 10,
       "scope": "Existing Scene/patch native mapping including per-node source scroll; owner-gated semantic metadata; OS bridge and full implementation proof pending",
@@ -540,11 +540,11 @@
       "evidence": "evidence/validation-chain/report.json"
     },
     "src/native_adapter/text_geometry.rs": {
-      "source_sha256": "874511852bf8065723aacffae67cb5c7e3bd5f5775bc29bc2adee71d22b73505",
-      "own_methods": 1,
-      "implementation_proofs_complete": 1,
-      "six_stage_acceptance_complete": 1,
-      "scope": "Layout-to-source text offset admission (identical length, in range with end included, character boundary) (Verus + five stages); layout/source text equality, Parley caret/hit geometry and coordinate mapping in native_scene are covered by integration tests, not proof",
+      "source_sha256": "81beda238706e36c7bee42a41dc0277673f813b649225ee37a6c32a9d54c365f",
+      "own_methods": 2,
+      "implementation_proofs_complete": 2,
+      "six_stage_acceptance_complete": 2,
+      "scope": "Layout-to-source text offset admission (identical length, in range with end included, character boundary) and text range admission (ordered, both ends on boundaries) (Verus + five stages); layout/source text equality, Parley caret/hit/selection geometry and coordinate mapping in native_scene are covered by integration tests, not proof",
       "evidence": "evidence/validation-chain/report.json"
     },
     "src/native_adapter/capture_policy.rs": {
@@ -564,14 +564,14 @@
       "evidence": "evidence/blitz-framework-update-contract-pending/report.json"
     },
     "src/native_adapter/facade.rs": {
-      "source_sha256": "eea92843508faf05512136990a86fca5dfe0cdea5eb39f0c95e3a95a2a751b14",
-      "own_methods": 59,
+      "source_sha256": "ccf2f7aaa75e736c90f1a1f72d28c8130db222b5cb2e40a7a0a96acd4359a60b",
+      "own_methods": 60,
       "implementation_proofs_complete": 4,
       "six_stage_acceptance_complete": 4,
       "scope": "Typed embedding-host library facade; application component semantics remain Scene/ScenePatch values, backend modules private",
       "evidence": "evidence/blitz-typed-library-pending/report.json",
       "latest_native_diagnostic": "evidence/blitz-native-backend-submit-pending/report.json",
-      "complete_scope": "TextDisplayView::update_version and close; SceneHostView::close and snapshot_identity logical projection only; other 51 facade methods pending",
+      "complete_scope": "TextDisplayView::update_version and close; SceneHostView::close and snapshot_identity logical projection only; other 52 facade methods pending",
       "proof_evidence": "evidence/text-display-version-chain/report.json",
       "close_proof_evidence": "evidence/text-display-close-chain/report.json",
       "scene_close_proof_evidence": "evidence/scene-host-close-chain/report.json",

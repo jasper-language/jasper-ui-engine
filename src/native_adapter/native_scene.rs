@@ -572,6 +572,28 @@ impl NativeScene {
         if rect.iter().any(|value|!value.is_finite() || value.abs()>f32::MAX as f64) || rect[2]<0.0 || rect[3]<0.0 {return None;}
         Some(jasper_ui_engine::geometry::Rect::new(rect[0] as f32,rect[1] as f32,rect[2] as f32,rect[3] as f32))
     }
+    /// Selection rectangles for the source-text UTF-8 range [start, end), one or more per laid-out
+    /// line in visual order, in the same view-local logical coordinates as node_bounds. An empty
+    /// range has no rectangles. The start attaches downstream and the end upstream, so a range
+    /// ending at a soft line break does not reach onto the following line.
+    pub(crate) fn text_selection_from_host(&self,caller:u64,version:u64,id:NodeId,start:usize,end:usize)
+        ->Option<Vec<jasper_ui_engine::geometry::Rect>> {
+        let (text,source,origin_x,origin_y)=self.source_text_layout(caller,version,id)?;
+        if !crate::text_geometry::text_range_admits(text.text.len(),source.len(),start,end,
+            source.is_char_boundary(start),source.is_char_boundary(end)) {return None;}
+        let scale=text.layout.scale() as f64;
+        if !(scale>0.0) || !scale.is_finite() {return None;}
+        let selection=parley::Selection::new(
+            parley::Cursor::from_byte_index(&text.layout,start,parley::Affinity::Downstream),
+            parley::Cursor::from_byte_index(&text.layout,end,parley::Affinity::Upstream));
+        let mut rects=Vec::new();
+        for (bounds,_line) in selection.geometry(&text.layout) {
+            let rect=[origin_x+bounds.x0/scale,origin_y+bounds.y0/scale,(bounds.x1-bounds.x0)/scale,(bounds.y1-bounds.y0)/scale];
+            if rect.iter().any(|value|!value.is_finite() || value.abs()>f32::MAX as f64) || rect[2]<0.0 || rect[3]<0.0 {return None;}
+            rects.push(jasper_ui_engine::geometry::Rect::new(rect[0] as f32,rect[1] as f32,rect[2] as f32,rect[3] as f32));
+        }
+        Some(rects)
+    }
     /// Versioned host-neutral semantic hierarchy, containing no backend identity.
     pub(crate) fn semantics_snapshot_from_host(&self,caller:u64,version:u64)->Option<crate::scene_events::SceneSemanticsSnapshot> {
         if caller!=self.owner || version!=self.scene_version || !self.document.is_open() {return None;}

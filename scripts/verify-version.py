@@ -730,6 +730,17 @@ pub closed spec fn surface_view_model(view: &Rgba8SurfaceView) -> (Seq<u8>, u32,
         "mutations": [("ignore-length-mismatch", "\n    layout_len == source_len && offset", "\n    offset"),
                       ("exclude-text-end", "offset <= source_len && on_boundary\n}", "offset < source_len && on_boundary\n}")],
     },
+    "text-range": {
+        "source": "src/native_adapter/text_geometry.rs", "marker": "TEXT RANGE", "property": "UI-TEXT-RANGE-001",
+        "signature": """pub fn text_range_admits(layout_len: usize, source_len: usize, start: usize, end: usize, start_on_boundary: bool, end_on_boundary: bool) -> bool {""",
+        "contract": """pub fn text_range_admits(layout_len: usize, source_len: usize, start: usize, end: usize, start_on_boundary: bool, end_on_boundary: bool) -> (result: bool)
+    ensures result == (layout_len == source_len && start <= end && end <= source_len && start_on_boundary && end_on_boundary),
+{""",
+        "function_count": 1, "depends": [], "evidence": "text-range-kernel",
+        "scope": "layout-to-source text range admission (identical length, ordered, in range with end included, both ends on character boundaries) only; not the Parley selection geometry, text equality or coordinate mapping",
+        "mutations": [("accept-reversed-range", "\n    layout_len == source_len && start <= end && end", "\n    layout_len == source_len && end"),
+                      ("ignore-end-boundary", "start_on_boundary && end_on_boundary\n}", "start_on_boundary\n}")],
+    },
     "damage-rect": {
         "source": "src/native_adapter/frame_schedule.rs", "marker": "DAMAGE RECT", "property": "UI-DAMAGE-RECT-001",
         "signature": """pub fn damage_rect_admits(x: u32, y: u32, rect_width: u32, rect_height: u32, width: u32, height: u32) -> bool {""",
