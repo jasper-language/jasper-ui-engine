@@ -555,6 +555,14 @@
       "scope": "Accessibility actions of a node in the visible tree (focus iff enabled and focusable, activate iff enabled button) and per-node change classification between two trees (Absent/Added/Removed/Unchanged/Changed) (Verus + five stages), own AccessibilityTree/AccessibilityNode/AccessibilityUpdate declarations; visibility pruning, traversal order, node_bounds geometry and focus projection in native_scene are covered by tests/native_accessibility_tree.rs, tree difference/replay (update_since, apply, root, is_empty) by tests/native_accessibility_update.rs, not proof; no platform accessibility API",
       "evidence": "evidence/validation-chain/report.json"
     },
+    "src/native_adapter/access_kit.rs": {
+      "source_sha256": "00b7bf850b5469c0564987f605f7fb1d6be5b70a1ea1a31a048cc0634382acdb",
+      "own_methods": 8,
+      "implementation_proofs_complete": 1,
+      "six_stage_acceptance_complete": 1,
+      "scope": "Admission of one AccessKit action request against the actions the accessibility tree reports for its target (Focus iff focus, Activate iff activate, anything else never) (Verus + five stages) and own AccessRequest declaration; AccessKit action/role mapping, node and TreeUpdate conversion (full and incremental) and request routing to focus/activate are covered by tests/native_accesskit_bridge.rs against the reference AccessKit consumer, not proof; no platform adapter",
+      "evidence": "evidence/validation-chain/report.json"
+    },
     "src/native_adapter/gpu_render.rs": {
       "source_sha256": "e11c6aace201bf8ff2ea8e56ea485a7bcaef7753275af1142a7d1d5cf4d0b058",
       "own_methods": 6,
@@ -580,8 +588,8 @@
       "evidence": "evidence/blitz-framework-update-contract-pending/report.json"
     },
     "src/native_adapter/facade.rs": {
-      "source_sha256": "7ad2937a07529ae33e9f60d51b65e202560b3a01019f069028a670a4a23fa0d0",
-      "own_methods": 63,
+      "source_sha256": "dd31c3637ca01657096907beefbf4ab00f53d15718878eadf7ce611e2cb21ed9",
+      "own_methods": 64,
       "implementation_proofs_complete": 4,
       "six_stage_acceptance_complete": 4,
       "scope": "Typed embedding-host library facade; application component semantics remain Scene/ScenePatch values, backend modules private",

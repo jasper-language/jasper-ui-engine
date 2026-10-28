@@ -72,6 +72,9 @@ pinned exactly (`=x.y.z`, or a fixed git revision for Blitz).
 | parley | =0.12.0 | Apache-2.0 OR MIT | https://github.com/linebender/parley |
 | fontique | =0.12.0 | Apache-2.0 OR MIT | https://github.com/linebender/parley |
 | keyboard-types | =0.8.3 | MIT OR Apache-2.0 | https://github.com/rust-windowing/keyboard-types |
+| accesskit | =0.25.2 | MIT OR Apache-2.0 | https://github.com/AccessKit/accesskit |
+| uuid (via accesskit) | 1.29.0 (locked) | Apache-2.0 OR MIT | https://github.com/uuid-rs/uuid |
 | proptest (dev only) | =1.12.0 | MIT OR Apache-2.0 | https://github.com/proptest-rs/proptest |
+| accesskit_consumer (dev only) | =0.39.2 | MIT OR Apache-2.0 | https://github.com/AccessKit/accesskit |
 
 The full Apache License 2.0 text is in `LICENSE`.

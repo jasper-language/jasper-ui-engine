@@ -14,9 +14,11 @@ Framework 产生 `native::SceneUpdate { expected_version, next_version, patches 
 
 文字几何（`native-blitz-pending`）：`text_offset_at(owner, version, node, x, y)` 把视图局部逻辑点投影到文字节点自身的布局，返回源文本中最近的 UTF-8 光标偏移（放置光标用，不考虑遮挡）；`text_caret(owner, version, node, offset, width)` 返回该偏移之前的光标矩形，坐标同 `node_bounds`。两者与绘制共用同一份布局；布局文本与源文本不一致（如空白折叠）、非字符边界、过期版本等情形返回 None。`text_selection(owner, version, node, start, end)` 返回源文本 UTF-8 区间 [start, end)（start ≤ end）的逐行选区矩形，同一坐标系与同一布局；空区间返回空列表，反向、非字符边界或越界区间返回 None；只给几何，不绘制选区高亮。
 
-无障碍树（`native-blitz-pending`）：`accessibility_tree(owner, version)` 返回 `AccessibilityTree { scene_version, nodes, focused }`，供平台无障碍桥（AccessKit、AT-SPI、UIA 或系统无障碍服务）构建各自的树。`nodes` 为可见节点，按源顺序深度优先、根在首位；每个 `AccessibilityNode` 含 Framework 原样语义（role、label、description、value、disabled）、与 `node_bounds` 相同的视图局部几何（无几何时为 None）、场景内焦点标记、本引擎准入的动作 `AccessActions { focus, activate }` 与可见子节点列表。隐藏（semantics.hidden）或未显示（display: none）的节点连同其子树剔除；根本身不可见时 `nodes` 为空。非归属方、过期版本或已关闭视图返回 None。本方法不调用任何平台无障碍 API，也不做屏幕坐标换算；平台动作路由与文本无障碍接口尚未提供。
+无障碍树（`native-blitz-pending`）：`accessibility_tree(owner, version)` 返回 `AccessibilityTree { scene_version, nodes, focused }`，供平台无障碍桥（AccessKit、AT-SPI、UIA 或系统无障碍服务）构建各自的树。`nodes` 为可见节点，按源顺序深度优先、根在首位；每个 `AccessibilityNode` 含 Framework 原样语义（role、label、description、value、disabled）、与 `node_bounds` 相同的视图局部几何（无几何时为 None）、场景内焦点标记、本引擎准入的动作 `AccessActions { focus, activate }` 与可见子节点列表。隐藏（semantics.hidden）或未显示（display: none）的节点连同其子树剔除；根本身不可见时 `nodes` 为空。非归属方、过期版本或已关闭视图返回 None。本方法不调用任何平台无障碍 API，也不做屏幕坐标换算；AccessKit 转换与动作路由见下文 AccessKit 桥，文本无障碍接口尚未提供。
 
 无障碍增量更新（`native-blitz-pending`）：`tree.update_since(&previous)` 返回同一视图从较旧（或同版本）快照 `previous` 到 `tree` 的 `AccessibilityUpdate { from_version, scene_version, nodes, removed, root, focused, focus_changed }`，形如维护镜像的桥（如 AccessKit TreeUpdate）所需：`nodes` 为新增或内容有变的节点（完整内容，按新树顺序；可见子节点变化的父节点本身即为变更，焦点移动时焦点标记翻转的节点亦然），`removed` 为离开树的节点（按旧树顺序），`root` 为新树的根（空树为 None）。`previous` 版本更新时为 None；不检测跨视图混用。`mirror.apply(&update)` 回放更新并从根重建深度优先源顺序：更新基于其他版本、移除镜像中不存在的节点、子节点缺失/重复/不可达或焦点不在树中时为 None，镜像本身不变。`update.is_empty()` 表示节点、根与焦点均无差别。
+
+AccessKit 桥（`accesskit-pending`，`accesskit =0.25.2` 经 `native::host::accesskit` 重导出）：`tree.to_accesskit(transform)` 给出完整 `TreeUpdate`（初始或重新同步；AccessKit 根树 `TreeId::ROOT`，附 TreeInfo，无焦点时焦点回落到根，`transform` 把视图局部逻辑坐标映射到宿主适配器坐标并只设在根上，恒等变换省略），空树为 None。`update.to_accesskit(transform)` 只携带新增或变更节点，移除的节点经其变更的父节点由 AccessKit 丢弃；变换改变时须发完整更新；较新树为空为 None。角色按 `accesskit_role` 映射；无 value 的 Text 把 label 作为 AccessKit value。`accesskit_action(owner, version, &ActionRequest, focus_sink, activation_sink)` 路由宿主平台适配器送来的动作：目标须在当前无障碍树中且提供该动作（Focus → focus，Click → activate），其他动作、其他树、携带动作数据、过期版本与非归属方一律拒绝且无副作用。平台适配器（accesskit_winit、AT-SPI、UIA、系统无障碍服务）、窗口事件循环与文本无障碍接口（TextRun/选区）仍归宿主或尚未提供。
 
 帧调度（`native-blitz-cpu-pending`）：`needs_frame` / `invalidate_frame` 报告与强制待绘状态；`render_to_surface_with_damage` 报告相对上一帧的 `FrameDamage`；`render_to_surface_damaged` 只把损伤像素写入宿主 Surface；`frame_pace(owner, presented, origin, interval, now)` 按宿主刷新时钟返回 `FramePace::{Idle, WaitUntil(t), RenderNow(tick)}`，每周期至多一帧、不追帧，时钟与垂直同步来源归宿主，本方法不绘制也不等待。
 
@@ -216,7 +218,7 @@ focus.focus_next();
 - `Semantics` 由 Jasper 组件层填写；`SemanticsTree` 只是快照。
 - `focusables()` 排除 `hidden`/`disabled`；顺序是 pre-order。
 - `FocusManager::handle_key` 只处理 Tab/Shift+Tab（KeyPhase::Down）。
-- AccessKit/平台无障碍桥未实现。
+- AccessKit 树转换与动作路由见 `accesskit-pending`（AccessKit 桥）；平台适配器接入与文本无障碍接口未实现。
 
 ## 手势（参考实现）
 

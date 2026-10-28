@@ -136,6 +136,9 @@ mod text_geometry;
 #[cfg(feature="native-blitz-pending")]
 #[path="native_adapter/access_tree.rs"]
 mod access_tree;
+#[cfg(feature="accesskit-pending")]
+#[path="native_adapter/access_kit.rs"]
+mod access_kit;
 #[cfg(feature="native-blitz-pending")]
 #[path="native_adapter/capture_policy.rs"]
 mod capture_policy;

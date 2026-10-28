@@ -55,7 +55,7 @@
 
 - Jasper Native ABI v1（句柄/批量/错误/版本/线程）
 - 内置宿主适配：系统 UI 服务 + `UiBatch` 通道 + 软件/GPU 后端
-- AccessKit 无障碍桥
+- AccessKit 无障碍桥（TreeUpdate 转换与动作路由已起步；平台适配器接入未做）
 - ABI 一致性/模糊测试
 - 诊断快照（布局/绘制/资源）
 

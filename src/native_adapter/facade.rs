@@ -20,6 +20,12 @@ pub use jasper_ui_engine::composition_identity::UiCompositionToken;
 #[cfg(feature="cpu-pending")]
 pub use crate::frame_schedule::{FrameDamage,FramePace};
 pub use crate::access_tree::{AccessActions,AccessibilityNode,AccessibilityTree,AccessibilityUpdate};
+/// The pinned AccessKit crate the bridge emits and accepts; hosts build their platform adapter on it.
+/// 桥所输出与接受的固定 AccessKit crate；宿主在其上构建平台适配器。
+#[cfg(feature="accesskit-pending")]
+pub use ::accesskit;
+#[cfg(feature="accesskit-pending")]
+pub use crate::access_kit::{AccessRequest,access_request,accesskit_role};
 #[cfg(feature="gpu-pending")]
 pub use crate::gpu_render::{GpuRenderer,GpuFrameError};
 /// External-service display client; no authoritative editor document or input engine.
@@ -219,6 +225,18 @@ impl SceneHostView {
     }
     pub fn activate(&self,owner:u64,version:u64,node:NodeId,sink:&mut impl FnMut(SceneActivationEvent))->bool {
         self.inner.activate_from_host(owner,version,node,sink)
+    }
+    /// AccessKit action request from the host's platform adapter: admitted only when the target
+    /// is in this version's accessibility tree and offers the action (Focus → focus, Click →
+    /// activate); anything else is refused without effect. Trees come from
+    /// `AccessibilityTree::to_accesskit` / `AccessibilityUpdate::to_accesskit`.
+    /// 宿主平台适配器送来的 AccessKit 动作请求：仅当目标在本版本无障碍树中且提供该动作时准入
+    /// （Focus → focus，Click → activate）；其余一律拒绝且无副作用。树由 `AccessibilityTree::to_accesskit` /
+    /// `AccessibilityUpdate::to_accesskit` 产生。
+    #[cfg(feature="accesskit-pending")]
+    pub fn accesskit_action(&mut self,owner:u64,version:u64,request:&accesskit::ActionRequest,
+        focus:&mut impl FnMut(SceneFocusEvent),activation:&mut impl FnMut(SceneActivationEvent))->bool {
+        crate::access_kit::route_action(self,owner,version,request,focus,activation)
     }
     /// Command key to native scene focus; text-service commits use the display client.
     pub fn key(&mut self,owner:u64,version:u64,input:&HostKeyInput<'_>,

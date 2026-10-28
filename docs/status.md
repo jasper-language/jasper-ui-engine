@@ -35,7 +35,7 @@
 
 - 场景文字的完整文本编辑与 IME 往返、选区高亮绘制与预编辑几何（光标/命中几何见 UI8 节、选区几何见 UI9 节）；双向文字、字重/斜体与字体族选择未验收。原生路径的文字光栅、多字体按序回退与折行已有无头实测（见 2026-10-27 UI3 节）。
 - 图片/SVG 解码、资源额度、圆角/阴影/变换；区域重绘（只重绘损伤区域）、真实垂直同步来源、动画/过渡驱动与 GPU 路径的帧调度。原生 CPU 路径的整帧按需调度、上一帧复用（UI4）、相对上一帧的精确损伤矩形报告（UI5）、按损伤只写变化像素的宿主 Surface 写入（UI6）与按宿主刷新时钟的帧节拍决定（UI7）已有无头实测。
-- GPU 窗口/表面呈现、device-lost 恢复、GPU 损伤与局部重绘、真实硬件 GPU 验收（原生无头 GPU 渲染见 UI10 节）；系统无障碍桥（AccessKit/平台 API 接入、平台动作路由、文本无障碍接口；宿主无关的无障碍树快照见 UI11 节、快照间增量更新与回放见 UI12 节）、多窗口/DPI/触控/笔平台覆盖。
+- GPU 窗口/表面呈现、device-lost 恢复、GPU 损伤与局部重绘、真实硬件 GPU 验收（原生无头 GPU 渲染见 UI10 节）；系统无障碍桥（平台适配器/系统无障碍服务接入、文本无障碍接口；宿主无关的无障碍树快照见 UI11 节、快照间增量更新与回放见 UI12 节、AccessKit TreeUpdate 转换与动作路由见 UI13 节）、多窗口/DPI/触控/笔平台覆盖。
 - 版本化语义更新协议、代际句柄/所有权、Native ABI、完整宿主能力协商。
 - 系统内置 UI 服务适配、系统 Surface/输入/字体资源接入、多应用隔离与重连恢复。系统桌面是一等目标，软件路径不能依赖自带窗口栈。
 - Jasper 组件/状态/主题规则/导航、Element/Reconciler/UI IR，以及 Web DOM/SSR 等由对应语义层/后端提供，本仓库不复制第二套实现。
@@ -499,3 +499,17 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 | `reversed_mismatched_and_inconsistent_updates_are_rejected` | 旧于 previous、镜像版本不符、移除不存在节点、缺失子节点、重复子节点、悬空子节点、不可达节点、焦点不在树中均为 None；失败后镜像仍可正确回放 | 通过 |
 
 构建虚拟机复测：默认配置单元 114 项及全部集成测试通过；`native-blitz-cpu-pending`（注入三份字体）单元 174 项及全部集成测试通过（`native_accessibility_update` 3/3、`native_accessibility_tree` 4/4）。`access_change` 完成六步链：Verus 2 verified/0 errors（含类型；把移除判为新增、忽略内容相等两反例被拒）。整链 `scripts/verify-ui.py`：Verus/Z3、Proptest（读边界属性 42 项）、Miri、cargo-fuzz（两个目标各 21 秒，19.9 万/170.4 万次）、Kani（47 个 harness）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，与本切片无关。树差、回放与顺序重建由集成测试覆盖，没有证明。证明映射检查为最新；`obligations.json` 中 `access_tree.rs`/`facade.rs` 的元数据哈希与计数在整链结束后更新（不改变被验证的源码）。
+
+## 2026-10-28：原生路径 AccessKit 桥（UI13）
+
+新特性 `accesskit-pending`（= `native-blitz-pending` + `accesskit =0.25.2`，经 `native::host::accesskit` 重导出）把宿主无关无障碍树接到 AccessKit。`AccessibilityTree::to_accesskit(transform)` 给出完整 `TreeUpdate`（AccessKit 根树、TreeInfo 含根与工具包名，无焦点时焦点回落到根；`transform` 只设在根上，恒等变换省略）；`AccessibilityUpdate::to_accesskit(transform)` 只携带新增或变更节点，移除的节点经其变更的父节点由 AccessKit 丢弃；空树无 AccessKit 形式（None）。角色按 `accesskit_role` 映射，无 value 的 Text 把 label 作为 AccessKit value。`Engine::accesskit_action` 路由宿主平台适配器送来的 `ActionRequest`：目标须在当前无障碍树中且提供该动作（Focus → focus，Click → activate），由新内核 `access_kit::access_request_admits` 准入；其他动作、其他树、携带动作数据、过期版本、非归属方、隐藏子树内节点一律拒绝且无副作用。平台适配器（accesskit_winit / AT-SPI / UIA / 系统无障碍服务）、窗口事件循环与文本无障碍接口（TextRun/选区）不在本切片。测试另用 `accesskit_consumer =0.39.2`（仅开发依赖）作参考消费端。
+
+新增集成测试 `tests/native_accesskit_bridge.rs`（`accesskit-pending`，注入 `JASPER_UI_TEST_FONT`=DejaVu Sans）：
+
+| 测试 | 断言 | 实测 |
+|---|---|---|
+| `full_tree_converts_semantics_geometry_actions_and_focus` | 完整转换：节点顺序、子节点、动作、禁用、几何与无障碍树逐节点一致；角色/label/value 映射；变换只在根上且消费端把 2 倍缩放合成进每个包围盒；空树 None | 节点 [1..7]，焦点回落根 1；2x 包围盒精确 |
+| `incremental_updates_keep_the_consumer_mirror_equal_to_the_newest_tree` | 真实引擎依次改值、移焦点、隐藏分组、插入并删除焦点按钮、重新显示分组：每步增量更新只含引擎报告的变更节点，参考消费端镜像（可达节点、根、焦点）始终等于最新树的完整转换；更新到空树为 None | 改值/聚焦/隐藏分组各仅 1 个节点；焦点移到 3、删除后回落 1 |
+| `action_requests_reach_focus_and_activate_only_when_offered` | 逐节点 Click/Focus 恰按树中报告的动作准入并到达 focus/activate；禁用按钮点击与聚焦、文字点击、不支持的动作、未知节点、非归属方、过期版本、其他树、携带数据、隐藏子树十类拒绝且无事件、焦点不变 | 通过 |
+
+构建虚拟机复测：默认配置单元 114 项及全部集成测试通过；`native-blitz-cpu-pending`（注入三份字体）单元 174 项及全部集成测试通过；`accesskit-pending` 单元 163 项及全部集成测试通过（`native_accesskit_bridge` 3/3）。`access_request_admits` 完成六步链：Verus 2 verified/0 errors（含类型；用 activate 判 Focus、准入不支持请求两反例被拒）。整链 `scripts/verify-ui.py`：Verus/Z3、Proptest（读边界属性 43 项）、Miri、cargo-fuzz（两个目标各 21 秒，10.4 万/103.1 万次）、Kani（48 个 harness）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，与本切片无关。转换与路由由集成测试覆盖，没有证明。证明映射检查为最新；`obligations.json` 新增 `access_kit.rs` 条目，`facade.rs` 的元数据哈希与方法计数在整链结束后更新（不改变被验证的源码）。
