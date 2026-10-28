@@ -22,7 +22,7 @@ AccessKit 桥（`accesskit-pending`，`accesskit =0.25.2` 经 `native::host::acc
 
 帧调度（`native-blitz-cpu-pending`）：`needs_frame` / `invalidate_frame` 报告与强制待绘状态；`render_to_surface_with_damage` 报告相对上一帧的 `FrameDamage`；`render_to_surface_damaged` 只把损伤像素写入宿主 Surface；`frame_pace(owner, presented, origin, interval, now)` 按宿主刷新时钟返回 `FramePace::{Idle, WaitUntil(t), RenderNow(tick)}`，每周期至多一帧、不追帧，时钟与垂直同步来源归宿主，本方法不绘制也不等待。
 
-GPU 渲染（`gpu-pending`）：`GpuRenderer::new_headless()` 不带呈现表面取得 wgpu 适配器（由平台/wgpu 环境变量选择）并创建设备，`adapter_info()` 返回适配器名与后端；`render_gpu(owner, version, &mut gpu, budget)` 经与 CPU 路径相同的 Blitz 绘制、在 Vello hybrid 上离屏渲染并读回紧凑预乘 RGBA8；`render_gpu_to_surface(owner, version, &mut gpu, bytes, stride, budget)` 写入宿主软件 Surface，Surface 准入先于任何 GPU 工作。准入失败为 `GpuFrameError::Rejected`；无适配器、设备、渲染、读回失败分别报告，绝不回退 CPU 帧冒充。GPU 帧后 CPU 帧缓存失效（下一次 CPU 损伤为 Full）。不提供窗口呈现与 device-lost 恢复。
+GPU 渲染（`gpu-pending`）：`GpuRenderer::new_headless()` 不带呈现表面取得 wgpu 适配器（由平台/wgpu 环境变量选择）并创建设备，`adapter_info()` 返回适配器名与后端；`render_gpu(owner, version, &mut gpu, budget)` 经与 CPU 路径相同的 Blitz 绘制、在 Vello hybrid 上离屏渲染并读回紧凑预乘 RGBA8；`render_gpu_to_surface(owner, version, &mut gpu, bytes, stride, budget)` 写入宿主软件 Surface，Surface 准入先于任何 GPU 工作。准入失败为 `GpuFrameError::Rejected`；无适配器、设备、渲染、读回失败分别报告，绝不回退 CPU 帧冒充。GPU 帧与 CPU 帧共用同一帧缓存与损伤基准：未变化视图（`needs_frame` 为 false）不做 GPU 工作而复用最近产出的帧（无论哪条路径绘制），需强制 GPU 重绘时先 `invalidate_frame`。`render_gpu_to_surface_with_damage` 与 `render_gpu_to_surface_damaged` 对应 CPU 路径的同名方法，返回 `Result<FrameDamage, GpuFrameError>`：损伤相对本视图最近产出的帧（跨 CPU/GPU 路径逐像素比较），`_damaged` 只把受损像素写入仍持有上一帧的 Surface，被拒或失败不写任何字节。不提供窗口呈现与 device-lost 恢复。
 
 `native` 及 Rust 类型名仍为候选，不冻结 Jasper 子命名空间。完整整帧/生命周期/浮点证明尚缺；该入口存在不等于默认后端迁移或六阶段验收完成。
 

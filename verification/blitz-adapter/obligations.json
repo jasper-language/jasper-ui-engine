@@ -476,8 +476,8 @@
       "evidence": "evidence/blitz-font-order-pending/report.json"
     },
     "src/native_adapter/native_scene.rs": {
-      "source_sha256": "77a9cc4371cb84799962940dc4b8611f7656c2137447517c73020cff15f02354",
-      "own_methods": 56,
+      "source_sha256": "098c4af0af2eff9b768e483f0a02f20b5dee63d6ef4bb03478c0fbc90d4ad9c7",
+      "own_methods": 59,
       "implementation_proofs_complete": 12,
       "six_stage_acceptance_complete": 10,
       "scope": "Existing Scene/patch native mapping including per-node source scroll; owner-gated semantic metadata; OS bridge and full implementation proof pending",
@@ -588,8 +588,8 @@
       "evidence": "evidence/blitz-framework-update-contract-pending/report.json"
     },
     "src/native_adapter/facade.rs": {
-      "source_sha256": "dd31c3637ca01657096907beefbf4ab00f53d15718878eadf7ce611e2cb21ed9",
-      "own_methods": 64,
+      "source_sha256": "4df4bb30aafe631038445fd3161243bdec64f0ebe7dc1464d631b6798ae95f9a",
+      "own_methods": 66,
       "implementation_proofs_complete": 4,
       "six_stage_acceptance_complete": 4,
       "scope": "Typed embedding-host library facade; application component semantics remain Scene/ScenePatch values, backend modules private",
