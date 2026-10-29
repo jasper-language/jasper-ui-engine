@@ -946,6 +946,8 @@ fn style_properties(style:&Style,root:bool)->Option<Vec<(&'static str,String)>> 
     }
     if !style.flex_grow.is_finite() || style.flex_grow<0.0 {return None;}
     values.push(("flex-grow",style.flex_grow.to_string()));
+    if !crate::native_fonts::font_weight_admits(style.font_weight) {return None;}
+    values.push(("font-weight",style.font_weight.to_string()));
     for (key,color) in [("background-color",style.background),("border-color",style.border_color),("color",style.color)] {
         values.push((key,format!("#{:02x}{:02x}{:02x}{:02x}",color.r,color.g,color.b,color.a)));
     }
@@ -955,6 +957,7 @@ fn style_properties(style:&Style,root:bool)->Option<Vec<(&'static str,String)>> 
         ("align-items",match style.align_items {Align::Start=>"flex-start",Align::Center=>"center",Align::End=>"flex-end",Align::Stretch=>"stretch"}),
         ("justify-content",match style.justify_content {Justify::Start=>"flex-start",Justify::Center=>"center",Justify::End=>"flex-end",Justify::SpaceBetween=>"space-between"}),
         ("overflow",match style.overflow {Overflow::Visible=>"visible",Overflow::Hidden=>"hidden",Overflow::Scroll=>"scroll"}),
+        ("font-style",match style.font_style {FontStyle::Normal=>"normal",FontStyle::Italic=>"italic"}),
         ("border-style","solid"),
         ("box-sizing","border-box")
     ] {values.push((key,value.to_owned()));}

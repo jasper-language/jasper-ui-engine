@@ -46,7 +46,7 @@ fn main() {
         ("../../src/style.rs", &["COLOR TYPE"][..]),
         (
             "../../src/native_adapter/native_fonts.rs",
-            &["FONT ORDER KERNEL"][..],
+            &["FONT ORDER KERNEL", "FONT WEIGHT KERNEL"][..],
         ),
         (
             "../../src/native_adapter/frame_schedule.rs",

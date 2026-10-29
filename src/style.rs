@@ -166,6 +166,14 @@ impl Default for Color {
     }
 }
 
+/// Font slant requested by Framework; the native path selects a matching injected face.
+/// Framework 声明的字体倾斜；原生路径从宿主注入的字面中匹配选择。
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FontStyle {
+    Normal,
+    Italic,
+}
+
 /// Portable style for one node.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Style {
@@ -187,6 +195,10 @@ pub struct Style {
     pub border_width: f32,
     pub border_color: Color,
     pub font_size: f32,
+    /// CSS numeric weight (400 regular, 700 bold); the native path admits 1..=1000 only.
+    /// CSS 数值字重（400 常规、700 粗体）；原生路径只准入 1..=1000。
+    pub font_weight: u16,
+    pub font_style: FontStyle,
     pub color: Color,
     pub overflow: Overflow,
 }
@@ -212,6 +224,8 @@ impl Default for Style {
             border_width: 0.0,
             border_color: Color::TRANSPARENT,
             font_size: 14.0,
+            font_weight: 400,
+            font_style: FontStyle::Normal,
             color: Color::BLACK,
             overflow: Overflow::Visible,
         }
@@ -289,6 +303,14 @@ impl Style {
     pub fn text(mut self, font_size: f32, color: Color) -> Self {
         self.font_size = font_size.max(1.0);
         self.color = color;
+        self
+    }
+
+    /// Unclamped: an out-of-range weight is rejected by the native path, not adjusted.
+    /// 不钳制：越界字重由原生路径拒绝，而非调整。
+    pub fn font(mut self, weight: u16, style: FontStyle) -> Self {
+        self.font_weight = weight;
+        self.font_style = style;
         self
     }
 
