@@ -480,15 +480,15 @@
       "evidence": "evidence/component-update-support-chain/report.json"
     },
     "src/native_adapter/native_fonts.rs": {
-      "source_sha256": "834078e74151c5bfd74a2e17a0ac2fcbff40341507cb83cf3b5476920552c9d2",
-      "own_methods": 6,
-      "implementation_proofs_complete": 3,
-      "six_stage_acceptance_complete": 3,
-      "scope": "Host-ordered injected font stack (file order, lexical family order within one file) through upstream APIs; font_stack_count_admits and font_order_admits are the verified kernel; font_weight_admits (CSS numeric weight 1..=1000) is a verified kernel; collection/constructor composition proof pending",
+      "source_sha256": "e015347d4e9c3f675171240ef3597c97db0b043d05019dd356d726c18d1059e9",
+      "own_methods": 7,
+      "implementation_proofs_complete": 4,
+      "six_stage_acceptance_complete": 4,
+      "scope": "Host-ordered injected font stack (file order, lexical family order within one file) through upstream APIs; font_stack_count_admits and font_order_admits are the verified kernel; font_weight_admits (CSS numeric weight 1..=1000) is a verified kernel; font_family_admits (declared family name 1..=128 bytes, no control byte/DEL/quote/backslash) is a verified kernel; registered-family lookup and collection/constructor composition proof pending",
       "evidence": "evidence/blitz-font-order-pending/report.json"
     },
     "src/native_adapter/native_scene.rs": {
-      "source_sha256": "f1a8efe3792ae0ae4aed0953836cb67b103a17971e32864dfa69488b793efbb5",
+      "source_sha256": "054660568e80578e6d05c5fa6ed831bcded687411db1b6899e9c2a9400ae13e9",
       "own_methods": 59,
       "implementation_proofs_complete": 12,
       "six_stage_acceptance_complete": 10,

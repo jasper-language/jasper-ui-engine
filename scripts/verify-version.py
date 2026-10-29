@@ -730,6 +730,27 @@ pub closed spec fn surface_view_model(view: &Rgba8SurfaceView) -> (Seq<u8>, u32,
         "mutations": [("reject-min-weight", "\n    weight >= 1 &&", "\n    weight > 1 &&"),
                       ("exclude-max-weight", "weight <= 1000\n}", "weight < 1000\n}")],
     },
+    "font-family": {
+        "source": "src/native_adapter/native_fonts.rs", "marker": "FONT FAMILY", "property": "UI-FONT-FAMILY-001",
+        "signature": "pub fn font_family_admits(name: &[u8]) -> bool {",
+        "contract": """pub fn font_family_admits(name: &[u8]) -> (result: bool)
+    ensures result == (1 <= name.len() && name.len() <= 128 && forall|j: int| 0 <= j < name.len() ==>
+        (name@[j] >= 0x20 && name@[j] != 0x22 && name@[j] != 0x5c && name@[j] != 0x7f)),
+{""",
+        "extra_annotations": [
+            ("    while index < name.len() {",
+             """    while index < name.len()
+        invariant index <= name.len(), 1 <= name.len() <= 128,
+            forall|j: int| 0 <= j < index ==> (name@[j] >= 0x20 && name@[j] != 0x22 && name@[j] != 0x5c && name@[j] != 0x7f),
+        decreases name.len() - index,
+    {"""),
+            ("            return false;", "            assert(name@[index as int] == byte);\n            return false;"),
+        ],
+        "function_count": 1, "depends": [], "evidence": "font-family-kernel",
+        "scope": "declared font-family name admission (1..=128 bytes, no control byte, DEL, quote or backslash; rejected not escaped) only; not the registered-family lookup, CSS mapping or Parley/fontique family selection",
+        "mutations": [("admit-forbidden-byte", "            return false;", "            return true;"),
+                      ("admit-overlong", "        return false;\n    }\n    let mut index", "        return name.len() > MAX_FONT_FAMILY_BYTES;\n    }\n    let mut index")],
+    },
     "text-offset": {
         "source": "src/native_adapter/text_geometry.rs", "marker": "TEXT OFFSET", "property": "UI-TEXT-OFFSET-001",
         "signature": """pub fn text_offset_admits(layout_len: usize, source_len: usize, offset: usize, on_boundary: bool) -> bool {""",
@@ -1808,7 +1829,7 @@ KERNELS["text-display-close"] = {
 }
 
 KERNELS["scene-semantics-type"]={"source":"src/semantics.rs","marker":"SCENE SEMANTICS","suffix":"TYPE","signature":None,"depends":["role-type"],"internal_only":True}
-KERNELS["native-scene-type"]={"source":"src/native_adapter/native_scene.rs","marker":"NATIVE SCENE","suffix":"TYPE","signature":None,"depends":["ui-view-slot","node-id-type","scene-semantics-type"],"internal_only":True,"spec_prelude":"use std::collections::BTreeMap; pub mod blitz_dom {#[verifier::external_body] pub struct NodeId {}} #[verifier::external_body] pub struct BaseDocument {}"}
+KERNELS["native-scene-type"]={"source":"src/native_adapter/native_scene.rs","marker":"NATIVE SCENE","suffix":"TYPE","signature":None,"depends":["ui-view-slot","node-id-type","scene-semantics-type"],"internal_only":True,"spec_prelude":"use std::collections::{BTreeMap,BTreeSet}; pub mod blitz_dom {#[verifier::external_body] pub struct NodeId {}} #[verifier::external_body] pub struct BaseDocument {}"}
 KERNELS["native-scene-close"]={
  "source":"src/native_adapter/native_scene.rs","marker":"NATIVE SCENE CLOSE",
  "signature":"pub(crate) fn close(&mut self,caller:u64)->bool {",

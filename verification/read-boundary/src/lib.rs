@@ -394,6 +394,15 @@ pub fn assert_font_weight(weight: u16) {
     assert_eq!(font_weight_admits(weight), (1..=1000).contains(&weight));
 }
 
+/// Independent family-name oracle: 1..=128 bytes, none a control byte, DEL, quote or backslash.
+/// 独立族名规格：1..=128 字节，且无控制字节、DEL、双引号、反斜杠。
+pub fn assert_font_family(name: &[u8]) {
+    assert_eq!(MAX_FONT_FAMILY_BYTES, 128);
+    let expected = (1..=128).contains(&name.len())
+        && name.iter().all(|byte| !byte.is_ascii_control() && !matches!(byte, b'"' | b'\\'));
+    assert_eq!(font_family_admits(name), expected);
+}
+
 /// Independent frame-reuse oracle: reuse only a clean cache of identical extent whose
 /// length equals the admitted packed length; any invalidation forces a repaint.
 /// 独立帧复用规格：仅复用未失效、尺寸一致且长度等于准入紧凑长度的缓存；任何失效都强制重绘。
@@ -1539,6 +1548,15 @@ mod kani_checks {
 
     #[kani::proof]
     #[kani::unwind(6)]
+    fn font_family_admission() {
+        let bytes: [u8; 4] = kani::any();
+        let len: usize = kani::any();
+        kani::assume(len <= 4);
+        assert_font_family(&bytes[..len]);
+    }
+
+    #[kani::proof]
+    #[kani::unwind(6)]
     fn font_order_first_occurrence() {
         let seen: [u64; 4] = kani::any();
         let len: usize = kani::any();
@@ -1913,6 +1931,12 @@ mod properties {
             assert_font_weight(near);
         }
         #[test]
+        fn font_family_property(name in prop::collection::vec(any::<u8>(), 0..140),
+                                plain in prop::collection::vec(0x20u8..0x7f, 120..136)) {
+            assert_font_family(&name);
+            assert_font_family(&plain);
+        }
+        #[test]
         fn font_order_property(seen in prop::collection::vec(0u64..6, 0..12), id in 0u64..8,
                                wide in any::<u64>(), count in any::<usize>(), small in 0usize..20) {
             assert_font_order(&seen, id, count);
@@ -2202,6 +2226,10 @@ mod memory {
         for weight in [0, 1, 2, 400, 700, 999, 1000, 1001, u16::MAX] {
             assert_font_weight(weight);
         }
+        for name in [&b""[..], &b"DejaVu Sans"[..], "思源黑体".as_bytes(), &b"a\"b"[..], &b"a\\b"[..], &b"\x1f"[..], &b"\x7f"[..],
+                     &[b'x'; 128][..], &[b'x'; 129][..]] {
+            assert_font_family(name);
+        }
         for seen in [&[][..], &[3][..], &[3, 3][..], &[1, 2, 3, u64::MAX][..]] {
             for id in [0, 1, 3, u64::MAX] {
                 for count in [0, 1, 16, 17, usize::MAX] {
@@ -2383,6 +2411,7 @@ mod schedules {
                 assert!(canvas.pixel(1, 0).is_none());
                 assert_font_order(&[first[0] as u64, first[1] as u64], first[2] as u64, first[3] as usize);
                 assert_font_weight(u16::from_le_bytes([first[0], first[1] & 7]));
+                assert_font_family(&first[..(first[2] as usize & 3)]);
                 assert_damage_span(Some((first[0] as u32, first[1] as u32)), first[2] as u32);
                 assert_damage_rect(first[0] as u32, first[1] as u32, first[2] as u32, first[3] as u32, 2, 2);
                 assert_frame_tick(first[0] as u64, first[1] as u64, first[2] as u64);

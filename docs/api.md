@@ -117,6 +117,7 @@ scene.apply(ScenePatch::Remove { id: NodeId(2) })?;
 - 滚动：`Node::scroll(Point)`，或 `ScenePatch::SetScroll { id, offset }`（见“滚动控制”）。
 - 文字：`font_size`、`color`（测量参与布局；光栅未实现）。
 - 字重与倾斜：`font_weight`（CSS 数值，默认 400）、`font_style: FontStyle::{Normal,Italic}`，构造器 `Style::font(weight, style)`。原生路径（`native-blitz-pending`）映射为 CSS `font-weight`/`font-style`，由 Parley 在宿主注入的同族字面（如 Regular/Bold/Oblique 分别注入）中匹配；字重须在 1..=1000，越界时场景导入与 `UpdateStyle` 补丁被拒（不钳制）。LegacyEngine 不实现字重与倾斜，绘制不受这两个字段影响。
+- 字体族：`font_family: Option<String>`（默认 None，沿用宿主注入顺序），构造器 `Style::family(name)`。原生路径映射为 CSS `font-family: "<name>", sans-serif`，由 Parley 按名选择；所选族缺少的字形按宿主注入顺序回退。族名须与本视图注入字体栈登记的某个族名完全一致（区分大小写），且为 1..=128 字节、不含控制字节/DEL/双引号/反斜杠；否则场景导入、`Insert` 与 `UpdateStyle` 补丁被拒（不静默替换为其他字体）。LegacyEngine 不实现字体族选择。
 - 当前不支持阴影/滤镜/变换/虚拟化。
 
 ## Paint / UiBatch

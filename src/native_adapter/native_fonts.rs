@@ -79,3 +79,28 @@ pub fn font_weight_admits(weight: u16) -> bool {
     weight >= 1 && weight <= 1000
 }
 // END VERIFIED FONT WEIGHT KERNEL
+
+// BEGIN VERIFIED FONT FAMILY KERNEL
+/// Upper bound on one declared font family name, in UTF-8 bytes.
+/// 单个声明字体族名的 UTF-8 字节数上限。
+pub const MAX_FONT_FAMILY_BYTES: usize = 128;
+
+/// A family name is 1..=MAX_FONT_FAMILY_BYTES bytes with no control byte, DEL, quote or
+/// backslash, so it is carried verbatim inside one CSS quoted string; rejected, never escaped.
+/// 族名为 1..=MAX_FONT_FAMILY_BYTES 字节，且不含控制字节、DEL、双引号、反斜杠，
+/// 因而可原样放入一个 CSS 引号串；不合规即拒绝，不转义。
+pub fn font_family_admits(name: &[u8]) -> bool {
+    if name.len() < 1 || name.len() > MAX_FONT_FAMILY_BYTES {
+        return false;
+    }
+    let mut index: usize = 0;
+    while index < name.len() {
+        let byte = name[index];
+        if byte < 0x20 || byte == 0x22 || byte == 0x5c || byte == 0x7f {
+            return false;
+        }
+        index += 1;
+    }
+    true
+}
+// END VERIFIED FONT FAMILY KERNEL
