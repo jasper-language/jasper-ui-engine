@@ -61,6 +61,7 @@ pinned exactly (`=x.y.z`, or a fixed git revision for Blitz).
 | blitz-paint | 0.3.0-beta.4 @ same rev | MIT OR Apache-2.0 | https://github.com/DioxusLabs/blitz |
 | anyrender | =0.14.0 | MIT OR Apache-2.0 | https://github.com/dioxuslabs/anyrender |
 | anyrender_vello_cpu | =0.18.0 | MIT OR Apache-2.0 | https://github.com/dioxuslabs/anyrender |
+| peniko | =0.6.1 | Apache-2.0 OR MIT | https://github.com/linebender/peniko |
 | vello_cpu | =0.3.0 | Apache-2.0 OR MIT | https://github.com/linebender/vello |
 | vello_gpu | =0.3.0 | Apache-2.0 OR MIT | https://github.com/linebender/vello |
 | vello_common | =0.3.0 | Apache-2.0 OR MIT | https://github.com/linebender/vello |

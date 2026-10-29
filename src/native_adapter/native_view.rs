@@ -660,7 +660,7 @@ impl NativeTextView {
         let document = self.document.as_mut()?;
         let scale = document.viewport().scale_f64();
         let pixels = anyrender::render_to_buffer::<anyrender_vello_cpu::VelloCpuImageRenderer, _>(
-            |scene| blitz_paint::paint_scene(scene, document, scale, width, height, 0, 0),
+            |scene| blitz_paint::paint_scene(&mut crate::glyph_skew::UprightSyntheticItalic(scene), document, scale, width, height, 0, 0),
             width,
             height,
         );

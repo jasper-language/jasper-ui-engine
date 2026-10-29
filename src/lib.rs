@@ -130,6 +130,9 @@ mod frame_schedule;
 #[cfg(feature="gpu-pending")]
 #[path="native_adapter/gpu_render.rs"]
 mod gpu_render;
+#[cfg(feature="cpu-pending")]
+#[path="native_adapter/glyph_skew.rs"]
+mod glyph_skew;
 #[cfg(feature="native-blitz-pending")]
 #[path="native_adapter/text_geometry.rs"]
 mod text_geometry;

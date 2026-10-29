@@ -1,9 +1,9 @@
-//! Font synthesis when the host injects only a regular face, as the pinned Blitz painter does it.
-//! Two upstream gaps are pinned here so that any change is noticed: synthetic italic is drawn as a
-//! backslant (the skew sign is mirrored in the y-down scene), and synthetic bold is not drawn at
-//! all. Neither counts as delivered; docs/status.md records both.
-//! 宿主只注入常规字面时，固定版 Blitz 绘制器的合成行为。此处钉住两个上游缺口以便察觉变化：
-//! 合成斜体画成反斜体（y 向下场景中倾斜符号取反），合成粗体完全不画。两者均不计为已交付，
+//! Font synthesis when the host injects only a regular face. Synthetic italic is drawn leaning
+//! right like a real italic: the pinned Blitz painter mirrors the skew in the y-down scene, and
+//! the engine corrects the sign on every glyph run. Synthetic bold is still not drawn (pinned
+//! here so that any upstream change is noticed); docs/status.md records it.
+//! 宿主只注入常规字面时的字体合成。合成斜体如真斜体般右倾：固定版 Blitz 绘制器在 y 向下场景中
+//! 把斜切符号取反，引擎在每个字形串上修正符号。合成粗体仍不绘制（此处钉住以便察觉上游变化），
 //! docs/status.md 如实记录。
 #![cfg(feature="native-blitz-cpu-pending")]
 use jasper_ui_engine::engine::Engine;
@@ -72,7 +72,7 @@ fn stem_edges(font:&[u8],slant:FontStyle)->Vec<u32> {
 fn lean(edges:&[u32])->i64 {*edges.first().expect("inked stem") as i64-*edges.last().expect("inked stem") as i64}
 
 #[test]
-fn synthetic_italic_from_the_pinned_painter_leans_backwards() {
+fn synthetic_italic_leans_right_like_an_italic_face() {
     let (regular,oblique)=(regular(),italic());
     let (slanted,upright)=(frame(&regular,400,FontStyle::Italic),frame(&regular,400,FontStyle::Normal));
     assert_ne!(slanted,upright,"italic over a regular-only stack is synthesised, not drawn upright");
@@ -86,10 +86,10 @@ fn synthetic_italic_from_the_pinned_painter_leans_backwards() {
     println!("stem lean: upright {}, oblique face {}, synthetic {}",lean(&upright_edges),lean(&oblique_edges),lean(&synthetic_edges));
     assert!(lean(&upright_edges).abs()<=1,"upright stem must be vertical: {upright_edges:?}");
     assert!(lean(&oblique_edges)>=3,"oblique face must lean right: {oblique_edges:?}");
-    // The pinned painter's synthetic skew leans the other way, monotonically: a known defect.
-    // 固定版绘制器的合成倾斜单调地朝反方向：已知缺陷。
-    assert!(lean(&synthetic_edges)<=-3,"synthetic italic lean changed: {synthetic_edges:?}; update docs/status.md");
-    assert!(synthetic_edges.windows(2).all(|pair|pair[0]<=pair[1]),"{synthetic_edges:?}");
+    // The corrected synthetic skew leans the same way as the real face, monotonically.
+    // 修正后的合成倾斜与真斜体字面同向，且单调。
+    assert!(lean(&synthetic_edges)>=3,"synthetic italic must lean right: {synthetic_edges:?}");
+    assert!(synthetic_edges.windows(2).all(|pair|pair[0]>=pair[1]),"{synthetic_edges:?}");
     // A style patch to Italic repaints the same synthetic frame as a fresh import.
     // 改为 Italic 的样式补丁重绘结果等于新导入的合成帧。
     let source=scene_of(SAMPLE,400,FontStyle::Normal);
@@ -115,4 +115,23 @@ fn bold_without_a_bold_face_draws_the_regular_face() {
     // Synthetic italic is unaffected by the requested weight.
     // 合成斜体不受所请求字重影响。
     assert_eq!(frame(&regular,700,FontStyle::Italic),frame(&regular,400,FontStyle::Italic));
+}
+
+/// The GPU path paints through the same corrected glyph runs: its synthetic stem leans right too.
+/// GPU 路径经同一修正后的字形串绘制：其合成竖笔画同样右倾。
+#[cfg(feature="gpu-pending")]
+#[test]
+fn gpu_synthetic_italic_leans_right_too() {
+    use jasper_ui_engine::native::host::GpuRenderer;
+    let regular=regular();
+    let source=scene_of("I",400,FontStyle::Italic);
+    let mut engine=Engine::with_fonts(OWNER,&source,&[&regular],W,H).expect("native import");
+    let mut gpu=GpuRenderer::new_headless().expect("a wgpu adapter is required for GPU acceptance");
+    let bytes=engine.render_gpu(OWNER,source.version(),&mut gpu,BUDGET).expect("gpu frame");
+    let edges:Vec<u32>=(0..H).filter_map(|y|(0..W).find(|x| {
+        let at=((y*W+x)*4) as usize;
+        is_ink(&bytes[at..at+4])
+    })).collect();
+    println!("gpu synthetic stem lean {}",lean(&edges));
+    assert!(lean(&edges)>=3,"gpu synthetic italic must lean right: {edges:?}");
 }

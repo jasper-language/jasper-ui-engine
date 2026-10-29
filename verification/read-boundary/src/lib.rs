@@ -415,6 +415,27 @@ pub fn assert_font_family(name: &[u8]) {
     assert_eq!(font_family_admits(name), expected);
 }
 
+/// Independent glyph-skew oracle in the f64 domain: a transform equal to a pure horizontal skew
+/// (a = d = 1.0, b = e = f = 0.0, either zero sign) has its skew negated; anything else, NaN
+/// coefficients included, keeps every bit of c.
+/// 浮点域独立斜切规格：等于纯水平斜切（a = d = 1.0，b = e = f = 0.0，零的符号不限）时斜切取反；
+/// 其余（含 NaN 系数）c 的每一位不变。
+pub fn assert_glyph_skew(a: u64, b: u64, c: u64, d: u64, e: u64, f: u64) {
+    let [fa, fb, fd, fe, ff] = [a, b, d, e, f].map(f64::from_bits);
+    let pure = fa == 1.0 && fb == 0.0 && fd == 1.0 && fe == 0.0 && ff == 0.0;
+    let expected = if pure { (-f64::from_bits(c)).to_bits() } else { c };
+    assert_eq!(upright_skew_x(a, b, c, d, e, f), expected);
+}
+
+/// A pure skew whose zero entries carry the given signs (bit i of `signs` negates zero i).
+/// 纯斜切，零系数的符号由 `signs` 的各位给出。
+pub fn assert_glyph_skew_pure(c: u64, signs: u8) {
+    let zero = |bit: u8| if signs & bit != 0 { (-0.0f64).to_bits() } else { 0.0f64.to_bits() };
+    let one = 1.0f64.to_bits();
+    assert_glyph_skew(one, zero(1), c, one, zero(2), zero(4));
+    assert_eq!(upright_skew_x(one, zero(1), c, one, zero(2), zero(4)), c ^ (1 << 63));
+}
+
 /// Independent frame-reuse oracle: reuse only a clean cache of identical extent whose
 /// length equals the admitted packed length; any invalidation forces a repaint.
 /// 独立帧复用规格：仅复用未失效、尺寸一致且长度等于准入紧凑长度的缓存；任何失效都强制重绘。
@@ -1559,6 +1580,12 @@ mod kani_checks {
     }
 
     #[kani::proof]
+    fn glyph_skew_mirror() {
+        assert_glyph_skew(kani::any(), kani::any(), kani::any(), kani::any(), kani::any(), kani::any());
+        assert_glyph_skew_pure(kani::any(), kani::any());
+    }
+
+    #[kani::proof]
     fn font_weight_admission() {
         assert_font_weight(kani::any());
     }
@@ -1947,6 +1974,17 @@ mod properties {
             assert_color_construct(r, g, b, a, alpha);
         }
         #[test]
+        fn glyph_skew_property(coeffs in any::<[u64; 6]>(), c in any::<u64>(), signs in any::<u8>(), pick in any::<u8>()) {
+            let [a, b, _, d, e, f] = coeffs;
+            assert_glyph_skew(a, b, c, d, e, f);
+            assert_glyph_skew_pure(c, signs);
+            // Near-pure transforms: replace a subset of coefficients with the pure values.
+            // 近纯变换：用纯斜切的值替换部分系数。
+            let one = 1.0f64.to_bits();
+            let keep = |bit: u8, pure: u64, other: u64| if pick & bit != 0 { pure } else { other };
+            assert_glyph_skew(keep(1, one, a), keep(2, 0, b), c, keep(4, one, d), keep(8, 1 << 63, e), keep(16, 0, f));
+        }
+        #[test]
         fn font_weight_property(weight in any::<u16>(), near in 0u16..1003) {
             assert_font_weight(weight);
             assert_font_weight(near);
@@ -2247,6 +2285,13 @@ mod memory {
         for weight in [0, 1, 2, 400, 700, 999, 1000, 1001, u16::MAX] {
             assert_font_weight(weight);
         }
+        let skew = 14f64.to_radians().tan().to_bits();
+        for signs in 0..8 {
+            assert_glyph_skew_pure(skew, signs);
+        }
+        for (a, b, d, e, f) in [(1.0f64, 0.0f64, 1.0f64, 0.0f64, 3.0f64), (2.0, 0.0, 1.0, 0.0, 0.0), (1.0, f64::NAN, 1.0, 0.0, 0.0)] {
+            assert_glyph_skew(a.to_bits(), b.to_bits(), skew, d.to_bits(), e.to_bits(), f.to_bits());
+        }
         for channel in [0, 1, 127, 254, 255] {
             assert_color_construct(channel, 255 - channel, channel / 2, 255 - channel / 3, channel);
         }
@@ -2435,6 +2480,7 @@ mod schedules {
                 assert!(canvas.pixel(1, 0).is_none());
                 assert_font_order(&[first[0] as u64, first[1] as u64], first[2] as u64, first[3] as usize);
                 assert_font_weight(u16::from_le_bytes([first[0], first[1] & 7]));
+                assert_glyph_skew_pure(u64::from_le_bytes([first[0], first[1], first[2], first[3], 0, 0, 0, 0]), first[2]);
                 assert_color_construct(first[0], first[1], first[2], first[3], first[0] ^ first[3]);
                 assert_font_family(&first[..(first[2] as usize & 3)]);
                 assert_damage_span(Some((first[0] as u32, first[1] as u32)), first[2] as u32);
