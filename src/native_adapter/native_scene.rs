@@ -660,7 +660,7 @@ impl NativeScene {
         }
         let scale=document.viewport().scale_f64();
         let pixels=anyrender::render_to_buffer::<anyrender_vello_cpu::VelloCpuImageRenderer,_>(
-            |scene|blitz_paint::paint_scene(scene,document,scale,width,height,0,0),width,height);
+            |scene|blitz_paint::paint_scene(&mut crate::glyph_skew::UprightSyntheticItalic(scene),document,scale,width,height,0,0),width,height);
         if pixels.len()!=bytes {return None;}
         let previous=self.frame_cache.as_ref().map(|(w,h,cached)|(*w,*h,cached.as_slice()));
         let damage=frame_damage(previous,width,height,&pixels);
@@ -762,7 +762,7 @@ impl NativeScene {
                 cached.len(),width,height,bytes) {return Ok((cached.clone(),FrameDamage::Unchanged));}
         }
         let scale=document.viewport().scale_f64();
-        let pixels=gpu.render(width,height,|scene|blitz_paint::paint_scene(scene,document,scale,width,height,0,0))?;
+        let pixels=gpu.render(width,height,|scene|blitz_paint::paint_scene(&mut crate::glyph_skew::UprightSyntheticItalic(scene),document,scale,width,height,0,0))?;
         if pixels.len()!=bytes {return Err(GpuFrameError::Readback(format!("expected {bytes} bytes, read {}",pixels.len())));}
         let previous=self.frame_cache.as_ref().map(|(w,h,cached)|(*w,*h,cached.as_slice()));
         let damage=frame_damage(previous,width,height,&pixels);

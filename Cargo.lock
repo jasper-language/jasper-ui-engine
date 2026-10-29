@@ -1593,6 +1593,7 @@ dependencies = [
  "fontique",
  "keyboard-types",
  "parley",
+ "peniko",
  "pollster",
  "proptest",
  "rustc-hash 2.1.3",

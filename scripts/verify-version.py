@@ -772,6 +772,19 @@ pub closed spec fn surface_view_model(view: &Rgba8SurfaceView) -> (Seq<u8>, u32,
         "mutations": [("admit-forbidden-byte", "            return false;", "            return true;"),
                       ("admit-overlong", "        return false;\n    }\n    let mut index", "        return name.len() > MAX_FONT_FAMILY_BYTES;\n    }\n    let mut index")],
     },
+    "glyph-skew": {
+        "source": "src/native_adapter/glyph_skew.rs", "marker": "GLYPH SKEW", "property": "UI-GLYPH-SKEW-001",
+        "signature": "pub fn upright_skew_x(a: u64, b: u64, c: u64, d: u64, e: u64, f: u64) -> u64 {",
+        "contract": """pub fn upright_skew_x(a: u64, b: u64, c: u64, d: u64, e: u64, f: u64) -> (result: u64)
+    ensures result == (if a == 0x3ff0_0000_0000_0000u64 && (b & 0x7fff_ffff_ffff_ffffu64) == 0
+            && d == 0x3ff0_0000_0000_0000u64 && (e & 0x7fff_ffff_ffff_ffffu64) == 0
+            && (f & 0x7fff_ffff_ffff_ffffu64) == 0 { c ^ 0x8000_0000_0000_0000u64 } else { c }),
+{""",
+        "function_count": 1, "depends": [], "evidence": "glyph-skew-kernel",
+        "scope": "bit-level decision mirroring the horizontal skew sign of a pure-skew glyph transform (a = d = 1.0, b = e = f = +-0.0), every other transform unchanged; not the forwarding painter, Parley synthesis, Blitz glyph painting or rasterisation",
+        "mutations": [("keep-backslant", "        c ^ F64_SIGN_BIT\n", "        c\n"),
+                      ("mirror-translated-skew", "        && (f & F64_MAGNITUDE_BITS) == 0\n", "")],
+    },
     "text-offset": {
         "source": "src/native_adapter/text_geometry.rs", "marker": "TEXT OFFSET", "property": "UI-TEXT-OFFSET-001",
         "signature": """pub fn text_offset_admits(layout_len: usize, source_len: usize, offset: usize, on_boundary: bool) -> bool {""",

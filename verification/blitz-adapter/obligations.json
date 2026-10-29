@@ -1,7 +1,7 @@
 {
   "status": "candidate_not_accepted",
   "source": "src/native_adapter/native_view.rs",
-  "source_sha256": "680807a6e34aadc277a211971ccd2ccdce10abea60b3c323cb11d1e842b5ec8f",
+  "source_sha256": "f5ebae94baf26654ad0598003af9f4dcf505547213621e9db5812d2c888ce159",
   "own_methods": 49,
   "whole_method_implementation_proofs_complete": 3,
   "ordered_gates": [
@@ -488,7 +488,7 @@
       "evidence": "evidence/blitz-font-order-pending/report.json"
     },
     "src/native_adapter/native_scene.rs": {
-      "source_sha256": "054660568e80578e6d05c5fa6ed831bcded687411db1b6899e9c2a9400ae13e9",
+      "source_sha256": "c3a09b7595dd0299a1a6ed55246c8ca70e4f02ca132cc97279d73ec0b8580744",
       "own_methods": 59,
       "implementation_proofs_complete": 12,
       "six_stage_acceptance_complete": 10,
@@ -581,6 +581,14 @@
       "implementation_proofs_complete": 1,
       "six_stage_acceptance_complete": 1,
       "scope": "GPU readback buffer layout (extent admission shared with the CPU path, rows padded to 256 bytes, buffer = padded row x height) (Verus + five stages); wgpu device/adapter, Vello hybrid rendering, texture copy and buffer mapping are a third-party trust boundary covered by tests/native_gpu_render.rs, not proof",
+      "evidence": "evidence/validation-chain/report.json"
+    },
+    "src/native_adapter/glyph_skew.rs": {
+      "source_sha256": "59c51182e86f92549ce62f544786a0bc482052c32bbca90b7f0bd3bca937e667",
+      "own_methods": 14,
+      "implementation_proofs_complete": 1,
+      "six_stage_acceptance_complete": 1,
+      "scope": "Bit-level synthetic italic skew decision (pure horizontal skew a = d = 1, b = e = f = +-0 has its sign mirrored, anything else unchanged) (Verus + five stages); the forwarding PaintScene wrapper and its use on the CPU, GPU and text-display paint paths are covered by tests/native_font_synthesis.rs (stem lean measured on CPU and GPU), not proof",
       "evidence": "evidence/validation-chain/report.json"
     },
     "src/native_adapter/capture_policy.rs": {

@@ -595,3 +595,21 @@ GPU 路径与 CPU 路径改为共用同一帧缓存与损伤基准（此前 GPU 
 同轮补欠账：既有 `style::Color::new/rgb/with_alpha` 移入独立标记区（语义不变）并完成六步链（UI-COLOR-CONSTRUCT-001，Verus 4 verified/0 errors，两反例被拒）。构建虚拟机复测：默认配置 29 个套件共 140 项通过；`native-blitz-cpu-pending`（注入字体）29 个套件共 252 项通过、0 失败（`native_font_synthesis` 2/2）。整链 `scripts/verify-ui.py`：Verus/Z3、Proptest（读边界属性 46 项）、Miri、cargo-fuzz（14.7 万/158.5 万次）、Kani（51 个 harness）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合。
 
 未完成：合成斜体方向修正与合成粗体（需在绘制入口按合成信息修正，或在只有常规字面时明确拒绝）、按钮的多字体公开入口、双向文字验收、TextDisplayView 的族名选择。根入口仍标记 not yet accepted。
+
+## 2026-10-29：合成斜体方向修正（UI20）
+
+UI19 刻画的反斜体已修正。新增 `src/native_adapter/glyph_skew.rs`：转发绘制器 `UprightSyntheticItalic` 包装 anyrender `PaintScene`，所有调用原样转发，只在 `draw_glyphs` 中把**恰为纯水平斜切**的字形变换（a = d = 1，b = e = f = ±0，即 Blitz 由 Parley 合成倾斜角生成的 `Affine::skew(tan, 0)`）的斜切符号取反；其他变换（含平移、缩放、NaN 系数）不变。根原生 CPU 路径、GPU 路径与 TextDisplayView 的绘制入口均经此包装；录制场景片段走默认 `append_scene`，同样修正。新增直接依赖 `peniko =0.6.1`（与锁定版本一致，仅为绘制调用类型，许可证已登记）。
+
+判定内核 `upright_skew_x` 以 `f64::to_bits` 位模式工作（UI-GLYPH-SKEW-001），Verus 4 verified/0 errors，「不取反」「平移斜切也取反」两反例被拒；Proptest、Miri、cargo-fuzz、Kani、Loom 以浮点域独立规格对照。
+
+`tests/native_font_synthesis.rs` 更新：
+
+| 测试 | 断言 | 实测 |
+|---|---|---|
+| `synthetic_italic_leans_right_like_an_italic_face` | 合成斜体帧不同于直立帧、墨迹量相差不超过 10%；直立竖笔画垂直、真斜体字面右倾 ≥3 列、合成斜体单调右倾 ≥3 列；改为 Italic 的样式补丁重绘等于新导入 | 墨迹 1388 vs 1383；倾斜 直立 0 / 真斜体 +4 / 合成 +5（修正前 −5） |
+| `bold_without_a_bold_face_draws_the_regular_face` | 字重 600/700/900 帧等于 400；700 斜体等于 400 斜体 | 通过（合成粗体仍缺失，未改） |
+| `gpu_synthetic_italic_leans_right_too`（`gpu-pending`） | GPU 路径合成竖笔画同样右倾 ≥3 列 | +5（构建虚拟机 llvmpipe） |
+
+构建虚拟机复测：默认配置 140 项通过；`native-blitz-cpu-pending`（注入字体）253 项通过；`native-blitz-cpu-pending,gpu-pending` 260 项通过；`accesskit-pending` 200 项通过；均 0 失败。整链 `scripts/verify-ui.py`：Verus/Z3、Proptest（读边界属性 47 项）、Miri、cargo-fuzz（16.0 万/172.8 万次）、Kani（52 个 harness）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，与本切片无关。转发绘制器与绘制路径接入为第三方 PaintScene 之上的编排，由集成测试覆盖，不在证明范围。
+
+未完成：合成粗体（绘制器只有全局加粗开关、不传递逐字形串的加粗合成信息；需另得合成信息，或在只有常规字面时明确拒绝）、按钮的多字体公开入口、双向文字验收、TextDisplayView 的族名选择。根入口仍标记 not yet accepted。
