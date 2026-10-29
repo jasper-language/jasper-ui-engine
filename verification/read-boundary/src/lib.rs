@@ -388,6 +388,18 @@ pub fn assert_font_order(seen: &[u64], id: u64, count: usize) {
     assert_eq!(order, expected);
 }
 
+/// Independent colour construction oracle: channels kept exactly, rgb opaque, with_alpha
+/// replaces alpha alone.
+/// 独立颜色构造规格：通道原样，rgb 不透明，with_alpha 只替换 alpha。
+pub fn assert_color_construct(r: u8, g: u8, b: u8, a: u8, alpha: u8) {
+    let color = Color::new(r, g, b, a);
+    assert_eq!([color.r, color.g, color.b, color.a], [r, g, b, a]);
+    let opaque = Color::rgb(r, g, b);
+    assert_eq!([opaque.r, opaque.g, opaque.b, opaque.a], [r, g, b, 255]);
+    let replaced = color.with_alpha(alpha);
+    assert_eq!([replaced.r, replaced.g, replaced.b, replaced.a], [r, g, b, alpha]);
+}
+
 /// Independent CSS numeric weight oracle: admitted exactly on 1..=1000.
 /// 独立 CSS 数值字重规格：恰在 1..=1000 准入。
 pub fn assert_font_weight(weight: u16) {
@@ -1542,6 +1554,11 @@ mod kani_checks {
     }
 
     #[kani::proof]
+    fn color_construct_exact() {
+        assert_color_construct(kani::any(), kani::any(), kani::any(), kani::any(), kani::any());
+    }
+
+    #[kani::proof]
     fn font_weight_admission() {
         assert_font_weight(kani::any());
     }
@@ -1926,6 +1943,10 @@ mod properties {
             assert_frame_reuse(dirty, wide, wide.0, wide.1, wide.2);
         }
         #[test]
+        fn color_construct_property(r in any::<u8>(), g in any::<u8>(), b in any::<u8>(), a in any::<u8>(), alpha in any::<u8>()) {
+            assert_color_construct(r, g, b, a, alpha);
+        }
+        #[test]
         fn font_weight_property(weight in any::<u16>(), near in 0u16..1003) {
             assert_font_weight(weight);
             assert_font_weight(near);
@@ -2226,6 +2247,9 @@ mod memory {
         for weight in [0, 1, 2, 400, 700, 999, 1000, 1001, u16::MAX] {
             assert_font_weight(weight);
         }
+        for channel in [0, 1, 127, 254, 255] {
+            assert_color_construct(channel, 255 - channel, channel / 2, 255 - channel / 3, channel);
+        }
         for name in [&b""[..], &b"DejaVu Sans"[..], "思源黑体".as_bytes(), &b"a\"b"[..], &b"a\\b"[..], &b"\x1f"[..], &b"\x7f"[..],
                      &[b'x'; 128][..], &[b'x'; 129][..]] {
             assert_font_family(name);
@@ -2411,6 +2435,7 @@ mod schedules {
                 assert!(canvas.pixel(1, 0).is_none());
                 assert_font_order(&[first[0] as u64, first[1] as u64], first[2] as u64, first[3] as usize);
                 assert_font_weight(u16::from_le_bytes([first[0], first[1] & 7]));
+                assert_color_construct(first[0], first[1], first[2], first[3], first[0] ^ first[3]);
                 assert_font_family(&first[..(first[2] as usize & 3)]);
                 assert_damage_span(Some((first[0] as u32, first[1] as u32)), first[2] as u32);
                 assert_damage_rect(first[0] as u32, first[1] as u32, first[2] as u32, first[3] as u32, 2, 2);

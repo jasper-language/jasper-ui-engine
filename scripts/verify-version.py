@@ -583,6 +583,27 @@ pub closed spec fn surface_view_model(view: &Rgba8SurfaceView) -> (Seq<u8>, u32,
                       ("drop-error-bytes", "_ => Err(pixels),", "_ => Err(Vec::new()),")],
     },
     "color-type": {"source": "src/style.rs", "marker": "COLOR", "suffix": "TYPE", "signature": None, "depends": [], "internal_only": True},
+    "color-construct": {
+        "source": "src/style.rs", "marker": "COLOR CONSTRUCT", "property": "UI-COLOR-CONSTRUCT-001",
+        "signature": "pub const fn new(r: u8, g: u8, b: u8, a: u8) -> Self {",
+        "contract": """pub const fn new(r: u8, g: u8, b: u8, a: u8) -> (result: Self)
+    ensures result.r == r && result.g == g && result.b == b && result.a == a,
+{""",
+        "extra_annotations": [
+            ("pub const fn rgb(r: u8, g: u8, b: u8) -> Self {",
+             """pub const fn rgb(r: u8, g: u8, b: u8) -> (result: Self)
+    ensures result.r == r && result.g == g && result.b == b && result.a == 255,
+{"""),
+            ("pub fn with_alpha(self, a: u8) -> Self {",
+             """pub fn with_alpha(self, a: u8) -> (result: Self)
+    ensures result.r == self.r && result.g == self.g && result.b == self.b && result.a == a,
+{"""),
+        ],
+        "function_count": 3, "depends": ["color-type"], "evidence": "color-construct-kernel",
+        "scope": "existing Color::new/rgb/with_alpha exact channel construction; not blend_over (floating point) or any colour-space semantics",
+        "mutations": [("rgb-not-opaque", "Self { r, g, b, a: 255 }", "Self { r, g, b, a: 254 }"),
+                      ("with-alpha-ignored", "Self { a, ..self }", "Self { a: self.a, ..self }")],
+    },
     "canvas-pixel": {
         "source": "src/raster.rs", "marker": "CANVAS PIXEL READ", "property": "UI-CANVAS-PIXEL-001",
         "signature": "pub fn pixel(&self, x: u32, y: u32) -> Option<Color> {",
