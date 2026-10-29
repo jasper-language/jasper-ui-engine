@@ -1,11 +1,11 @@
 use super::{BaseDocument,blitz_dom,ViewSlot,NodeId};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap,BTreeSet};
 mod native_scene {pub(crate) use super::NativeScene;}
 include!(concat!(env!("OUT_DIR"),"/actual_scene.rs"));
 pub fn check(version:u64,owner:u64,caller:u64,closed:bool) {
     // Unread map contents are universally framed by Verus; runtime fixture keeps them empty.
     let mut view=SceneHostView {inner:NativeScene {document:ViewSlot::new(BaseDocument),owner,scene_version:version,node_count:7,
-        parents:BTreeMap::new(),children:BTreeMap::new(),displayed:BTreeMap::new(),semantics:BTreeMap::new(),nodes:BTreeMap::new(),frame_dirty:true,frame_cache:None}};
+        parents:BTreeMap::new(),children:BTreeMap::new(),displayed:BTreeMap::new(),semantics:BTreeMap::new(),nodes:BTreeMap::new(),frame_dirty:true,frame_cache:None,families:BTreeSet::new()}};
     if closed {assert!(view.inner.document.close());}
     assert_eq!(view.close(caller),owner==caller && !closed);
     assert_eq!(view.inner.document.is_open(),owner!=caller && !closed);
@@ -39,7 +39,7 @@ mod proofs {
 
 pub fn check_visibility(entries:&[(u64,Option<u64>,Option<bool>,Option<bool>)],start:u64) {
     let mut view=SceneHostView {inner:NativeScene {document:ViewSlot::new(BaseDocument),owner:1,scene_version:0,node_count:entries.len(),
-        parents:BTreeMap::new(),children:BTreeMap::new(),displayed:BTreeMap::new(),semantics:BTreeMap::new(),nodes:BTreeMap::new(),frame_dirty:true,frame_cache:None}};
+        parents:BTreeMap::new(),children:BTreeMap::new(),displayed:BTreeMap::new(),semantics:BTreeMap::new(),nodes:BTreeMap::new(),frame_dirty:true,frame_cache:None,families:BTreeSet::new()}};
     for (id,parent,displayed,hidden) in entries {
         view.inner.parents.insert(NodeId(*id),parent.map(NodeId));
         match displayed {Some(value)=>{view.inner.displayed.insert(NodeId(*id),*value);},None=>{view.inner.displayed.remove(&NodeId(*id));}}
@@ -90,7 +90,7 @@ mod visibility_proofs {
         let parent_present:bool=kani::any();let display_present:bool=kani::any();let semantic_present:bool=kani::any();
         let shown:bool=kani::any();let hidden:bool=kani::any();let cycle:bool=kani::any();
         let mut view=SceneHostView {inner:NativeScene {document:ViewSlot::new(BaseDocument),owner:1,scene_version:0,node_count:1,
-            parents:BTreeMap::new(),children:BTreeMap::new(),displayed:BTreeMap::new(),semantics:BTreeMap::new(),nodes:BTreeMap::new(),frame_dirty:true,frame_cache:None}};
+            parents:BTreeMap::new(),children:BTreeMap::new(),displayed:BTreeMap::new(),semantics:BTreeMap::new(),nodes:BTreeMap::new(),frame_dirty:true,frame_cache:None,families:BTreeSet::new()}};
         if parent_present {view.inner.parents.insert(NodeId(0),if cycle {Some(NodeId(0))} else {None});}
         if display_present {view.inner.displayed.insert(NodeId(0),shown);}
         if semantic_present {view.inner.semantics.insert(NodeId(0),Semantics {hidden,..Default::default()});}
@@ -167,7 +167,7 @@ mod hidden_proofs {
 pub fn check_snapshot_identity(version:u64,count:usize,owner:u64,caller:u64,closed:bool) {
     // Maps are never accessed by this method; Verus frames arbitrary map payloads.
     let mut view=NativeScene {document:ViewSlot::new(BaseDocument),owner,scene_version:version,node_count:count,
-        parents:BTreeMap::new(),children:BTreeMap::new(),displayed:BTreeMap::new(),semantics:BTreeMap::new(),nodes:BTreeMap::new(),frame_dirty:true,frame_cache:None};
+        parents:BTreeMap::new(),children:BTreeMap::new(),displayed:BTreeMap::new(),semantics:BTreeMap::new(),nodes:BTreeMap::new(),frame_dirty:true,frame_cache:None,families:BTreeSet::new()};
     if closed {assert!(view.document.close());}
     let expected=if owner==caller && !closed {Some((version,count))} else {None};
     assert_eq!(view.snapshot_identity(caller),expected);assert_eq!(view.snapshot_identity(caller),expected);

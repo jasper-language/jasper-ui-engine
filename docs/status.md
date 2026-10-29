@@ -559,3 +559,19 @@ GPU 路径与 CPU 路径改为共用同一帧缓存与损伤基准（此前 GPU 
 构建虚拟机复测：默认配置 140 项通过；`native-blitz-cpu-pending`（注入字体）共 247 项通过（`native_font_weight_style` 3/3）；`native-blitz-cpu-pending,gpu-pending,accesskit-pending` 测试目标编译通过。新内核六步链：Verus/Z3 1 verified/0 errors（拒绝最小值、排除最大值两反例被拒），Proptest、Miri、cargo-fuzz、Kani、Loom 均覆盖。整链 `scripts/verify-ui.py`：Verus/Z3、Proptest（读边界属性 44 项）、Miri、cargo-fuzz（两个目标各 21 秒，13.5 万/129.6 万次）、Kani（49 个 harness）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，与本切片无关。CSS 映射与 Parley 字面匹配属第三方信任边界，由集成测试覆盖，不在证明范围。
 
 未完成：字体族名选择（font-family）、合成粗体/斜体（宿主只注入常规字面时）的验收、按钮的多字体公开入口、双向文字验收。根入口仍标记 not yet accepted。
+
+## 2026-10-29：场景字体族名选择（UI18）
+
+`style::Style` 新增 `font_family: Option<String>`（默认 None，沿用宿主注入顺序），构造器 `Style::family(name)`。根原生场景路径把它映射为 CSS `font-family: "<name>", sans-serif`（None 时为 `sans-serif`，每个节点显式声明、不继承，与颜色、字号一致），由 Parley/fontique 按名选择；所选族缺少的字形经通用族按宿主注入顺序回退。族名须与本视图注入字体栈登记的族名完全一致（区分大小写）：未登记的族名在场景导入、`Insert` 与 `UpdateStyle` 补丁中被拒，不静默替换为其他字体。新内核 `native_fonts::font_family_admits`：族名 1..=128 字节、不含控制字节/DEL/双引号/反斜杠时准入，使其可原样放入 CSS 引号串；不合规即拒绝，不转义。LegacyEngine 不实现字体族选择。
+
+新增集成测试 `tests/native_font_family.rs`（`native-blitz-cpu-pending`，注入 `JASPER_UI_TEST_LATIN_FONT`=DejaVu Sans 与 `JASPER_UI_TEST_CJK_FONT`=Noto Sans CJK 字体集）：
+
+| 测试 | 断言 | 实测 |
+|---|---|---|
+| `family_is_selected_by_name_not_by_injection_order` | 两种注入顺序下，`DejaVu Sans`、`Noto Sans CJK SC`、`Noto Sans Mono CJK SC`（同一字体集文件内的两个族）帧均等于只注入对应文件时的帧；未声明族等于先注入的族；三者两两不同 | 通过 |
+| `glyphs_missing_from_the_family_fall_back_in_host_order` | 声明 `DejaVu Sans` 的汉字在 [CJK, 拉丁] 下回退，帧等于只注入 CJK 的默认帧，且不同于只注入拉丁时的缺字框帧；在 [拉丁, CJK] 下等于未声明族 | 通过 |
+| `unregistered_or_unsafe_names_are_rejected_and_updates_repaint` | 前缀名、大小写不同、尾随空格、空名、含双引号/反斜杠/换行、129 字节均导入被拒；只注入拉丁时 CJK 族名被拒；未登记/不安全族名的 `UpdateStyle` 与 `Insert` 被拒且帧不变；改为 Mono 族的补丁标脏、重绘等于新导入；清除族名回到原帧 | 通过 |
+
+构建虚拟机复测：默认配置 28 个测试套件共 140 项通过；`native-blitz-cpu-pending`（注入字体）28 个套件共 250 项通过、0 失败（`native_font_family` 3/3）；`native-blitz-cpu-pending,gpu-pending,accesskit-pending` 测试目标编译通过。新内核六步链：Verus/Z3 3 verified/0 errors（准入禁用字节、准入超长两反例被拒），Proptest、Miri、cargo-fuzz、Kani、Loom 均覆盖。`NativeScene` 新增登记族名字段后重验 scene-host-close（8/0）、scene-snapshot-identity（7/0）、scene-host-identity（9/0），映射检查全部 current。整链 `scripts/verify-ui.py`：Verus/Z3、Proptest（读边界属性 45 项）、Miri、cargo-fuzz（两个目标各 21 秒，15.9 万/122.8 万次）、Kani（50 个 harness）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，与本切片无关。登记族名查找、CSS 映射与 Parley 按名选择/回退为编排与第三方信任边界，由集成测试覆盖，不在证明范围。
+
+未完成：合成粗体/斜体（宿主只注入常规字面时）的验收、按钮的多字体公开入口、双向文字验收、TextDisplayView 的族名选择。根入口仍标记 not yet accepted。

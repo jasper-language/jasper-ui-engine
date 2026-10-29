@@ -199,6 +199,9 @@ pub struct Style {
     /// CSS 数值字重（400 常规、700 粗体）；原生路径只准入 1..=1000。
     pub font_weight: u16,
     pub font_style: FontStyle,
+    /// Family name selected by Framework; None keeps the host-injected fallback order.
+    /// Framework 选择的字体族名；None 沿用宿主注入的回退顺序。
+    pub font_family: Option<String>,
     pub color: Color,
     pub overflow: Overflow,
 }
@@ -226,6 +229,7 @@ impl Default for Style {
             font_size: 14.0,
             font_weight: 400,
             font_style: FontStyle::Normal,
+            font_family: None,
             color: Color::BLACK,
             overflow: Overflow::Visible,
         }
@@ -311,6 +315,13 @@ impl Style {
     pub fn font(mut self, weight: u16, style: FontStyle) -> Self {
         self.font_weight = weight;
         self.font_style = style;
+        self
+    }
+
+    /// The native path admits only a family registered by an injected font, matched exactly.
+    /// 原生路径只准入注入字体已登记的族名（完全一致）。
+    pub fn family(mut self, name: &str) -> Self {
+        self.font_family = Some(name.to_owned());
         self
     }
 

@@ -96,6 +96,7 @@ pub(crate) struct NativeScene {
     nodes:BTreeMap<NodeId,(blitz_dom::NodeId,Option<blitz_dom::NodeId>)>,
     frame_dirty:bool,
     frame_cache:Option<(u32,u32,Vec<u8>)>,
+    families:BTreeSet<String>,
 }
 // END VERIFIED NATIVE SCENE TYPE
 impl NativeScene {
@@ -108,8 +109,11 @@ impl NativeScene {
     pub(crate) fn from_scene_with_fonts(owner:u64,scene:&Scene,fonts:&[&[u8]],width:u32,height:u32)->Option<Self> {
         Self::from_scene_with_context(owner,scene,crate::native_fonts::injected_font_stack(fonts)?,width,height)
     }
-    fn from_scene_with_context(owner:u64,scene:&Scene,font_ctx:blitz_dom::FontContext,width:u32,height:u32)->Option<Self> {
-        let prepared=prepare_subtree(&scene.root,0,&BTreeSet::new())?;
+    fn from_scene_with_context(owner:u64,scene:&Scene,mut font_ctx:blitz_dom::FontContext,width:u32,height:u32)->Option<Self> {
+        // Declared families are admitted against exactly what the injected stack registered.
+        // 声明的族名按注入字体栈实际登记的族名准入。
+        let families:BTreeSet<String>=font_ctx.collection.family_names().map(str::to_owned).collect();
+        let prepared=prepare_subtree(&scene.root,0,&BTreeSet::new(),&families)?;
         // Existing identity validation runs only after depth/node admission.
         scene.validate().ok()?;
         let mut document=BaseDocument::new(DocumentConfig {
@@ -129,7 +133,7 @@ impl NativeScene {
         }
         let mut view=Self {document:ViewSlot::new(document),owner,scene_version:scene.version(),node_count:0,
             nodes:BTreeMap::new(),semantics:BTreeMap::new(),parents:BTreeMap::new(),displayed:BTreeMap::new(),children:BTreeMap::new(),
-            frame_dirty:true,frame_cache:None};
+            frame_dirty:true,frame_cache:None,families};
         if !view.append_prepared_subtree(&scene.root,None,body,prepared) {return None;}
         if !view.sync_native_focus_participation() {return None;}
         view.document.as_mut()?.resolve(0.0);
@@ -211,7 +215,7 @@ impl NativeScene {
                 },
                 ScenePatch::UpdateStyle {id,style} => {
                     if !live.contains(id) {return false;}
-                    let Some(properties)=style_properties(style,parents.get(id)==Some(&None)) else {return false;};
+                    let Some(properties)=style_properties(style,parents.get(id)==Some(&None),&self.families) else {return false;};
                     prepared.push(PreparedSceneMutation::Style(properties));
                 },
                 ScenePatch::UpdateSemantics {id,semantics}=> {
@@ -240,7 +244,7 @@ impl NativeScene {
                     let index=source_insert_index(*index,siblings.len());let anchor=siblings.get(index).copied();
                     let mut depth=1;let mut current=*parent;
                     while let Some(Some(ancestor))=parents.get(&current) {depth+=1;if depth>128 {return false;}current=*ancestor;}
-                    let Some(styles)=prepare_subtree(node,depth,&live) else {return false;};
+                    let Some(styles)=prepare_subtree(node,depth,&live,&self.families) else {return false;};
                     let mut stack=vec![(node,Some(*parent))];
                     while let Some((node,source_parent))=stack.pop() {
                         live.insert(node.id);roles.insert(node.id,node.semantics.role);parents.insert(node.id,source_parent);
@@ -861,12 +865,12 @@ fn source_subtree_contains(parents:&BTreeMap<NodeId,Option<NodeId>>,node:NodeId,
 }
 
 /// Bounded source admission shared by initial import and single-subtree insertion.
-fn prepare_subtree(root:&Node,base_depth:usize,existing:&BTreeSet<NodeId>)->Option<Vec<Vec<(&'static str,String)>>> {
+fn prepare_subtree(root:&Node,base_depth:usize,existing:&BTreeSet<NodeId>,families:&BTreeSet<String>)->Option<Vec<Vec<(&'static str,String)>>> {
     let mut stack=vec![(root,base_depth)];let mut prepared=Vec::new();let mut seen=BTreeSet::new();
     while let Some((node,depth))=stack.pop() {
         if depth>128 || existing.contains(&node.id) || !seen.insert(node.id) || matches!(node.kind,NodeKind::Canvas(_))
             || native_scroll_offset(node.scroll).is_none() {return None;}
-        prepared.push(style_properties(&node.style,depth==0)?);
+        prepared.push(style_properties(&node.style,depth==0,families)?);
         if !scene_work_fits(existing.len().checked_add(prepared.len())?,stack.len(),node.children.len()) {return None;}
         for child in node.children.iter().rev() {stack.push((child,depth+1));}
     }
@@ -923,7 +927,7 @@ fn semantic_attributes(semantics:&Semantics)->Vec<(&'static str,String)> {
     values
 }
 
-fn style_properties(style:&Style,root:bool)->Option<Vec<(&'static str,String)>> {
+fn style_properties(style:&Style,root:bool,families:&BTreeSet<String>)->Option<Vec<(&'static str,String)>> {
     let mut values=Vec::new();
     for (key,length) in [("width",style.width),("height",style.height),("min-width",style.min_width),
         ("max-width",style.max_width),("min-height",style.min_height),("max-height",style.max_height)] {
@@ -948,6 +952,14 @@ fn style_properties(style:&Style,root:bool)->Option<Vec<(&'static str,String)>> 
     values.push(("flex-grow",style.flex_grow.to_string()));
     if !crate::native_fonts::font_weight_admits(style.font_weight) {return None;}
     values.push(("font-weight",style.font_weight.to_string()));
+    // Every node states its family (no inheritance), like color and size; the generic keeps
+    // the host-injected order for glyphs the named family lacks.
+    // 每个节点都显式声明族（不继承），与颜色、字号一致；通用族保持宿主注入顺序，用于所选族缺字回退。
+    values.push(("font-family",match &style.font_family {
+        None=>"sans-serif".to_owned(),
+        Some(name) if crate::native_fonts::font_family_admits(name.as_bytes()) && families.contains(name)=>format!("\"{name}\", sans-serif"),
+        Some(_)=>return None,
+    }));
     for (key,color) in [("background-color",style.background),("border-color",style.border_color),("color",style.color)] {
         values.push((key,format!("#{:02x}{:02x}{:02x}{:02x}",color.r,color.g,color.b,color.a)));
     }
