@@ -543,3 +543,19 @@ GPU 路径与 CPU 路径改为共用同一帧缓存与损伤基准（此前 GPU 
 构建虚拟机复测：默认配置 140 项通过；`native-blitz-cpu-pending`（注入三份字体）26 个套件共 244 项通过（单元 174 项，`native_text_display_fonts` 3/3）。本切片未新增内核：所改代码是上游 Blitz/fontique 构造之上的编排，六步链各阶段对其为 N/A（理由与替代证据见 `docs/verification.md` UI-TEXT-DISPLAY-FONTS-001），不计为六阶段完成。整链 `scripts/verify-ui.py`：Verus/Z3、Proptest（读边界属性 43 项）、Miri、cargo-fuzz（两个目标各 21 秒，18.5 万/201.5 万次）、Kani（48 个 harness）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，与本切片无关。
 
 未完成：字重/斜体/字体族选择、按钮的多字体公开入口、双向文字验收。根入口仍标记 not yet accepted。
+
+## 2026-10-29：场景字重与斜体选择（UI17）
+
+`style::Style` 新增 `font_weight: u16`（CSS 数值字重，默认 400）与 `font_style: FontStyle::{Normal, Italic}`（默认 Normal），构造器 `Style::font(weight, style)`。根原生场景路径把两者映射为 CSS `font-weight` / `font-style`，由 Parley/fontique 在宿主注入的同族字面中匹配（如 DejaVu Sans Regular、Bold、Oblique 分别作为独立文件注入同一字体栈）。新内核 `native_fonts::font_weight_admits`：字重恰在 1..=1000 时准入，越界的场景导入与 `UpdateStyle` 补丁被拒，不钳制。LegacyEngine 不实现字重与倾斜，作为对照引擎其绘制不受这两个字段影响。
+
+新增集成测试 `tests/native_font_weight_style.rs`（`native-blitz-cpu-pending`，注入 `JASPER_UI_TEST_LATIN_FONT`=DejaVu Sans、`JASPER_UI_TEST_BOLD_FONT`=DejaVu Sans Bold、`JASPER_UI_TEST_ITALIC_FONT`=DejaVu Sans Oblique）：
+
+| 测试 | 断言 | 实测 |
+|---|---|---|
+| `weight_selects_the_matching_injected_face` | 两种注入顺序下，700 帧均等于只注入 Bold、400 帧均等于只注入 Regular（按字重匹配、与顺序无关）；700 与 400 帧不同且粗体墨迹更多；默认样式帧等于显式 400/Normal | 墨迹像素 1397 vs 1051 |
+| `italic_selects_the_oblique_injected_face` | 两种注入顺序下，Italic 帧等于只注入 Oblique、Normal 帧等于只注入 Regular；Italic 与 Normal 帧不同 | 通过 |
+| `out_of_range_weight_is_rejected_and_updates_repaint` | 字重 0、1001、65535 导入被拒，1 与 1000 准入；越界 `UpdateStyle` 被拒且版本与帧不变；改为 700 的补丁标脏，重绘帧等于新导入的 700 场景 | 通过 |
+
+构建虚拟机复测：默认配置 140 项通过；`native-blitz-cpu-pending`（注入字体）共 247 项通过（`native_font_weight_style` 3/3）；`native-blitz-cpu-pending,gpu-pending,accesskit-pending` 测试目标编译通过。新内核六步链：Verus/Z3 1 verified/0 errors（拒绝最小值、排除最大值两反例被拒），Proptest、Miri、cargo-fuzz、Kani、Loom 均覆盖。整链 `scripts/verify-ui.py`：Verus/Z3、Proptest（读边界属性 44 项）、Miri、cargo-fuzz（两个目标各 21 秒，13.5 万/129.6 万次）、Kani（49 个 harness）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，与本切片无关。CSS 映射与 Parley 字面匹配属第三方信任边界，由集成测试覆盖，不在证明范围。
+
+未完成：字体族名选择（font-family）、合成粗体/斜体（宿主只注入常规字面时）的验收、按钮的多字体公开入口、双向文字验收。根入口仍标记 not yet accepted。

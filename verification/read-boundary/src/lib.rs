@@ -388,6 +388,12 @@ pub fn assert_font_order(seen: &[u64], id: u64, count: usize) {
     assert_eq!(order, expected);
 }
 
+/// Independent CSS numeric weight oracle: admitted exactly on 1..=1000.
+/// 独立 CSS 数值字重规格：恰在 1..=1000 准入。
+pub fn assert_font_weight(weight: u16) {
+    assert_eq!(font_weight_admits(weight), (1..=1000).contains(&weight));
+}
+
 /// Independent frame-reuse oracle: reuse only a clean cache of identical extent whose
 /// length equals the admitted packed length; any invalidation forces a repaint.
 /// 独立帧复用规格：仅复用未失效、尺寸一致且长度等于准入紧凑长度的缓存；任何失效都强制重绘。
@@ -1527,6 +1533,11 @@ mod kani_checks {
     }
 
     #[kani::proof]
+    fn font_weight_admission() {
+        assert_font_weight(kani::any());
+    }
+
+    #[kani::proof]
     #[kani::unwind(6)]
     fn font_order_first_occurrence() {
         let seen: [u64; 4] = kani::any();
@@ -1897,6 +1908,11 @@ mod properties {
             assert_frame_reuse(dirty, wide, wide.0, wide.1, wide.2);
         }
         #[test]
+        fn font_weight_property(weight in any::<u16>(), near in 0u16..1003) {
+            assert_font_weight(weight);
+            assert_font_weight(near);
+        }
+        #[test]
         fn font_order_property(seen in prop::collection::vec(0u64..6, 0..12), id in 0u64..8,
                                wide in any::<u64>(), count in any::<usize>(), small in 0usize..20) {
             assert_font_order(&seen, id, count);
@@ -2183,6 +2199,9 @@ mod memory {
                 }
             }
         }
+        for weight in [0, 1, 2, 400, 700, 999, 1000, 1001, u16::MAX] {
+            assert_font_weight(weight);
+        }
         for seen in [&[][..], &[3][..], &[3, 3][..], &[1, 2, 3, u64::MAX][..]] {
             for id in [0, 1, 3, u64::MAX] {
                 for count in [0, 1, 16, 17, usize::MAX] {
@@ -2363,6 +2382,7 @@ mod schedules {
                 assert_eq!(canvas.pixel(0, 0).map(|c| [c.r, c.g, c.b, c.a]), Some(*first));
                 assert!(canvas.pixel(1, 0).is_none());
                 assert_font_order(&[first[0] as u64, first[1] as u64], first[2] as u64, first[3] as usize);
+                assert_font_weight(u16::from_le_bytes([first[0], first[1] & 7]));
                 assert_damage_span(Some((first[0] as u32, first[1] as u32)), first[2] as u32);
                 assert_damage_rect(first[0] as u32, first[1] as u32, first[2] as u32, first[3] as u32, 2, 2);
                 assert_frame_tick(first[0] as u64, first[1] as u64, first[2] as u64);

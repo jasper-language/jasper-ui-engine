@@ -719,6 +719,17 @@ pub closed spec fn surface_view_model(view: &Rgba8SurfaceView) -> (Seq<u8>, u32,
         "mutations": [("render-twice-per-period", "Some(last) => last >= tick,", "Some(last) => last > tick,"),
                       ("wake-when-clean", "        return Some(FramePace::Idle);", "        return Some(FramePace::RenderNow(now));")],
     },
+    "font-weight": {
+        "source": "src/native_adapter/native_fonts.rs", "marker": "FONT WEIGHT", "property": "UI-FONT-WEIGHT-001",
+        "signature": "pub fn font_weight_admits(weight: u16) -> bool {",
+        "contract": """pub fn font_weight_admits(weight: u16) -> (result: bool)
+    ensures result == (1 <= weight && weight <= 1000),
+{""",
+        "function_count": 1, "depends": [], "evidence": "font-weight-kernel",
+        "scope": "CSS numeric font-weight admission (1..=1000, rejected not clamped) only; not the Parley/fontique face matching, CSS mapping or synthesis",
+        "mutations": [("reject-min-weight", "\n    weight >= 1 &&", "\n    weight > 1 &&"),
+                      ("exclude-max-weight", "weight <= 1000\n}", "weight < 1000\n}")],
+    },
     "text-offset": {
         "source": "src/native_adapter/text_geometry.rs", "marker": "TEXT OFFSET", "property": "UI-TEXT-OFFSET-001",
         "signature": """pub fn text_offset_admits(layout_len: usize, source_len: usize, offset: usize, on_boundary: bool) -> bool {""",

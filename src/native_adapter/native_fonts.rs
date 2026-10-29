@@ -71,3 +71,11 @@ pub fn font_order_admits(seen: &[u64], id: u64) -> bool {
     true
 }
 // END VERIFIED FONT ORDER KERNEL
+
+// BEGIN VERIFIED FONT WEIGHT KERNEL
+/// CSS numeric font weights span 1..=1000; anything else is rejected, never clamped.
+/// CSS 数值字重范围为 1..=1000；其余值拒绝，不钳制。
+pub fn font_weight_admits(weight: u16) -> bool {
+    weight >= 1 && weight <= 1000
+}
+// END VERIFIED FONT WEIGHT KERNEL

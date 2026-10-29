@@ -116,6 +116,7 @@ scene.apply(ScenePatch::Remove { id: NodeId(2) })?;
 - 溢出：`overflow(Overflow::Hidden/Scroll)`；`Scroll` 支持 wheel 路由/clamp/fling 与 overlay 滚动条（见“滚动控制”）。
 - 滚动：`Node::scroll(Point)`，或 `ScenePatch::SetScroll { id, offset }`（见“滚动控制”）。
 - 文字：`font_size`、`color`（测量参与布局；光栅未实现）。
+- 字重与倾斜：`font_weight`（CSS 数值，默认 400）、`font_style: FontStyle::{Normal,Italic}`，构造器 `Style::font(weight, style)`。原生路径（`native-blitz-pending`）映射为 CSS `font-weight`/`font-style`，由 Parley 在宿主注入的同族字面（如 Regular/Bold/Oblique 分别注入）中匹配；字重须在 1..=1000，越界时场景导入与 `UpdateStyle` 补丁被拒（不钳制）。LegacyEngine 不实现字重与倾斜，绘制不受这两个字段影响。
 - 当前不支持阴影/滤镜/变换/虚拟化。
 
 ## Paint / UiBatch
