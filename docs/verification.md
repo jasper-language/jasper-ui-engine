@@ -50,6 +50,7 @@ Loom 当前执行实际生产函数体的调用侧调度场景：两个线程共
 | UI-CANVAS-IMPORT-001 | `raster::Canvas::from_rgba8` 和既有 width/height/pixels | 非零尺寸且精确完整布局才接管原字节；失败返还原字节；成功裁剪栈为空、访问器精确 | 以匹配源码的 `evidence/canvas-import-kernel/` 与六阶段报告为准；旧分配/resize、clone/绘图不随之闭合 |
 | UI-PIXEL-PACK-001 | `surface::rgb8_word` | 精确 RGB 数值权重、高字节为零、无运算溢出 | 当前源码的 `evidence/pixel-pack-kernel/` 与全链证据；不规定原生字节序/alpha 混色 |
 | UI-PIXEL-CONVERT-001 | `desktop::rgba_to_u32` | 所有长度的前置检查安全；成功全输出逐字精确、alpha 忽略；失败全目标保持；循环边界/终止 | 当前源码的 `evidence/pixel-convert-kernel/` 与全链；窗口/呈现生命周期不随之闭合 |
+| UI-COLOR-CONSTRUCT-001 | `style::Color::new/rgb/with_alpha` | `new` 四通道原样；`rgb` 三通道原样且 alpha=255；`with_alpha` 只替换 alpha、三色通道不变 | proved，4 verified/0 errors，「rgb 非不透明」「with_alpha 忽略新值」两反例被拒；以匹配源码的 `evidence/color-construct-kernel/` 与六阶段报告为准；`blend_over`（浮点）不在范围 |
 | UI-FONT-WEIGHT-001 | `native_fonts::font_weight_admits` | CSS 数值字重恰在 1..=1000 时准入（充要），越界拒绝而非钳制 | proved，1 verified/0 errors，拒绝最小值 1/排除最大值 1000 两反例被拒；以匹配源码的 `evidence/font-weight-kernel/` 与六阶段报告为准；CSS `font-weight`/`font-style` 映射与 Parley/fontique 字面匹配为第三方信任边界，由 `tests/native_font_weight_style.rs` 集成测试覆盖，不在证明范围 |
 | UI-FONT-FAMILY-001 | `native_fonts::font_family_admits` | 族名恰为 1..=128 字节且每字节非控制字节、非 DEL、非 `"`、非 `\` 时准入（充要），不合规拒绝而非转义 | proved（数字见本切片六阶段报告），准入禁用字节/准入超长两反例应被拒；以匹配源码的 `evidence/font-family-kernel/` 与六阶段报告为准；族名须在注入字体栈已登记族中的查找、CSS `font-family` 映射与 Parley/fontique 按名选择及缺字回退为编排与第三方信任边界，由 `tests/native_font_family.rs` 集成测试覆盖，不在证明范围 |
 | UI-FONT-ORDER-001 | `native_fonts::font_stack_count_admits/font_order_admits` | 字体栈数量 1..=16 准入充要；某族 id 仅首次出现时准入，先注入文件保持回退优先级 | proved，4 verified/0 errors，空栈准入/重复准入两反例被拒；以匹配源码的 `evidence/font-order-kernel/` 与六阶段报告为准；不涵盖字体解析、上游注册、族名排序与 Parley 回退选择 |
@@ -833,3 +834,20 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 | `src/style.rs` `Color` | — | 仅新增 `COLOR TYPE` 提取标记，无语义变化 | — | 作为 canvas-pixel 依赖参与上述各步 |
 
 假设：`pixel` 的前置条件（像素缓冲长度 = 宽×高×4）由已证明的 `from_rgba8` 建立；`Canvas::new`/`resize` 建立该不变式仍未证明。整链报告 `complete=false` 的原因不变（capture-query 任意双键 Kani 原义务未解决）。
+
+
+## 2026-10-29：UI19 合成斜体/粗体刻画测试与 Color 构造全链补证
+
+### 本轮新增/修改代码的六步登记
+
+| 代码 | 步骤 | 规格 / 范围 | 命令 | 结果 |
+|---|---|---|---|---|
+| `tests/native_font_synthesis.rs`（仅测试） | 六步 | N/A：只含验收断言与像素采样辅助，无生产逻辑；被测对象是固定版本第三方绘制器（Blitz / Vello CPU）的合成行为 | — | N/A；替代证据：真斜体字面作方向锚点（竖笔画右倾 +4 列），直立 0 列 |
+| `src/style.rs` `Color::new/rgb/with_alpha`（移入独立 impl 与 `COLOR CONSTRUCT KERNEL` 标记区，语义不变；补欠账） | Verus/Z3 | UI-COLOR-CONSTRUCT-001 | `verify-version.py --kernel color-construct` | proved：4 verified / 0 errors；两反例均以后置条件失败被拒 |
+| 同上 | Proptest | 独立规格 `assert_color_construct`，任意五个 u8 | `cargo test … properties::`（`PROPTEST_RNG_SEED=12345`） | 通过（46 项） |
+| 同上 | Miri | 5 组边界通道值（0/1/127/254/255）原样提取代码 | `cargo +nightly miri test … memory::` | 通过 |
+| 同上 | cargo-fuzz | `read_boundary` 目标以输入前四字节构造 | `cargo fuzz run read_boundary`（种子 12345） | 通过；两目标 147186 / 1585253 次 |
+| 同上 | Kani | `color_construct_exact`：五个任意 u8 全空间 | `cargo kani --manifest-path verification/read-boundary/Cargo.toml` | 51 项 SUCCESSFUL（新增 1 项） |
+| 同上 | Loom | 共享只读输入跨线程构造一致 | `schedules::shared_immutable_buffer_independent_cursors` | 通过；函数无同步原语，仅覆盖调用侧 |
+
+假设：无。整链报告 `complete=false` 的原因不变（capture-query 任意双键 Kani 原义务未解决）。

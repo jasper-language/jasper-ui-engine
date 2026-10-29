@@ -575,3 +575,23 @@ GPU 路径与 CPU 路径改为共用同一帧缓存与损伤基准（此前 GPU 
 构建虚拟机复测：默认配置 28 个测试套件共 140 项通过；`native-blitz-cpu-pending`（注入字体）28 个套件共 250 项通过、0 失败（`native_font_family` 3/3）；`native-blitz-cpu-pending,gpu-pending,accesskit-pending` 测试目标编译通过。新内核六步链：Verus/Z3 3 verified/0 errors（准入禁用字节、准入超长两反例被拒），Proptest、Miri、cargo-fuzz、Kani、Loom 均覆盖。`NativeScene` 新增登记族名字段后重验 scene-host-close（8/0）、scene-snapshot-identity（7/0）、scene-host-identity（9/0），映射检查全部 current。整链 `scripts/verify-ui.py`：Verus/Z3、Proptest（读边界属性 45 项）、Miri、cargo-fuzz（两个目标各 21 秒，15.9 万/122.8 万次）、Kani（50 个 harness）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，与本切片无关。登记族名查找、CSS 映射与 Parley 按名选择/回退为编排与第三方信任边界，由集成测试覆盖，不在证明范围。
 
 未完成：合成粗体/斜体（宿主只注入常规字面时）的验收、按钮的多字体公开入口、双向文字验收、TextDisplayView 的族名选择。根入口仍标记 not yet accepted。
+
+## 2026-10-29：只注入常规字面时的字体合成（UI19，刻画）
+
+宿主只注入常规字面（DejaVu Sans Regular）而场景声明斜体或粗字重时，固定版 Blitz 绘制器的行为经实测刻画如下，**均不计为已交付**：
+
+- **合成斜体方向错误**：Parley 为该字形串报告倾斜合成，绘制器据此施加字形斜切，但在 y 向下的场景坐标中符号取反，画出的是**反斜体**（左倾）。单个 "I" 竖笔画顶行相对底行左缘：直立 0 列、注入真斜体字面 +4 列（右倾）、合成斜体 −5 列。
+- **合成粗体缺失**：绘制器不消费 Parley 的加粗合成（只有对全部文字生效的全局加粗特性，本仓库未开启），字重 600/700/900 的帧与 400 逐字节相同。
+
+新增 `tests/native_font_synthesis.rs`（`native-blitz-cpu-pending`，注入 `JASPER_UI_TEST_LATIN_FONT` 与 `JASPER_UI_TEST_ITALIC_FONT`）：
+
+| 测试 | 断言 | 实测 |
+|---|---|---|
+| `synthetic_italic_from_the_pinned_painter_leans_backwards` | 合成斜体帧不同于直立帧、墨迹量相差不超过 10%；直立竖笔画垂直、真斜体字面右倾 ≥3 列、合成斜体单调左倾 ≥3 列；改为 Italic 的样式补丁重绘等于新导入 | 墨迹 1397 vs 1383；倾斜 0 / +4 / −5 |
+| `bold_without_a_bold_face_draws_the_regular_face` | 字重 600/700/900 帧等于 400；700 斜体等于 400 斜体 | 通过 |
+
+两项断言在上游行为改变时会失败，届时须更新本节。宿主若需要正确的斜体与粗体，目前须注入对应字面（UI17 已验收按字重/倾斜匹配注入字面）。
+
+同轮补欠账：既有 `style::Color::new/rgb/with_alpha` 移入独立标记区（语义不变）并完成六步链（UI-COLOR-CONSTRUCT-001，Verus 4 verified/0 errors，两反例被拒）。构建虚拟机复测：默认配置 29 个套件共 140 项通过；`native-blitz-cpu-pending`（注入字体）29 个套件共 252 项通过、0 失败（`native_font_synthesis` 2/2）。整链 `scripts/verify-ui.py`：Verus/Z3、Proptest（读边界属性 46 项）、Miri、cargo-fuzz（14.7 万/158.5 万次）、Kani（51 个 harness）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合。
+
+未完成：合成斜体方向修正与合成粗体（需在绘制入口按合成信息修正，或在只有常规字面时明确拒绝）、按钮的多字体公开入口、双向文字验收、TextDisplayView 的族名选择。根入口仍标记 not yet accepted。

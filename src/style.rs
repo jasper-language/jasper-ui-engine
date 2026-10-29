@@ -118,18 +118,6 @@ impl Color {
         a: 255,
     };
 
-    pub const fn new(r: u8, g: u8, b: u8, a: u8) -> Self {
-        Self { r, g, b, a }
-    }
-
-    pub const fn rgb(r: u8, g: u8, b: u8) -> Self {
-        Self { r, g, b, a: 255 }
-    }
-
-    pub fn with_alpha(self, a: u8) -> Self {
-        Self { a, ..self }
-    }
-
     /// Source-over compositing: `self` over `dst`.
     pub fn blend_over(self, dst: Color) -> Color {
         if self.a == 0 {
@@ -159,6 +147,28 @@ impl Color {
         }
     }
 }
+
+// BEGIN VERIFIED COLOR CONSTRUCT KERNEL
+impl Color {
+    /// Exact channels; no premultiplication or clamping.
+    /// 通道原样保存；不预乘、不钳制。
+    pub const fn new(r: u8, g: u8, b: u8, a: u8) -> Self {
+        Self { r, g, b, a }
+    }
+
+    /// Opaque colour: alpha is 255.
+    /// 不透明颜色：alpha 为 255。
+    pub const fn rgb(r: u8, g: u8, b: u8) -> Self {
+        Self { r, g, b, a: 255 }
+    }
+
+    /// Replaces only alpha; colour channels are kept.
+    /// 只替换 alpha，颜色通道保持不变。
+    pub fn with_alpha(self, a: u8) -> Self {
+        Self { a, ..self }
+    }
+}
+// END VERIFIED COLOR CONSTRUCT KERNEL
 
 impl Default for Color {
     fn default() -> Self {
