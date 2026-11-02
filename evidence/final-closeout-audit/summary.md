@@ -3,13 +3,13 @@
 This report is an audit snapshot, not a delivery acceptance record.
 
 - branch: `codex/item6-closeout`
-- commit: `366a715958109ea453b48e6a61d6d943f4a57d0e`
+- commit: `72f491d0d97f0ba4ca3f73d278bed869eade4539`
 - explicit item 1-5 completions: 5/5
 - final report materially covers HEAD: `false`
 - missing required evidence: 0
 - missing final-report references: 0
 - stale/missing recorded source hashes: 0
-- branch refs included: `pending`
+- branch refs included: `included`
 - tool configuration: `passed`
 - evidence reports indexed: 29
 

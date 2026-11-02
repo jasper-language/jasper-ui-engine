@@ -15,7 +15,6 @@ run() {
 
 run python3 scripts/check-blitz-native-dependencies.py
 run python3 scripts/test-audit-closeout.py
-run python3 scripts/audit-closeout.py --output "${CLOSEOUT_AUDIT_DIR:-evidence/final-closeout-audit}"
 run cargo fmt --all -- --check
 run cargo check --locked --all-targets
 run cargo check --locked --features native-engine-cpu --all-targets
@@ -31,13 +30,16 @@ if [[ "${CLOSEOUT_RUN_NATIVE_INTEGRATION:-0}" == "1" ]]; then
         echo 'CLOSEOUT_RUN_NATIVE_INTEGRATION=1 requires JASPER_UI_TEST_FONT' >&2
         exit 2
     fi
-    run cargo test --locked --features native-engine-cpu \
+    run cargo test --locked --features native-engine-cpu,accesskit-pending \
         --test native_blitz_engine \
         --test native_cpu_acceptance \
         --test native_frame_differential \
         --test native_frame_transaction \
         --test native_update_contract \
-        --test native_component_update_contract
+        --test native_component_update_contract \
+        --test native_item5_journey \
+        --test native_interaction_closure \
+        --test native_accesskit_bridge
 fi
 
 if [[ "${CLOSEOUT_RUN_GPU:-0}" == "1" ]]; then

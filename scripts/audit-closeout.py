@@ -14,6 +14,7 @@ import argparse
 from datetime import datetime, timezone
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -839,6 +840,22 @@ def run_baseline(output: Path) -> dict[str, Any]:
     log = output / "baseline.log"
     command = [
         str(ROOT / "scripts/verify-in-vm.sh"),
+        "env",
+    ]
+    for name in (
+        "JASPER_UI_TEST_FONT",
+        "JASPER_UI_TEST_LATIN_FONT",
+        "JASPER_UI_TEST_CJK_FONT",
+        "JASPER_UI_TEST_BOLD_FONT",
+        "JASPER_UI_TEST_ITALIC_FONT",
+        "CLOSEOUT_RUN_NATIVE_INTEGRATION",
+        "CLOSEOUT_RUN_GPU",
+        "CARGO_PROFILE_DEV_DEBUG",
+        "CARGO_PROFILE_TEST_DEBUG",
+    ):
+        if value := os.environ.get(name):
+            command.append(f"{name}={value}")
+    command += [
         "bash",
         "scripts/closeout-baseline.sh",
     ]
