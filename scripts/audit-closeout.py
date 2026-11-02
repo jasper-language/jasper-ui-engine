@@ -533,6 +533,15 @@ def integration_audit() -> dict[str, Any]:
     }
 
 
+def source_dirty_paths(lines: list[str], output: Path) -> list[str]:
+    output_prefix = rel(output) + "/"
+    return [
+        line
+        for line in lines
+        if line.strip() and output_prefix not in line
+    ]
+
+
 def proof_backlog_audit() -> dict[str, Any]:
     doc = ROOT / PROOF_BACKLOG_DOC
     text = doc.read_text() if doc.is_file() else ""
@@ -567,7 +576,7 @@ def proof_backlog_audit() -> dict[str, Any]:
     }
 
 
-def static_audit() -> dict[str, Any]:
+def static_audit(output: Path | None = None) -> dict[str, Any]:
     final_path = ROOT / FINAL_AUDIT
     final: dict[str, Any] = {}
     final_error = None
@@ -634,11 +643,8 @@ def static_audit() -> dict[str, Any]:
 
     git_branch = run_git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
     git_commit = run_git("rev-parse", "HEAD").stdout.strip()
-    dirty = [
-        line
-        for line in run_git("status", "--porcelain").stdout.splitlines()
-        if line.strip()
-    ]
+    status_lines = run_git("status", "--porcelain").stdout.splitlines()
+    dirty = source_dirty_paths(status_lines, output or ROOT / DEFAULT_OUTPUT)
     recorded_commits = final.get("commits", [])
     recorded_commit_shas = [
         value.split()[0]
@@ -920,7 +926,7 @@ def main(argv: list[str]) -> int:
     if args.run_baseline:
         baseline = run_baseline(output)
 
-    report = static_audit()
+    report = static_audit(output)
     report["baseline_regression"] = baseline
     failures = final_gate_failures(report)
     report["final_gate"] = {

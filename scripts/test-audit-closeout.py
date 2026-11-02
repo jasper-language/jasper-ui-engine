@@ -102,6 +102,19 @@ class EvidenceAuditTests(unittest.TestCase):
         failures = audit.final_gate_failures(report)
         self.assertEqual(failures, ["VM baseline regression did not pass"])
 
+    def test_generated_audit_directory_does_not_dirty_source_tree(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            output = root / "evidence" / "final-closeout-audit"
+            lines = [
+                " M src/lib.rs",
+                " M evidence/final-closeout-audit/report.json",
+                "?? docs/note.md",
+            ]
+            with mock.patch.object(audit, "ROOT", root):
+                dirty = audit.source_dirty_paths(lines, output)
+            self.assertEqual(dirty, [" M src/lib.rs", "?? docs/note.md"])
+
 
 if __name__ == "__main__":
     unittest.main()
