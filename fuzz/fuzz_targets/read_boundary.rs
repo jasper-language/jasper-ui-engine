@@ -1,6 +1,6 @@
 #![no_main]
 use jasper_ui_read_verification::{
-    assert_borrow, assert_bytes_slot, assert_canvas_import, assert_canvas_pixel, assert_capture_query, assert_color_construct,
+    assert_borrow, assert_bold_alias, assert_bytes_slot, assert_canvas_import, assert_canvas_pixel, assert_capture_query, assert_color_construct,
     assert_command_modifier, assert_cursor, assert_endpoint, assert_focus_cleanup,
     assert_damage_convergence, assert_damage_rect, assert_damage_span, assert_damage_write, assert_focus_selection, assert_font_family, assert_font_order, assert_font_weight, assert_frame_damage, assert_glyph_skew, assert_glyph_skew_pure, assert_frame_pace, assert_frame_reuse, assert_frame_tick, assert_gpu_readback_layout, assert_header, assert_access_actions, assert_access_change, assert_access_request, assert_text_offset, assert_text_range, assert_hover_lifecycle, assert_input_retire,
     assert_keyboard_focus, assert_payload, assert_pixel_conversion, assert_pointer_order,
@@ -135,6 +135,11 @@ fuzz_target!(|data: &[u8]| {
     assert_font_weight(len as u16);
     assert_color_construct(data[0], data[1], data[2], data[3], data[1] ^ data[2]);
     assert_font_weight((pos % 1003) as u16);
+    let alias_weights:Vec<u16>=data[24..].iter().take(8).map(|&byte|byte as u16).collect();
+    let alias_max:Vec<u16>=data[24..].iter().skip(8).take(8)
+        .map(|&byte|(byte as u16)%502).collect();
+    assert_bold_alias(&alias_weights,&alias_max);
+    assert_bold_alias(&alias_weights,&alias_weights);
     let word = |at: usize| u64::from_le_bytes(data[at..at + 8].try_into().unwrap());
     if data.len() >= 48 {
         assert_glyph_skew(word(0), word(8), word(16), word(24), word(32), word(40));

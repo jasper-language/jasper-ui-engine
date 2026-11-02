@@ -772,6 +772,34 @@ pub closed spec fn surface_view_model(view: &Rgba8SurfaceView) -> (Seq<u8>, u32,
         "mutations": [("admit-forbidden-byte", "            return false;", "            return true;"),
                       ("admit-overlong", "        return false;\n    }\n    let mut index", "        return name.len() > MAX_FONT_FAMILY_BYTES;\n    }\n    let mut index")],
     },
+    "bold-alias": {
+        "source": "src/native_adapter/native_fonts.rs", "marker": "BOLD ALIAS", "property": "UI-FONT-BOLD-ALIAS-001",
+        "signature": "pub fn bold_alias_admits(weights: &[u16], group_max: &[u16]) -> bool {",
+        "contract": """pub fn bold_alias_admits(weights: &[u16], group_max: &[u16]) -> (result: bool)
+    ensures result == (1 <= weights.len() && weights.len() == group_max.len()
+        && forall|j: int| 0 <= j < weights.len() ==>
+            weights@[j] == group_max@[j] && group_max@[j] <= 500),
+{""",
+        "extra_annotations": [
+            ("    if weights.len() < 1 || weights.len() != group_max.len() {",
+             """    if weights.len() < 1 || weights.len() != group_max.len() {
+        assert(!(1 <= weights.len() && weights.len() == group_max.len()));"""),
+            ("    while index < weights.len() {",
+             """    while index < weights.len()
+        invariant index <= weights.len(), weights.len() == group_max.len(),
+            forall|j: int| 0 <= j < index ==> weights@[j] == group_max@[j] && group_max@[j] <= 500,
+        decreases weights.len() - index,
+    {"""),
+            ("        if weights[index] != group_max[index] || group_max[index] > BOLD_ALIAS_MAX_SOURCE_WEIGHT {",
+             """        if weights[index] != group_max[index] || group_max[index] > BOLD_ALIAS_MAX_SOURCE_WEIGHT {
+            assert(weights@[index as int] != group_max@[index as int]
+                || group_max@[index as int] > 500);"""),
+        ],
+        "function_count": 1, "depends": [], "evidence": "bold-alias-kernel",
+        "scope": "stand-in admission for one physical font blob: nonempty equal-length per-face weights/group maxima, each face is its family-style-width group maximum, each maximum <=500; not font parsing, name/family grouping, upstream registration, CSS matching, blob ID selection or painting",
+        "mutations": [("admit-empty-blob", "weights.len() < 1 ||", ""),
+                      ("reject-qualified-blob", "\n    true\n}", "\n    false\n}")],
+    },
     "glyph-skew": {
         "source": "src/native_adapter/glyph_skew.rs", "marker": "GLYPH SKEW", "property": "UI-GLYPH-SKEW-001",
         "signature": "pub fn upright_skew_x(a: u64, b: u64, c: u64, d: u64, e: u64, f: u64) -> u64 {",

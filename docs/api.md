@@ -12,6 +12,8 @@ Framework 产生 `native::SceneUpdate { expected_version, next_version, patches 
 
 原生 CPU 入口 `Engine::render_to_backend` 在归属/版本/存活/预算准入后，复用原生绘制并调用既有 `RenderBackend::submit_rgba8`、成功后才调用 `present`。默认后端明确返回 Unsupported；HeadlessBackend 接管已经绘制的像素，不重放 PaintOp。字节按上游输出原样保存，不提供宿主 alpha/合成转换或外部呈现回滚；旧 UiBatch 序列化格式不变。此新增编排与包装尚未完成有序证明验收。
 
+场景整帧更新现采用候选事务：`apply_update` 先在引擎保留的 `Scene` 快照副本上原子应用，再从终态构建独立原生候选；仅当两者都成功才一次替换活动视图。拒绝不会部分修改活动原生树、版本、焦点、视口、滚动或最近帧。成功后恢复焦点、悬停位置、按下节点身份和上一帧损伤基准；合法 Button↔非 Button 语义变化也通过候选重建完成，不再要求原生标签保持不变。完整实现级整帧证明仍待完成。
+
 文字几何（`native-blitz-pending`）：`text_offset_at(owner, version, node, x, y)` 把视图局部逻辑点投影到文字节点自身的布局，返回源文本中最近的 UTF-8 光标偏移（放置光标用，不考虑遮挡）；`text_caret(owner, version, node, offset, width)` 返回该偏移之前的光标矩形，坐标同 `node_bounds`。两者与绘制共用同一份布局；布局文本与源文本不一致（如空白折叠）、非字符边界、过期版本等情形返回 None。`text_selection(owner, version, node, start, end)` 返回源文本 UTF-8 区间 [start, end)（start ≤ end）的逐行选区矩形，同一坐标系与同一布局；空区间返回空列表，反向、非字符边界或越界区间返回 None；只给几何，不绘制选区高亮。
 
 无障碍树（`native-blitz-pending`）：`accessibility_tree(owner, version)` 返回 `AccessibilityTree { scene_version, nodes, focused }`，供平台无障碍桥（AccessKit、AT-SPI、UIA 或系统无障碍服务）构建各自的树。`nodes` 为可见节点，按源顺序深度优先、根在首位；每个 `AccessibilityNode` 含 Framework 原样语义（role、label、description、value、disabled）、与 `node_bounds` 相同的视图局部几何（无几何时为 None）、场景内焦点标记、本引擎准入的动作 `AccessActions { focus, activate }` 与可见子节点列表。隐藏（semantics.hidden）或未显示（display: none）的节点连同其子树剔除；根本身不可见时 `nodes` 为空。非归属方、过期版本或已关闭视图返回 None。本方法不调用任何平台无障碍 API，也不做屏幕坐标换算；AccessKit 转换与动作路由见下文 AccessKit 桥，文本无障碍接口尚未提供。
@@ -23,6 +25,8 @@ AccessKit 桥（`accesskit-pending`，`accesskit =0.25.2` 经 `native::host::acc
 帧调度（`native-blitz-cpu-pending`）：`needs_frame` / `invalidate_frame` 报告与强制待绘状态；`render_to_surface_with_damage` 报告相对上一帧的 `FrameDamage`；`render_to_surface_damaged` 只把损伤像素写入宿主 Surface；`frame_pace(owner, presented, origin, interval, now)` 按宿主刷新时钟返回 `FramePace::{Idle, WaitUntil(t), RenderNow(tick)}`，每周期至多一帧、不追帧，时钟与垂直同步来源归宿主，本方法不绘制也不等待。
 
 GPU 渲染（`gpu-pending`）：`GpuRenderer::new_headless()` 不带呈现表面取得 wgpu 适配器（由平台/wgpu 环境变量选择）并创建设备，`adapter_info()` 返回适配器名与后端；`render_gpu(owner, version, &mut gpu, budget)` 经与 CPU 路径相同的 Blitz 绘制、在 Vello hybrid 上离屏渲染并读回紧凑预乘 RGBA8；`render_gpu_to_surface(owner, version, &mut gpu, bytes, stride, budget)` 写入宿主软件 Surface，Surface 准入先于任何 GPU 工作。准入失败为 `GpuFrameError::Rejected`；无适配器、设备、渲染、读回失败分别报告，绝不回退 CPU 帧冒充。GPU 帧与 CPU 帧共用同一帧缓存与损伤基准：未变化视图（`needs_frame` 为 false）不做 GPU 工作而复用最近产出的帧（无论哪条路径绘制），需强制 GPU 重绘时先 `invalidate_frame`。`render_gpu_to_surface_with_damage` 与 `render_gpu_to_surface_damaged` 对应 CPU 路径的同名方法，返回 `Result<FrameDamage, GpuFrameError>`：损伤相对本视图最近产出的帧（跨 CPU/GPU 路径逐像素比较），`_damaged` 只把受损像素写入仍持有上一帧的 Surface，被拒或失败不写任何字节。不提供窗口呈现与 device-lost 恢复。
+
+宿主 GPU 呈现（`gpu-pending`）：`GpuRenderer::from_wgpu(instance, adapter, device, queue)` 只接收宿主持有的 wgpu 对象，不取得设备；`render_gpu_to_host_view(owner, version, &mut gpu, format, &TextureView, budget)` 在归属/版本/存活/尺寸/预算准入后直接提交一帧到宿主纹理视图。宿主创建和重配窗口 Surface、持有 swapchain texture 的生命周期，并在调用成功返回后自行 `present`；引擎不创建窗口、Surface、adapter/device，也不接管垂直同步或 device-lost 恢复。支持 `Rgba8Unorm`、`Rgba8UnormSrgb`、`Bgra8Unorm`、`Bgra8UnormSrgb`，其他格式明确返回 `GpuFrameError::Unsupported`。直接宿主视图不会产生 CPU 回读缓存，因此下一次 CPU 损伤报告为 Full；失败保持视图待绘。实际窗口 Surface 的 VM 呈现仍受无显示端点阻塞。
 
 `native` 及 Rust 类型名仍为候选，不冻结 Jasper 子命名空间。完整整帧/生命周期/浮点证明尚缺；该入口存在不等于默认后端迁移或六阶段验收完成。
 

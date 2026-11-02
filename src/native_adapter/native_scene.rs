@@ -85,6 +85,9 @@ fn orchestrate_native_host_surface(
 
 // BEGIN VERIFIED NATIVE SCENE TYPE
 pub(crate) struct NativeScene {
+    source:Scene,
+    font_ctx:blitz_dom::FontContext,
+    bold_aliases:BTreeSet<u64>,
     document:ViewSlot<BaseDocument>,
     owner:u64,
     scene_version:u64,
@@ -97,6 +100,7 @@ pub(crate) struct NativeScene {
     frame_dirty:bool,
     frame_cache:Option<(u32,u32,Vec<u8>)>,
     families:BTreeSet<String>,
+    last_pointer:Option<(f32,f32)>,
 }
 // END VERIFIED NATIVE SCENE TYPE
 impl NativeScene {
@@ -109,13 +113,15 @@ impl NativeScene {
     pub(crate) fn from_scene_with_fonts(owner:u64,scene:&Scene,fonts:&[&[u8]],width:u32,height:u32)->Option<Self> {
         Self::from_scene_with_context(owner,scene,crate::native_fonts::injected_font_stack(fonts)?,width,height)
     }
-    fn from_scene_with_context(owner:u64,scene:&Scene,mut font_ctx:blitz_dom::FontContext,width:u32,height:u32)->Option<Self> {
+    fn from_scene_with_context(owner:u64,scene:&Scene,fonts:crate::native_fonts::InjectedFonts,width:u32,height:u32)->Option<Self> {
+        let crate::native_fonts::InjectedFonts {context:mut font_ctx,bold_aliases}=fonts;
         // Declared families are admitted against exactly what the injected stack registered.
         // 声明的族名按注入字体栈实际登记的族名准入。
         let families:BTreeSet<String>=font_ctx.collection.family_names().map(str::to_owned).collect();
         let prepared=prepare_subtree(&scene.root,0,&BTreeSet::new(),&families)?;
         // Existing identity validation runs only after depth/node admission.
         scene.validate().ok()?;
+        let stored_font_ctx=font_ctx.clone();
         let mut document=BaseDocument::new(DocumentConfig {
             font_ctx:Some(font_ctx),
             viewport:Some(Viewport {window_size:(width,height),..Viewport::default()}),
@@ -131,9 +137,9 @@ impl NativeScene {
             tree.set_style_property(body,"margin","0px");
             tree.append_children(html,&[body]);tree.append_children(root,&[html]);
         }
-        let mut view=Self {document:ViewSlot::new(document),owner,scene_version:scene.version(),node_count:0,
+        let mut view=Self {source:scene.clone(),font_ctx:stored_font_ctx,bold_aliases,document:ViewSlot::new(document),owner,scene_version:scene.version(),node_count:0,
             nodes:BTreeMap::new(),semantics:BTreeMap::new(),parents:BTreeMap::new(),displayed:BTreeMap::new(),children:BTreeMap::new(),
-            frame_dirty:true,frame_cache:None,families};
+            frame_dirty:true,frame_cache:None,families,last_pointer:None};
         if !view.append_prepared_subtree(&scene.root,None,body,prepared) {return None;}
         if !view.sync_native_focus_participation() {return None;}
         view.document.as_mut()?.resolve(0.0);
@@ -197,127 +203,55 @@ impl NativeScene {
         let Some(children)=self.children.get_mut(&parent) else {return false;};children.insert(index,node.id);
         true
     }
-    /// Preflight the complete ordered frame using temporary identity topology, not a Scene copy.
+    /// Apply one complete frame to a candidate source/native view, then swap it into place.
+    /// No active document or metadata is mutated before both stages succeed.
     pub(crate) fn apply_patches(&mut self,caller:u64,expected:u64,next:u64,patches:&[ScenePatch])->bool {
-        self.invalidate_frame();
         if !accepts_scene_update(self.owner,caller,self.scene_version,expected,next,
             patches.len(),self.document.is_open()) {return false;}
-        let mut prepared=Vec::with_capacity(patches.len());
-        let mut live:BTreeSet<_>=self.nodes.keys().copied().collect();
-        let mut text_nodes:BTreeSet<_>=self.nodes.iter().filter_map(|(id,(_,text))|text.is_some().then_some(*id)).collect();
-        let mut parents=self.parents.clone();let mut children=self.children.clone();
-        let mut roles:BTreeMap<_,_>=self.semantics.iter().map(|(id,value)|(*id,value.role)).collect();
-        for patch in patches {
-            match patch {
-                ScenePatch::UpdateText {id,..} => {
-                    if !live.contains(id) || !text_nodes.contains(id) {return false;}
-                    prepared.push(PreparedSceneMutation::Text);
-                },
-                ScenePatch::UpdateStyle {id,style} => {
-                    if !live.contains(id) {return false;}
-                    let Some(properties)=style_properties(style,parents.get(id)==Some(&None),&self.families) else {return false;};
-                    prepared.push(PreparedSceneMutation::Style(properties));
-                },
-                ScenePatch::UpdateSemantics {id,semantics}=> {
-                    let Some(role)=roles.get(id) else {return false;};
-                    // Only Button changes the native element tag; other roles are attributes.
-                    if !semantic_role_update_preserves_tag(*role,semantics.role) {return false;}
-                    roles.insert(*id,semantics.role);
-                    prepared.push(PreparedSceneMutation::Semantics(semantic_attributes(semantics)));
-                },
-                ScenePatch::SetScroll {id,offset}=> {
-                    if !live.contains(id) {return false;}
-                    let Some(offset)=native_scroll_offset(*offset) else {return false;};
-                    prepared.push(PreparedSceneMutation::Scroll(offset));
-                },
-                ScenePatch::Remove {id} => {
-                    if !live.contains(id) || parents.get(id)==Some(&None) {return false;}
-                    let removed:Vec<_>=live.iter().copied().filter(|node|source_subtree_contains(&parents,*node,*id)).collect();
-                    if let Some(Some(parent))=parents.get(id) {
-                        if let Some(siblings)=children.get_mut(parent) {siblings.retain(|child|child!=id);}
-                    }
-                    for node in &removed {roles.remove(node);live.remove(node);text_nodes.remove(node);parents.remove(node);children.remove(node);}
-                    prepared.push(PreparedSceneMutation::Remove(removed));
-                },
-                ScenePatch::Insert {parent,index,node} => {
-                    let Some(siblings)=children.get(parent) else {return false;};
-                    let index=source_insert_index(*index,siblings.len());let anchor=siblings.get(index).copied();
-                    let mut depth=1;let mut current=*parent;
-                    while let Some(Some(ancestor))=parents.get(&current) {depth+=1;if depth>128 {return false;}current=*ancestor;}
-                    let Some(styles)=prepare_subtree(node,depth,&live,&self.families) else {return false;};
-                    let mut stack=vec![(node,Some(*parent))];
-                    while let Some((node,source_parent))=stack.pop() {
-                        live.insert(node.id);roles.insert(node.id,node.semantics.role);parents.insert(node.id,source_parent);
-                        children.insert(node.id,node.children.iter().map(|child|child.id).collect());
-                        if matches!(node.kind,NodeKind::Text(_)) {text_nodes.insert(node.id);}
-                        for child in node.children.iter().rev() {stack.push((child,Some(node.id)));}
-                    }
-                    let Some(siblings)=children.get_mut(parent) else {return false;};siblings.insert(index,node.id);
-                    prepared.push(PreparedSceneMutation::Insert {styles,index,anchor});
-                },
-                _=>return false,
-            }
-        }
-        for (patch,plan) in patches.iter().zip(prepared) {
-            match (patch,plan) {
-                (ScenePatch::Insert {parent,node,..},PreparedSceneMutation::Insert {styles,index,anchor})=> {
-                    if !self.insert_prepared(*parent,index,anchor,node,styles) {return false;}
-                },
-                (ScenePatch::UpdateText {id,text},PreparedSceneMutation::Text)=> {
-                    let Some((_,Some(node)))=self.nodes.get(id) else {return false;};let node=*node;
-                    let Some(document)=self.document.as_mut() else {return false;};
-                    document.mutate().set_node_text(node,text);document.resolve(0.0);
-                },
-                (ScenePatch::UpdateStyle {id,style},PreparedSceneMutation::Style(properties))=> {
-                    let Some((node,_))=self.nodes.get(id) else {return false;};let node=*node;
-                    let Some(document)=self.document.as_mut() else {return false;};
-                    {let mut tree=document.mutate();for (key,value) in properties {tree.set_style_property(node,key,&value);}}
-                    self.displayed.insert(*id,style.display!=Display::None);document.resolve(0.0);
-                },
-                (ScenePatch::UpdateSemantics {id,semantics},PreparedSceneMutation::Semantics(attributes))=> {
-                    let Some((element,_))=self.nodes.get(id) else {return false;};let element=*element;
-                    let Some(document)=self.document.as_mut() else {return false;};
-                    {
-                        let mut tree=document.mutate();
-                        for key in ["role","aria-label","aria-description","aria-valuetext","disabled","tabindex"] {
-                            tree.clear_attribute(element,QualName::new(None,Namespace::from(""),LocalName::from(key)));
-                        }
-                        for (key,value) in attributes {
-                            tree.set_attribute(element,QualName::new(None,Namespace::from(""),LocalName::from(key)),&value);
-                        }
-                    }
-                    self.semantics.insert(*id,semantics.clone());document.resolve(0.0);
-                },
-                (ScenePatch::SetScroll {id,..},PreparedSceneMutation::Scroll(offset))=> {
-                    let Some((element,_))=self.nodes.get(id) else {return false;};let element=*element;
-                    let Some(document)=self.document.as_mut() else {return false;};
-                    let Some(node)=document.get_node_mut(element) else {return false;};
-                    *node.scroll_offset_mut()=offset;
-                },
-                (ScenePatch::Remove {id},PreparedSceneMutation::Remove(removed))=> {
-                    let Some(node)=self.nodes.get(id).map(|(node,_)|*node) else {return false;};
-                    let Some(document)=self.document.as_mut() else {return false;};
-                    document.mutate().remove_and_drop_node(node);
-                    if let Some(Some(parent))=self.parents.get(id) {
-                        if let Some(siblings)=self.children.get_mut(parent) {siblings.retain(|child|child!=id);}
-                    }
-                    for source in removed {
-                        self.nodes.remove(&source);self.parents.remove(&source);self.displayed.remove(&source);
-                        self.semantics.remove(&source);self.children.remove(&source);
-                    }
-                    document.resolve(0.0);
-                },
-                _=>return false,
-            }
-        }
-        if !self.sync_native_focus_participation() {return false;}
-        self.scene_version=next;self.node_count=self.nodes.len();
-        if let Some(id)=self.focused_node(caller,next) {
-            if !self.focus_eligible(id) {
-                if let Some(document)=self.document.as_mut() {document.clear_focus();document.resolve(0.0);}
-            }
-        }
+        let focused=self.focused_node(caller,expected);
+        let mut source=self.source.clone();
+        if source.apply_batch_at(expected,patches).is_err() {return false;}
+        if source.version()!=next {return false;}
+        let Some(candidate)=self.rebuild_candidate(source,focused) else {return false;};
+        *self=candidate;
         true
+    }
+    /// Build and restore host-visible state in a detached candidate document.
+    fn rebuild_candidate(&self,source:Scene,focused:Option<NodeId>)->Option<Self> {
+        let document=self.document.as_ref()?;
+        let viewport=document.viewport().clone();
+        let viewport_scroll=document.viewport_scroll();
+        let pressed=document.get_mousedown_node_id().and_then(|native|
+            self.nodes.iter().find_map(|(id,(element,_))|(*element==native).then_some(*id)));
+        let (width,height)=viewport.window_size;
+        let mut candidate=Self::from_scene_with_context(
+            self.owner,&source,crate::native_fonts::InjectedFonts {
+                context:self.font_ctx.clone(),bold_aliases:self.bold_aliases.clone()
+            },width,height)?;
+        {
+            let document=candidate.document.as_mut()?;
+            document.set_viewport(viewport);
+            document.set_viewport_scroll(viewport_scroll);
+        }
+        if let Some(id)=pressed {
+            if candidate.source_visible(id) {
+                let native=candidate.nodes.get(&id)?.0;
+                candidate.document.as_mut()?.set_mousedown_node_id(Some(native));
+            }
+        }
+        if let Some(id)=focused {
+            if candidate.focus_eligible(id) {
+                let native=candidate.nodes.get(&id)?.0;
+                candidate.document.as_mut()?.set_focus_to(native);
+            }
+        }
+        if let Some((x,y))=self.last_pointer {
+            candidate.document.as_mut()?.set_hover_to(x,y);
+        }
+        candidate.document.as_mut()?.resolve(0.0);
+        candidate.last_pointer=self.last_pointer;
+        candidate.frame_cache=self.frame_cache.clone();
+        Some(candidate)
     }
     /// Publish actual final focus after a successful source patch batch.
     pub(crate) fn apply_patches_with_focus_events(&mut self,caller:u64,expected:u64,next:u64,patches:&[ScenePatch],
@@ -352,6 +286,7 @@ impl NativeScene {
         use crate::native_view::PointerAction;
         let (x,y)=input.position;let phase=input.phase;let pressed=input.primary_pressed;
         if caller!=self.owner || version!=self.scene_version || !x.is_finite() || !y.is_finite() {return false;}
+        self.last_pointer=Some((x,y));
         let Some(document)=self.document.as_mut() else {return false;};
         let scroll=document.viewport_scroll();let page_x=x as f64+scroll.x;let page_y=y as f64+scroll.y;
         if !page_x.is_finite() || !page_y.is_finite() || page_x.abs()>f32::MAX as f64 || page_y.abs()>f32::MAX as f64 {return false;}
@@ -486,6 +421,7 @@ impl NativeScene {
         if caller!=self.owner || version!=self.scene_version {return false;}
         let before=self.focused_node(caller,version);
         let Some(document)=self.document.as_mut() else {return false;};
+        self.last_pointer=None;
         document.unactive_node();document.set_mousedown_node_id(None);document.clear_hover();document.clear_focus();document.resolve(0.0);
         crate::scene_events::notify_focus_transition(version,before,None,sink);true
     }
@@ -660,7 +596,9 @@ impl NativeScene {
         }
         let scale=document.viewport().scale_f64();
         let pixels=anyrender::render_to_buffer::<anyrender_vello_cpu::VelloCpuImageRenderer,_>(
-            |scene|blitz_paint::paint_scene(&mut crate::glyph_skew::UprightSyntheticItalic(scene),document,scale,width,height,0,0),width,height);
+            |scene|blitz_paint::paint_scene(&mut crate::glyph_skew::UprightSyntheticItalic {
+                scene,bold_aliases:&self.bold_aliases
+            },document,scale,width,height,0,0),width,height);
         if pixels.len()!=bytes {return None;}
         let previous=self.frame_cache.as_ref().map(|(w,h,cached)|(*w,*h,cached.as_slice()));
         let damage=frame_damage(previous,width,height,&pixels);
@@ -762,7 +700,9 @@ impl NativeScene {
                 cached.len(),width,height,bytes) {return Ok((cached.clone(),FrameDamage::Unchanged));}
         }
         let scale=document.viewport().scale_f64();
-        let pixels=gpu.render(width,height,|scene|blitz_paint::paint_scene(&mut crate::glyph_skew::UprightSyntheticItalic(scene),document,scale,width,height,0,0))?;
+        let pixels=gpu.render(width,height,|scene|blitz_paint::paint_scene(
+            &mut crate::glyph_skew::UprightSyntheticItalic {scene,bold_aliases:&self.bold_aliases},
+            document,scale,width,height,0,0))?;
         if pixels.len()!=bytes {return Err(GpuFrameError::Readback(format!("expected {bytes} bytes, read {}",pixels.len())));}
         let previous=self.frame_cache.as_ref().map(|(w,h,cached)|(*w,*h,cached.as_slice()));
         let damage=frame_damage(previous,width,height,&pixels);
@@ -820,6 +760,36 @@ impl NativeScene {
             return Err(GpuFrameError::Rejected);
         }
         Ok(damage)
+    }
+    /// Render directly into a host-owned wgpu texture view. The host owns the Surface, texture
+    /// acquisition, resize/configuration and present call; the engine only submits one admitted
+    /// Vello hybrid frame into the supplied view.
+    /// 直接绘制到宿主持有的 wgpu 纹理视图；Surface、纹理取得/重配与 present 归宿主，
+    /// 引擎只向该视图提交一个已准入的 Vello hybrid 帧。
+    #[cfg(feature="gpu-pending")]
+    pub(crate) fn render_gpu_to_host_view(&mut self,caller:u64,version:u64,
+        gpu:&mut crate::gpu_render::GpuRenderer,format:wgpu::TextureFormat,view:&wgpu::TextureView,
+        max_render_bytes:usize)->Result<(),crate::gpu_render::GpuFrameError> {
+        use crate::gpu_render::GpuFrameError;
+        if caller!=self.owner || version!=self.scene_version {return Err(GpuFrameError::Rejected);}
+        let (width,height,scale)={
+            let document=self.document.as_ref().ok_or(GpuFrameError::Rejected)?;
+            let viewport=document.viewport();
+            (viewport.window_size.0,viewport.window_size.1,viewport.scale_f64())
+        };
+        crate::cpu_budget::cpu_frame_bytes(width,height,max_render_bytes)
+            .ok_or(GpuFrameError::Rejected)?;
+        self.invalidate_frame();
+        let document=self.document.as_mut().ok_or(GpuFrameError::Rejected)?;
+        let result=gpu.render_to_host_view(width,height,format,view,
+            |scene|blitz_paint::paint_scene(
+                &mut crate::glyph_skew::UprightSyntheticItalic {scene,bold_aliases:&self.bold_aliases},
+                document,scale,width,height,0,0));
+        if result.is_ok() {
+            // Presentation pixels live in the host's texture, not in this CPU cache.
+            self.frame_cache=None;self.frame_dirty=false;
+        }
+        result
     }
     /// Render through the native painter then the existing backend submission/presentation seam.
     /// 经原生绘制后接入既有后端提交/呈现接缝；不生成或重放旧 PaintOp。

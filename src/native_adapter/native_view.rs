@@ -11,6 +11,7 @@ use jasper_ui_engine::{input_identity::{next_ui_update_version, accepts_ui_displ
 /// Text is supplied by the consumer, not owned as an authoritative edit document.
 // BEGIN VERIFIED NATIVE VIEW TYPE
 pub(crate) struct NativeTextView {
+    bold_aliases:std::collections::BTreeSet<u64>,
     document: ViewSlot<BaseDocument>,
     preedit: UiCompositionSlot,
     component_version: u64,
@@ -50,17 +51,20 @@ impl NativeTextView {
     /// oversized (> MAX_INJECTED_FONTS) stack or a file that registers no font family.
     /// 宿主有序回退栈；空栈、超限或任一文件无字体族时返回 None，不静默跳过。
     pub(crate) fn new_with_fonts(session: u64, context: UiInputContext, fonts: &[&[u8]], text: &str, width: u32, height: u32) -> Option<Self> {
-        let font_ctx=crate::native_fonts::injected_font_stack(fonts)?;
-        Some(Self::new_with_context(session,context,font_ctx,text,width,height,NativeElementKind::Text))
+        let fonts=crate::native_fonts::injected_font_stack(fonts)?;
+        let font_ctx=fonts.context;
+        let bold_aliases=fonts.bold_aliases;
+        Some(Self::new_with_context(session,context,font_ctx,bold_aliases,text,width,height,NativeElementKind::Text))
     }
 
     fn new_with_kind(session: u64, context: UiInputContext, font_bytes: &[u8], text: &str,
         width: u32, height: u32, kind: NativeElementKind) -> Self {
-        let font_ctx=crate::native_fonts::injected_font_context(font_bytes);
-        Self::new_with_context(session,context,font_ctx,text,width,height,kind)
+        let fonts=crate::native_fonts::injected_font_context(font_bytes);
+        Self::new_with_context(session,context,fonts.context,fonts.bold_aliases,text,width,height,kind)
     }
 
-    fn new_with_context(session: u64, context: UiInputContext, font_ctx: blitz_dom::FontContext, text: &str,
+    fn new_with_context(session: u64, context: UiInputContext, font_ctx: blitz_dom::FontContext,
+        bold_aliases:std::collections::BTreeSet<u64>,text: &str,
         width: u32, height: u32, kind: NativeElementKind) -> Self {
         let mut document = BaseDocument::new(DocumentConfig {
             font_ctx: Some(font_ctx),
@@ -91,7 +95,7 @@ impl NativeTextView {
             tree.append_children(root, &[container]);
         }
         document.resolve(0.0);
-        Self { document: ViewSlot::new(document), preedit: UiCompositionSlot::new(), component_version: 0, session, context, content_node, text_node, text_element, preedit_node, preedit_element }
+        Self { bold_aliases,document: ViewSlot::new(document), preedit: UiCompositionSlot::new(), component_version: 0, session, context, content_node, text_node, text_element, preedit_node, preedit_element }
     }
 
     /// Replaces a host-supplied display snapshot with compare-before-update semantics.
@@ -660,7 +664,9 @@ impl NativeTextView {
         let document = self.document.as_mut()?;
         let scale = document.viewport().scale_f64();
         let pixels = anyrender::render_to_buffer::<anyrender_vello_cpu::VelloCpuImageRenderer, _>(
-            |scene| blitz_paint::paint_scene(&mut crate::glyph_skew::UprightSyntheticItalic(scene), document, scale, width, height, 0, 0),
+            |scene| blitz_paint::paint_scene(&mut crate::glyph_skew::UprightSyntheticItalic {
+                scene,bold_aliases:&self.bold_aliases
+            }, document, scale, width, height, 0, 0),
             width,
             height,
         );

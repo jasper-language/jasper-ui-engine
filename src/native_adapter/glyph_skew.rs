@@ -10,6 +10,7 @@ use anyrender::{Filter,Glyph,NormalizedCoord,PaintRef,PaintScene,RegisterResourc
 use peniko::kurbo::{Affine,Rect,Shape,Stroke,Vec2};
 use peniko::{BlendMode,Color,Fill,FontData,ImageBrushRef,StyleRef};
 use std::any::Any;
+use std::collections::BTreeSet;
 use std::sync::Arc;
 
 // BEGIN VERIFIED GLYPH SKEW KERNEL
@@ -49,44 +50,59 @@ fn upright_glyph_transform(transform:Option<Affine>)->Option<Affine> {
     })
 }
 
-/// Forwarding painter that corrects the synthetic italic direction; nothing else changes.
+/// Forwarding painter that corrects synthetic italic direction and emboldens only registered
+/// bold stand-in blobs; every other paint operation passes through unchanged.
 /// Recorded scene fragments use the provided `append_scene`, so their glyph runs are corrected
 /// the same way.
-/// 修正合成斜体方向的转发绘制器，其余不变。录制场景片段走默认 `append_scene`，其中字形串同样修正。
-pub(crate) struct UprightSyntheticItalic<'p,S:PaintScene>(pub(crate) &'p mut S);
+/// 修正合成斜体方向且仅加粗已登记粗体替身 Blob 的转发绘制器，其余不变。录制场景片段走默认
+/// `append_scene`，其中字形串同样经此处理。
+pub(crate) struct UprightSyntheticItalic<'p,S:PaintScene> {
+    pub(crate) scene:&'p mut S,
+    pub(crate) bold_aliases:&'p BTreeSet<u64>,
+}
 
 impl<S:PaintScene> RenderContext for UprightSyntheticItalic<'_,S> {
     fn try_register_custom_resource(&mut self,resource:Box<dyn Any>)->Result<ResourceId,RegisterResourceError> {
-        self.0.try_register_custom_resource(resource)
+        self.scene.try_register_custom_resource(resource)
     }
-    fn unregister_resource(&mut self,resource_id:ResourceId) {self.0.unregister_resource(resource_id)}
-    fn renderer_specific_context(&self)->Option<Box<dyn Any>> {self.0.renderer_specific_context()}
+    fn unregister_resource(&mut self,resource_id:ResourceId) {self.scene.unregister_resource(resource_id)}
+    fn renderer_specific_context(&self)->Option<Box<dyn Any>> {self.scene.renderer_specific_context()}
 }
 
 impl<S:PaintScene> PaintScene for UprightSyntheticItalic<'_,S> {
-    fn reset(&mut self) {self.0.reset()}
+    fn reset(&mut self) {self.scene.reset()}
     fn push_layer(&mut self,fill:Fill,blend:impl Into<BlendMode>,alpha:f32,transform:Affine,clip:&impl Shape,
         filter:Option<Arc<Filter>>,backdrop_filter:Option<Arc<Filter>>) {
-        self.0.push_layer(fill,blend,alpha,transform,clip,filter,backdrop_filter)
+        self.scene.push_layer(fill,blend,alpha,transform,clip,filter,backdrop_filter)
     }
-    fn push_clip_layer(&mut self,fill:Fill,transform:Affine,clip:&impl Shape) {self.0.push_clip_layer(fill,transform,clip)}
-    fn pop_layer(&mut self) {self.0.pop_layer()}
+    fn push_clip_layer(&mut self,fill:Fill,transform:Affine,clip:&impl Shape) {self.scene.push_clip_layer(fill,transform,clip)}
+    fn pop_layer(&mut self) {self.scene.pop_layer()}
     fn stroke<'a>(&mut self,style:&Stroke,transform:Affine,brush:impl Into<PaintRef<'a>>,brush_transform:Option<Affine>,shape:&impl Shape) {
-        self.0.stroke(style,transform,brush,brush_transform,shape)
+        self.scene.stroke(style,transform,brush,brush_transform,shape)
     }
     fn fill<'a>(&mut self,style:Fill,transform:Affine,brush:impl Into<PaintRef<'a>>,brush_transform:Option<Affine>,shape:&impl Shape) {
-        self.0.fill(style,transform,brush,brush_transform,shape)
+        self.scene.fill(style,transform,brush,brush_transform,shape)
     }
     fn draw_glyphs<'a,'s:'a>(&'s mut self,font:&'a FontData,font_size:f32,hint:bool,normalized_coords:&'a [NormalizedCoord],
         embolden:Vec2,style:impl Into<StyleRef<'a>>,brush:impl Into<PaintRef<'a>>,brush_alpha:f32,transform:Affine,
         glyph_transform:Option<Affine>,glyphs:impl Iterator<Item=Glyph>+Clone) {
-        self.0.draw_glyphs(font,font_size,hint,normalized_coords,embolden,style,brush,brush_alpha,transform,
+        let bold=self.bold_aliases.contains(&font.data.id());
+        let embolden=if bold {synthetic_bold_embolden(font_size)} else {embolden};
+        self.scene.draw_glyphs(font,font_size,hint&&!bold,normalized_coords,embolden,style,brush,brush_alpha,transform,
             upright_glyph_transform(glyph_transform),glyphs)
     }
     fn draw_box_shadow(&mut self,transform:Affine,rect:Rect,brush:Color,radius:f64,std_dev:f64) {
-        self.0.draw_box_shadow(transform,rect,brush,radius,std_dev)
+        self.scene.draw_box_shadow(transform,rect,brush,radius,std_dev)
     }
-    fn draw_image(&mut self,image:ImageBrushRef,transform:Affine) {self.0.draw_image(image,transform)}
+    fn draw_image(&mut self,image:ImageBrushRef,transform:Affine) {self.scene.draw_image(image,transform)}
+}
+
+/// Same relative embolden used by pinned Blitz when its global synthesis feature is enabled.
+/// The UI painter applies this only to registered stand-in blobs selected for bold requests.
+/// 与固定版 Blitz 全局合成特性使用的相对加粗量相同；UI 绘制器仅对粗体请求选中的替身 Blob 应用。
+fn synthetic_bold_embolden(font_size:f32)->Vec2 {
+    let font_size=font_size as f64;
+    Vec2::new((0.015125*font_size).min(0.3),(0.0121*font_size).min(0.3))
 }
 
 #[cfg(test)]

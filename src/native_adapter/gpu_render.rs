@@ -21,6 +21,7 @@ pub enum GpuFrameError {
     Rejected,
     NoAdapter(String),
     Device(String),
+    Unsupported(String),
     Render(String),
     Readback(String),
 }
@@ -40,13 +41,21 @@ struct Target {
 /// 一个 wgpu 设备及跨帧、跨视图复用的 Vello hybrid 渲染器状态。
 pub struct GpuRenderer {
     device:DeviceHandle,
-    renderer:Option<(Renderer,Resources)>,
+    renderer:Option<(RenderKey,Renderer,Resources)>,
     target:Option<Target>,
     images:FxHashMap<u64,ImageId>,
     textures:FxHashMap<ResourceId,wgpu::TextureView>,
 }
 
 impl GpuRenderer {
+    /// Use a host-owned wgpu instance, adapter, device and queue. This constructor performs no
+    /// device acquisition; the host retains ownership of its window Surface and presentation.
+    /// 使用宿主持有的 wgpu instance、adapter、device 与 queue；本构造不取得设备，窗口
+    /// Surface 创建与呈现继续归宿主。
+    pub fn from_wgpu(instance:wgpu::Instance,adapter:wgpu::Adapter,device:wgpu::Device,queue:wgpu::Queue)->Self {
+        Self {device:DeviceHandle {instance,adapter,device,queue},
+            renderer:None,target:None,images:FxHashMap::default(),textures:FxHashMap::default()}
+    }
     /// Acquire an adapter without a surface (headless) and create its device.
     /// 不带呈现表面（无头）取得适配器并创建设备。
     pub fn new_headless()->Result<Self,GpuFrameError> {
@@ -73,16 +82,49 @@ impl GpuRenderer {
         let limit=self.device.device.limits().max_texture_dimension_2d;
         let Some((padded,buffer_bytes))=gpu_readback_layout(width,height) else {return Err(GpuFrameError::Rejected);};
         if width>limit || height>limit {return Err(GpuFrameError::Rejected);}
+        if self.target.as_ref().is_none_or(|target|target.width!=width || target.height!=height) {
+            self.target=Some(create_target(&self.device.device,width,height,buffer_bytes));
+        }
+        let target=self.target.take().expect("target created above");
+        let painted=self.paint(width,height,TARGET_FORMAT,&target.view,&target.depth,
+            Some((&target.texture,&target.readback,padded)),draw);
+        let readback=target.readback.clone();
+        self.target=Some(target);
+        painted?;
+        read_back(&self.device.device,&readback,width,height,padded)
+    }
+
+    /// Render directly into a host-owned texture view. The host creates the Surface, configures
+    /// its format/extent, calls this method, then presents through its own wgpu Surface.
+    /// 直接绘制到宿主持有的纹理视图；宿主创建、配置 Surface，调用本方法后自行 present。
+    pub(crate) fn render_to_host_view(&mut self,width:u32,height:u32,format:wgpu::TextureFormat,
+        view:&wgpu::TextureView,draw:impl FnOnce(&mut VelloHybridScenePainter<'_>))->Result<(),GpuFrameError> {
+        let Some(_)=gpu_readback_layout(width,height) else {return Err(GpuFrameError::Rejected);};
+        let limit=self.device.device.limits().max_texture_dimension_2d;
+        if width>limit || height>limit {return Err(GpuFrameError::Rejected);}
+        if !matches!(format,wgpu::TextureFormat::Rgba8Unorm|wgpu::TextureFormat::Rgba8UnormSrgb
+            |wgpu::TextureFormat::Bgra8Unorm|wgpu::TextureFormat::Bgra8UnormSrgb) {
+            return Err(GpuFrameError::Unsupported(format!("host GPU target format {format:?}")));
+        }
+        let depth=Renderer::create_depth_texture_view(&self.device.device,
+            &RenderSize {width:width as u16,height:height as u16});
+        self.paint(width,height,format,view,&depth,None,draw)
+    }
+
+    fn paint(&mut self,width:u32,height:u32,format:wgpu::TextureFormat,view:&wgpu::TextureView,
+        depth:&wgpu::TextureView,copy_to:Option<(&wgpu::Texture,&wgpu::Buffer,u32)>,
+        draw:impl FnOnce(&mut VelloHybridScenePainter<'_>))->Result<(),GpuFrameError> {
+        let key=RenderKey {format,width:width as u16,height:height as u16};
         let (device,queue)=(&self.device.device,&self.device.queue);
         let error_scope=device.push_error_scope(wgpu::ErrorFilter::Validation);
-        if self.target.as_ref().is_none_or(|target|target.width!=width || target.height!=height) {
-            self.target=Some(create_target(device,width,height,buffer_bytes));
+        if self.renderer.as_ref().is_none_or(|(known,..)|*known!=key) {
+            self.images.clear();self.textures.clear();
+            let (renderer,resources)=Renderer::new_with(device,
+                &RenderTargetConfig {format,width:key.width,height:key.height},RenderSettings::default());
+            self.renderer=Some((key,renderer,resources));
         }
-        let target=self.target.as_ref().expect("target created above");
-        let (renderer,resources)=self.renderer.get_or_insert_with(||Renderer::new_with(device,
-            &RenderTargetConfig {format:TARGET_FORMAT,width:width as u16,height:height as u16},
-            RenderSettings::default()));
-        let mut scene=Scene::new_with(width as u16,height as u16,RenderSettings::default().level);
+        let (_,renderer,resources)=self.renderer.as_mut().expect("renderer created above");
+        let mut scene=Scene::new_with(key.width,key.height,RenderSettings::default().level);
         let mut encoder=device.create_command_encoder(&wgpu::CommandEncoderDescriptor {label:Some("jasper native gpu frame")});
         {
             let images=ImageManager::new(renderer,resources,device,queue,&mut encoder,&mut self.images);
@@ -90,22 +132,27 @@ impl GpuRenderer {
             draw(&mut painter);
         }
         let mut bindings=TextureBindings::new();
-        for (id,view) in &self.textures {bindings.insert(vello_common::TextureId(id.into_ffi()),view.clone());}
+        for (id,texture) in &self.textures {bindings.insert(vello_common::TextureId(id.into_ffi()),texture.clone());}
         renderer.render(&scene,resources,device,queue,&mut encoder,
-            &RenderSize {width:width as u16,height:height as u16},&target.view,Some(&target.depth),
+            &RenderSize {width:key.width,height:key.height},view,Some(depth),
             &bindings,TargetInit::Clear(ClearSettings::default()))
             .map_err(|error|GpuFrameError::Render(format!("{error:?}")))?;
-        encoder.copy_texture_to_buffer(target.texture.as_image_copy(),
-            wgpu::TexelCopyBufferInfo {buffer:&target.readback,
-                layout:wgpu::TexelCopyBufferLayout {offset:0,bytes_per_row:Some(padded),rows_per_image:None}},
-            target.texture.size());
+        if let Some((texture,buffer,padded))=copy_to {
+            encoder.copy_texture_to_buffer(texture.as_image_copy(),
+                wgpu::TexelCopyBufferInfo {buffer,
+                    layout:wgpu::TexelCopyBufferLayout {offset:0,bytes_per_row:Some(padded),rows_per_image:None}},
+                texture.size());
+        }
         queue.submit([encoder.finish()]);
         if let Some(error)=pollster::block_on(error_scope.pop()) {
             return Err(GpuFrameError::Render(error.to_string()));
         }
-        read_back(device,&target.readback,width,height,padded)
+        Ok(())
     }
 }
+
+#[derive(Clone,Copy,Debug,PartialEq,Eq)]
+struct RenderKey {format:wgpu::TextureFormat,width:u16,height:u16}
 
 // BEGIN VERIFIED GPU READBACK LAYOUT KERNEL
 /// Readback layout for a `width`×`height` RGBA8 frame: each row padded up to the 256-byte copy

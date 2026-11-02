@@ -1,0 +1,85 @@
+{
+  "status": "engineering_slice_passes_actual_surface_presentation_pending",
+  "checklist_item": 3,
+  "sources": {
+    "src/native_adapter/gpu_render.rs": "381dc058f7a6e38e64092fbc043f035673964cdbb319650a9202f8b574cc4ad3",
+    "src/native_adapter/native_scene.rs": "bfd57113bd2610b6711c24caefab82a641396c57fdf344fbb6edf4c5758132bf",
+    "src/native_adapter/facade.rs": "469669e92b74041f24f67e25cb90473860626c3cd34abdf2055d41e64f971965",
+    "tests/native_gpu_host_view.rs": "cbcd5d1a1244e046e19c98a4ce9ee939f96da5a313fafcb71dc144f38b7c599a"
+  },
+  "scope": "Host-owned GPU device injection and direct Vello hybrid rendering into a host-created wgpu TextureView. The host retains Surface configuration, swapchain texture lifetime and the present call.",
+  "api": {
+    "device_injection": "GpuRenderer::from_wgpu(instance, adapter, device, queue)",
+    "direct_render": "Engine::render_gpu_to_host_view(owner, version, gpu, format, view, budget)",
+    "supported_formats": [
+      "Rgba8Unorm",
+      "Rgba8UnormSrgb",
+      "Bgra8Unorm",
+      "Bgra8UnormSrgb"
+    ],
+    "unsupported": "GpuFrameError::Unsupported(format description)"
+  },
+  "tests": [
+    {
+      "name": "native_gpu_host_view::host_device_and_texture_are_used_without_engine_device_acquisition",
+      "result": "passed",
+      "checks": [
+        "host-created wgpu DeviceHandle components are injected into GpuRenderer",
+        "adapter identity is preserved",
+        "foreign owner rejection leaves needs_frame true",
+        "admitted direct render clears needs_frame",
+        "host-created target texture contains declared red rectangle and background after host copy/readback"
+      ]
+    },
+    {
+      "name": "native_gpu_host_view::unsupported_host_format_is_explicit_and_fails_closed",
+      "result": "passed",
+      "checks": [
+        "RGBA16Float target returns GpuFrameError::Unsupported",
+        "target is not treated as presented",
+        "engine remains dirty"
+      ]
+    },
+    {
+      "name": "native_gpu_render",
+      "result": "3/3 passed",
+      "scope": "existing CPU comparison, software write and GPU resize regressions"
+    },
+    {
+      "name": "native_gpu_frame_damage",
+      "result": "3/3 passed",
+      "scope": "GPU/CPU shared baseline, exact damage rectangle and rejection preservation"
+    },
+    {
+      "name": "native_font_synthesis with gpu-pending",
+      "result": "5/5 passed",
+      "scope": "synthetic italic and bold paths on the same forwarding painter"
+    }
+  ],
+  "ordered_acceptance": {
+    "Verus+Z3": "pending for the public host-device/view orchestration; wgpu object lineage, Surface/swapchain behavior and Vello submission are third-party TCB",
+    "Proptest": "not applicable to live wgpu object creation in the current property harness; format/layout kernels retain their separate proofs",
+    "Miri": "not applicable: wgpu drivers, threading and GPU APIs are unsupported external execution",
+    "cargo-fuzz": "not applicable to live Surface/device state; numerical readback/layout paths retain separate fuzz coverage",
+    "Kani": "not applicable to wgpu driver/device state; readback layout has a separate proven finite kernel",
+    "Loom": "not applicable inside the engine: the host owns queue/submission synchronization and present; engine-side ownership is a single mutable GpuRenderer"
+  },
+  "environment": {
+    "vm": "3G, zero swap, 128 tasks, Cargo jobs=1, default 180-second workload limit",
+    "adapter": "VM software wgpu adapter (llvmpipe); /dev/dri access denied",
+    "actual_window_surface": "not tested because the restricted VM has no authorized display endpoint"
+  },
+  "TCB": [
+    "wgpu instance/adapter/device/queue/Surface correctness",
+    "Vello hybrid renderer and shaders",
+    "host Surface reconfiguration, swapchain texture lifetime, vsync and present",
+    "OS window system and GPU driver"
+  ],
+  "limitations": [
+    "Direct rendering to a host TextureView is implemented; actual window Surface acquire/present/DPI/recovery must still be observed on an authorized display host.",
+    "The texture view's true extent and usage are host obligations; the engine checks its requested extent and format but cannot introspect a TextureView's creation descriptor.",
+    "No hardware-GPU/device-lost evidence is claimed from the VM's software adapter.",
+    "Checklist item 3 remains incomplete."
+  ],
+  "checklist_item_3_complete": false
+}

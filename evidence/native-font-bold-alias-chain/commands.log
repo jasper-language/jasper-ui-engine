@@ -1,0 +1,27 @@
+Verus:
+  command: python3 scripts/verify-version.py --verus <VM>/verus --kernel bold-alias
+  result: 3 verified, 0 errors; admit-empty-blob rejected; reject-qualified-blob rejected
+
+Proptest:
+  command: PROPTEST_RNG_SEED=20261102 cargo test --locked --manifest-path verification/read-boundary/Cargo.toml bold_alias_property
+  result: 1 passed, 0 failed; properties::bold_alias_property
+
+Miri:
+  command: MIRIFLAGS=-Zmiri-strict-provenance cargo +nightly-2026-10-17 miri test --locked --manifest-path verification/read-boundary/Cargo.toml bold_alias_boundaries
+  result: 1 passed, 0 failed; memory::bold_alias_boundaries
+
+cargo-fuzz:
+  command: cargo fuzz run --fuzz-dir fuzz read_boundary -- -runs=200000 -max_len=256 -seed=20261102
+  result: Done 200000 runs in 19 second(s); no crash artifact
+
+Kani:
+  command: cargo kani --manifest-path verification/read-boundary/Cargo.toml --harness bold_alias_admission
+  result: 185 checks, 0 failed, 1 unreachable; VERIFICATION SUCCESSFUL
+
+CPU:
+  command: cargo test --locked --features native-blitz-cpu-pending --test native_font_synthesis
+  result: 3 passed, 0 failed
+
+GPU:
+  command: cargo test --locked --features native-blitz-cpu-pending,gpu-pending --test native_font_synthesis
+  result: 5 passed, 0 failed

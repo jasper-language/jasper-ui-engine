@@ -1,0 +1,9 @@
+verification results:: 2 verified, 1 errors
+error: invariant not satisfied at end of loop body
+  --> <repo>/evidence/bold-alias-kernel/negative_ignore_group_maximum.rs:28:13
+   |
+28 |             forall|j: int| 0 <= j < index ==> weights@[j] == group_max@[j] && group_max@[j] <= 500,
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: aborting due to 1 previous error
+

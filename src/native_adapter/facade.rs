@@ -331,6 +331,15 @@ impl SceneHostView {
         ->Result<FrameDamage,GpuFrameError> {
         self.inner.render_gpu_to_host_surface_damaged(owner,version,gpu,bytes,stride,budget)
     }
+    /// Render directly into a host-owned wgpu texture view. The host creates and configures the
+    /// window Surface, owns its texture lifecycle, and calls `present` after this returns.
+    /// 直接绘制到宿主持有的 wgpu 纹理视图；宿主创建/配置窗口 Surface、管理纹理生命周期，
+    /// 并在本方法返回后自行 present。
+    #[cfg(feature="gpu-pending")]
+    pub fn render_gpu_to_host_view(&mut self,owner:u64,version:u64,gpu:&mut GpuRenderer,
+        format:wgpu::TextureFormat,view:&wgpu::TextureView,budget:usize)->Result<(),GpuFrameError> {
+        self.inner.render_gpu_to_host_view(owner,version,gpu,format,view,budget)
+    }
     /// Native CPU frame to an embedding backend; unsupported backends return an explicit error.
     /// 原生 CPU 帧提交至嵌入后端；不支持的后端返回明确错误，呈现责任仍归宿主。
     #[cfg(feature="cpu-pending")]

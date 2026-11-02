@@ -1,10 +1,10 @@
 //! Font synthesis when the host injects only a regular face. Synthetic italic is drawn leaning
 //! right like a real italic: the pinned Blitz painter mirrors the skew in the y-down scene, and
-//! the engine corrects the sign on every glyph run. Synthetic bold is still not drawn (pinned
-//! here so that any upstream change is noticed); docs/status.md records it.
+//! the engine corrects the sign on every glyph run. Synthetic bold uses a weight-700 stand-in
+//! registration of the regular face and emboldens only glyph runs from that registered blob.
 //! 宿主只注入常规字面时的字体合成。合成斜体如真斜体般右倾：固定版 Blitz 绘制器在 y 向下场景中
-//! 把斜切符号取反，引擎在每个字形串上修正符号。合成粗体仍不绘制（此处钉住以便察觉上游变化），
-//! docs/status.md 如实记录。
+//! 把斜切符号取反，引擎在每个字形串上修正符号。合成粗体通过把常规字面以字重 700 再登记为
+//! 替身 Blob，绘制器只对来自该 Blob 的字形串加粗。
 #![cfg(feature="native-blitz-cpu-pending")]
 use jasper_ui_engine::engine::Engine;
 use jasper_ui_engine::geometry::Edges;
@@ -23,6 +23,7 @@ const SAMPLE:&str="Jasper IIII llll";
 /// 注入的字体文件；测试不扫描系统字体。
 fn regular()->Vec<u8> {read("JASPER_UI_TEST_LATIN_FONT")}
 fn italic()->Vec<u8> {read("JASPER_UI_TEST_ITALIC_FONT")}
+fn bold()->Vec<u8> {read("JASPER_UI_TEST_BOLD_FONT")}
 fn read(var:&str)->Vec<u8> {
     let path=std::env::var(var).unwrap_or_else(|_|panic!("{var} must name an injected font file"));
     std::fs::read(path).expect("injected font readable")
@@ -102,19 +103,36 @@ fn synthetic_italic_leans_right_like_an_italic_face() {
 }
 
 #[test]
-fn bold_without_a_bold_face_draws_the_regular_face() {
-    // The pinned painter ignores Parley's embolden synthesis (only a global embolden feature
-    // exists, left off), so weight 600..900 over a regular-only stack equals weight 400.
-    // 固定版绘制器忽略 Parley 的加粗合成（只有全局加粗特性，未开启），故只注入常规字面时
-    // 字重 600..900 等于 400。
+fn bold_without_a_bold_face_uses_the_registered_standin() {
+    // The pinned painter does not request Parley's embolden synthesis. The font resource layer
+    // registers a weight-700 copy of the regular blob; CSS matching selects it only for bold
+    // requests and the forwarding painter emboldens only that blob.
+    // 固定版绘制器不请求 Parley 加粗合成；字体资源层把常规 Blob 以字重 700 再登记，
+    // CSS 匹配仅在粗体请求时选中替身，转发绘制器只加粗该 Blob。
     let regular=regular();
     let upright=frame(&regular,400,FontStyle::Normal);
-    for weight in [600,700,900] {
-        assert_eq!(frame(&regular,weight,FontStyle::Normal),upright,"weight {weight}: bold synthesis changed; update docs/status.md");
+    let synthesized=frame(&regular,700,FontStyle::Normal);
+    assert_ne!(synthesized,upright,"bold stand-in must change the painted outlines");
+    assert!(ink(&synthesized)>ink(&upright),"bold stand-in must add ink");
+    for weight in [600,900] {
+        assert_eq!(frame(&regular,weight,FontStyle::Normal),synthesized,
+            "weight {weight}: the weight-700 stand-in must serve all bold requests");
     }
-    // Synthetic italic is unaffected by the requested weight.
-    // 合成斜体不受所请求字重影响。
-    assert_eq!(frame(&regular,700,FontStyle::Italic),frame(&regular,400,FontStyle::Italic));
+    let italic=frame(&regular,400,FontStyle::Italic);
+    let bold_italic=frame(&regular,700,FontStyle::Italic);
+    assert_ne!(bold_italic,italic);
+    assert_ne!(bold_italic,synthesized);
+    assert!(ink(&bold_italic)>ink(&italic));
+}
+
+#[test]
+fn real_bold_face_is_preferred_over_the_regular_standin() {
+    let (regular,bold)=(regular(),bold());
+    let source=scene_of(SAMPLE,700,FontStyle::Normal);
+    let mut standalone=Engine::with_fonts(OWNER,&source,&[&bold],W,H).expect("bold import");
+    let mut combined=Engine::with_fonts(OWNER,&source,&[&regular,&bold],W,H).expect("font stack");
+    assert_eq!(render(&mut standalone,source.version()),render(&mut combined,source.version()),
+        "real bold face must win over the regular synthetic stand-in");
 }
 
 /// The GPU path paints through the same corrected glyph runs: its synthetic stem leans right too.
@@ -134,4 +152,20 @@ fn gpu_synthetic_italic_leans_right_too() {
     })).collect();
     println!("gpu synthetic stem lean {}",lean(&edges));
     assert!(lean(&edges)>=3,"gpu synthetic italic must lean right: {edges:?}");
+}
+
+#[cfg(feature="gpu-pending")]
+#[test]
+fn gpu_regular_only_stack_uses_the_bold_standin_too() {
+    use jasper_ui_engine::native::host::GpuRenderer;
+    let regular=regular();
+    let render_gpu=|weight| {
+        let source=scene_of(SAMPLE,weight,FontStyle::Normal);
+        let mut engine=Engine::with_fonts(OWNER,&source,&[&regular],W,H).expect("native import");
+        let mut gpu=GpuRenderer::new_headless().expect("a wgpu adapter is required for GPU acceptance");
+        engine.render_gpu(OWNER,source.version(),&mut gpu,BUDGET).expect("gpu frame")
+    };
+    let (plain,bold)=(render_gpu(400),render_gpu(700));
+    assert_ne!(plain,bold,"GPU bold stand-in must change painted outlines");
+    assert!(ink(&bold)>ink(&plain),"GPU bold stand-in must add ink");
 }

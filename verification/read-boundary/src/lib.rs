@@ -415,6 +415,16 @@ pub fn assert_font_family(name: &[u8]) {
     assert_eq!(font_family_admits(name), expected);
 }
 
+/// Independent bold-alias admission oracle: nonempty equal-length tables, every face is its
+/// group maximum, and every group maximum is at most 500.
+/// 独立粗体替身准入规格：非空等长表、每个字面均等于本组最大字重，且组最大字重不超过 500。
+pub fn assert_bold_alias(weights: &[u16], group_max: &[u16]) {
+    let expected=weights.len()>=1 && weights.len()==group_max.len()
+        && weights.iter().zip(group_max).all(|(&weight,&maximum)|
+            weight==maximum && maximum<=BOLD_ALIAS_MAX_SOURCE_WEIGHT);
+    assert_eq!(bold_alias_admits(weights,group_max),expected);
+}
+
 /// Independent glyph-skew oracle in the f64 domain: a transform equal to a pure horizontal skew
 /// (a = d = 1.0, b = e = f = 0.0, either zero sign) has its skew negated; anything else, NaN
 /// coefficients included, keeps every bit of c.
@@ -1609,6 +1619,17 @@ mod kani_checks {
     }
 
     #[kani::proof]
+    #[kani::unwind(6)]
+    fn bold_alias_admission() {
+        let weights: [u16;4] = kani::any();
+        let maxima: [u16;4] = kani::any();
+        let len: usize = kani::any();
+        kani::assume(len<=4);
+        assert_bold_alias(&weights[..len],&maxima[..len]);
+        assert_bold_alias(&weights[..len],&maxima[..len.saturating_sub(1)]);
+    }
+
+    #[kani::proof]
     #[kani::unwind(37)]
     fn canvas_pixel_read() {
         let bytes: [u8; 36] = kani::any();
@@ -2005,6 +2026,14 @@ mod properties {
             }
         }
         #[test]
+        fn bold_alias_property(weights in prop::collection::vec(any::<u16>(),0..16),
+                               maxima in prop::collection::vec(any::<u16>(),0..16)) {
+            assert_bold_alias(&weights,&maxima);
+            assert_bold_alias(&weights,&weights);
+            let low:Vec<u16>=weights.iter().map(|weight|weight%501).collect();
+            assert_bold_alias(&low,&low);
+        }
+        #[test]
         fn canvas_pixel_property(bytes in prop::collection::vec(any::<u8>(), 0..256),
                                  width in 1u32..8, height in 1u32..8, x in any::<u32>(), y in any::<u32>(),
                                  small_x in 0u32..9, small_y in 0u32..9) {
@@ -2152,6 +2181,22 @@ mod memory {
     use super::*;
 
     #[test]
+    fn bold_alias_boundaries() {
+        for (weights,maxima) in [
+            (&[][..],&[][..]),
+            (&[0][..],&[0][..]),
+            (&[400][..],&[400][..]),
+            (&[400][..],&[700][..]),
+            (&[500,500][..],&[500,500][..]),
+            (&[501][..],&[501][..]),
+            (&[400,400][..],&[400][..]),
+            (&[u16::MAX][..],&[u16::MAX][..]),
+        ] {
+            assert_bold_alias(weights,maxima);
+        }
+    }
+
+    #[test]
     fn slices_and_failure_positions() {
         assert_focus_selection(&[], None, 0);
         assert_focus_selection(&[1, 1, u64::MAX], Some(7), u64::MAX);
@@ -2284,6 +2329,16 @@ mod memory {
         }
         for weight in [0, 1, 2, 400, 700, 999, 1000, 1001, u16::MAX] {
             assert_font_weight(weight);
+        }
+        for (weights,maxima) in [
+            (&[][..],&[][..]),
+            (&[400][..],&[400][..]),
+            (&[400][..],&[700][..]),
+            (&[500,500][..],&[500,500][..]),
+            (&[501][..],&[501][..]),
+            (&[400,400][..],&[400][..]),
+        ] {
+            assert_bold_alias(weights,maxima);
         }
         let skew = 14f64.to_radians().tan().to_bits();
         for signs in 0..8 {

@@ -1,0 +1,9 @@
+{
+  "status": "not_applicable",
+  "scope": [
+    "bold_alias_admits: immutable u16 slices and local loop index",
+    "font blob id membership: immutable BTreeSet lookup in the glyph forwarding painter"
+  ],
+  "reason": "This path owns no threads, locks, atomics, channels, asynchronous tasks or shared mutable state. Fontique registration and AnyRender/Vello renderer synchronization are third-party boundaries and are not claimed by this applicability result.",
+  "production_concurrency_added": false
+}

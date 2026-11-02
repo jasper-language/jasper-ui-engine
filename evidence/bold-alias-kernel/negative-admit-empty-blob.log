@@ -1,0 +1,15 @@
+verification results:: 2 verified, 1 errors
+error: postcondition not satisfied
+  --> <repo>/evidence/bold-alias-kernel/negative_admit_empty_blob.rs:17:13
+   |
+17 |       ensures result == (1 <= weights.len() && weights.len() == group_max.len()
+   |  _____________^
+18 | |         && forall|j: int| 0 <= j < weights.len() ==>
+19 | |             weights@[j] == group_max@[j] && group_max@[j] <= 500),
+   | |_________________________________________________________________^ failed this postcondition
+...
+38 |       true
+   |       ---- at the end of the function body
+
+error: aborting due to 1 previous error
+

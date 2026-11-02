@@ -631,3 +631,28 @@ UI19 刻画的反斜体已修正。新增 `src/native_adapter/glyph_skew.rs`：�
 此外，Kissat 在 `unwind=2` 的 SAT 阶段超时。上述运行保留为后端能力负控，明确证明旧超时不能解释为边界充分，也没有资格据 object 参数或较小展开界宣称通过。完整记录见 `evidence/native-subtree-solver-capability/report.json`。
 
 第 1 项仍保持未勾选：真实 Map 的 Kani 义务未完成，`apply_update → apply_patches` 的完整整帧变更证明也仍缺；后续需要新的验证器/后端编码，或保持真实 Map、完整性质、原始域与全部断言的非缩减分解。
+
+## 2026-11-02：场景整帧候选事务（第 2 项工程缺口）
+
+`NativeScene` 现保留一份 `Scene` 来源快照。`apply_patches` 先准入所有权/版本/开放状态，再在来源副本上调用原子 `Scene::apply_batch_at`，随后从终态构建完整的候选原生视图；两个阶段均成功后才接管候选，因此来源应用或原生构造失败都不会部分修改活动树、版本、焦点、视口、滚动或最近帧。成功后恢复焦点、视口滚动、最近指针悬停、原生按下节点身份和上一帧缓存。
+
+该实现也移除了“语义更新不得改变原生 Button 标签”的旧限制：Button→Container 等合法更新由候选重建完成，并可在同一 NodeId 上保留仍合格的焦点。新增 `tests/native_frame_transaction.rs`：
+
+- 合法来源批次中的零字号样式使候选原生构造失败；版本、节点数、焦点、node bounds 与全部像素保持，随后以原 expected version 提交合法帧成功。
+- Button→Container 语义更新成功，像素与同终态新导入逐字节一致，角色/标签和焦点均正确。
+
+受限 VM 中原生 CPU 库 175 项、`native_blitz_engine` 2 项、`native_cpu_acceptance` 4 项、`native_frame_differential` 1 项及新增事务 2 项全部通过。该事务编排尚缺完整 Verus/六阶段实现级证明，因此第 2 项仍不勾选。
+
+## 2026-11-02：合成粗体替身完成限定验收
+
+注入字体资源层对每个物理 Blob 按（族、样式、宽度）计算组内最大字重。仅当 Blob 中每个字面都是本组最大且字重不超过 500、且没有可变字重轴时，才以全新 Blob id、字重 700 再登记替身。CSS 匹配只在粗体请求时选取替身；转发绘制器按该 Blob id 启用固定版 Blitz 的相对轮廓加粗量，不改其他字体或其他绘制调用。真实 Bold 字面存在时优先于常规字面替身。
+
+新增 `UI-FONT-BOLD-ALIAS-001`：实际生产判定完成 Verus+Z3 3 verified/0 errors，空表与拒绝合格 Blob 两个反例均拒绝；Proptest 256 例、Miri（严格 provenance）、cargo-fuzz 200000 次、Kani 185 checks（0 失败）通过；纯同步路径记录 Loom 不适用。整族查询、Blob 注册、Parley 匹配与 Vello 光栅为明确第三方 TCB。证据：`evidence/native-font-bold-alias-chain/report.json`。
+
+场景 CPU 3 项和 GPU 2 项字体合成测试通过：常规字面单独注入时 600/700/900 使用同一替身并增加墨迹，700 斜体同时保持右倾与加粗，真实 Bold 注入时不被替身替代。第 3 项整体仍未完成：TextDisplayView 尚无字重更新字段，窗口 GPU Surface 的真实 display 呈现和 device-loss/能力矩阵仍需后续验收。
+
+## 2026-11-02：宿主 GPU 设备与目标视图直连
+
+`GpuRenderer::from_wgpu(instance, adapter, device, queue)` 允许宿主注入已经取得的 wgpu 设备，不触发引擎侧设备获取。`render_gpu_to_host_view` 在 owner/version/open/extent/budget 准入后直接把 Blitz/Vello hybrid 帧绘制进宿主 `TextureView`；宿主保留窗口 Surface、swapchain texture 生命周期与 present 调用。引擎支持 RGBA8/BGRA8 的 linear/sRGB 四种目标格式，其他格式返回明确的 `GpuFrameError::Unsupported`。
+
+新增 `tests/native_gpu_host_view.rs` 2 项通过：宿主设备身份与注入对象一致，外来 owner 拒绝不改变待绘状态，直接纹理渲染后宿主自行 copy/readback 得到声明像素；不支持的 RGBA16F 目标明确拒绝并保持待绘。既有 GPU CPU 对照 3 项、GPU 损伤 3 项和 GPU 字体合成 2 项均通过。VM 无 `/dev/dri` 权限，使用软件 wgpu adapter；因此该证据证明宿主设备和目标纹理路径，不冒充真实硬件 Surface/垂直同步/device-loss 验收。

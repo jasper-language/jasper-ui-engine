@@ -1,0 +1,92 @@
+{
+  "status": "scoped_ordered_acceptance_complete",
+  "property": "UI-FONT-BOLD-ALIAS-001",
+  "scope": "Injected-font bold stand-in admission and the exact blob-id gate used by the CPU/GPU glyph forwarding painter. The stand-in duplicates a physical font blob under weight 700 only when every face in that blob is its family/style/width group maximum and all such maxima are <=500. Variable-weight fonts and blobs containing a real face above 500 receive no stand-in.",
+  "sources": {
+    "src/native_adapter/native_fonts.rs": "5af9d61c8c2aeb48a7b1614c88f9096d78cd5141dac67c7cdb898645749a4add",
+    "src/native_adapter/glyph_skew.rs": "9907568e6024f7607fa5663ab509dac3f36bd203a15c3b0032c52ac7a972c8f8",
+    "src/native_adapter/native_scene.rs": "bfd57113bd2610b6711c24caefab82a641396c57fdf344fbb6edf4c5758132bf",
+    "src/native_adapter/native_view.rs": "b21a5719b2f7cca9cee2d5f254d3911980f03a61459c2b6b481c79cdddc5c0c9",
+    "verification/read-boundary/src/lib.rs": "a2d0dcec0045138aaf2cdc8fcf7d3b301a92ad975c0547cbb83516198fa8412d",
+    "verification/read-boundary/build.rs": "c300c61446fe04dc8c48f8de5eeb9a880ab4f625b9bdc2648c99b37499e1fec8",
+    "scripts/verify-version.py": "9540af0672b18c9450db6b15358235e982ada2e2563b12500985b3e7202c415c",
+    "fuzz/fuzz_targets/read_boundary.rs": "cc337b6f298fa19a0723dbba419b3ae245c017c019adbc73e1170ec21eb9c104",
+    "tests/native_font_synthesis.rs": "dce4837df0239ec30c2d18c06da7f8ad45eac2b6e32eb7c78b805299cbe02b59"
+  },
+  "ordered_stages": [
+    {
+      "stage": "Verus+Z3",
+      "status": "passed",
+      "verified_including_dependencies": 3,
+      "errors": 0,
+      "negative_controls_rejected": [
+        "admit-empty-blob",
+        "reject-qualified-blob"
+      ],
+      "evidence": "../bold-alias-kernel/report.json",
+      "tool": "Verus 0.2026.10.18.7d82994 with bundled Z3 4.16.0"
+    },
+    {
+      "stage": "Proptest",
+      "status": "passed",
+      "test": "properties::bold_alias_property",
+      "cases": 256,
+      "seed": 20261102,
+      "command": "PROPTEST_RNG_SEED=20261102 cargo test --locked --manifest-path verification/read-boundary/Cargo.toml bold_alias_property"
+    },
+    {
+      "stage": "Miri",
+      "status": "passed",
+      "test": "memory::bold_alias_boundaries",
+      "toolchain": "nightly-2026-10-17",
+      "miri_flags": "-Zmiri-strict-provenance",
+      "command": "MIRIFLAGS=-Zmiri-strict-provenance cargo +nightly-2026-10-17 miri test --locked --manifest-path verification/read-boundary/Cargo.toml bold_alias_boundaries"
+    },
+    {
+      "stage": "cargo-fuzz",
+      "status": "passed",
+      "target": "read_boundary",
+      "runs": 200000,
+      "seconds": 19,
+      "max_len": 256,
+      "seed": 20261102,
+      "crashes": 0,
+      "command": "cargo fuzz run --fuzz-dir fuzz read_boundary -- -runs=200000 -max_len=256 -seed=20261102"
+    },
+    {
+      "stage": "Kani",
+      "status": "passed",
+      "harness": "kani_checks::bold_alias_admission",
+      "checks": 185,
+      "failed": 0,
+      "unreachable": 1,
+      "unwind": 6,
+      "domain": "Four arbitrary u16 face weights and four arbitrary u16 group maxima, plus lengths 0..=4; independent oracle also checks unequal lengths.",
+      "tool": "Kani 0.68.0 / CBMC 6.11.0"
+    },
+    {
+      "stage": "Loom applicability",
+      "status": "not_applicable",
+      "reason": "The proven stand-in admission and painter blob-id gate operate on immutable slices/BTreeSet and local glyph arguments. No own threads, locks, atomics, async tasks or shared mutation exist; fontique registration and renderer synchronization remain third-party boundaries."
+    }
+  ],
+  "integration": {
+    "cpu": "native_font_synthesis 3/3: regular-only weights 600/700/900 select one synthesized frame with more ink than 400, real Bold is preferred when injected, and synthetic italic+bold both change the frame.",
+    "gpu": "native_font_synthesis with gpu-pending passes the synthetic italic and regular-only bold stand-in tests on the VM's software wgpu adapter; /dev/dri permission warnings do not fail rendering.",
+    "stage_change": "A 400->700 Style patch repaints a frame equal to a fresh 700 import because the retained source snapshot and rebuilt native candidate use the same font context/blob aliases."
+  },
+  "TCB": [
+    "fontique parsing, family/style/width queries, blob hashing and registration",
+    "Parley CSS face matching and shaping",
+    "pinned Blitz painter glyph embolden formula",
+    "AnyRender/Vello CPU and GPU embolden/rasterisation",
+    "Rust compiler, allocator and standard collections"
+  ],
+  "limits": [
+    "One physical blob is aliased as a whole because FontInfoOverride applies to every face it contains.",
+    "Fonts with a variable weight axis are not synthesized.",
+    "The Blitz relative embolden formula is copied as an explicit pinned third-party rendering policy; this report does not prove floating-point rendering geometry.",
+    "TextDisplayView currently has no font-weight update field, so its alias wiring is compiled but not exercised by a weight-changing display-client test."
+  ],
+  "whole_checklist_item_3_complete": false
+}
