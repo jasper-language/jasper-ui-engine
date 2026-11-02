@@ -5,7 +5,7 @@
   "sources": {
     "src/native_adapter/native_fonts.rs": "5af9d61c8c2aeb48a7b1614c88f9096d78cd5141dac67c7cdb898645749a4add",
     "src/native_adapter/glyph_skew.rs": "9907568e6024f7607fa5663ab509dac3f36bd203a15c3b0032c52ac7a972c8f8",
-    "src/native_adapter/native_scene.rs": "bfd57113bd2610b6711c24caefab82a641396c57fdf344fbb6edf4c5758132bf",
+    "src/native_adapter/native_scene.rs": "adac56b1a8a9383397879e3d36de26da5f1add99daf45185fdad80b66c3e3275",
     "src/native_adapter/native_view.rs": "b21a5719b2f7cca9cee2d5f254d3911980f03a61459c2b6b481c79cdddc5c0c9",
     "verification/read-boundary/src/lib.rs": "a2d0dcec0045138aaf2cdc8fcf7d3b301a92ad975c0547cbb83516198fa8412d",
     "verification/read-boundary/build.rs": "c300c61446fe04dc8c48f8de5eeb9a880ab4f625b9bdc2648c99b37499e1fec8",

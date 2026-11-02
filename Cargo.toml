@@ -90,3 +90,7 @@ required-features = ["native-blitz-cpu-pending"]
 [[example]]
 name = "pointer"
 required-features = ["native-blitz-pending"]
+
+[[example]]
+name = "full_scene"
+required-features = ["native-blitz-cpu-pending"]

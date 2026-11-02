@@ -206,6 +206,7 @@ impl NativeScene {
     /// Apply one complete frame to a candidate source/native view, then swap it into place.
     /// No active document or metadata is mutated before both stages succeed.
     pub(crate) fn apply_patches(&mut self,caller:u64,expected:u64,next:u64,patches:&[ScenePatch])->bool {
+        self.invalidate_frame();
         if !accepts_scene_update(self.owner,caller,self.scene_version,expected,next,
             patches.len(),self.document.is_open()) {return false;}
         let focused=self.focused_node(caller,expected);

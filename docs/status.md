@@ -656,3 +656,11 @@ UI19 刻画的反斜体已修正。新增 `src/native_adapter/glyph_skew.rs`：�
 `GpuRenderer::from_wgpu(instance, adapter, device, queue)` 允许宿主注入已经取得的 wgpu 设备，不触发引擎侧设备获取。`render_gpu_to_host_view` 在 owner/version/open/extent/budget 准入后直接把 Blitz/Vello hybrid 帧绘制进宿主 `TextureView`；宿主保留窗口 Surface、swapchain texture 生命周期与 present 调用。引擎支持 RGBA8/BGRA8 的 linear/sRGB 四种目标格式，其他格式返回明确的 `GpuFrameError::Unsupported`。
 
 新增 `tests/native_gpu_host_view.rs` 2 项通过：宿主设备身份与注入对象一致，外来 owner 拒绝不改变待绘状态，直接纹理渲染后宿主自行 copy/readback 得到声明像素；不支持的 RGBA16F 目标明确拒绝并保持待绘。既有 GPU CPU 对照 3 项、GPU 损伤 3 项和 GPU 字体合成 2 项均通过。VM 无 `/dev/dri` 权限，使用软件 wgpu adapter；因此该证据证明宿主设备和目标纹理路径，不冒充真实硬件 Surface/垂直同步/device-loss 验收。
+
+## 2026-11-02：完整 headless 场景调用方（第 5 项迁移）
+
+新增公共 `examples/full_scene.rs`，单一进程依次跑通：Scene/SceneUpdate 声明与版本化样式/布局/字重更新、Framework 焦点、指针 Down/Up 单次激活、Blitz 布局、Vello CPU 渲染与 HeadlessBackend 呈现、外部文本服务权威显示快照、输入绑定从旧 revision 原子轮换到后继、UI 预编辑设置/取消、文本焦点租约关闭，以及两个视图最终退休。示例只依赖根 crate 公共模块，不导入 `native_adapter`、Blitz/Parley/Vello 私有模块。
+
+VM 实跑成功，输出 `evidence/full-scene/full_scene.ppm`（P6 320×180，172815 字节，SHA-256 `5d1fdf5388311dbc691619307d606eda1e1f1bb830213a2653203fae6026df3c`）。证据：`evidence/full-scene-migration-pending/report.json`。
+
+这仍不是第 5 项整体完成：外部文本是宿主注入快照而非活服务；winit 窗口仍只记录输入，未把全部输入送入场景/文本客户端；真实显示/GPU present、平台无障碍桥、DPI/暂停恢复、示例编排六阶段和性能基线仍缺。

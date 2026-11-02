@@ -3,7 +3,7 @@
   "checklist_item": 3,
   "sources": {
     "src/native_adapter/gpu_render.rs": "381dc058f7a6e38e64092fbc043f035673964cdbb319650a9202f8b574cc4ad3",
-    "src/native_adapter/native_scene.rs": "bfd57113bd2610b6711c24caefab82a641396c57fdf344fbb6edf4c5758132bf",
+    "src/native_adapter/native_scene.rs": "adac56b1a8a9383397879e3d36de26da5f1add99daf45185fdad80b66c3e3275",
     "src/native_adapter/facade.rs": "469669e92b74041f24f67e25cb90473860626c3cd34abdf2055d41e64f971965",
     "tests/native_gpu_host_view.rs": "cbcd5d1a1244e046e19c98a4ce9ee939f96da5a313fafcb71dc144f38b7c599a"
   },

@@ -1,0 +1,38 @@
+{
+  "status": "single_full_caller_path_passes_remaining_item5_acceptance_pending",
+  "checklist_item": 5,
+  "source": {
+    "examples/full_scene.rs": "5f12c4cc12ca6f9fc9fdddd3dae270a2c780059d8e44b6a2538b49ed46a45423",
+    "Cargo.toml": "96e9e23c502bc075ac742d27be87e017c11ea2cb6afa09f5a12681fc9db152a4"
+  },
+  "command": "cargo run --locked --features native-blitz-cpu-pending --example full_scene -- <injected-font.ttf> evidence/full-scene/full_scene.ppm",
+  "result": "passed",
+  "path": [
+    "typed Scene declarations using only jasper_ui_engine::scene/style/semantics",
+    "Framework focus request",
+    "native pointer Down while focused",
+    "versioned SceneUpdate visual/layout/weight change",
+    "focus retained across whole-frame candidate rebuild",
+    "native pointer Up produces exactly one activation",
+    "Blitz layout and CPU Vello rendering through RenderBackend/HeadlessBackend presentation",
+    "external TextDisplayView receives a new authoritative display snapshot",
+    "input binding rotates old ticket to the successor revision",
+    "UI-owned IME preedit is set and cancelled",
+    "text focus lease and both views retire"
+  ],
+  "artifact": {
+    "path": "full_scene.ppm",
+    "bytes": 172815,
+    "sha256": "5d1fdf5388311dbc691619307d606eda1e1f1bb830213a2653203fae6026df3c",
+    "header": "P6 320 180 255"
+  },
+  "public_boundary": "The example imports only root jasper_ui_engine modules and the public engine::Engine / native::host::TextDisplayView facades; it does not import native_adapter, Blitz, Parley, Vello or private backend modules.",
+  "remaining": [
+    "The path is headless and injects the external display text; it does not connect to a live external editing/IME service.",
+    "The winit window still records input rather than forwarding all events into the scene and text clients.",
+    "Real display endpoints, GPU Surface present, accessibility platform bridge and DPI/suspend recovery are not available in the restricted VM.",
+    "The example orchestration itself has no six-stage implementation proof; its component APIs retain separate evidence only.",
+    "The declared performance baseline and optimization gate remain open."
+  ],
+  "checklist_item_5_complete": false
+}

@@ -2,13 +2,13 @@
   "status": "engineering_slice_passes_full_frame_proof_pending",
   "checklist_item": 2,
   "sources": {
-    "src/native_adapter/native_scene.rs": "bfd57113bd2610b6711c24caefab82a641396c57fdf344fbb6edf4c5758132bf",
+    "src/native_adapter/native_scene.rs": "adac56b1a8a9383397879e3d36de26da5f1add99daf45185fdad80b66c3e3275",
     "tests/native_frame_transaction.rs": "4fccb6247f55f6e258d05ed3ba0307b4acac1e9a11166b3e912befda65304b3f"
   },
   "scope": "NativeScene apply_update/apply_patches transactionality: apply the ordered frame atomically to a retained source Scene clone, build a detached native candidate from that terminal source, restore host-visible state, and swap only after both stages succeed.",
   "behavior": {
     "rejected_source_frame": "No active view assignment occurs.",
-    "rejected_native_candidate": "Source snapshot, active native document, version, focus, viewport scroll, pointer hover/press, frame cache and pixels remain unchanged.",
+    "rejected_native_candidate": "Source snapshot, active native document, version, focus, viewport scroll, pointer hover/press, frame cache and pixels remain unchanged. As before, entering the scene-update API conservatively marks a possible repaint first, so a rejected call may require one redundant paint but cannot serve a stale frame.",
     "accepted_frame": "One candidate document becomes active; focus, grouped scroll, hover, native press identity and prior frame/damage cache are restored; scene version equals the exact admitted successor.",
     "semantic_tag_change": "A legal Button to non-Button source semantic update is rebuilt with the correct native element instead of rejecting the whole frame."
   },
@@ -20,7 +20,7 @@
         "zero-font-size native candidate rejected after the source Scene batch accepted",
         "snapshot identity remained at old version/count",
         "focus remained on the same node",
-        "node bounds and every RGBA byte remained equal",
+        "node bounds and every RGBA byte remained equal; the rejected update left the frame conservatively dirty",
         "a later valid frame from the retained old expected version succeeded",
         "accepted frame pixels equal a fresh import of the terminal source"
       ]
