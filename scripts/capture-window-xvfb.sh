@@ -37,16 +37,18 @@ done
 test -n "$window_id"
 xwd -root -silent -out "$out/root.xwd"
 xwdtopnm "$out/root.xwd" >"$out/root.ppm"
+pnmtopng "$out/root.ppm" >"$out/root.png"
 xdotool windowsize "$window_id" 640 360
 sleep 2
 xwd -root -silent -out "$out/resized.xwd"
 xwdtopnm "$out/resized.xwd" >"$out/resized.ppm"
+pnmtopng "$out/resized.ppm" >"$out/resized.png"
 
 # Exercise the host-owned Vulkan Surface/TextureView/present path on the same X11 endpoint.
 kill "$app_pid" 2>/dev/null || true
 wait "$app_pid" 2>/dev/null || true
 app_pid=
-cargo run --locked --features desktop,native-blitz-cpu-pending --example window -- "$font" --once \
+cargo run --locked --features desktop,native-engine-cpu --example window -- "$font" --once \
     >"$out/window-once.log" 2>&1
 cargo run --locked --features desktop,gpu-pending --example gpu_window -- "$font" --once \
     >"$out/gpu-window-once.log" 2>&1

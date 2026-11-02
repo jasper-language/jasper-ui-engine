@@ -1,0 +1,2 @@
+item5_full_scene=pass output=evidence/item5-full-path-baseline/full_scene.ppm scene=360x240 update_focus=preserved scroll=preserved accessibility=passed resource_failures=passed text_ime=passed
+item5_perf scene_cpu_scroll_patch median_us=153 p95_us=177 samples=6 surface_bytes=345600 viewport=360x240

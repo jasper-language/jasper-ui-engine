@@ -25,7 +25,7 @@
 | 语义与焦点 | `semantics.rs`、`keyboard.rs` | 宿主中立语义树、Tab 导航/激活意图、文本/组合事件焦点路由；无系统读屏桥 |
 | 滚动与滚动条 | `scroll.rs`、`scrollbar.rs` | 逐级消费/残余 delta、clamp/fling、几何/拖动/绘制；无回弹/自动隐藏/完整平台主题 |
 | 桌面输入映射 | `desktop.rs`、`desktop` | winit 鼠标/键盘/滚轮/IME/焦点规范化；映射与路由不等于完整编辑器 |
-| 桌面窗口/软件呈现 | `examples/window.rs` | winit + softbuffer 色块窗口；示例把输入打印到 stderr，尚无状态驱动交互闭环 |
+| 桌面窗口/软件呈现 | `examples/window.rs` | winit + softbuffer 原生 CPU 窗口；指针、滚轮、命令键、IME 显示与焦点恢复已接公共入口，点击触发版本化视觉更新；真实外部服务/系统无障碍/合成器仍未验收 |
 | GPU 选择与枚举 | `graphics.rs`、`gpu_wgpu.rs`、`gpu` | 策略、回退说明与真实适配器枚举；旧引擎无 GPU 绘制管线或 device-lost 恢复 |
 | 原生 GPU 无头渲染 | `native_adapter/gpu_render.rs`、`gpu-pending` | Vello hybrid 于 wgpu 离屏渲染并读回，仅在软件 Vulkan（llvmpipe）实测；无窗口呈现、device-lost 恢复、GPU 损伤或真实硬件验收（见 UI10 节） |
 | 流水线 | `engine.rs` | 每帧完整布局/绘制/编码/提交/呈现，无完整增量失效与调度 |
@@ -670,11 +670,13 @@ UI19 刻画的反斜体已修正。新增 `src/native_adapter/glyph_skew.rs`：�
 
 VM 实跑成功，输出 `evidence/full-scene/full_scene.ppm`（P6 320×180，172815 字节，SHA-256 `5d1fdf5388311dbc691619307d606eda1e1f1bb830213a2653203fae6026df3c`）。证据：`evidence/full-scene-migration-pending/report.json`。
 
-这仍不是第 5 项整体完成：外部文本是宿主注入快照而非活服务；winit 窗口仍只记录输入，未把全部输入送入场景/文本客户端；真实显示/GPU present、平台无障碍桥、DPI/暂停恢复、示例编排六阶段和性能基线仍缺。
+这是当时的首发快照，不是最终第 5 项状态：外部文本是宿主注入快照而非活服务；winit 窗口当时仍只记录输入。后续收口见本文件末节及 `evidence/item5-full-path-baseline/report.json`。
 
 ## 2026-11-02：六项总审计（0/6 完整勾选）
 
 统一审计见 `evidence/final-checklist-audit-pending/report.json`。当前 0 项达到清单完成定义：
+
+> 此段是第 5 项收口前的历史审计快照；第 5 项后续按用户“功能优先、基础证明与集成测试即可、复杂证明登记给 Claude”的授权完成，本段不覆盖最终状态。
 
 - 第 1 项：真实两节点 `BTreeMap` Kani 仍阻塞；`unwind=2` 展开不足、`unwind=4` 明确失败、`unwind=5/8` 超时，其他后端 OOM/转换失败；整帧实现级证明仍缺。
 - 第 2 项：候选整帧事务、标签变化、状态恢复、CPU/后端路径已通过工程回归，但事务六阶段证明、默认入口迁移和真实显示仍未闭合。
@@ -765,3 +767,14 @@ GPU 直接绘制到宿主 `TextureView` 后，`needs_frame` 在宿主 `Queue::pr
 新增 `PlatformBridgeCapabilities` 明确引擎提供显示投影、场景路由和宿主中立无障碍树；权威文本/IME、窗口捕获、AT-SPI/UIA 适配器属于宿主。AccessKit 转换由可选 feature 提供，不包含平台运行服务。
 
 注入字体、捕获回调和取消传输的 loopback 公共接口测试 7/7 通过，覆盖 IME 停用取消、传输失败重试、迟到/重复预编辑、权威快照重绑、焦点/捕获失败恢复、删除目标与新目标重绑、永久退休、重复抬起及无障碍树更新；`native-blitz-pending` 全量回归通过，AccessKit 3/3 与 CPU 启用的 7 项交互测试通过。无真实编辑/IME/系统无障碍服务，相关外部服务和平台适配器列为 TCB/能力限制；异步细化证明登记给 Claude。证据：`evidence/native-interaction-closure/report.json`。
+## 2026-11-02：第 5 项原型与实际调用路径收口
+
+活动 `hello`、`pointer`、`window`、`gpu_window` 与 `full_scene` 均已通过只消费根 `engine::Engine` 的静态边界回归；没有任何活动调用方导入 `native_adapter`、Blitz/AnyRender 私有类型、`LegacyEngine` 或 experiments 路径。显式 `legacy_pointer` 仅保留兼容对照。
+
+`full_scene` 现在联合验证纯视觉 `SceneUpdate` 前后焦点与视口滚动保持，焦点/按钮动作仍在无障碍树中，增量滚动帧与同终态新导入逐字节一致；空字体栈、帧预算不足和过期版本拒绝后，宿主字节与活动视图保持可用。随后走完外部权威快照、输入票据轮换、预编辑重绘/取消、焦点租约关闭和视图退休。
+
+`window` 现在通过 `HostRenderer` 的 Surface 代数门控把实际 winit 指针、滚轮、命令键、IME 预编辑/提交与失焦恢复路由到公共入口。`scripts/interact-window-xvfb.sh` 在 Xvfb 中通过 xdotool 点击真实窗口，日志必须报告 `activated=1`、视觉补丁后焦点保持和退休完成；800×600 与重设后的 640×360 Surface 截图均通过。
+
+受限 VM 的集成回归 3/3 通过，额外覆盖 `HostRenderer` 在活动 Surface 代数上的焦点、无障碍、滚动和呈现准入，以及重配/暂停/恢复/退休后的陈旧代数拒绝。Xvfb 中窗口单帧、真实点击激活和 800×600→640×360 重设均通过，llvmpipe Vulkan 示例完成宿主 present。release 基线的 360×240 强制 CPU 全帧为 6 个样本，中位 153 µs、P95 177 µs；Surface 为 345600 字节，只作同一 VM 后续优化回归参照。证据：`evidence/item5-full-path-baseline/report.json`。
+
+按用户本轮完成口径，第 5 项的功能缺口、基础生命周期准入、真实调用方/X11/GPU 集成证据已完成并勾选。整帧组合证明、真实外部编辑/IME、系统无障碍、硬件 Surface/device-loss 与最终平台阈值仍明确登记在 `docs/claude-item5-proof-backlog.md`，交由 Claude 后续完成。

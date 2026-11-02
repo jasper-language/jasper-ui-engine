@@ -1,0 +1,104 @@
+{
+  "status": "item5_public_callers_complete_basic_proof_passed",
+  "date": "2026-11-02",
+  "checklist_item": 5,
+  "checklist_item_5_complete": true,
+  "scope": "Move active native examples to formal Engine/HostRenderer entries; exercise declaration, update, layout/presentation, window and pointer interaction, generation-gated lifecycle, injected external text/IME display, accessibility, resource rejection, retirement and a release performance baseline.",
+  "sources": {
+    "src/native_adapter/render_host.rs": "3360ac64f47dceb2804e95dd8079249d7ff8913f2f1613069c78367c579b9915",
+    "examples/full_scene.rs": "43d1ba52b4b2a326c3fb5ad0583d6e01df2dc43c49d501f3ba6751be3c4f27cd",
+    "examples/window.rs": "f76e908e96439bf12340ab98ac4ece56279e447d9fb8a031d10a58210bc26b6f",
+    "tests/native_item5_journey.rs": "024cb2b56967da67fd3134bfff29de1a2220ad7d1827d2af47ebae2a03db5097",
+    "scripts/item5-baseline.sh": "58f3b88384c032d18ba0fe8753932d85ec0ad589d6d4dd3783347e73a054ac69",
+    "scripts/interact-window-xvfb.sh": "17d1a6c2b01226ee43397a129d892471357b3e5a18f7d89f368abb3a7539e1a9",
+    "scripts/capture-window-xvfb.sh": "b9cbb0d6216db44b698d1fe724176005dea6687721e3ae125c43c67abbb064db"
+  },
+  "commands": {
+    "all_targets_check": "scripts/verify-in-vm.sh env CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 cargo check --locked --features desktop,native-engine-cpu --tests --examples",
+    "integration": "scripts/verify-in-vm.sh env CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 JASPER_UI_TEST_FONT=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf cargo test --locked --no-default-features --features native-engine-cpu --test native_item5_journey",
+    "release_scene": "scripts/verify-in-vm.sh env CARGO_PROFILE_RELEASE_DEBUG=0 scripts/item5-baseline.sh /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf evidence/item5-full-path-baseline",
+    "window_once": "scripts/verify-in-vm.sh env CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 xvfb-run -a -s '-screen 0 1280x720x24' cargo run --locked --features desktop,native-engine-cpu --example window -- /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf --once",
+    "window_click": "scripts/verify-in-vm.sh env CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 scripts/interact-window-xvfb.sh /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf evidence/item5-window-interaction",
+    "window_capture": "scripts/verify-in-vm.sh env CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 scripts/capture-window-xvfb.sh /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf evidence/item5-window-xvfb"
+  },
+  "results": {
+    "all_targets_check": "passed",
+    "integration_tests": "3 passed, 0 failed",
+    "full_scene": "passed",
+    "window_once": "passed; activated=0, external_snapshot_revision=1, retired=true",
+    "window_click": "passed; activated=1, external_snapshot_revision=1, retired=true",
+    "host_lifecycle": "HostRenderer accepts focus, pointer, scroll, accessibility and rendering only for the exact active Surface generation; reconfigure, suspend, resume and retirement reject stale epochs",
+    "public_boundary": "hello, pointer, window, gpu_window and full_scene contain no native_adapter, Blitz, AnyRender, LegacyEngine or experiments path import; each consumes engine::Engine or native::host::HostRenderer",
+    "visual_switch": "a style-only SceneUpdate preserves scene focus, viewport scroll and accessibility focus/action; incremental scrolled output equals a fresh native import",
+    "interaction": "pointer down survives the visual frame and pointer up emits exactly one activation",
+    "external_text": "authoritative snapshot, binding rotation, focus, preedit repaint/cancel and retirement passed through public native::host types",
+    "resource_failures": "empty font stack and insufficient frame budget are rejected; rejected writes preserve host bytes and the following valid render succeeds",
+    "window_x11": "the 800x600 window and resized 640x360 X11 protocol Surface both presented; the host-owned window shows the expected background, button and text. The llvmpipe Vulkan example completed one presented frame.",
+    "window_pixel_counts": {
+      "initial_800x600": {
+        "background_24_26_32": 469600,
+        "button_40_130_90": 10093,
+        "black_xvfb_root": 441634
+      },
+      "resized_640x360": {
+        "background_24_26_32": 220000,
+        "button_40_130_90": 10093,
+        "black_xvfb_root": 691234
+      }
+    }
+  },
+  "performance": {
+    "profile": "release",
+    "environment": {
+      "memory": "8G",
+      "swap": "8G",
+      "cargo_build_jobs": 1,
+      "tasks_max": 128,
+      "renderer": "Blitz paint_scene through AnyRender/Vello CPU",
+      "font": "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+    },
+    "viewport": "360x240",
+    "surface_bytes": 345600,
+    "paint_mechanism": "force invalidate_frame, then time one full layout/paint and host Surface adaptation; one warmup discarded",
+    "samples": 6,
+    "median_us": 153,
+    "p95_us": 177,
+    "debug_comparison": {
+      "median_us": 14475,
+      "p95_us": 14940,
+      "scope": "debug diagnostic only; not the optimization baseline"
+    },
+    "optimization_gate": "Use release median/P95 as the same-VM regression reference; establish a cross-host threshold after final release-host acceptance."
+  },
+  "artifacts": {
+    "full_scene_log": {
+      "path": "full_scene.log",
+      "sha256": "380b106e666d9ff301d586a9b07590d9f38a98494d3fe72c857220ede9674504"
+    },
+    "full_scene_cpu_frame": {
+      "path": "full_scene.ppm",
+      "bytes": 259215,
+      "sha256": "e44ec4f6ad99b2109168ec3fef5a5981779ee5636d893c41f22233d0a17ece86",
+      "header": "P6 360 240 255"
+    },
+    "window_initial": {
+      "path": "../item5-window-xvfb/root.png",
+      "sha256": "1a96a5adda1249176cff1bf05a4f4daeed5e9c3bee409a1367d88d408bdcbb6b"
+    },
+    "window_resized": {
+      "path": "../item5-window-xvfb/resized.png",
+      "sha256": "070b7eaca0d1d28b0f6749b53ae6cd68814ba732a44936c3f670ba6f4798ff3a"
+    },
+    "window_click_log": {
+      "path": "../item5-window-interaction/interaction.log",
+      "sha256": "99a198fbf1978e0de1d541a62b26a8794179e90c3b895194842a003539554f74"
+    }
+  },
+  "limitations": [
+    "The external text and IME path consumes a synchronous host-injected service snapshot. No live editor or IME engine is implemented or claimed.",
+    "Accessibility is verified through the public snapshot/action API; no platform AT-SPI, UIA or system accessibility bridge was executed.",
+    "Xvfb is a real X11 protocol Surface but not a compositor, window manager, hardware display controller or vsync source.",
+    "The performance number is a same-VM regression baseline, not a hardware display, GPU or cross-host latency guarantee.",
+    "Whole-frame and window-adapter formal composition obligations are registered in docs/claude-item5-proof-backlog.md for Claude."
+  ]
+}
