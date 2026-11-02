@@ -696,3 +696,11 @@ VM 实跑成功，输出 `evidence/full-scene/full_scene.ppm`（P6 320×180，17
 该实际准入分类器完成限定有序验收：Verus+Z3 2 verified/0 errors，忽略归属与忽略视图支持两个负控被拒；Proptest 256 例、严格 provenance Miri、cargo-fuzz 200000 次、Kani 112 checks（全 bool 控制位、全 usize 计数和全 u64 序号，0 失败）通过；纯同步无共享状态，Loom 不适用。公共 API 集成测试覆盖归属、空帧、容量、过期序号、视图不支持、合法两项帧、序号精确推进和关闭视图。证据：`evidence/component-update-error-contract-chain/report.json`。
 
 第 1 项仍不勾选：本结果不证明逐值原生 setter、resolve、回调 panic 回滚或完整组件帧组合；真实两节点 `BTreeMap` Kani、整帧变更与浮点规格缺口仍未关闭。
+
+## 2026-11-02：场景整帧完成门与拒绝零修改
+
+修正 `NativeScene::apply_patches_result`：不再在准入前使活动帧失效。来源拒绝、准入拒绝或原生候选失败均保持活动树、版本、焦点、滚动、指针状态、最近帧缓存和 `needs_frame` 脏状态不变；只有来源成功、来源版本精确等于后继且独立候选就绪后，才执行活动视图替换。
+
+新增 `complete_scene_frame` 完成门并完成限定有序验收：Verus+Z3 2 verified/0 errors，忽略来源版本、无候选仍提交两个负控被拒；Proptest 256 例、严格 provenance Miri、cargo-fuzz 200000 次、Kani 112 checks（0 失败）通过；Loom 因纯同步标量函数不适用。`native_frame_transaction` 2/2 与 `native_update_contract` 1/1 通过，覆盖来源拒绝和候选拒绝后的完整帧保持。证据：`evidence/scene-frame-completion-chain/report.json`。
+
+第 2 项仍不勾选：本结果只证明提交门，不证明 `ScenePatch` 应用、Blitz 候选构造/状态恢复、第三方 panic 回滚或真实显示呈现。

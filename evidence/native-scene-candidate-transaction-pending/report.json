@@ -2,13 +2,13 @@
   "status": "engineering_slice_passes_full_frame_proof_pending",
   "checklist_item": 2,
   "sources": {
-    "src/native_adapter/native_scene.rs": "adac56b1a8a9383397879e3d36de26da5f1add99daf45185fdad80b66c3e3275",
-    "tests/native_frame_transaction.rs": "4fccb6247f55f6e258d05ed3ba0307b4acac1e9a11166b3e912befda65304b3f"
+    "src/native_adapter/native_scene.rs": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
+    "tests/native_frame_transaction.rs": "5b10bad81c67ec1b042eb360a185866057a12ee8f73c4d3cee8b0bb92c349d18"
   },
   "scope": "NativeScene apply_update/apply_patches transactionality: apply the ordered frame atomically to a retained source Scene clone, build a detached native candidate from that terminal source, restore host-visible state, and swap only after both stages succeed.",
   "behavior": {
-    "rejected_source_frame": "No active view assignment occurs.",
-    "rejected_native_candidate": "Source snapshot, active native document, version, focus, viewport scroll, pointer hover/press, frame cache and pixels remain unchanged. As before, entering the scene-update API conservatively marks a possible repaint first, so a rejected call may require one redundant paint but cannot serve a stale frame.",
+    "rejected_source_frame": "No active view assignment occurs and the active view, including its prior clean/dirty frame state, remains unchanged.",
+    "rejected_native_candidate": "Source snapshot, active native document, version, focus, viewport scroll, pointer hover/press, frame cache, dirty state and pixels remain unchanged. A rejected call no longer conservatively dirties an otherwise clean frame.",
     "accepted_frame": "One candidate document becomes active; focus, grouped scroll, hover, native press identity and prior frame/damage cache are restored; scene version equals the exact admitted successor.",
     "semantic_tag_change": "A legal Button to non-Button source semantic update is rebuilt with the correct native element instead of rejecting the whole frame."
   },
@@ -17,10 +17,11 @@
       "test": "native_frame_transaction::failed_candidate_build_leaves_the_active_frame_and_source_snapshot_unchanged",
       "result": "passed",
       "checks": [
+        "source-rejected missing-node frame left identity, bounds, every RGBA byte and needs_frame unchanged",
         "zero-font-size native candidate rejected after the source Scene batch accepted",
         "snapshot identity remained at old version/count",
         "focus remained on the same node",
-        "node bounds and every RGBA byte remained equal; the rejected update left the frame conservatively dirty",
+        "node bounds and every RGBA byte remained equal; the rejected update left the frame clean",
         "a later valid frame from the retained old expected version succeeded",
         "accepted frame pixels equal a fresh import of the terminal source"
       ]
@@ -57,11 +58,11 @@
     }
   ],
   "ordered_acceptance": {
-    "Verus+Z3": "pending: the existing admission/version predicates are scoped-proved, but the complete candidate build/commit transaction and restored UI state have no implementation-level theorem",
-    "Proptest": "not yet applied to random valid/invalid ordered frame sequences",
-    "Miri": "native document construction/resolve depends on large pinned third-party crates and is not covered by this report",
-    "cargo-fuzz": "not yet applied to the transaction control path",
-    "Kani": "not yet applied; large BaseDocument/fontique state is outside the available fixed-memory model",
+    "Verus+Z3": "commit gate proved separately: UI-SCENE-FRAME-COMPLETION-001 requires source success, exact successor and candidate readiness; ScenePatch application, candidate construction and restored UI state remain pending",
+    "Proptest": "scene-frame completion gate passed 256 cases; complete random valid/invalid NativeScene frame sequences remain pending",
+    "Miri": "the pure completion gate passed strict provenance; native document construction/resolve depends on large pinned third-party crates and is not covered by this report",
+    "cargo-fuzz": "scene_update target passed 200000 runs for the completion gate; complete NativeScene transaction fuzzing remains pending",
+    "Kani": "scene_frame_completion passed 112 checks; large BaseDocument/fontique state remains outside the available fixed-memory model",
     "Loom": "not applicable to the synchronous single-owner candidate swap itself; host/device concurrency remains external"
   },
   "TCB": [
@@ -77,5 +78,6 @@
     "Native construction uses third-party APIs that may fail or panic; false is returned for observed failure, while third-party panic rollback is not claimed.",
     "Checklist item 2 remains incomplete because the full ordered proof and actual display/window presentation remain open."
   ],
+  "scoped_completion": "evidence/scene-frame-completion-chain/report.json",
   "checklist_item_2_complete": false
 }

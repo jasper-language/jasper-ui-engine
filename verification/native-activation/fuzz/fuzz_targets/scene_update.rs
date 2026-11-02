@@ -7,4 +7,5 @@ fuzz_target!(|data:[u8;42]| {
     jasper_ui_native_activation_verification::check_scene_update(word(0),word(0),word(16),word(16),word(16).wrapping_add(1),count%4097,open);
     jasper_ui_native_activation_verification::check_scene_update_result(word(0),word(8),word(16),word(24),word(32),count,open);
     jasper_ui_native_activation_verification::check_scene_update_result(word(0),word(0),word(16),word(16),word(16).wrapping_add(1),count%4097,open);
+    jasper_ui_native_activation_verification::check_scene_frame_completion(open,word(16),word(24),data[0]&2!=0);
 });

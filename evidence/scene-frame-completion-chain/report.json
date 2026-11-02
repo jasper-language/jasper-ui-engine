@@ -1,0 +1,80 @@
+{
+  "status": "scoped_ordered_acceptance_complete",
+  "property": "UI-SCENE-FRAME-COMPLETION-001 transaction commit gate",
+  "scope": "The actual complete_scene_frame function requires successful source application, an exact successor version and a detached native candidate before apply_patches_result may replace the active view.",
+  "sources": {
+    "src/native_adapter/native_scene.rs": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
+    "tests/native_frame_transaction.rs": "5b10bad81c67ec1b042eb360a185866057a12ee8f73c4d3cee8b0bb92c349d18",
+    "verification/native-activation/build.rs": "c95b982cb5ebdd208decdbe42304cf23623998c08235d83f270f5393bf64a317",
+    "verification/native-activation/src/lib.rs": "28fee14c8495787aea487bd5b0bcd9d653711d7ececac71be0951642391f7b6b",
+    "verification/native-activation/fuzz/fuzz_targets/scene_update.rs": "9d629f65b35f091dd4b762426a68ec249ddacf90d1e0b0c3f61211dd83841c26",
+    "scripts/verify-version.py": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e"
+  },
+  "ordered_stages": [
+    {
+      "stage": "Verus+Z3",
+      "status": "passed",
+      "verified_including_dependencies": 2,
+      "negative_controls_rejected": [
+        "ignore-source-version",
+        "commit-without-candidate"
+      ],
+      "evidence": "../scene-frame-completion-kernel/report.json"
+    },
+    {
+      "stage": "Proptest",
+      "status": "passed",
+      "test": "scene_gate_tests::scene_update",
+      "cases": 256,
+      "seed": 20261102
+    },
+    {
+      "stage": "Miri",
+      "status": "passed",
+      "test": "scene_gate_tests::miri_scene_update_boundaries",
+      "toolchain": "nightly-2026-10-17",
+      "flags": "-Zmiri-strict-provenance"
+    },
+    {
+      "stage": "cargo-fuzz",
+      "status": "passed",
+      "target": "scene_update",
+      "runs": 200000,
+      "seconds": 3,
+      "max_len": 42,
+      "seed": 20261102,
+      "crashes": 0
+    },
+    {
+      "stage": "Kani",
+      "status": "passed",
+      "harness": "scene_gate_proofs::scene_frame_completion",
+      "checks": 112,
+      "failed": 0,
+      "domain": "all source-success bools, all u64 source/successor versions and all candidate-ready bools"
+    },
+    {
+      "stage": "Loom applicability",
+      "status": "not_applicable",
+      "evidence": "loom-applicability.json"
+    }
+  ],
+  "integration": {
+    "native_frame_transaction": "2/2 passed",
+    "native_update_contract": "1/1 passed",
+    "checks": [
+      "foreign-owner rejection preserved identity and clean needs_frame state",
+      "source-rejected missing-node frame preserved identity, bounds, pixels and clean needs_frame state",
+      "native-candidate rejection preserved identity, bounds, pixels and clean needs_frame state",
+      "a later valid update from the retained old expected version succeeded",
+      "accepted candidate pixels equal a fresh import of the terminal source"
+    ]
+  },
+  "decision": "apply_patches_result no longer invalidates the active frame before admission. A rejected admission or candidate now leaves the complete active view, including frame cache and dirty state, unchanged. The candidate is assigned only after the verified completion gate succeeds.",
+  "limits": [
+    "The gate does not prove ScenePatch application, Blitz candidate construction, restore behavior or third-party panic rollback.",
+    "The candidate is rebuilt in full for accepted frames; this is not a performance result.",
+    "Checklist item 2 remains incomplete because full implementation-level candidate/replace and actual display presentation are still pending."
+  ],
+  "checklist_item_2_complete": false
+}

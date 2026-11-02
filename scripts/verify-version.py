@@ -1872,6 +1872,29 @@ KERNELS["scene-update-admission"] = {
     "mutations":[("ignore-scene-owner","if owner!=caller {return Err(SceneUpdateError::OwnerMismatch);}", "if false {return Err(SceneUpdateError::OwnerMismatch);}"),("ignore-next-version","Some(successor) if next==successor=>Ok(())", "Some(_)=>Ok(())")],
 }
 
+KERNELS["scene-frame-completion"] = {
+    "source":"src/native_adapter/native_scene.rs", "marker":"SCENE FRAME COMPLETION",
+    "property":"UI-SCENE-FRAME-COMPLETION-001",
+    "signature":"pub(crate) fn complete_scene_frame(source_ok:bool,source_version:u64,next:u64,candidate_ready:bool)\n    ->Result<(),SceneUpdateError> {",
+    "contract":"""pub(crate) fn complete_scene_frame(source_ok:bool,source_version:u64,next:u64,candidate_ready:bool)
+    ->(result:Result<(),SceneUpdateError>)
+        ensures match result {
+            Err(SceneUpdateError::SourceRejected)=>!source_ok || source_version!=next,
+            Err(SceneUpdateError::NativeRejected)=>source_ok && source_version==next && !candidate_ready,
+            Ok(())=>source_ok && source_version==next && candidate_ready,
+            Err(SceneUpdateError::OwnerMismatch)=>false,
+            Err(SceneUpdateError::Closed)=>false,
+            Err(SceneUpdateError::EmptyFrame)=>false,
+            Err(SceneUpdateError::CapacityExceeded)=>false,
+            Err(SceneUpdateError::StaleVersion {..})=>false,
+            Err(SceneUpdateError::InvalidSuccessor {..})=>false,
+        },
+    {""",
+    "depends":["scene-update-error-type"], "evidence":"scene-frame-completion-kernel", "function_count":1,
+    "scope":"Exact source-success, exact successor version and detached-candidate readiness gate before active replacement; source patch semantics, candidate construction and replacement assignment are excluded.",
+    "mutations":[("ignore-source-version","if !source_ok || source_version!=next {return Err(SceneUpdateError::SourceRejected);}","if !source_ok {return Err(SceneUpdateError::SourceRejected);}"),("commit-without-candidate","if !candidate_ready {return Err(SceneUpdateError::NativeRejected);}","if false {return Err(SceneUpdateError::NativeRejected);}")],
+}
+
 
 KERNELS["source-insert-index"] = {
     "source":"src/native_adapter/native_scene.rs", "marker":"SOURCE INSERT INDEX",

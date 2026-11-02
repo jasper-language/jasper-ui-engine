@@ -866,3 +866,17 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 | 同上 | Loom | 纯同步标量分类器，无线程、锁、原子、任务或共享变更 | 源码适用性审查 | 不适用 |
 
 公共 API 集成测试 `native_component_update_contract` 覆盖归属、空帧、容量、过期序号、视图不支持、合法两项帧、序号精确推进和关闭视图。逐值原生 setter、resolve、回调 panic 回滚及完整组件帧组合不在本次证明范围；第 1 项整体仍未完成。证据：`evidence/component-update-error-contract-chain/report.json`、`evidence/component-update-admission-kernel/report.json`。
+
+
+## 2026-11-02：UI-SCENE-FRAME-COMPLETION-001
+
+| 代码 | 步骤 | 规格 / 范围 | 命令 | 结果 |
+|---|---|---|---|---|
+| `src/native_adapter/native_scene.rs` `complete_scene_frame`；`apply_patches_result` 仅在门成功后赋值 | Verus/Z3 | 来源成功、来源版本精确等于后继、独立候选就绪；拒绝分类精确 | `verify-version.py --kernel scene-frame-completion` | proved：2 verified / 0 errors；忽略来源版本、无候选仍提交两个负控被拒 |
+| 同上 | Proptest | 独立结果模型；任意 bool 与任意 `u64` 来源/后继版本，含强制后继边界 | `cargo test --manifest-path verification/native-activation/Cargo.toml scene_gate_tests::scene_update` | 通过，256 例 |
+| 同上 | Miri | 0/1/`u64::MAX-1`/`u64::MAX` 版本、0/1/4096/4097/`usize::MAX` 计数及开关组合 | `cargo +nightly miri test ... miri_scene_update_boundaries` | 通过（strict provenance） |
+| 同上 | cargo-fuzz | 相同独立模型 | `cargo fuzz run scene_update -runs=200000` | 通过，200000 次，0 crash |
+| 同上 | Kani | 全 bool、全 `u64` 符号输入 | `cargo kani ... scene_frame_completion` | 通过，112 checks / 0 failed |
+| 同上 | Loom | 纯同步标量完成门，无共享并发状态 | 源码适用性审查 | 不适用 |
+
+`native_frame_transaction` 额外验证来源拒绝与原生候选拒绝后，版本、节点数、焦点、几何、全部像素及 `needs_frame` 均保持。ScenePatch 语义、Blitz 构造/恢复和替换赋值本身仍为未证明依赖；第 2 项不勾选。证据：`evidence/scene-frame-completion-chain/report.json`、`evidence/scene-frame-completion-kernel/report.json`。

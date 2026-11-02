@@ -16,7 +16,7 @@ Framework 产生 `native::SceneUpdate { expected_version, next_version, patches 
 
 原生 CPU 入口 `Engine::render_to_backend` 在归属/版本/存活/预算准入后，复用原生绘制并调用既有 `RenderBackend::submit_rgba8`、成功后才调用 `present`。默认后端明确返回 Unsupported；HeadlessBackend 接管已经绘制的像素，不重放 PaintOp。字节按上游输出原样保存，不提供宿主 alpha/合成转换或外部呈现回滚；旧 UiBatch 序列化格式不变。此新增编排与包装尚未完成有序证明验收。
 
-场景整帧更新现采用候选事务：`apply_update` 先在引擎保留的 `Scene` 快照副本上原子应用，再从终态构建独立原生候选；仅当两者都成功才一次替换活动视图。拒绝不会部分修改活动原生树、版本、焦点、视口、滚动或最近帧。成功后恢复焦点、悬停位置、按下节点身份和上一帧损伤基准；合法 Button↔非 Button 语义变化也通过候选重建完成，不再要求原生标签保持不变。完整实现级整帧证明仍待完成。
+场景整帧更新现采用候选事务：`apply_update` 先在引擎保留的 `Scene` 快照副本上原子应用，再从终态构建独立原生候选；仅当来源成功、版本精确成为后继且候选就绪时才一次替换活动视图。拒绝不会修改活动原生树、版本、焦点、视口、滚动、最近帧缓存或脏帧状态。成功后恢复焦点、悬停位置、按下节点身份和上一帧损伤基准；合法 Button↔非 Button 语义变化也通过候选重建完成，不再要求原生标签保持不变。提交条件已有独立限定证明，完整实现级候选构造/替换证明仍待完成。
 
 文字几何（`native-blitz-pending`）：`text_offset_at(owner, version, node, x, y)` 把视图局部逻辑点投影到文字节点自身的布局，返回源文本中最近的 UTF-8 光标偏移（放置光标用，不考虑遮挡）；`text_caret(owner, version, node, offset, width)` 返回该偏移之前的光标矩形，坐标同 `node_bounds`。两者与绘制共用同一份布局；布局文本与源文本不一致（如空白折叠）、非字符边界、过期版本等情形返回 None。`text_selection(owner, version, node, start, end)` 返回源文本 UTF-8 区间 [start, end)（start ≤ end）的逐行选区矩形，同一坐标系与同一布局；空区间返回空列表，反向、非字符边界或越界区间返回 None；只给几何，不绘制选区高亮。
 

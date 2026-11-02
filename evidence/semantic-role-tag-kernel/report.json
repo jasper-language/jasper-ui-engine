@@ -3,9 +3,9 @@
   "status": "proved",
   "scope": "Exact legacy tag-preservation predicate retained for source compatibility; the transactional scene path now rebuilds native elements and no longer consumes this predicate; constructor mapping, maps and whole mutation frame unproved.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "adac56b1a8a9383397879e3d36de26da5f1add99daf45185fdad80b66c3e3275",
+  "source_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
   "sources": {
-    "src/native_adapter/native_scene.rs": "adac56b1a8a9383397879e3d36de26da5f1add99daf45185fdad80b66c3e3275",
+    "src/native_adapter/native_scene.rs": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
     "src/semantics.rs": "a698a75a61554e48a1dfcd2644544d071340037e96df276c58dd331bc1740755"
   },
   "kernel_sha256": "c132d2e1d10b7b34d2524b509751c21b3d8b9133971bfd4b329fb35b6fbac6b2",
@@ -14,7 +14,7 @@
     "native-button-role": "967f42acd9861679ab5451f9270406431a2583aca766d5d609e22cf42260b360"
   },
   "proof_sha256": "b30e0bb75b5f50a79862cecef3c5fa9cd135af3311cb2f7659544f48be589c15",
-  "runner_sha256": "eddbeb6c7d9795cd636c283dd36880d63ccc3f84bd77b17a9220f0448cb0203e",
+  "runner_sha256": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/.local/share/jasper-ui-verification/verus-x86-linux/verus",

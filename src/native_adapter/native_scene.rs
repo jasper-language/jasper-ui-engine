@@ -245,16 +245,17 @@ impl NativeScene {
     /// Structured form of frame admission and candidate construction.
     pub(crate) fn apply_patches_result(&mut self,caller:u64,expected:u64,next:u64,
         patches:&[ScenePatch])->Result<(),SceneUpdateError> {
-        self.invalidate_frame();
         admit_scene_update(self.owner,caller,self.scene_version,expected,next,
             patches.len(),self.document.is_open())?;
         let focused=self.focused_node(caller,expected);
         let mut source=self.source.clone();
-        if source.apply_batch_at(expected,patches).is_err() {return Err(SceneUpdateError::SourceRejected);}
-        if source.version()!=next {return Err(SceneUpdateError::SourceRejected);}
-        let Some(candidate)=self.rebuild_candidate(source,focused) else {
-            return Err(SceneUpdateError::NativeRejected);
-        };
+        let source_ok=source.apply_batch_at(expected,patches).is_ok();
+        let source_version=source.version();
+        let candidate=if source_ok && source_version==next {
+            self.rebuild_candidate(source,focused)
+        } else {None};
+        complete_scene_frame(source_ok,source_version,next,candidate.is_some())?;
+        let Some(candidate)=candidate else {return Err(SceneUpdateError::NativeRejected);};
         *self=candidate;
         Ok(())
     }
@@ -918,6 +919,17 @@ pub(crate) fn accepts_scene_update(owner:u64,caller:u64,current:u64,expected:u64
     admit_scene_update(owner,caller,current,expected,next,count,open).is_ok()
 }
 // END VERIFIED SCENE UPDATE ADMISSION KERNEL
+
+// BEGIN VERIFIED SCENE FRAME COMPLETION KERNEL
+/// Require a successful source frame at the exact successor and a detached native
+/// candidate before the caller may replace the active view.
+pub(crate) fn complete_scene_frame(source_ok:bool,source_version:u64,next:u64,candidate_ready:bool)
+    ->Result<(),SceneUpdateError> {
+    if !source_ok || source_version!=next {return Err(SceneUpdateError::SourceRejected);}
+    if !candidate_ready {return Err(SceneUpdateError::NativeRejected);}
+    Ok(())
+}
+// END VERIFIED SCENE FRAME COMPLETION KERNEL
 
 // BEGIN VERIFIED SCENE WORK CAPACITY KERNEL
 /// Candidate admission count only; not an allocator bound for text, fonts or upstream scratch.

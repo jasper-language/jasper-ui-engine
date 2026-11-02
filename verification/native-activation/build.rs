@@ -21,7 +21,8 @@ fn main() {
     for (path,marker) in [("../../src/native_adapter/native_scene.rs","SCENE UPDATE ERROR TYPE"),
         ("../../src/input_identity.rs","UI UPDATE NEXT"),
         ("../../src/native_adapter/native_scene.rs","SCENE WORK CAPACITY"),
-        ("../../src/native_adapter/native_scene.rs","SCENE UPDATE ADMISSION")] {
+        ("../../src/native_adapter/native_scene.rs","SCENE UPDATE ADMISSION"),
+        ("../../src/native_adapter/native_scene.rs","SCENE FRAME COMPLETION")] {
         let source=root.join(path);println!("cargo:rerun-if-changed={}",source.display());
         let text=fs::read_to_string(source).unwrap();
         let begin=format!("// BEGIN VERIFIED {marker} KERNEL\n");

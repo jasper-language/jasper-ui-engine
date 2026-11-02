@@ -1,0 +1,49 @@
+{
+  "property": "UI-SCENE-FRAME-COMPLETION-001",
+  "status": "proved",
+  "scope": "Exact source-success, exact successor version and detached-candidate readiness gate before active replacement; source patch semantics, candidate construction and replacement assignment are excluded.",
+  "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
+  "source_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
+  "sources": {
+    "src/native_adapter/native_scene.rs": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac"
+  },
+  "kernel_sha256": "00db83b2a2b982d4b7075c93c74abe40b5ce7aa33432c10a2e1744bf240bfbd6",
+  "dependencies": {
+    "scene-update-error-type": "e51ba92d111f3c76e2b9b17418f5f44f30451bf604c57c1f9b2ea378403956cb"
+  },
+  "proof_sha256": "378c9547c817e1a3003fade74f086b915fab6d614083fbd5f5a8970f9d861ca6",
+  "runner_sha256": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e",
+  "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
+  "command": [
+    "<home>/.local/share/jasper-ui-verification/verus-x86-linux/verus",
+    "--crate-type",
+    "lib",
+    "<repo>/evidence/scene-frame-completion-kernel/kernel.rs"
+  ],
+  "exit_code": 0,
+  "solver": {
+    "path": "<home>/.local/share/jasper-ui-verification/verus-x86-linux/z3",
+    "version": "Z3 version 4.16.0 - 64 bit\n",
+    "explicit_override": null
+  },
+  "verified_obligations": 2,
+  "negative_controls": [
+    {
+      "name": "ignore-source-version",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "commit-without-candidate",
+      "rejected": true,
+      "exit_code": 1
+    }
+  ],
+  "negative_control_rejected": true,
+  "trust_boundary": [
+    "Verus/vstd and SMT solver",
+    "Rust/Verus integer, references and slice semantics",
+    "signature annotation/extraction script",
+    "Rust compiler and target execution"
+  ]
+}

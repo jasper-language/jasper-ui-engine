@@ -166,6 +166,15 @@ pub fn check_scene_update_result(owner:u64,caller:u64,current:u64,expected:u64,n
     assert_eq!(actual,model);
     check_scene_update(owner,caller,current,expected,next,count,open);
 }
+/// Exact source-success/version/candidate gate before active replacement.
+pub fn check_scene_frame_completion(source_ok:bool,source_version:u64,next:u64,candidate_ready:bool) {
+    use scene_gate::SceneUpdateError as E;
+    let actual=scene_gate::complete_scene_frame(source_ok,source_version,next,candidate_ready);
+    let model=if !source_ok || source_version!=next {Err(E::SourceRejected)}
+        else if !candidate_ready {Err(E::NativeRejected)}
+        else {Ok(())};
+    assert_eq!(actual,model);
+}
 #[cfg(test)]
 mod scene_gate_tests {
     use super::*;use proptest::prelude::*;
@@ -177,6 +186,8 @@ mod scene_gate_tests {
             check_scene_update(owner,owner,current,current,current.wrapping_add(1),count%4097,open);
             check_scene_update_result(owner,caller,current,expected,next,count,open);
             check_scene_update_result(owner,owner,current,current,current.wrapping_add(1),count%4097,open);
+            check_scene_frame_completion(open,current,next,count!=0);
+            check_scene_frame_completion(true,current,current,count!=0);
         }
     }
     #[test]
@@ -186,6 +197,8 @@ mod scene_gate_tests {
             check_scene_update(10,11,version,version,version.wrapping_add(1),count,open);
             check_scene_update_result(10,10,version,version,version.wrapping_add(1),count,open);
             check_scene_update_result(10,11,version,version,version.wrapping_add(1),count,open);
+            check_scene_frame_completion(open,version,version.wrapping_add(1),count!=0);
+            check_scene_frame_completion(true,version,version,count!=0);
         }}}
     }
 }
@@ -195,6 +208,8 @@ mod scene_gate_proofs {
     fn scene_update() {super::check_scene_update(kani::any(),kani::any(),kani::any(),kani::any(),kani::any(),kani::any(),kani::any());}
     #[kani::proof]
     fn scene_update_result() {super::check_scene_update_result(kani::any(),kani::any(),kani::any(),kani::any(),kani::any(),kani::any(),kani::any());}
+    #[kani::proof]
+    fn scene_frame_completion() {super::check_scene_frame_completion(kani::any(),kani::any(),kani::any(),kani::any());}
 }
 
 mod insert_index {include!(concat!(env!("OUT_DIR"),"/insert_index.rs"));}

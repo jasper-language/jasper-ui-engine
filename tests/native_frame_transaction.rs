@@ -3,7 +3,7 @@
 #![cfg(feature="native-blitz-cpu-pending")]
 use jasper_ui_engine::{engine::Engine,geometry::Edges,scene::{Node,NodeId,Scene,ScenePatch},
     semantics::{Role,Semantics},style::{Color,Length,Style}};
-use jasper_ui_engine::native::SceneUpdate;
+use jasper_ui_engine::native::{SceneUpdate,SceneUpdateError};
 
 const OWNER:u64=17;
 const W:u32=200;
@@ -47,12 +47,24 @@ fn failed_candidate_build_leaves_the_active_frame_and_source_snapshot_unchanged(
     let version=source.version();
     assert!(live.focus(OWNER,version,NodeId(2),&mut |_|{}));
     let before=pixels(&mut live,version);
+    assert_eq!(live.needs_frame(OWNER),Some(false));
     let before_bounds=live.node_bounds(OWNER,version,NodeId(2)).unwrap();
+    let valid=[ScenePatch::UpdateText {id:NodeId(2),text:"changed".into()}];
+    assert_eq!(live.try_apply(OWNER+1,version,version+1,&valid),Err(SceneUpdateError::OwnerMismatch));
+    assert_eq!(live.snapshot_identity(OWNER),Some((version,2)));
+    assert_eq!(live.needs_frame(OWNER),Some(false));
+    assert_eq!(live.try_apply(OWNER,version,version+1,&[ScenePatch::Remove {id:NodeId(99)}]),
+        Err(SceneUpdateError::SourceRejected));
+    assert_eq!(live.snapshot_identity(OWNER),Some((version,2)));
+    assert_eq!(live.needs_frame(OWNER),Some(false));
+    assert_eq!(live.node_bounds(OWNER,version,NodeId(2)),Some(before_bounds));
+    assert_eq!(pixels(&mut live,version),before);
     let mut invalid_style=Style::default().width(Length::Px(80.0)).background(Color::BLUE);
     invalid_style.font_size=0.0;
     let invalid=[ScenePatch::UpdateStyle {id:NodeId(2),style:invalid_style}];
     assert!(!apply(&mut source,&mut live,&invalid));
     assert_eq!(live.snapshot_identity(OWNER),Some((version,2)));
+    assert_eq!(live.needs_frame(OWNER),Some(false));
     assert_eq!(live.focused_node(OWNER,version),Some(NodeId(2)));
     assert_eq!(live.node_bounds(OWNER,version,NodeId(2)),Some(before_bounds));
     assert_eq!(pixels(&mut live,version),before);

@@ -3,9 +3,9 @@
   "status": "proved",
   "scope": "Actual read-only metadata projection after owner/open admission; not correctness of cached node_count or native tree correspondence.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "adac56b1a8a9383397879e3d36de26da5f1add99daf45185fdad80b66c3e3275",
+  "source_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
   "sources": {
-    "src/native_adapter/native_scene.rs": "adac56b1a8a9383397879e3d36de26da5f1add99daf45185fdad80b66c3e3275",
+    "src/native_adapter/native_scene.rs": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
     "src/native_adapter/view_slot.rs": "eb3058520b3dfa250f894bd8419ada7076046bf50d5091c8d7b15fa48e82025c",
     "src/scene.rs": "60a8c71dea8702de950b5a036ef4074732c0bed2865f48dc2015a47271f224c2",
     "src/semantics.rs": "a698a75a61554e48a1dfcd2644544d071340037e96df276c58dd331bc1740755"
@@ -19,7 +19,7 @@
     "native-scene-type": "87eed3476a1cbac905a553ce4e93a4dcbc6bae28f9bdaa577aeeb593584effc6"
   },
   "proof_sha256": "e51f227986f3d8c9db7f6d9a5a3bfa7d6462afbe03763ce727ea8ffccb308f59",
-  "runner_sha256": "40ff191717edb56e95e13a43693de330faedc1ebc6dbaee280f56e6974ddab68",
+  "runner_sha256": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/.local/share/jasper-ui-verification/verus-x86-linux/verus",

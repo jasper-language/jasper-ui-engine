@@ -21,13 +21,13 @@
     ]
   },
   "sources": {
-    "src/native_adapter/native_scene.rs": "629ab770cbfa7a272af756a896c1b218bdbd19974518fb5f9cbeb6032bcabb67",
+    "src/native_adapter/native_scene.rs": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
     "src/native_adapter/facade.rs": "614588af1896f6eeeb75ae2afb5fefe0ba6737ffb106f8b0b23ecc25aa43edc7",
-    "verification/native-activation/build.rs": "79dbd12c3683f8c063e5eae305198bfc488d3a0b2bb69de81e84586bae812756",
-    "verification/native-activation/src/lib.rs": "38bba1210c0b062bf216dc3cb9dda73684c84e6c8c54c0552ded3294e0b3a33f",
-    "verification/native-activation/fuzz/fuzz_targets/scene_update.rs": "da32b366c65f9ceaaef5f3dafa1d749edb4ad75369cc6d451a548393b27d1e80",
+    "verification/native-activation/build.rs": "c95b982cb5ebdd208decdbe42304cf23623998c08235d83f270f5393bf64a317",
+    "verification/native-activation/src/lib.rs": "28fee14c8495787aea487bd5b0bcd9d653711d7ececac71be0951642391f7b6b",
+    "verification/native-activation/fuzz/fuzz_targets/scene_update.rs": "9d629f65b35f091dd4b762426a68ec249ddacf90d1e0b0c3f61211dd83841c26",
     "tests/native_update_contract.rs": "d93c37ba11f964b7179729e8c18b421e7ae68c143df5aef704812b354323e9ac",
-    "scripts/verify-version.py": "52c6db7735e9da201f154d002836a17ec087e3d9950f6feb155d627e141140f5"
+    "scripts/verify-version.py": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e"
   },
   "ordered_stages": [
     {
@@ -92,6 +92,15 @@
       "closed view",
       "every rejection left version and node count unchanged"
     ]
+  },
+  "current_source_reruns": {
+    "scene update admission Verus": "5 verified / 0 errors; both negative controls rejected",
+    "scene gate Proptest": "scene_gate_tests::scene_update passed with 256 configured cases",
+    "scene gate Miri": "miri_scene_update_boundaries passed with strict provenance",
+    "scene update fuzz": "scene_update completed 200000 runs in 3 seconds with 0 crashes",
+    "scene update result Kani": "scene_gate_proofs::scene_update_result passed 148 checks with 0 failures",
+    "scene frame completion Kani": "scene_gate_proofs::scene_frame_completion passed 112 checks with 0 failures",
+    "public scene update contract": "native_update_contract 1/1 passed with the injected DejaVu Sans font"
   },
   "limits": [
     "This does not prove Scene::apply_batch_at, Blitz candidate construction, full-frame rollback of third-party panic, or the whole apply_update transaction.",

@@ -41,6 +41,7 @@
       "working_evidence": [
         "canonical native engine::Engine and explicit LegacyEngine separation",
         "candidate whole-frame transaction leaves the active view unchanged on source/candidate rejection",
+        "rejected frames now preserve the active frame cache and clean/dirty scheduling state as well as tree/version/focus/scroll state",
         "legal native tag changes and focus/scroll/hover/press/damage state restoration",
         "CPU render through Blitz/Vello and RenderBackend/HeadlessBackend",
         "root CPU, differential, transaction and GPU regression tests"
@@ -128,7 +129,7 @@
       "working_evidence": [
         "proof-correspondence audit is current for all listed extracted kernels",
         "affected proofs were rerun after native struct changes",
-        "downstream verify-ui now includes bold-alias and structured scene/component admission kernels",
+        "downstream verify-ui now includes bold-alias, structured scene/component admission and scene-frame completion kernels",
         "Loom applicability and third-party TCBs are recorded per scoped report"
       ],
       "blocking_gaps": [
@@ -149,6 +150,7 @@
     "bold_alias_chain": "Verus 3/0 + Proptest 256 + Miri + fuzz 200000 + Kani 185 checks, Loom N/A",
     "scene_update_error_chain": "Verus 5/0 + Proptest 256 + Miri + fuzz 200000 + Kani 148 checks, Loom N/A; public API covers all eight variants",
     "component_update_error_chain": "Verus 2/0 + Proptest 256 + Miri + fuzz 200000 + Kani 112 checks, Loom N/A; public API covers all reachable structured variants",
+    "scene_frame_completion_chain": "Verus 2/0 + Proptest 256 + Miri + fuzz 200000 + Kani 112 checks, Loom N/A; rejection now preserves frame dirty/cache state",
     "full_scene": "VM run passed and emitted PPM 320x180, 172815 bytes",
     "proof_mapping": "scripts/test-blitz-proof-mapping.py current=true with all negative controls rejected"
   },

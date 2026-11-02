@@ -327,7 +327,8 @@
     "UI-VIEW-READ-001",
     "UI-VIEW-WRITE-001",
     "UI-UPDATE-NEXT-001",
-    "UI-COMPONENT-UPDATE-ADMISSION-001"
+    "UI-COMPONENT-UPDATE-ADMISSION-001",
+    "UI-SCENE-FRAME-COMPLETION-001"
   ],
   "trust_boundary": [
     "pinned Blitz mutator/style/resolve/layout/selection",
@@ -344,6 +345,7 @@
     "component-update-admission": "evidence/component-update-admission-kernel/report.json",
     "scene-work-capacity": "evidence/scene-work-capacity-chain/report.json",
     "scene-update-admission": "evidence/scene-update-admission-chain/report.json",
+    "scene-frame-completion": "evidence/scene-frame-completion-chain/report.json",
     "source-insert-index": "evidence/source-insert-index-chain/report.json"
   },
   "proof_correspondence_check": "python3 scripts/check-blitz-proof-mapping.py (metadata only; not acceptance)",
@@ -497,13 +499,13 @@
       "evidence": "evidence/blitz-font-order-pending/report.json"
     },
     "src/native_adapter/native_scene.rs": {
-      "source_sha256": "c3a09b7595dd0299a1a6ed55246c8ca70e4f02ca132cc97279d73ec0b8580744",
+      "source_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
       "own_methods": 59,
-      "implementation_proofs_complete": 12,
-      "six_stage_acceptance_complete": 10,
+      "implementation_proofs_complete": 13,
+      "six_stage_acceptance_complete": 11,
       "scope": "Existing Scene/patch native mapping including per-node source scroll; owner-gated semantic metadata; OS bridge and full implementation proof pending",
       "evidence": "evidence/scene-work-capacity-chain/report.json",
-      "complete_scope": "scene_work_fits, accepts_scene_update, source_insert_index, native frame orchestration, native DPI-scale bit admission, native host-surface orchestration and close logical owner/slot retirement only; native tree/focus/mutation methods unaccepted; snapshot_identity stored metadata projection accepted separately; semantic_role_update_preserves_tag predicate accepted separately",
+      "complete_scope": "scene_work_fits, accepts_scene_update, complete_scene_frame, source_insert_index, native frame orchestration, native DPI-scale bit admission, native host-surface orchestration and close logical owner/slot retirement only; native tree/focus/mutation methods unaccepted; snapshot_identity stored metadata projection accepted separately; semantic_role_update_preserves_tag predicate accepted separately",
       "latest_native_diagnostic": "evidence/native-host-surface-orchestration-chain/report.json",
       "ancestry_stage1": "evidence/blitz-ancestry-proof-capability/report.json",
       "ancestry_termination_only": "evidence/blitz-ancestry-bounded-pending/report.json",
@@ -524,6 +526,7 @@
       "semantic_tag_native_diagnostic": "evidence/blitz-semantic-tag-integration-pending/native.log",
       "semantic_tag_ordered_acceptance": "evidence/semantic-role-native-class-chain/report.json",
       "named_additional_scoped_acceptance": {
+        "complete_scene_frame": "source success at the exact successor and detached candidate readiness precede active replacement; rejected calls preserve the frame cache and dirty state; scoped ordered acceptance complete",
         "source_visible": "read-only stored-map bounded walk; scoped ordered acceptance complete",
         "source_hidden_ancestry": "read-only accumulated hiding walk; scoped ordered acceptance complete",
         "admits_native_dpi_scale_bits": "all f32 bit patterns correspond exactly to finite inclusive [1/64,64] admission; scoped ordered acceptance complete",
@@ -533,7 +536,8 @@
       "ancestry_ordered_acceptance_status": "incomplete: SAT memory exhaustion under fixed3G (default/object8), Z3 SMT conversion map::at/status6; all original inputs and checks retained",
       "latest_read_only_map_acceptance": "evidence/native-map-ordered-replay/report.json",
       "native_dpi_scale_ordered_acceptance": "evidence/native-dpi-scale-admission-chain/report.json",
-      "native_host_surface_ordered_acceptance": "evidence/native-host-surface-orchestration-chain/report.json"
+      "native_host_surface_ordered_acceptance": "evidence/native-host-surface-orchestration-chain/report.json",
+      "scene_frame_completion_ordered_acceptance": "evidence/scene-frame-completion-chain/report.json"
     },
     "src/native_adapter/scene_events.rs": {
       "source_sha256": "c004b0dee8cf221e8b32d7b92c49c9e68377fda8fe0ca20317a84ec161a5bffb",

@@ -1,0 +1,5 @@
+{
+  "status": "not_applicable",
+  "scope": "complete_scene_frame is a synchronous pure function over scalar booleans and versions.",
+  "reason": "There are no threads, locks, atomics, queues, allocations, callbacks or shared mutations in the verified function. Host and third-party concurrency remain external."
+}

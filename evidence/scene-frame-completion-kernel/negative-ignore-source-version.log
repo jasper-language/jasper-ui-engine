@@ -1,0 +1,42 @@
+verification results:: 1 verified, 1 errors
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+  --> <repo>/evidence/scene-frame-completion-kernel/negative_ignore_source_version.rs:19:1
+   |
+19 | / pub(crate) fn complete_scene_frame(source_ok:bool,source_version:u64,next:u64,candidate_ready:bool)
+20 | |     ->(result:Result<(),SceneUpdateError>)
+   | |_________________________________________^
+
+error: postcondition not satisfied
+  --> <repo>/evidence/scene-frame-completion-kernel/negative_ignore_source_version.rs:21:17
+   |
+21 |           ensures match result {
+   |  _________________^
+22 | |             Err(SceneUpdateError::SourceRejected)=>!source_ok || source_version!=next,
+23 | |             Err(SceneUpdateError::NativeRejected)=>source_ok && source_version==next && !candidate_ready,
+24 | |             Ok(())=>source_ok && source_version==next && candidate_ready,
+...  |
+30 | |             Err(SceneUpdateError::InvalidSuccessor {..})=>false,
+31 | |         },
+   | |_________^ failed this postcondition
+...
+34 |       if !candidate_ready {return Err(SceneUpdateError::NativeRejected);}
+   |                            -------------------------------------------- at this exit
+
+error: postcondition not satisfied
+  --> <repo>/evidence/scene-frame-completion-kernel/negative_ignore_source_version.rs:21:17
+   |
+21 |           ensures match result {
+   |  _________________^
+22 | |             Err(SceneUpdateError::SourceRejected)=>!source_ok || source_version!=next,
+23 | |             Err(SceneUpdateError::NativeRejected)=>source_ok && source_version==next && !candidate_ready,
+24 | |             Ok(())=>source_ok && source_version==next && candidate_ready,
+...  |
+30 | |             Err(SceneUpdateError::InvalidSuccessor {..})=>false,
+31 | |         },
+   | |_________^ failed this postcondition
+...
+35 |       Ok(())
+   |       ------ at the end of the function body
+
+error: aborting due to 2 previous errors
+

@@ -20,11 +20,11 @@
   "sources": {
     "src/native_adapter/native_view.rs": "cc1820ab15b3a75f1a4edf05978b1a6b4321c68617cc7b71cc5266e395d9a8da",
     "src/native_adapter/facade.rs": "ac54bd10ee888f5d06fdf99bf07a3c97df3facf1f11d9b38405d1c55f1c69f54",
-    "verification/native-activation/build.rs": "b700150989dacf4db2aaa8dc3474eb43849b52f4136dac636b7a9bca8d096ad9",
-    "verification/native-activation/src/lib.rs": "4e57b31e0edb4c094fb3407bdde18a92cb1be3804781a1d735e153c96ef5dbba",
+    "verification/native-activation/build.rs": "c95b982cb5ebdd208decdbe42304cf23623998c08235d83f270f5393bf64a317",
+    "verification/native-activation/src/lib.rs": "28fee14c8495787aea487bd5b0bcd9d653711d7ececac71be0951642391f7b6b",
     "verification/native-activation/fuzz/fuzz_targets/component_support.rs": "03e7ebaa5ee94a762c6484a8442c461cc4400220878adfd6d5e152ca6d5a8f20",
     "tests/native_component_update_contract.rs": "4977624090dd71470ef8a5e09dd84d3dd1882dda3db8cfaf1992a2db178c0d27",
-    "scripts/verify-version.py": "fa6ac67c4f8ef79d41ddb98564271733e96879fe96ae3f1f46f04c997686d551"
+    "scripts/verify-version.py": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e"
   },
   "ordered_stages": [
     {

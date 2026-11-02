@@ -3,10 +3,10 @@
   "status": "proved",
   "scope": "Actual Scene host/native close and exact map/semantic declarations; logical owned slot retirement plus metadata preservation, no map algorithm, rendering, destructor or host cleanup proof.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "469669e92b74041f24f67e25cb90473860626c3cd34abdf2055d41e64f971965",
+  "source_sha256": "ac54bd10ee888f5d06fdf99bf07a3c97df3facf1f11d9b38405d1c55f1c69f54",
   "sources": {
-    "src/native_adapter/facade.rs": "469669e92b74041f24f67e25cb90473860626c3cd34abdf2055d41e64f971965",
-    "src/native_adapter/native_scene.rs": "adac56b1a8a9383397879e3d36de26da5f1add99daf45185fdad80b66c3e3275",
+    "src/native_adapter/facade.rs": "ac54bd10ee888f5d06fdf99bf07a3c97df3facf1f11d9b38405d1c55f1c69f54",
+    "src/native_adapter/native_scene.rs": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
     "src/native_adapter/view_slot.rs": "eb3058520b3dfa250f894bd8419ada7076046bf50d5091c8d7b15fa48e82025c",
     "src/scene.rs": "60a8c71dea8702de950b5a036ef4074732c0bed2865f48dc2015a47271f224c2",
     "src/semantics.rs": "a698a75a61554e48a1dfcd2644544d071340037e96df276c58dd331bc1740755"
@@ -22,7 +22,7 @@
     "scene-host-type": "9634bb42ae8a8552b800da5972671e92cdff78ef11d6b67deb4ee0642856fab4"
   },
   "proof_sha256": "1b841840e3f1b288667a62a93ccd5ecc4fc89116831ca774e285fcc856cb90a5",
-  "runner_sha256": "40ff191717edb56e95e13a43693de330faedc1ebc6dbaee280f56e6974ddab68",
+  "runner_sha256": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/.local/share/jasper-ui-verification/verus-x86-linux/verus",
