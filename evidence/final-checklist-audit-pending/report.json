@@ -1,0 +1,156 @@
+{
+  "date": "2026-11-02",
+  "status": "incomplete_no_checklist_item_fully_complete",
+  "completed_items": 0,
+  "total_items": 6,
+  "commits": [
+    "c562bdc UI21: subtree real-Map backend capability evidence",
+    "83ff1ee UI21: synthetic bold, candidate frame transaction, host GPU target",
+    "db59a6b UI22: full caller path and verification-chain wiring",
+    "5b0885e UI23: rerun affected native proofs and preserve unwind=5 failure"
+  ],
+  "items": {
+    "1_public_contract": {
+      "status": "blocked_incomplete",
+      "working_evidence": [
+        "typed SceneUpdate and public Engine/facade exist",
+        "external CPU/no-CPU callers and backend private-type boundary checks pass",
+        "transaction candidate now rejects atomically at the application view level"
+      ],
+      "blocking_gaps": [
+        "the actual two-entry real BTreeMap source_subtree_contains Kani obligation remains unfinished",
+        "unwind=2 is insufficient; unwind=4/object11 fails assertions; unwind=5 and 8 time out; other available backends OOM or fail conversion",
+        "complete apply_update to apply_patches implementation-level whole-frame proof remains absent",
+        "float specification and general native-map/mutation proofs remain absent"
+      ],
+      "evidence": [
+        "../native-subtree-solver-capability/report.json",
+        "../native-map-ordered-replay/report.json",
+        "../native-subtree-ordered-replay/report.json",
+        "../native-subtree-partition-candidate/report.json",
+        "../blitz-framework-update-contract-pending/report.json"
+      ]
+    },
+    "2_engine_blitz": {
+      "status": "incomplete",
+      "working_evidence": [
+        "canonical native engine::Engine and explicit LegacyEngine separation",
+        "candidate whole-frame transaction leaves the active view unchanged on source/candidate rejection",
+        "legal native tag changes and focus/scroll/hover/press/damage state restoration",
+        "CPU render through Blitz/Vello and RenderBackend/HeadlessBackend",
+        "root CPU, differential, transaction and GPU regression tests"
+      ],
+      "blocking_gaps": [
+        "the transaction candidate build/commit and restored state have no complete six-stage implementation proof",
+        "default Engine still requires an explicit native feature; legacy remains a compile-time fallback choice for existing API users",
+        "actual window/display presentation and all input forwarding remain incomplete",
+        "the selected whole-frame proof depends on the unresolved item 1 obligation"
+      ],
+      "evidence": [
+        "../native-scene-candidate-transaction-pending/report.json",
+        "../native-frame-orchestration-chain/report.json",
+        "../native-backend-frame-chain/report.json",
+        "../native-backend-submission-chain/report.json",
+        "../native-headless-forwarding-chain/report.json"
+      ]
+    },
+    "3_render_host": {
+      "status": "incomplete",
+      "working_evidence": [
+        "host-injected software Surface with stride/padding checks",
+        "DPI bit-domain admission and host viewport mutation",
+        "host-ordered injected font stacks, real faces, bold stand-in and synthetic italic",
+        "host-provided wgpu instance/adapter/device/queue and direct TextureView rendering",
+        "CPU/GPU frames, size changes, damage and software write regressions"
+      ],
+      "blocking_gaps": [
+        "no authorized display endpoint in the restricted VM, so real window Surface acquire/present/vsync/suspend recovery is unobserved",
+        "hardware GPU and device-loss behavior are not verified on the software adapter",
+        "the capability matrix and lifecycle contract still need final cross-host evidence",
+        "host GPU orchestration lacks the requested six-stage implementation proof; wgpu/Vello are explicit TCB"
+      ],
+      "evidence": [
+        "../native-gpu-host-target-pending/report.json",
+        "../native-font-bold-alias-chain/report.json",
+        "../native-dpi-scale-admission-chain/report.json",
+        "../native-host-surface-orchestration-chain/report.json",
+        "../blitz-root-window-migration/report.json"
+      ]
+    },
+    "4_interaction_external_services": {
+      "status": "incomplete",
+      "working_evidence": [
+        "pointer/focus/capture/deactivation/retirement paths and stale/duplicate event controls",
+        "external display snapshots, binding rotation, preedit set/cancel and focus lease closure",
+        "AccessibilityTree/AccessKit conversion and action routing boundary",
+        "the new full_scene caller exercises display update, preedit repaint/cancel and retirement"
+      ],
+      "blocking_gaps": [
+        "no live external editing/input service connection or native IME service in the restricted environment",
+        "no authorized platform accessibility bridge (AT-SPI/UIA/system service) runtime",
+        "all new/modified interaction orchestration lacks the complete ordered proofs",
+        "full composition of late events, rebinding, service cancellation and host capture remains unproved"
+      ],
+      "evidence": [
+        "../full-scene-migration-pending/report.json",
+        "../input-lifecycle-chain/report.json",
+        "../ui-input-binding-chain/report.json",
+        "../ui-composition-chain/report.json",
+        "../validation-chain/report.json"
+      ]
+    },
+    "5_prototype_real_paths": {
+      "status": "incomplete",
+      "working_evidence": [
+        "hello/pointer use root native Engine; legacy pointer is explicit",
+        "full_scene completes declaration, update, CPU render, focus/pointer, external display/IME client and retirement through public APIs",
+        "PPM output captured"
+      ],
+      "blocking_gaps": [
+        "window input is still diagnostic rather than fully forwarded",
+        "the external text/IME path uses an injected authority snapshot, not a live service",
+        "no actual display/GPU/accessibility platform path",
+        "example orchestration six-stage proof and performance baseline remain open"
+      ],
+      "evidence": [
+        "../full-scene-migration-pending/report.json",
+        "../blitz-root-hello-migration/report.json",
+        "../blitz-root-pointer-migration/report.json"
+      ]
+    },
+    "6_final_delivery": {
+      "status": "not_started_as_final_closeout",
+      "working_evidence": [
+        "proof-correspondence audit is current for all listed extracted kernels",
+        "affected proofs were rerun after native struct changes",
+        "downstream verify-ui now includes bold-alias kernel and updated Kani/property counts",
+        "Loom applicability and third-party TCBs are recorded per scoped report"
+      ],
+      "blocking_gaps": [
+        "items 1–5 are not all complete",
+        "real BTreeMap Kani timeout/OOM and float specification gaps remain",
+        "whole native transaction and host GPU orchestration lack ordered acceptance",
+        "full verify-ui chain has not been rerun because its previous complete Kani stage exceeds a single default 180-second workload and the unresolved capture-query obligation remains",
+        "no authorized display/live service/hardware GPU evidence exists"
+      ]
+    }
+  },
+  "verification_highlights": {
+    "default_check": "cargo check --locked --all-targets passed",
+    "native_cpu_check": "cargo check --locked --features native-blitz-cpu-pending --all-targets passed",
+    "native_gpu_check": "cargo check --locked --features native-blitz-cpu-pending,gpu-pending --all-targets passed",
+    "full_cpu_tests": "all unit/integration/doc tests passed with only the unavailable same-family sans-oblique fixture test skipped",
+    "gpu_tests": "native_gpu_host_view 2/2, native_gpu_render 3/3, native_gpu_frame_damage 3/3, GPU font synthesis 2/2 on software wgpu",
+    "bold_alias_chain": "Verus 3/0 + Proptest 256 + Miri + fuzz 200000 + Kani 185 checks, Loom N/A",
+    "full_scene": "VM run passed and emitted PPM 320x180, 172815 bytes",
+    "proof_mapping": "scripts/test-blitz-proof-mapping.py current=true with all negative controls rejected"
+  },
+  "required_next_steps": [
+    "1. Solve the real source_subtree_contains Kani obligation with a changed verifier/backend or a non-shrinking supported decomposition, then rerun the complete item 1 chain.",
+    "2. Formalize the candidate transaction, restored state, whole-frame ordering and apply_update delegation; connect and prove the whole-frame behavior.",
+    "3. Run real window GPU Surface presentation, suspend/resume, DPI, device-loss and capability-matrix acceptance on an authorized display host.",
+    "4. Connect live external text/input and native accessibility hosts and complete the combined interaction lifecycle proofs.",
+    "5. Move the remaining window/input callers and external service path to public APIs, record performance, then rerun the full scenario.",
+    "6. Rerun every ordered chain and the complete verify-ui final audit only after the above blockers close."
+  ]
+}

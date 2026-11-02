@@ -667,3 +667,16 @@ UI19 刻画的反斜体已修正。新增 `src/native_adapter/glyph_skew.rs`：�
 VM 实跑成功，输出 `evidence/full-scene/full_scene.ppm`（P6 320×180，172815 字节，SHA-256 `5d1fdf5388311dbc691619307d606eda1e1f1bb830213a2653203fae6026df3c`）。证据：`evidence/full-scene-migration-pending/report.json`。
 
 这仍不是第 5 项整体完成：外部文本是宿主注入快照而非活服务；winit 窗口仍只记录输入，未把全部输入送入场景/文本客户端；真实显示/GPU present、平台无障碍桥、DPI/暂停恢复、示例编排六阶段和性能基线仍缺。
+
+## 2026-11-02：六项总审计（0/6 完整勾选）
+
+统一审计见 `evidence/final-checklist-audit-pending/report.json`。当前 0 项达到清单完成定义：
+
+- 第 1 项：真实两节点 `BTreeMap` Kani 仍阻塞；`unwind=2` 展开不足、`unwind=4` 明确失败、`unwind=5/8` 超时，其他后端 OOM/转换失败；整帧实现级证明仍缺。
+- 第 2 项：候选整帧事务、标签变化、状态恢复、CPU/后端路径已通过工程回归，但事务六阶段证明、默认入口迁移和真实显示仍未闭合。
+- 第 3 项：字体合成与宿主 GPU TextureView 路径通过，但真实窗口 Surface/present、硬件 GPU/device-loss、能力矩阵与生命周期验收缺失。
+- 第 4 项：同步指针/焦点/捕获、外部显示/组合客户端和 AccessKit 边界已有大量回归，但没有活外部服务、真实平台无障碍桥及完整组合证明。
+- 第 5 项：`full_scene` 已跑通单个 headless 公共 API 全路径，但窗口输入转发、活服务、真实显示、示例六阶段和性能基线仍缺。
+- 第 6 项：前置 1–5 未完成；真实 Map/浮点缺口仍在，不能做最终完成声明。
+
+当前可复核的工程结果：默认、原生 CPU、原生 GPU 全 targets 编译通过；全量 CPU 测试除“无同族 sans oblique 夹具”外通过；GPU 宿主/CPU 对照/损伤/字体测试通过；bold-alias 六阶段限定验收通过；`test-blitz-proof-mapping.py` 当前映射与负控通过。该审计不提升任何清单项为完成。
