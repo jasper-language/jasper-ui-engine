@@ -42,7 +42,7 @@ warning: methods `active_for_owner` and `retire_current` are never used
 
 warning: `jasper-ui-engine` (lib) generated 2 warnings
 warning: `jasper-ui-engine` (lib test) generated 2 warnings (2 duplicates)
-    Finished `dev` profile [unoptimized] target(s) in 0.22s
+    Finished `dev` profile [unoptimized] target(s) in 0.10s
 
 $ cargo check --locked --features native-engine-cpu --all-targets
 warning: field `families` is never read
@@ -191,7 +191,7 @@ warning: method `host_scale` is never used
      |                   ^^^^^^^^^^
 
 warning: `jasper-ui-engine` (lib test) generated 5 warnings (4 duplicates)
-    Finished `dev` profile [unoptimized] target(s) in 0.27s
+    Finished `dev` profile [unoptimized] target(s) in 0.11s
 
 $ cargo check --locked --features native-engine-cpu\,gpu-pending --all-targets
 warning: field `families` is never read
@@ -340,7 +340,7 @@ warning: method `host_scale` is never used
      |                   ^^^^^^^^^^
 
 warning: `jasper-ui-engine` (lib test) generated 5 warnings (4 duplicates)
-    Finished `dev` profile [unoptimized] target(s) in 0.34s
+    Finished `dev` profile [unoptimized] target(s) in 0.29s
 
 $ cargo test --locked
 warning: function `submit_native_frame` is never used
@@ -365,126 +365,126 @@ warning: methods `active_for_owner` and `retire_current` are never used
 
 warning: `jasper-ui-engine` (lib) generated 2 warnings
 warning: `jasper-ui-engine` (lib test) generated 2 warnings (2 duplicates)
-    Finished `test` profile [unoptimized] target(s) in 0.13s
+    Finished `test` profile [unoptimized] target(s) in 0.15s
      Running unittests src/lib.rs (target/debug/build/jasper-ui-engine/b9e5f05b592fb29a/out/jasper_ui_engine-b9e5f05b592fb29a)
 
 running 118 tests
 test backend::tests::text_is_explicitly_unsupported ... ok
 test backend::tests::clears_and_fills ... ok
 test batch::tests::bounded_payload_distinguishes_prefix_limit_and_payload_failures ... ok
-test batch::tests::byte_reads_preserve_all_possible_values ... ok
-test batch::tests::every_incomplete_text_batch_prefix_is_rejected ... ok
 test batch::tests::bounded_payload_returns_exact_bytes_and_keeps_following_data ... ok
-test batch::tests::failed_reads_preserve_cursor_and_success_advances_exactly ... ok
-test batch::tests::header_cannot_reserve_more_ops_than_payload_tag_bytes ... ok
-test batch::tests::header_validation_preserves_error_precedence ... ok
+test batch::tests::every_incomplete_text_batch_prefix_is_rejected ... ok
+test batch::tests::byte_reads_preserve_all_possible_values ... ok
 test batch::tests::rejects_bad_magic_and_truncation ... ok
+test batch::tests::header_validation_preserves_error_precedence ... ok
+test batch::tests::header_cannot_reserve_more_ops_than_payload_tag_bytes ... ok
 test batch::tests::round_trips_all_ops ... ok
-test batch::tests::short_integer_read_preserves_position_and_can_be_followed_by_byte_reads ... ok
-test batch::tests::strings_keep_existing_utf8_and_length_error_states ... ok
-test batch::tests::valid_header_does_not_claim_payload_is_valid ... ok
+test batch::tests::scalar_reads_match_native_endian_conversion_for_each_byte_lane ... ok
+test batch::tests::failed_reads_preserve_cursor_and_success_advances_exactly ... ok
 test canvas::tests::hit_regions_use_local_coordinates_and_last_wins ... ok
+test batch::tests::valid_header_does_not_claim_payload_is_valid ... ok
+test batch::tests::strings_keep_existing_utf8_and_length_error_states ... ok
+test batch::tests::short_integer_read_preserves_position_and_can_be_followed_by_byte_reads ... ok
 test geometry::tests::contains_and_intersects ... ok
-test canvas::tests::records_and_offsets_commands ... ok
 test geometry::tests::inset_respects_edges ... ok
-test gesture::tests::ignores_palm_sized_touch ... ok
-test gesture::tests::double_tap_requires_time_and_distance ... ok
-test gesture::tests::left_click_remains_a_tap ... ok
+test canvas::tests::records_and_offsets_commands ... ok
 test gesture::tests::palm_does_not_begin_pinch ... ok
-test gesture::tests::palm_growth_cancels_active_pan ... ok
+test gesture::tests::left_click_remains_a_tap ... ok
+test gesture::tests::cancel_emits_cancelled ... ok
 test gesture::tests::palm_rejection_can_be_disabled ... ok
+test gesture::tests::double_tap_requires_time_and_distance ... ok
 test gesture::tests::pan_breaks_a_double_tap_sequence ... ok
-test gesture::tests::recognizes_double_tap_across_pointer_ids ... ok
-test gesture::tests::recognizes_long_press_and_suppresses_tap ... ok
 test gesture::tests::recognizes_pan ... ok
+test gesture::tests::recognizes_pinch ... ok
+test gesture::tests::palm_growth_cancels_active_pan ... ok
+test gesture::tests::recognizes_double_tap_across_pointer_ids ... ok
 test gesture::tests::recognizes_tap ... ok
 test gesture::tests::right_click_is_a_secondary_tap_not_a_tap ... ok
-test batch::tests::scalar_reads_match_native_endian_conversion_for_each_byte_lane ... ok
-test graphics::tests::auto_prefers_discrete_and_integrated_prefers_integrated ... ok
 test gesture::tests::secondary_click_breaks_a_double_tap_sequence ... ok
-test graphics::tests::software_can_be_forced_or_forbidden ... ok
-test gesture::tests::recognizes_pinch ... ok
-test gesture::tests::cancel_emits_cancelled ... ok
-test hit_test::tests::clipped_node_outside_clip_is_not_hit ... ok
-test graphics::tests::preference_round_trips_through_settings_text ... ok
+test gesture::tests::recognizes_long_press_and_suppresses_tap ... ok
+test graphics::tests::auto_prefers_discrete_and_integrated_prefers_integrated ... ok
+test gesture::tests::ignores_palm_sized_touch ... ok
+test batch::tests::u16_decoding_matches_native_conversion_for_entire_domain ... ok
 test graphics::tests::named_adapter_matches_case_insensitively_with_fallback ... ok
-test hit_test::tests::picks_topmost_and_builds_path ... ok
 test hit_test::tests::transparent_container_does_not_swallow_children ... ok
+test graphics::tests::preference_round_trips_through_settings_text ... ok
 test host_capabilities::tests::capabilities_never_claim_the_system_host_or_hardware_gpu ... ok
+test graphics::tests::software_can_be_forced_or_forbidden ... ok
+test hit_test::tests::clipped_node_outside_clip_is_not_hit ... ok
+test hit_test::tests::picks_topmost_and_builds_path ... ok
+test input::tests::rejects_duplicate_down_and_unknown_up ... ok
 test input::tests::tracks_multiple_touches_and_pen_axes ... ok
 test keyboard::tests::command_modifiers_and_key_up_are_left_to_the_host ... ok
-test input::tests::rejects_duplicate_down_and_unknown_up ... ok
 test keyboard::tests::enter_activates_focused_button ... ok
 test keyboard::tests::escape_is_a_dismiss_intent ... ok
-test keyboard::tests::focus_survives_refresh_when_still_focusable ... ok
-test keyboard::tests::host_retirement_closes_gate_and_extracts_focus_once ... ok
 test keyboard::tests::routes_text_and_composition_to_a_focused_text_field ... ok
 test keyboard::tests::tab_moves_focus_and_shift_tab_moves_back ... ok
-test keyboard::tests::take_focus_returns_target_once_and_keeps_navigation_usable ... ok
 test keyboard::tests::text_is_not_consumed_by_non_editable_targets_or_empty_input ... ok
+test keyboard::tests::take_focus_returns_target_once_and_keeps_navigation_usable ... ok
 test keyboard::tests::space_activates_checkbox_but_not_text_field ... ok
-test paint::tests::paints_background_border_and_text ... ok
-test paint::tests::emits_clip_for_clipped_nodes ... ok
+test keyboard::tests::host_retirement_closes_gate_and_extracts_focus_once ... ok
+test keyboard::tests::focus_survives_refresh_when_still_focusable ... ok
 test layout::tests::overflow_hidden_clips_and_scrolls_children ... ok
 test layout::tests::column_layout_uses_gap_and_padding ... ok
-test layout::tests::text_measure_participates_in_layout ... ok
-test batch::tests::u16_decoding_matches_native_conversion_for_entire_domain ... ok
 test layout::tests::rejects_direct_root_edits_with_duplicate_ids_before_measuring_text ... ok
-test platform::tests::records_redraw_and_cursor ... ok
-test pointer::tests::host_retirement_returns_hover_leave_once ... ok
-test pointer::tests::down_move_up_keep_capture ... ok
-test pointer::tests::hover_is_not_captured ... ok
+test paint::tests::emits_clip_for_clipped_nodes ... ok
+test layout::tests::text_measure_participates_in_layout ... ok
 test pointer::tests::captured_target_retains_original_owner_until_cancel ... ok
-test pointer::tests::hover_tracker_emits_changes_only_on_target_switch ... ok
-test raster::tests::draws_lines_with_clipping ... ok
+test paint::tests::paints_background_border_and_text ... ok
 test paint::tests::paints_canvas_commands_in_content_coordinates ... ok
-test raster::tests::alpha_blends_over_background ... ok
+test platform::tests::records_redraw_and_cursor ... ok
+test pointer::tests::down_move_up_keep_capture ... ok
+test pointer::tests::host_retirement_returns_hover_leave_once ... ok
+test pointer::tests::hover_is_not_captured ... ok
+test pointer::tests::hover_tracker_emits_changes_only_on_target_switch ... ok
 test pointer::tests::multi_touch_captures_are_independent ... ok
+test raster::tests::alpha_blends_over_background ... ok
+test raster::tests::draws_lines_with_clipping ... ok
 test raster::tests::fills_and_clips_rects ... ok
 test scene::semantic_patch_tests::semantic_frame_is_versioned_and_rejected_batch_preserves_previous_state ... ok
 test scene::tests::applies_incremental_patches ... ok
 test scene::tests::batch_is_atomic ... ok
-test scene::tests::checked_construction_and_legacy_updates_reject_duplicate_descendants ... ok
 test scene::tests::descendant_collision_rolls_back_all_staged_changes ... ok
-test scene::tests::rejects_duplicate_and_root_removal ... ok
 test scene::tests::duplicate_ids_inside_new_subtree_are_rejected ... ok
+test scene::tests::checked_construction_and_legacy_updates_reject_duplicate_descendants ... ok
+test scene::tests::rejects_duplicate_and_root_removal ... ok
 test scene::tests::remove_then_reinsert_and_update_descendant_uses_staged_state ... ok
 test scene::tests::set_canvas_updates_canvas_nodes_only ... ok
-test scene::tests::set_scroll_is_versioned_patch ... ok
 test scene::tests::stale_batch_is_rejected ... ok
 test scene::tests::version_advances_only_on_success ... ok
 test scene::tests::version_exhaustion_rejects_updates_without_changing_scene ... ok
+test scroll::tests::fling_stops_when_velocity_falls_below_threshold ... ok
 test scroll::tests::slow_fling_is_rejected_and_wheel_cancels_an_active_fling ... ok
-test scroll::tests::resolves_content_extent_and_max_offset ... ok
 test scroll::tests::transparent_scroll_container_is_part_of_the_chain ... ok
 test scroll::tests::wheel_at_origin_cannot_scroll_up ... ok
-test scroll::tests::fling_stops_when_velocity_falls_below_threshold ... ok
+test scroll::tests::resolves_content_extent_and_max_offset ... ok
+test scene::tests::set_scroll_is_versioned_patch ... ok
 test scroll::tests::wheel_cancels_fling_even_when_already_at_the_edge ... ok
-test scroll::tests::wheel_residual_is_clamped_by_the_outer_container ... ok
-test scroll::tests::fling_decays_and_stops_at_the_bottom_edge ... ok
-test scroll::tests::wheel_scrolls_and_clamps_to_bounds ... ok
 test scroll::tests::wheel_chains_to_the_outer_scroll_container ... ok
-test scrollbar::tests::drag_preserves_the_cross_axis_offset ... ok
+test scroll::tests::fling_decays_and_stops_at_the_bottom_edge ... ok
+test scroll::tests::wheel_residual_is_clamped_by_the_outer_container ... ok
 test scrollbar::tests::both_axes_are_reported_when_content_overflows_both ... ok
+test scroll::tests::wheel_scrolls_and_clamps_to_bounds ... ok
+test scroll::tests::wheel_splits_residual_delta_across_the_chain ... ok
+test scrollbar::tests::drag_preserves_the_cross_axis_offset ... ok
 test scrollbar::tests::horizontal_track_and_thumb_are_derived_separately ... ok
 test scrollbar::tests::fitting_or_non_scroll_containers_have_no_bars ... ok
 test scrollbar::tests::painting_emits_track_then_thumb ... ok
-test scroll::tests::wheel_splits_residual_delta_across_the_chain ... ok
 test scrollbar::tests::thumb_hit_and_drag_map_pointer_to_offset ... ok
 test scrollbar::tests::tiny_ratio_respects_min_thumb ... ok
 test scrollbar::tests::vertical_track_and_thumb_follow_offset ... ok
 test scrollbar::tests::zero_thickness_produces_no_bar ... ok
 test scrollbar::tests::painting_wraps_bars_in_the_ancestor_clip ... ok
-test semantics::tests::infers_text_label_and_excludes_disabled ... ok
 test style::tests::resolves_lengths ... ok
-test semantics::tests::tab_and_shift_tab_cycle ... ok
+test semantics::tests::infers_text_label_and_excludes_disabled ... ok
 test style::tests::blends_alpha ... ok
 test surface_lifecycle::tests::foreign_callbacks_do_not_change_state ... ok
+test surface_lifecycle::tests::transition_generations_invalidate_old_host_resources ... ok
+test semantics::tests::tab_and_shift_tab_cycle ... ok
 test text::tests::combining_marks_do_not_add_advance ... ok
 test text::tests::measures_empty_lines_and_crlf ... ok
-test text::tests::wraps_at_max_width ... ok
-test surface_lifecycle::tests::transition_generations_invalidate_old_host_resources ... ok
 test text::tests::measures_latin_and_cjk ... ok
+test text::tests::wraps_at_max_width ... ok
 test text::tests::wraps_cjk_at_full_width_glyph_boundaries ... ok
 test surface_lifecycle::tests::successful_cycles_stay_active_and_monotone ... ok
 
@@ -505,7 +505,7 @@ test hostile_counts_reject ... ok
 test tag_only_batches_roundtrip ... ok
 test arbitrary_bytes_are_total ... ok
 
-test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.21s
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
 
      Running tests/bytes_slot.rs (target/debug/build/jasper-ui-engine/7785ef0693fe596d/out/bytes_slot-7785ef0693fe596d)
 
@@ -518,8 +518,8 @@ test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
      Running tests/canvas_import.rs (target/debug/build/jasper-ui-engine/e26b920c51652275/out/canvas_import-e26b920c51652275)
 
 running 2 tests
-test rejected_import_returns_original_owned_buffer ... ok
 test imported_buffer_reaches_software_rendering ... ok
+test rejected_import_returns_original_owned_buffer ... ok
 
 test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
@@ -533,25 +533,25 @@ test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
      Running tests/input_admission.rs (target/debug/build/jasper-ui-engine/0145d06f99d97575/out/input_admission-0145d06f99d97575)
 
 running 8 tests
+test binding_rotation_rejects_old_revision_and_keeps_old_binding_on_denial ... ok
 test composition_replacement_range_is_current_document_utf8_boundary ... ok
 test composition_view_rejects_late_updates_and_old_cancellation_with_same_focus_owner ... ok
 test coordinated_focus_transfer_preserves_both_objects_on_rejection ... ok
-test initial_focus_transfer_close_reopen_keeps_old_owner_qualified ... ok
-test binding_rotation_rejects_old_revision_and_keeps_old_binding_on_denial ... ok
+test preedit_cursor_is_local_and_none_remains_absent ... ok
 test normalized_entrances_reject_closed_or_stale_binding ... ok
 test real_keyboard_focus_filters_payload_then_retires_binding ... ok
-test preedit_cursor_is_local_and_none_remains_absent ... ok
+test initial_focus_transfer_close_reopen_keeps_old_owner_qualified ... ok
 
 test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
      Running tests/layout_consistency.rs (target/debug/build/jasper-ui-engine/7ca43d73fa294c0a/out/layout_consistency-7ca43d73fa294c0a)
 
 running 5 tests
-test center_alignment_places_a_fixed_child_in_the_middle ... ok
 test flex_grow_consumes_free_space_without_moving_the_next_sibling ... ok
-test min_and_max_constraints_clamp_percentage_sizes ... ok
-test percentage_sizes_resolve_against_the_content_box ... ok
 test padding_and_gap_are_applied_in_row_order ... ok
+test center_alignment_places_a_fixed_child_in_the_middle ... ok
+test percentage_sizes_resolve_against_the_content_box ... ok
+test min_and_max_constraints_clamp_percentage_sizes ... ok
 
 test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
@@ -773,141 +773,142 @@ warning: method `host_scale` is never used
      |                   ^^^^^^^^^^
 
 warning: `jasper-ui-engine` (lib test) generated 5 warnings
-    Finished `test` profile [unoptimized] target(s) in 0.20s
+    Finished `test` profile [unoptimized] target(s) in 0.30s
      Running unittests src/lib.rs (target/debug/build/jasper-ui-engine/f4ca83db0a88e4d9/out/jasper_ui_engine-f4ca83db0a88e4d9)
 
 running 179 tests
-test batch::tests::failed_reads_preserve_cursor_and_success_advances_exactly ... ok
 test batch::tests::bounded_payload_distinguishes_prefix_limit_and_payload_failures ... ok
 test batch::tests::bounded_payload_returns_exact_bytes_and_keeps_following_data ... ok
-test batch::tests::rejects_bad_magic_and_truncation ... ok
-test batch::tests::scalar_reads_match_native_endian_conversion_for_each_byte_lane ... ok
-test batch::tests::short_integer_read_preserves_position_and_can_be_followed_by_byte_reads ... ok
 test backend::tests::text_is_explicitly_unsupported ... ok
+test batch::tests::byte_reads_preserve_all_possible_values ... ok
 test backend::tests::clears_and_fills ... ok
 test batch::tests::header_cannot_reserve_more_ops_than_payload_tag_bytes ... ok
 test batch::tests::every_incomplete_text_batch_prefix_is_rejected ... ok
+test batch::tests::scalar_reads_match_native_endian_conversion_for_each_byte_lane ... ok
+test batch::tests::failed_reads_preserve_cursor_and_success_advances_exactly ... ok
 test batch::tests::header_validation_preserves_error_precedence ... ok
 test batch::tests::round_trips_all_ops ... ok
-test batch::tests::strings_keep_existing_utf8_and_length_error_states ... ok
 test batch::tests::valid_header_does_not_claim_payload_is_valid ... ok
-test batch::tests::byte_reads_preserve_all_possible_values ... ok
-test canvas::tests::hit_regions_use_local_coordinates_and_last_wins ... ok
+test batch::tests::rejects_bad_magic_and_truncation ... ok
+test geometry::tests::contains_and_intersects ... ok
 test geometry::tests::inset_respects_edges ... ok
 test gesture::tests::cancel_emits_cancelled ... ok
-test gesture::tests::double_tap_requires_time_and_distance ... ok
 test gesture::tests::ignores_palm_sized_touch ... ok
-test gesture::tests::palm_does_not_begin_pinch ... ok
 test canvas::tests::records_and_offsets_commands ... ok
-test gesture::tests::palm_growth_cancels_active_pan ... ok
+test gesture::tests::double_tap_requires_time_and_distance ... ok
+test batch::tests::short_integer_read_preserves_position_and_can_be_followed_by_byte_reads ... ok
 test gesture::tests::left_click_remains_a_tap ... ok
-test gesture::tests::palm_rejection_can_be_disabled ... ok
-test geometry::tests::contains_and_intersects ... ok
+test gesture::tests::palm_does_not_begin_pinch ... ok
 test gesture::tests::pan_breaks_a_double_tap_sequence ... ok
-test gesture::tests::recognizes_double_tap_across_pointer_ids ... ok
+test gesture::tests::palm_growth_cancels_active_pan ... ok
+test canvas::tests::hit_regions_use_local_coordinates_and_last_wins ... ok
+test batch::tests::strings_keep_existing_utf8_and_length_error_states ... ok
+test gesture::tests::palm_rejection_can_be_disabled ... ok
 test gesture::tests::recognizes_long_press_and_suppresses_tap ... ok
-test gesture::tests::recognizes_pinch ... ok
 test gesture::tests::recognizes_pan ... ok
 test gesture::tests::recognizes_tap ... ok
+test gesture::tests::recognizes_pinch ... ok
 test gesture::tests::right_click_is_a_secondary_tap_not_a_tap ... ok
-test batch::tests::u16_decoding_matches_native_conversion_for_entire_domain ... ok
-test gesture::tests::secondary_click_breaks_a_double_tap_sequence ... ok
-test graphics::tests::preference_round_trips_through_settings_text ... ok
-test graphics::tests::software_can_be_forced_or_forbidden ... ok
-test graphics::tests::auto_prefers_discrete_and_integrated_prefers_integrated ... ok
 test glyph_skew::tests::pure_skew_is_mirrored_and_others_pass_through ... ok
-test graphics::tests::named_adapter_matches_case_insensitively_with_fallback ... ok
-test hit_test::tests::clipped_node_outside_clip_is_not_hit ... ok
+test gesture::tests::secondary_click_breaks_a_double_tap_sequence ... ok
+test graphics::tests::auto_prefers_discrete_and_integrated_prefers_integrated ... ok
+test gesture::tests::recognizes_double_tap_across_pointer_ids ... ok
+test graphics::tests::preference_round_trips_through_settings_text ... ok
 test hit_test::tests::picks_topmost_and_builds_path ... ok
-test input::tests::tracks_multiple_touches_and_pen_axes ... ok
-test keyboard::tests::command_modifiers_and_key_up_are_left_to_the_host ... ok
-test keyboard::tests::escape_is_a_dismiss_intent ... ok
-test hit_test::tests::transparent_container_does_not_swallow_children ... ok
-test keyboard::tests::enter_activates_focused_button ... ok
+test hit_test::tests::clipped_node_outside_clip_is_not_hit ... ok
 test host_capabilities::tests::capabilities_never_claim_the_system_host_or_hardware_gpu ... ok
-test keyboard::tests::focus_survives_refresh_when_still_focusable ... ok
-test keyboard::tests::take_focus_returns_target_once_and_keeps_navigation_usable ... ok
-test keyboard::tests::tab_moves_focus_and_shift_tab_moves_back ... ok
+test hit_test::tests::transparent_container_does_not_swallow_children ... ok
 test input::tests::rejects_duplicate_down_and_unknown_up ... ok
-test keyboard::tests::text_is_not_consumed_by_non_editable_targets_or_empty_input ... ok
-test keyboard::tests::routes_text_and_composition_to_a_focused_text_field ... ok
-test layout::tests::rejects_direct_root_edits_with_duplicate_ids_before_measuring_text ... ok
-test native_keys::conversion_tests::command_conversion_preserves_all_metadata_without_text_commit ... ok
+test graphics::tests::software_can_be_forced_or_forbidden ... ok
+test keyboard::tests::command_modifiers_and_key_up_are_left_to_the_host ... ok
+test input::tests::tracks_multiple_touches_and_pen_axes ... ok
+test keyboard::tests::escape_is_a_dismiss_intent ... ok
+test keyboard::tests::enter_activates_focused_button ... ok
 test keyboard::tests::host_retirement_closes_gate_and_extracts_focus_once ... ok
+test keyboard::tests::focus_survives_refresh_when_still_focusable ... ok
 test keyboard::tests::space_activates_checkbox_but_not_text_field ... ok
+test graphics::tests::named_adapter_matches_case_insensitively_with_fallback ... ok
+test keyboard::tests::text_is_not_consumed_by_non_editable_targets_or_empty_input ... ok
+test keyboard::tests::take_focus_returns_target_once_and_keeps_navigation_usable ... ok
+test batch::tests::u16_decoding_matches_native_conversion_for_entire_domain ... ok
+test keyboard::tests::routes_text_and_composition_to_a_focused_text_field ... ok
+test keyboard::tests::tab_moves_focus_and_shift_tab_moves_back ... ok
+test layout::tests::rejects_direct_root_edits_with_duplicate_ids_before_measuring_text ... ok
+test layout::tests::column_layout_uses_gap_and_padding ... ok
 test layout::tests::text_measure_participates_in_layout ... ok
 test layout::tests::overflow_hidden_clips_and_scrolls_children ... ok
-test layout::tests::column_layout_uses_gap_and_padding ... ok
-test native_scene::source_box_sizing_tests::source_declared_size_includes_padding_and_border ... ok
+test native_keys::conversion_tests::command_conversion_preserves_all_metadata_without_text_commit ... ok
 test native_scene::deactivation_hover_tests::deactivation_clears_actual_native_hover_and_press ... ok
+test native_scene::source_box_sizing_tests::source_declared_size_includes_padding_and_border ... ok
 test native_scene::semantic_attribute_update_tests::native_semantic_update_clears_stale_attributes_on_same_element ... ok
 test native_scene::tests::host_semantic_hierarchy_tracks_source_frame_order_and_retirement ... ok
 test native_scene::tests::nested_button_content_keeps_pointer_target_but_activates_button_owner ... ok
-test native_scene::source_root_viewport_tests::auto_source_root_fills_native_logical_viewport ... ok
 test native_scene::tests::pointer_and_style_batch_publish_actual_scene_focus_transitions_once ... ok
+test native_scene::source_root_viewport_tests::auto_source_root_fills_native_logical_viewport ... ok
+test native_scene::tests::native_scene_copies_into_injected_host_stride_without_touching_padding ... ok
 test native_scene::tests::scene_pointer_routes_own_node_identity_and_native_activation ... ok
 test native_scene::tests::scene_retirement_notifies_focus_loss_once_after_owner_version_admission ... ok
-test native_scene::tests::scene_focus_rejects_display_none_and_hidden_ancestors ... ok
-test native_scene::tests::native_scene_copies_into_injected_host_stride_without_touching_padding ... ok
+test native_scene::tests::scene_semantics_preserve_all_fields_without_claiming_os_actions ... ok
 test native_scene::tests::source_ancestry_is_bounded_even_for_cyclic_metadata ... ok
 test native_scene::tests::scene_native_focus_checks_semantics_and_notifies_actual_transitions ... ok
-test native_scene::tests::scene_semantics_preserve_all_fields_without_claiming_os_actions ... ok
-test native_scene::tests::semantic_activation_routes_own_node_without_requiring_keyboard_focus ... ok
+test native_scene::tests::scene_focus_rejects_display_none_and_hidden_ancestors ... ok
 test native_scene::tests::existing_scene_imports_native_tree_and_rejects_unsupported_inputs ... ok
+test native_scene::tests::semantic_activation_routes_own_node_without_requiring_keyboard_focus ... ok
 test native_scene::tests::host_viewport_scroll_changes_pixels_and_rejects_stale_routing ... ok
 test native_scene::tests::visibility_rejects_cyclic_or_incomplete_source_metadata_without_native_focus ... ok
 test native_view::capture_successor_tests::successor_cancel_clears_native_press_without_stale_callback ... ok
-test native_view::tests::actual_dispatch_rejects_sequence_exhaustion ... ok
 test native_scene::tests::source_leaf_removal_preflights_order_and_retires_node_focus_metadata ... ok
+test native_scene::tests::source_patch_batch_updates_same_native_tree_and_preflights_rejection ... ok
 test native_scene::tests::source_scene_clamps_out_of_range_insert_index_to_append ... ok
+test native_view::tests::actual_dispatch_rejects_sequence_exhaustion ... ok
 test native_scene::tests::mixed_source_frame_preflights_new_targets_then_matches_authoritative_scene ... ok
 test native_view::tests::button_enter_activation_requires_admitted_focus_without_ime_or_shortcut ... ok
-test native_scene::tests::scene_consumes_host_physical_extent_dpi_and_zero_surface_lifecycle ... ok
-test native_view::tests::appearance_updates_preserve_active_input_and_display_state ... ok
-test native_view::tests::command_keys_preserve_modifier_combinations_and_locations ... ok
-test native_view::tests::cancelled_preedit_cannot_resurrect_or_clear_successor ... ok
-test native_scene::tests::source_patch_batch_updates_same_native_tree_and_preflights_rejection ... ok
-test native_view::tests::framework_pointer_callbacks_are_typed_and_admission_gated ... ok
-test native_view::tests::focused_command_keys_reach_framework_without_editing_document ... ok
-test native_view::tests::framework_pointer_positions_are_view_local_across_scale_and_scroll ... ok
-test native_view::tests::component_frame_preflights_all_updates_and_advances_one_version ... ok
 test native_scene::tests::source_subtree_removal_cleans_descendant_identity_semantics_and_focus ... ok
+test native_view::tests::command_keys_preserve_modifier_combinations_and_locations ... ok
+test native_scene::tests::scene_consumes_host_physical_extent_dpi_and_zero_surface_lifecycle ... ok
 test native_view::tests::disabling_component_notifies_current_focus_owner_once ... ok
-test native_scene::tests::source_insert_subtree_preserves_order_identity_and_snapshot_pixels ... ok
-test native_view::tests::semantic_activation_requires_current_enabled_button_snapshot ... ok
+test native_view::tests::focused_command_keys_reach_framework_without_editing_document ... ok
+test native_view::tests::component_frame_preflights_all_updates_and_advances_one_version ... ok
+test native_view::tests::framework_pointer_callbacks_are_typed_and_admission_gated ... ok
+test native_view::tests::framework_pointer_positions_are_view_local_across_scale_and_scroll ... ok
 test native_view::tests::own_semantics_export_role_name_disabled_focus_and_authorized_context ... ok
+test native_view::tests::semantic_activation_requires_current_enabled_button_snapshot ... ok
+test native_view::tests::appearance_updates_preserve_active_input_and_display_state ... ok
+test native_view::tests::cancelled_preedit_cannot_resurrect_or_clear_successor ... ok
 test native_view::tests::typed_button_activation_comes_from_blitz_click_and_respects_disabled ... ok
-test native_view::tests::routed_mouse_uses_blitz_and_rejects_foreign_or_closed_view ... ok
+test native_view::tests::typed_button_terminal_up_cannot_reactivate_a_finished_or_cancelled_press ... ok
+test native_view::tests::replacing_focus_binding_clears_previous_preedit_before_new_payload ... ok
+test native_view::tests::update_frame_reports_focus_only_after_successful_whole_frame ... ok
 test native_view::tests::two_native_views_isolate_application_and_close ... ok
 test native_view::tests::snapshot_change_invalidates_old_preedit_and_selection ... ok
-test native_view::tests::replacing_focus_binding_clears_previous_preedit_before_new_payload ... ok
-test native_view::tests::native_update_frame_matches_sequential_final_pixels ... ok
+test native_view::tests::routed_mouse_uses_blitz_and_rejects_foreign_or_closed_view ... ok
 test paint::tests::emits_clip_for_clipped_nodes ... ok
 test paint::tests::paints_background_border_and_text ... ok
+test native_scene::tests::source_insert_subtree_preserves_order_identity_and_snapshot_pixels ... ok
 test paint::tests::paints_canvas_commands_in_content_coordinates ... ok
+test platform::tests::records_redraw_and_cursor ... ok
 test pointer::tests::captured_target_retains_original_owner_until_cancel ... ok
-test pointer::tests::host_retirement_returns_hover_leave_once ... ok
 test pointer::tests::down_move_up_keep_capture ... ok
+test pointer::tests::host_retirement_returns_hover_leave_once ... ok
 test pointer::tests::hover_is_not_captured ... ok
 test pointer::tests::hover_tracker_emits_changes_only_on_target_switch ... ok
 test pointer::tests::multi_touch_captures_are_independent ... ok
-test platform::tests::records_redraw_and_cursor ... ok
-test native_view::tests::update_frame_reports_focus_only_after_successful_whole_frame ... ok
-test native_view::tests::typed_button_terminal_up_cannot_reactivate_a_finished_or_cancelled_press ... ok
-test pointer_host::tests::capture_cancel_retry_and_stale_release_use_real_native_view ... ok
 test native_view::tests::versioned_disabled_button_rejects_focus_and_command_keys ... ok
-test pointer_host::tests::captured_drag_outside_content_keeps_framework_target ... ok
 test pointer_host::tests::capture_to_framework_callback_and_focus_cancel_are_one_path ... ok
-test pointer_host::tests::down_without_framework_target_cannot_start_a_later_component_drag ... ok
+test pointer_host::tests::capture_cancel_retry_and_stale_release_use_real_native_view ... ok
+test native_view::tests::typed_button_uses_native_element_and_versioned_caption_updates ... ok
+test pointer_host::tests::captured_drag_outside_content_keeps_framework_target ... ok
 test pointer_host::tests::capture_release_delivers_button_activation_once_even_when_release_ack_fails ... ok
+test pointer_host::tests::down_without_framework_target_cannot_start_a_later_component_drag ... ok
+test pointer_host::tests::framework_focus_notifications_survive_capture_release_failure_once ... ok
 test raster::tests::alpha_blends_over_background ... ok
 test raster::tests::draws_lines_with_clipping ... ok
 test raster::tests::fills_and_clips_rects ... ok
 test scene::semantic_patch_tests::semantic_frame_is_versioned_and_rejected_batch_preserves_previous_state ... ok
 test scene::tests::applies_incremental_patches ... ok
 test scene::tests::batch_is_atomic ... ok
-test scene::tests::checked_construction_and_legacy_updates_reject_duplicate_descendants ... ok
 test scene::tests::descendant_collision_rolls_back_all_staged_changes ... ok
+test scene::tests::checked_construction_and_legacy_updates_reject_duplicate_descendants ... ok
 test scene::tests::duplicate_ids_inside_new_subtree_are_rejected ... ok
 test scene::tests::rejects_duplicate_and_root_removal ... ok
 test scene::tests::remove_then_reinsert_and_update_descendant_uses_staged_state ... ok
@@ -916,48 +917,47 @@ test scene::tests::set_scroll_is_versioned_patch ... ok
 test scene::tests::stale_batch_is_rejected ... ok
 test scene::tests::version_advances_only_on_success ... ok
 test scene::tests::version_exhaustion_rejects_updates_without_changing_scene ... ok
-test scroll::tests::fling_decays_and_stops_at_the_bottom_edge ... ok
-test scroll::tests::fling_stops_when_velocity_falls_below_threshold ... ok
-test pointer_host::tests::idle_bridge_cannot_close_another_applications_valid_focus ... ok
-test pointer_host::tests::rejected_view_context_never_requests_host_capture ... ok
-test scroll::tests::slow_fling_is_rejected_and_wheel_cancels_an_active_fling ... ok
-test scroll::tests::transparent_scroll_container_is_part_of_the_chain ... ok
-test scroll::tests::resolves_content_extent_and_max_offset ... ok
-test scroll::tests::wheel_at_origin_cannot_scroll_up ... ok
 test pointer_host::tests::rejected_release_delivery_retains_capture_until_explicit_cancel ... ok
-test scroll::tests::wheel_chains_to_the_outer_scroll_container ... ok
-test pointer_host::tests::framework_focus_notifications_survive_capture_release_failure_once ... ok
+test native_view::tests::native_update_frame_matches_sequential_final_pixels ... ok
+test scroll::tests::fling_decays_and_stops_at_the_bottom_edge ... ok
+test pointer_host::tests::idle_bridge_cannot_close_another_applications_valid_focus ... ok
+test scroll::tests::slow_fling_is_rejected_and_wheel_cancels_an_active_fling ... ok
+test scroll::tests::resolves_content_extent_and_max_offset ... ok
+test scroll::tests::fling_stops_when_velocity_falls_below_threshold ... ok
+test pointer_host::tests::rejected_view_context_never_requests_host_capture ... ok
+test scroll::tests::wheel_at_origin_cannot_scroll_up ... ok
 test scroll::tests::wheel_cancels_fling_even_when_already_at_the_edge ... ok
+test scroll::tests::transparent_scroll_container_is_part_of_the_chain ... ok
 test scroll::tests::wheel_residual_is_clamped_by_the_outer_container ... ok
+test scroll::tests::wheel_scrolls_and_clamps_to_bounds ... ok
+test scroll::tests::wheel_chains_to_the_outer_scroll_container ... ok
 test scroll::tests::wheel_splits_residual_delta_across_the_chain ... ok
 test scrollbar::tests::both_axes_are_reported_when_content_overflows_both ... ok
-test scroll::tests::wheel_scrolls_and_clamps_to_bounds ... ok
 test scrollbar::tests::drag_preserves_the_cross_axis_offset ... ok
-test scrollbar::tests::horizontal_track_and_thumb_are_derived_separately ... ok
-test scrollbar::tests::fitting_or_non_scroll_containers_have_no_bars ... ok
-test scrollbar::tests::painting_wraps_bars_in_the_ancestor_clip ... ok
-test scrollbar::tests::painting_emits_track_then_thumb ... ok
 test scrollbar::tests::thumb_hit_and_drag_map_pointer_to_offset ... ok
+test scrollbar::tests::fitting_or_non_scroll_containers_have_no_bars ... ok
+test scrollbar::tests::painting_emits_track_then_thumb ... ok
+test scrollbar::tests::painting_wraps_bars_in_the_ancestor_clip ... ok
+test scrollbar::tests::horizontal_track_and_thumb_are_derived_separately ... ok
+test semantics::tests::tab_and_shift_tab_cycle ... ok
 test scrollbar::tests::tiny_ratio_respects_min_thumb ... ok
-test semantics::tests::infers_text_label_and_excludes_disabled ... ok
+test style::tests::blends_alpha ... ok
 test scrollbar::tests::zero_thickness_produces_no_bar ... ok
 test scrollbar::tests::vertical_track_and_thumb_follow_offset ... ok
-test style::tests::blends_alpha ... ok
+test semantics::tests::infers_text_label_and_excludes_disabled ... ok
 test style::tests::resolves_lengths ... ok
 test surface_lifecycle::tests::foreign_callbacks_do_not_change_state ... ok
-test semantics::tests::tab_and_shift_tab_cycle ... ok
+test surface_lifecycle::tests::transition_generations_invalidate_old_host_resources ... ok
 test text::tests::combining_marks_do_not_add_advance ... ok
 test text::tests::measures_latin_and_cjk ... ok
 test text::tests::measures_empty_lines_and_crlf ... ok
-test surface_lifecycle::tests::transition_generations_invalidate_old_host_resources ... ok
-test text::tests::wraps_cjk_at_full_width_glyph_boundaries ... ok
-test surface_lifecycle::tests::successful_cycles_stay_active_and_monotone ... ok
 test text::tests::wraps_at_max_width ... ok
-test native_view::tests::typed_button_uses_native_element_and_versioned_caption_updates ... ok
+test text::tests::wraps_cjk_at_full_width_glyph_boundaries ... ok
 test pointer_host::tests::host_retirement_blocks_reopen_and_retries_release_without_touching_other_app ... ok
+test surface_lifecycle::tests::successful_cycles_stay_active_and_monotone ... ok
 test native_view::tests::actual_viewport_scroll_maps_and_restores ... ok
 
-test result: ok. 179 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.09s
+test result: ok. 179 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.20s
 
 
 $ cargo test --locked --features native-engine-cpu\,accesskit-pending --test native_blitz_engine --test native_cpu_acceptance --test native_frame_differential --test native_frame_transaction --test native_update_contract --test native_component_update_contract --test native_item5_journey --test native_interaction_closure --test native_accesskit_bridge
@@ -1097,7 +1097,7 @@ warning: methods `up` and `focus_lost` are never used
     |                     ^^^^^^^^^^
 
 warning: `jasper-ui-engine` (lib) generated 10 warnings
-    Finished `test` profile [unoptimized] target(s) in 0.21s
+    Finished `test` profile [unoptimized] target(s) in 0.16s
      Running tests/native_accesskit_bridge.rs (target/debug/build/jasper-ui-engine/cb08592363ac522c/out/native_accesskit_bridge-cb08592363ac522c)
 
 running 3 tests
@@ -1105,7 +1105,7 @@ test full_tree_converts_semantics_geometry_actions_and_focus ... ok
 test action_requests_reach_focus_and_activate_only_when_offered ... ok
 test incremental_updates_keep_the_consumer_mirror_equal_to_the_newest_tree ... ok
 
-test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
 
      Running tests/native_blitz_engine.rs (target/debug/build/jasper-ui-engine/f154aeea3b120b88/out/native_blitz_engine-f154aeea3b120b88)
 
@@ -1113,14 +1113,14 @@ running 2 tests
 test root_engine_consumes_typed_frame_and_host_surface ... ok
 test native_frame_reaches_existing_backend_without_legacy_paint_replay ... ok
 
-test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
 
      Running tests/native_component_update_contract.rs (target/debug/build/jasper-ui-engine/15b160092e9d41b4/out/native_component_update_contract-15b160092e9d41b4)
 
 running 1 test
 test public_component_update_errors_distinguish_rejection_stages ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
 
      Running tests/native_cpu_acceptance.rs (target/debug/build/jasper-ui-engine/39b80a496f72d303/out/native_cpu_acceptance-39b80a496f72d303)
 
@@ -1130,14 +1130,14 @@ test legacy_layout_difference_table ... ok
 test fills_borders_and_backgrounds_sample_correctly ... ok
 test latin_and_han_text_leave_ink_only_where_glyphs_are ... ok
 
-test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
 
      Running tests/native_frame_differential.rs (target/debug/build/jasper-ui-engine/e3f856703f14cbb4/out/native_frame_differential-e3f856703f14cbb4)
 
 running 1 test
 test ordered_scroll_and_style_frames_match_fresh_source_import ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.30s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s
 
      Running tests/native_frame_transaction.rs (target/debug/build/jasper-ui-engine/5daa22b437c28025/out/native_frame_transaction-5daa22b437c28025)
 
@@ -1145,7 +1145,7 @@ running 2 tests
 test legal_native_tag_change_rebuilds_the_candidate_instead_of_partially_mutating ... ok
 test failed_candidate_build_leaves_the_active_frame_and_source_snapshot_unchanged ... ok
 
-test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
 
      Running tests/native_interaction_closure.rs (target/debug/build/jasper-ui-engine/c5d122b9ca4331b8/out/native_interaction_closure-c5d122b9ca4331b8)
 
@@ -1153,8 +1153,8 @@ running 7 tests
 test retirement_blocks_reopen_and_keeps_failed_cancel_retryable ... ok
 test composition_cancel_is_exact_pending_retry_and_late_payload_is_rejected ... ok
 test capture_retirement_closes_local_view_before_release_retry ... ok
-test focus_loss_closes_focus_before_recovering_capture_and_service_cancel ... ok
 test authoritative_snapshot_advances_once_and_invalidates_old_ticket_and_preedit ... ok
+test focus_loss_closes_focus_before_recovering_capture_and_service_cancel ... ok
 test scene_pointer_and_keyboard_duplicates_do_not_repeat_activation ... ok
 test scene_delete_reports_focus_loss_and_new_target_rebinds_with_fresh_accessibility ... ok
 
@@ -1167,14 +1167,14 @@ test active_native_examples_use_only_the_formal_engine_entry ... ok
 test host_renderer_gates_input_and_presentation_by_surface_generation ... ok
 test visual_switch_keeps_focus_scroll_accessibility_and_rejects_resource_failures ... ok
 
-test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
 
      Running tests/native_update_contract.rs (target/debug/build/jasper-ui-engine/070b0018a0bf1f06/out/native_update_contract-070b0018a0bf1f06)
 
 running 1 test
 test public_update_errors_distinguish_every_admission_and_construction_stage ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.37s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
 
 
 $ cargo test --locked --features native-engine-cpu\,gpu-pending --test native_gpu_host_view --test native_gpu_render --test native_gpu_frame_damage --test native_font_synthesis
@@ -1314,7 +1314,7 @@ warning: methods `up` and `focus_lost` are never used
     |                     ^^^^^^^^^^
 
 warning: `jasper-ui-engine` (lib) generated 10 warnings
-    Finished `test` profile [unoptimized] target(s) in 0.17s
+    Finished `test` profile [unoptimized] target(s) in 0.21s
      Running tests/native_font_synthesis.rs (target/debug/build/jasper-ui-engine/0dace4fd8b5ef702/out/native_font_synthesis-0dace4fd8b5ef702)
 
 running 5 tests
@@ -1325,8 +1325,8 @@ libEGL warning: failed to open /dev/dri/renderD128: Permission denied
 
 libEGL warning: failed to open /dev/dri/card0: Permission denied
 
-test bold_without_a_bold_face_uses_the_registered_standin ... ok
 test synthetic_italic_leans_right_like_an_italic_face ... ok
+test bold_without_a_bold_face_uses_the_registered_standin ... ok
 test gpu_synthetic_italic_leans_right_too ... ok
 libEGL warning: failed to open /dev/dri/renderD128: Permission denied
 
@@ -1336,7 +1336,7 @@ libEGL warning: failed to open /dev/dri/card0: Permission denied
 
 test gpu_regular_only_stack_uses_the_bold_standin_too ... ok
 
-test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.56s
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.67s
 
      Running tests/native_gpu_frame_damage.rs (target/debug/build/jasper-ui-engine/b4b54611154247a5/out/native_gpu_frame_damage-b4b54611154247a5)
 
@@ -1351,7 +1351,7 @@ test gpu_rejection_writes_nothing_and_keeps_the_baseline ... ok
 test gpu_and_cpu_frames_share_one_damage_baseline ... ok
 test gpu_damage_is_exact_and_damaged_writes_touch_only_the_rect ... ok
 
-test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.63s
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.42s
 
      Running tests/native_gpu_host_view.rs (target/debug/build/jasper-ui-engine/b64d52c289daa006/out/native_gpu_host_view-b64d52c289daa006)
 
@@ -1365,7 +1365,7 @@ libEGL warning: failed to open /dev/dri/card0: Permission denied
 test unsupported_host_format_is_explicit_and_fails_closed ... ok
 test host_device_and_texture_are_used_without_engine_device_acquisition ... ok
 
-test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.38s
 
      Running tests/native_gpu_render.rs (target/debug/build/jasper-ui-engine/d2f92fbc107971aa/out/native_gpu_render-d2f92fbc107971aa)
 
@@ -1380,7 +1380,7 @@ test gpu_surface_write_preserves_padding_and_rejects_before_gpu_work ... ok
 test gpu_frame_matches_cpu_frame ... ok
 test gpu_frame_schedules_and_resizes ... ok
 
-test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.72s
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.65s
 
 
 closeout baseline passed

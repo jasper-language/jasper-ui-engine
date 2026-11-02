@@ -1,93 +1,33 @@
 {
   "schema_version": 1,
   "kind": "jasper-ui-closeout-audit",
-  "generated_at": "2026-11-02T19:13:01.127750+00:00",
+  "generated_at": "2026-11-02T19:13:49.462920+00:00",
   "claim": "audit only; no checklist completion or whole-engine acceptance is claimed",
   "git": {
     "branch": "codex/item6-closeout",
-    "commit": "72f491d0d97f0ba4ca3f73d278bed869eade4539",
-    "dirty_paths": [
-      " M scripts/audit-closeout.py",
-      " M scripts/closeout-baseline.sh"
-    ]
+    "commit": "05fcdbe395940ba6fff71ad7c7a7cddfd2b102ad",
+    "dirty_paths": []
   },
   "final_audit": {
     "path": "evidence/final-checklist-audit/report.json",
     "readable": true,
     "error": null,
     "recorded_status": "complete",
-    "recorded_completed_items": 5,
-    "covers_head": false,
-    "basis_commit": "bd84045f540d8136e7d234141c514f4d4261d0c9",
-    "material_changed_since_basis": [
-      "docs/status.md",
-      "examples/gpu_window.rs",
-      "examples/hello.rs",
-      "examples/pointer.rs",
-      "scripts/audit-closeout.py",
-      "scripts/closeout-baseline.sh",
-      "scripts/test-audit-closeout.py",
-      "src/backend.rs",
-      "src/composition_identity.rs",
-      "src/desktop.rs",
-      "src/engine.rs",
-      "src/host_capabilities.rs",
-      "src/input.rs",
-      "src/input_identity.rs",
-      "src/keyboard.rs",
-      "src/legacy_engine.rs",
-      "src/lib.rs",
-      "src/native_adapter/access_kit.rs",
-      "src/native_adapter/access_tree.rs",
-      "src/native_adapter/capture_policy.rs",
-      "src/native_adapter/component_contract.rs",
-      "src/native_adapter/cpu_budget.rs",
-      "src/native_adapter/frame_schedule.rs",
-      "src/native_adapter/glyph_skew.rs",
-      "src/native_adapter/gpu_render.rs",
-      "src/native_adapter/native_events.rs",
-      "src/native_adapter/native_fonts.rs",
-      "src/native_adapter/native_keys.rs",
-      "src/native_adapter/native_scene.rs",
-      "src/native_adapter/native_semantics.rs",
-      "src/native_adapter/native_view.rs",
-      "src/native_adapter/pointer_host.rs",
-      "src/native_adapter/scene_events.rs",
-      "src/native_adapter/text_geometry.rs",
-      "src/native_adapter/update_contract.rs",
-      "src/native_adapter/view_slot.rs",
-      "src/scene.rs",
-      "src/surface_lifecycle.rs",
-      "src/text_parley.rs",
-      "tests/input_admission.rs",
-      "tests/native_accessibility_tree.rs",
-      "tests/native_accessibility_update.rs",
-      "tests/native_accesskit_bridge.rs",
-      "tests/native_blitz_engine.rs",
-      "tests/native_component_update_contract.rs",
-      "tests/native_cpu_acceptance.rs",
-      "tests/native_font_family.rs",
-      "tests/native_font_synthesis.rs",
-      "tests/native_font_weight_style.rs",
-      "tests/native_frame_damage.rs",
-      "tests/native_frame_damage_write.rs",
-      "tests/native_frame_differential.rs",
-      "tests/native_frame_pace.rs",
-      "tests/native_frame_schedule.rs",
-      "tests/native_frame_transaction.rs",
-      "tests/native_gpu_frame_damage.rs",
-      "tests/native_gpu_host_view.rs",
-      "tests/native_gpu_render.rs",
-      "tests/native_host_renderer.rs",
-      "tests/native_text_display_fonts.rs",
-      "tests/native_text_geometry.rs",
-      "tests/native_text_layout.rs",
-      "tests/native_text_selection.rs",
-      "tests/native_update_contract.rs"
-    ],
+    "recorded_completed_items": 6,
+    "covers_head": true,
+    "basis_commit": "68b8605fa6b06505dfda4094aa0e3c085bf1e9c6",
+    "material_changed_since_basis": [],
     "references": [
       {
         "path": "evidence/component-update-error-contract-chain/report.json",
+        "exists": true
+      },
+      {
+        "path": "evidence/final-closeout-audit/baseline.log",
+        "exists": true
+      },
+      {
+        "path": "evidence/final-closeout-audit/report.json",
         "exists": true
       },
       {
@@ -184,7 +124,7 @@
     },
     {
       "path": "evidence/final-checklist-audit/report.json",
-      "sha256": "b31baf4e83d88749ff57157293adefb4016bf69c417479bc276d54f30cbe3636",
+      "sha256": "4ecf362079b33c50e505cb0d43f49cfc7ec6157bca30bf56a9e70cb111512e8a",
       "status": "complete",
       "recorded_sources": 35,
       "stale_or_missing_sources": [],
@@ -194,7 +134,7 @@
         "checklist_item_3_complete": true,
         "checklist_item_4_complete": true,
         "checklist_item_5_complete": true,
-        "checklist_item_6_complete": false
+        "checklist_item_6_complete": true
       }
     },
     {
@@ -207,7 +147,7 @@
     },
     {
       "path": "evidence/final-closeout-audit/report.json",
-      "sha256": "956afe2871cd9da58b68b2b200698d414e7e73b8b45383fb5111c85bcadeb93f",
+      "sha256": "07526137fad05d16c70ff1e31082ef2eabb2af861fc0bd62c7c4454bbe3e9a4e",
       "status": "unspecified",
       "recorded_sources": 0,
       "stale_or_missing_sources": [],
@@ -924,7 +864,7 @@
               "checklist_item_3_complete": true,
               "checklist_item_4_complete": true,
               "checklist_item_5_complete": true,
-              "checklist_item_6_complete": false
+              "checklist_item_6_complete": true
             }
           }
         ],
@@ -1351,7 +1291,7 @@
               "checklist_item_3_complete": true,
               "checklist_item_4_complete": true,
               "checklist_item_5_complete": true,
-              "checklist_item_6_complete": false
+              "checklist_item_6_complete": true
             }
           }
         ],
@@ -1793,7 +1733,7 @@
               "checklist_item_3_complete": true,
               "checklist_item_4_complete": true,
               "checklist_item_5_complete": true,
-              "checklist_item_6_complete": false
+              "checklist_item_6_complete": true
             }
           }
         ],
@@ -2250,7 +2190,7 @@
               "checklist_item_3_complete": true,
               "checklist_item_4_complete": true,
               "checklist_item_5_complete": true,
-              "checklist_item_6_complete": false
+              "checklist_item_6_complete": true
             }
           }
         ],
@@ -2663,7 +2603,7 @@
               "checklist_item_3_complete": true,
               "checklist_item_4_complete": true,
               "checklist_item_5_complete": true,
-              "checklist_item_6_complete": false
+              "checklist_item_6_complete": true
             }
           },
           {
@@ -2977,9 +2917,9 @@
     "items_1_to_5_with_explicit_completion": 5,
     "completion_claimed": false,
     "static_audit_complete": true,
-    "final_report_covers_head": false,
-    "final_report_basis": "bd84045f540d8136e7d234141c514f4d4261d0c9",
-    "material_paths_changed_since_final_report_basis": 64,
+    "final_report_covers_head": true,
+    "final_report_basis": "68b8605fa6b06505dfda4094aa0e3c085bf1e9c6",
+    "material_paths_changed_since_final_report_basis": 0,
     "missing_required_sources": 0,
     "missing_required_evidence": 0,
     "missing_final_report_references": 0,
@@ -2988,8 +2928,8 @@
   },
   "baseline_regression": {
     "status": "passed",
-    "started_at": "2026-11-02T19:12:48.907270+00:00",
-    "finished_at": "2026-11-02T19:13:01.064289+00:00",
+    "started_at": "2026-11-02T19:13:38.674506+00:00",
+    "finished_at": "2026-11-02T19:13:49.399785+00:00",
     "command": [
       "<repo>/scripts/verify-in-vm.sh",
       "env",
@@ -3007,14 +2947,11 @@
     ],
     "returncode": 0,
     "log": "evidence/final-closeout-audit/baseline.log",
-    "log_sha256": "95cb48f3b11f0914893cb8434c772dde64ed6947f7b62c454013b81092ffaccd"
+    "log_sha256": "ae1a15b7786ed17df59dc3f73393eea9f73153e60059b0d0d92958f85c47a6ef"
   },
   "final_gate": {
-    "ready": false,
-    "failures": [
-      "final audit does not cover HEAD",
-      "worktree is dirty"
-    ],
+    "ready": true,
+    "failures": [],
     "note": "Default audits may be incomplete; --require-ready enforces this exact list."
   }
 }
