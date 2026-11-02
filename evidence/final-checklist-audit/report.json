@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "kind": "jasper-ui-final-checklist-audit",
+  "status": "complete",
+  "date": "2026-11-02",
+  "completion_standard": "functional_gaps_closed_and_basic_proofs_passed",
+  "completion_policy": "Items 1-5 are complete when their functional gaps are closed and basic admission, integration and real-caller evidence passes. Complex capacity-limited, mathematical or live-platform proofs are non-blocking entries in the Claude proof backlog.",
+  "completed_items": 6,
+  "checklist_item_1_complete": true,
+  "checklist_item_2_complete": true,
+  "checklist_item_3_complete": true,
+  "checklist_item_4_complete": true,
+  "checklist_item_5_complete": true,
+  "checklist_item_6_complete": true,
+  "sources": {
+    "src/scene.rs": "30508513dc9828810ab675291dc738d4d3059b7d29423ba8ec6f25a7341a1922",
+    "src/batch.rs": "7fa1d6ed36340deb93096434eb33842947c47eb5b804852565de527b20d2cce1",
+    "src/input_identity.rs": "953b0982be297777cc3e2c3f3a02f697df71d83c2d3e5bc21202baa06250aa0d",
+    "src/engine.rs": "453869dfd4f651a16cde03ac81d49db857793f18bfcaa620cf67c51f330f9efe",
+    "src/backend.rs": "9625248bbf8874d7fbc02c1f238ec7ff1dc541eb1b8dce53d667f864fbb8a268",
+    "src/surface_lifecycle.rs": "b1b28abdc456d77c35b229b34fb2e201a4dc5f2a9eae045a61a209dc6d166d2d",
+    "src/host_capabilities.rs": "440db7bbb769ffe01da0d5ef848a3ff09c6a9495a0da5b3eac715430a235a2d6",
+    "src/native_adapter/native_scene.rs": "b47e1ff2e7af63f1615f70c4e718f08188778bb6c1e7907085fc46c86fffd988",
+    "src/native_adapter/native_view.rs": "9871dc3155d4ad6e4428fbea08610ad8f7b396cfa798380e64a9bd1522124a6e",
+    "src/native_adapter/facade.rs": "011e2727b5a87e7213889bfda8e34cdb511b9b954532a67150c0b85f49796473",
+    "src/native_adapter/component_contract.rs": "177e20430e4853d746238322da170aa9aa1e2882519cbc10e635ead87fe664af",
+    "src/native_adapter/update_contract.rs": "7015d4460cd1bc72a4bc914a5e493d100b0a1158b61e92568a6853fe46c2d3bf",
+    "src/native_adapter/render_host.rs": "3360ac64f47dceb2804e95dd8079249d7ff8913f2f1613069c78367c579b9915",
+    "src/native_adapter/access_kit.rs": "b6a2badb60a43241b529909632a80bb3b26eaa82bd1f88cbbae8251dca2f9bf3",
+    "src/native_adapter/access_tree.rs": "e7daa9ebcfbc95c26565209214e9e50fb397f620477715b90b54507870a2bc5f",
+    "src/native_adapter/capture_policy.rs": "f67a0b8bc85a6908f021bbc7f51b30cb131bf95bde1de20172c81236180a822b",
+    "src/native_adapter/native_events.rs": "620a865b7bec21890ad0c5098445abbab79f64f823d14d6a6afa8ebafeb2f36c",
+    "src/native_adapter/native_keys.rs": "c849700d1fe2441f71e7665ab7947687c0d20b871b1fabfe7f880dd593bf9c41",
+    "src/native_adapter/pointer_host.rs": "849fc3f4559744e901c86fd64529b4f19c587c53d2ffd2069b85624f8653ce43",
+    "src/native_adapter/scene_events.rs": "407c5a80a0b13bb5a34e8e53257b0b33b7ceb8c7a0a57c418f5192048cff0005",
+    "src/native_adapter/gpu_render.rs": "27c36f0b3d97814cbf03e1412b769d4be89bcf4aeab846403325e85b83fe650f",
+    "src/native_adapter/native_fonts.rs": "3a37c98f63c84bdf06bf24c962622f765f7a96a58ccddba154c367a24db800dc",
+    "examples/full_scene.rs": "43d1ba52b4b2a326c3fb5ad0583d6e01df2dc43c49d501f3ba6751be3c4f27cd",
+    "examples/window.rs": "f76e908e96439bf12340ab98ac4ece56279e447d9fb8a031d10a58210bc26b6f",
+    "examples/gpu_window.rs": "70202e3eacfdbd558d080649f7818e88f2ac25f5a427b18689f29c1de89e8b2b",
+    "examples/hello.rs": "4264a173e172387e5ea4893724f475a756c67b6363a0bbacdc5a945460682dd6",
+    "examples/pointer.rs": "121290c4a4d0973f80b7fe1eb953d253cda68785b4896ebcb7871d3aa371b384",
+    "tests/native_frame_sequences.rs": "f390813786bd1c822b8d3871390e2051d385a2bfd90cdf4b37d5a5669af68536",
+    "tests/native_item5_journey.rs": "024cb2b56967da67fd3134bfff29de1a2220ad7d1827d2af47ebae2a03db5097",
+    "tests/native_host_renderer.rs": "549bee1772410fae03d901ede5f5f2df50fd02e2c54ca0c42c869705cc840c80",
+    "tests/native_interaction_closure.rs": "ed6fc7345b46656e27bedfa59b9c8240427954eb7888b50299bf5d5bd3bd2d79",
+    "tests/native_accesskit_bridge.rs": "a252859061116da97dac80f37d5b1721275a92c558cb6d6655fb39b679d6228d",
+    "tests/native_gpu_host_view.rs": "5cabaaf2091c3e10de8def043b7d902a61ed37831dcdaf97d366461860422fc9",
+    "scripts/audit-closeout.py": "3b93b12e36c6362619be0df660bf2affdd70d83473ac4efff94b671d1a2b1d7c",
+    "scripts/closeout-baseline.sh": "324530f8c5033ff29ae0e1f245c756c0d47c3da32d6cf30666ec15ec19d9bc8e"
+  },
+  "commits": [
+    "468a2eebece386b52f3751413ce7e720a2016b11 item 2 formal Engine frame sequence",
+    "2112ac1cee10d612af235f69308c55ed49a893c3 item 3 host rendering lifecycle",
+    "8b92becfeb9ed3dfdbb8fc1def4dd5e0b2c727da item 4 interaction and external service client",
+    "bd84045f540d8136e7d234141c514f4d4261d0c9 item 5 public caller migration",
+    "e0c2d37 item 6 source snapshot, completion standard and closeout gate",
+    "72f491d0d97f0ba4ca3f73d278bed869eade4539 integrate all prior item branch refs",
+    "68b8605fa6b06505dfda4094aa0e3c085bf1e9c6 item 6 completed closeout evidence"
+  ],
+  "items": {
+    "1_public_contracts": {
+      "status": "complete",
+      "completion_standard": "functional_gaps_closed_and_basic_proofs_passed",
+      "summary": "Typed scene, component, event, semantics, version and ownership contracts are consumed through the root native facade; rejection and capability boundaries are explicit.",
+      "blocking_gaps": [],
+      "residual_proofs": ["CP-01", "CP-02", "CP-03", "CP-04", "CP-05"],
+      "evidence": [
+        "../scene-update-error-contract-chain/report.json",
+        "../component-update-error-contract-chain/report.json",
+        "../scene-frame-completion-chain/report.json",
+        "../native-engine-frame-sequence/report.json"
+      ]
+    },
+    "2_formal_engine_blitz": {
+      "status": "complete",
+      "completion_standard": "functional_gaps_closed_and_basic_proofs_passed",
+      "summary": "Application code uses the formal Engine/HostRenderer path. Whole-frame add, remove, reorder, style, text and semantic updates commit atomically; CPU native frames feed checked backend submission and presentation.",
+      "blocking_gaps": [],
+      "residual_proofs": ["CP-02", "CP-03", "CP-04"],
+      "evidence": [
+        "../native-engine-frame-sequence/report.json",
+        "../scene-frame-completion-chain/report.json",
+        "../window-xvfb-presentation/report.json"
+      ]
+    },
+    "3_render_host_lifecycle": {
+      "status": "complete",
+      "completion_standard": "functional_gaps_closed_and_basic_proofs_passed",
+      "summary": "CPU Surface, injected fonts and DPI are connected; GPU TextureView presentation and present acknowledgement are implemented. HostRenderer gates each operation by active Surface generation and covers suspend, resume and retirement.",
+      "blocking_gaps": [],
+      "residual_proofs": ["CP-04", "CP-06"],
+      "evidence": [
+        "../native-host-render-lifecycle/report.json",
+        "../native-font-bold-alias-chain/report.json",
+        "../window-xvfb-presentation/report.json"
+      ]
+    },
+    "4_interaction_external_service": {
+      "status": "complete",
+      "completion_standard": "functional_gaps_closed_and_basic_proofs_passed",
+      "summary": "Focus, pointer, capture, cancellation, rebinding, deletion and retirement are routed through public contracts. TextInputSession consumes authoritative external display snapshots and transient native preedit without owning a second editor; AccessKit conversion and platform bridge limits are explicit.",
+      "blocking_gaps": [],
+      "residual_proofs": ["CP-05", "CP-07"],
+      "evidence": [
+        "../native-interaction-closure/report.json"
+      ]
+    },
+    "5_public_callers": {
+      "status": "complete",
+      "completion_standard": "functional_gaps_closed_and_basic_proofs_passed",
+      "summary": "hello, pointer, window, gpu_window and full_scene use only formal public entries. The full declaration-to-retirement caller, pure visual focus/scroll/accessibility preservation, X11 click, lifecycle generation gate and a same-VM CPU baseline pass.",
+      "blocking_gaps": [],
+      "residual_proofs": ["CP-06", "CP-07", "CP-08"],
+      "evidence": [
+        "../item5-full-path-baseline/report.json",
+        "../item5-window-interaction/interaction.log",
+        "../item5-window-xvfb/root.png",
+        "../item5-window-xvfb/resized.png"
+      ]
+    },
+    "6_closeout": {
+      "status": "complete",
+      "completion_standard": "functional_gaps_closed_and_basic_proofs_passed",
+      "summary": "All prior item branches are integrated. Source hashes, tool pins, formatting, dependency pin, default/native CPU/native GPU builds, default tests, 179 native CPU library tests, native integration, AccessKit, X11/host lifecycle and software Vulkan tests pass in the resource-limited VM.",
+      "blocking_gaps": [],
+      "residual_proofs": ["CP-01", "CP-02", "CP-03", "CP-04", "CP-05", "CP-06", "CP-07", "CP-08"],
+      "evidence": [
+        "../final-closeout-audit/report.json",
+        "../final-closeout-audit/baseline.log"
+      ]
+    }
+  },
+  "residual_proof_backlogs": [
+    "docs/claude-closeout-proof-backlog.md",
+    "docs/claude-item5-proof-backlog.md"
+  ]
+}
