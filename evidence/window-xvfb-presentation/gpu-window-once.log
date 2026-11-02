@@ -1,4 +1,4 @@
-Script started on 2026-11-02 18:17:15+01:00 [COMMAND="env JASPER_UI_TEST_FONT=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf WGPU_BACKEND=vulkan xvfb-run -a -s "-screen 0 1280x720x24" cargo run --locked --features desktop,gpu-pending --example gpu_window -- /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf --once" <not executed on terminal>]
+   Compiling jasper-ui-engine v0.1.0 (<repo>)
 warning: multiple associated items are never used
    --> src/native_adapter/native_view.rs:79:19
     |
@@ -147,9 +147,12 @@ warning: methods `up` and `focus_lost` are never used
     |                     ^^^^^^^^^^
 
 warning: `jasper-ui-engine` (lib) generated 12 warnings
-   Compiling jasper-ui-engine v0.1.0 (<repo>)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.67s
-     Running `target/debug/examples/gpu_window /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf --once`
-GPU adapter: ("llvmpipe (LLVM 21.1.8, 256 bits)", "Vulkan")
+    Finished `dev` profile [unoptimized] target(s) in 2.62s
+     Running `experiments/blitz-host/target/debug/examples/gpu_window /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf --once`
+libEGL warning: failed to open /dev/dri/renderD128: Permission denied
 
-Script done on 2026-11-02 18:17:18+01:00 [COMMAND_EXIT_CODE="0"]
+libEGL warning: failed to open /dev/dri/renderD128: Permission denied
+
+libEGL warning: failed to open /dev/dri/card0: Permission denied
+
+GPU adapter: ("llvmpipe (LLVM 21.1.8, 256 bits)", "Vulkan")

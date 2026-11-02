@@ -1,0 +1,45 @@
+warning: methods `active_for_owner` and `retire_current` are never used
+   --> <repo>/experiments/blitz-host/target/miri/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/175bbe056226e485/out/actual.rs:99:19
+    |
+ 63 | impl SurfaceLifecycle {
+    | --------------------- methods in this implementation
+...
+ 99 |     pub(crate) fn active_for_owner(&self, caller: u64) -> bool {
+    |                   ^^^^^^^^^^^^^^^^
+...
+175 |     pub(crate) fn retire_current(&mut self, caller: u64) -> bool {
+    |                   ^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `jasper-ui-host-surface-verification` (lib) generated 1 warning
+    Finished `test` profile [unoptimized] target(s) in 0.01s
+     Running unittests src/lib.rs (experiments/blitz-host/target/miri/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/f7f3a7c1057cb26c/out/jasper_ui_host_surface_verification-f7f3a7c1057cb26c)
+warning: methods `active_for_owner` and `retire_current` are never used
+   --> <repo>/experiments/blitz-host/target/miri/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/175bbe056226e485/out/actual.rs:99:19
+    |
+ 63 | impl SurfaceLifecycle {
+    | --------------------- methods in this implementation
+...
+ 99 |     pub(crate) fn active_for_owner(&self, caller: u64) -> bool {
+    |                   ^^^^^^^^^^^^^^^^
+...
+175 |     pub(crate) fn retire_current(&mut self, caller: u64) -> bool {
+    |                   ^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+
+running 2 tests
+test actual::tests::foreign_callbacks_do_not_change_state ... ok
+test actual::tests::transition_generations_invalidate_old_host_resources ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.24s
+
+warning: 1 warning emitted
+
+   Doc-tests jasper_ui_host_surface_verification
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s

@@ -11,6 +11,7 @@ cargo-fuzz = true
 libfuzzer-sys = "0.4"
 jasper-ui-engine = { path = "..", default-features = false }
 jasper-ui-read-verification = { path = "../verification/read-boundary" }
+jasper-ui-host-surface-verification = { path = "../verification/host-surface" }
 
 [[bin]]
 name = "read_boundary"
@@ -22,6 +23,13 @@ bench = false
 [[bin]]
 name = "batch_decode"
 path = "fuzz_targets/batch_decode.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "host_surface"
+path = "fuzz_targets/host_surface.rs"
 test = false
 doc = false
 bench = false

@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use jasper_ui_engine::backend::HeadlessBackend;
 use jasper_ui_engine::desktop::{rgba_to_u32, DesktopInput};
-use jasper_ui_engine::engine::Engine;
+use jasper_ui_engine::native::host::{HostRenderer, SurfaceState};
 use jasper_ui_engine::scene::{Node, NodeId, Scene};
 use jasper_ui_engine::style::{Color, FlexDirection, Length, Style};
 use softbuffer::{Context, Surface};
@@ -19,7 +19,9 @@ use winit::window::{Window, WindowId};
 struct App {
     window: Option<Arc<Window>>,
     surface: Option<Surface<Arc<Window>, Arc<Window>>>,
-    engine: Engine,
+    engine: HostRenderer,
+    generation: u64,
+    viewport: Option<(u32, u32, f32)>,
     backend: HeadlessBackend,
     scene: Scene,
     input: DesktopInput,
@@ -53,12 +55,15 @@ impl App {
                     ),
                 ),
         );
-        let engine = Engine::new(10, &scene, font, 640, 360)
+        let engine = HostRenderer::new(10, &scene, font, 640, 360)
             .ok_or("native scene import rejected")?;
+        let generation = engine.surface_status(10).ok_or("native surface missing")?.generation;
         Ok(Self {
             window: None,
             surface: None,
             engine,
+            generation,
+            viewport: None,
             backend: HeadlessBackend::new(1, 1),
             scene,
             input: DesktopInput::new(),
@@ -86,10 +91,24 @@ impl App {
         surface.resize(width, height)?;
         // Window size is physical; native layout and events use logical coordinates.
         // 窗口尺寸为物理像素，原生布局与事件使用逻辑坐标。
-        if !self.engine.set_viewport(10, size.width, size.height, window.scale_factor() as f32) {
-            return Err("native viewport rejected".into());
+        let viewport = (size.width, size.height, window.scale_factor() as f32);
+        if self.viewport != Some(viewport) {
+            self.generation = self.engine.reconfigure(
+                10,
+                self.generation,
+                viewport.0,
+                viewport.1,
+                viewport.2,
+            ).map_err(|error| format!("native viewport rejected: {error:?}"))?;
+            self.viewport = Some(viewport);
         }
-        self.engine.render_to_backend(10, self.scene.version(), &mut self.backend, 64 * 1024 * 1024)
+        self.engine.render_to_backend(
+            10,
+            self.scene.version(),
+            self.generation,
+            &mut self.backend,
+            64 * 1024 * 1024,
+        )
             .map_err(|error| format!("native CPU frame rejected: {error:?}"))?;
         let pixels = self.backend.canvas().pixels();
         let mut buffer = surface.buffer_mut()?;
@@ -104,6 +123,16 @@ impl ApplicationHandler for App {
         if self.window.is_some() { return; }
         let attributes = Window::default_attributes().with_title("Jasper UI Engine");
         let window = Arc::new(event_loop.create_window(attributes).expect("create window"));
+        let size = window.inner_size();
+        let scale = window.scale_factor() as f32;
+        let state = self.engine.surface_status(10).ok_or("native surface missing").expect("surface status");
+        let generation = if state.state == SurfaceState::Suspended {
+            self.engine.resume(10, self.generation, size.width.max(1), size.height.max(1), scale)
+        } else {
+            self.engine.reconfigure(10, self.generation, size.width.max(1), size.height.max(1), scale)
+        }.expect("native surface resume");
+        self.generation = generation;
+        self.viewport = Some((size.width.max(1), size.height.max(1), scale));
         let context = Context::new(window.clone()).expect("softbuffer context");
         let surface = Surface::new(&context, window.clone()).expect("softbuffer surface");
         window.request_redraw();
@@ -111,10 +140,18 @@ impl ApplicationHandler for App {
         self.surface = Some(surface);
     }
 
-    fn suspended(&mut self, _event_loop: &ActiveEventLoop) {
+    fn suspended(&mut self, event_loop: &ActiveEventLoop) {
         // Native state survives host suspension; surface ownership stays here.
         // 宿主暂停保留原生场景状态，仅在本层释放窗口与 Surface。
-        self.engine.deactivate(10, self.scene.version(), &mut |_| {});
+        match self.engine.suspend(10, self.scene.version(), self.generation, &mut |_| {}) {
+            Ok(generation) => self.generation = generation,
+            Err(error) => {
+                self.presentation_error = Some(format!("native suspend rejected: {error:?}"));
+                event_loop.exit();
+                return;
+            }
+        }
+        self.viewport = None;
         self.surface = None;
         self.window = None;
     }
@@ -128,11 +165,11 @@ impl ApplicationHandler for App {
         if self.window.as_ref().map(|window| window.id()) != Some(window_id) { return; }
         match event {
             WindowEvent::CloseRequested => {
-                self.engine.close(10);
+                let _ = self.engine.retire(10, self.scene.version(), self.generation, &mut |_| {});
                 event_loop.exit();
             },
             WindowEvent::Focused(false) => {
-                self.engine.deactivate(10, self.scene.version(), &mut |_| {});
+                self.engine.deactivate(10, self.scene.version(), self.generation, &mut |_| {});
             },
             WindowEvent::RedrawRequested => {
                 if let Err(error) = self.render() {
@@ -173,7 +210,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let event_loop = EventLoop::new()?;
     let mut app = App::new(once, &font)?;
     let result = event_loop.run_app(&mut app);
-    app.engine.close(10);
+    app.engine.close(10, app.scene.version(), &mut |_| {});
     result?;
     if let Some(error) = app.presentation_error { return Err(error.into()); }
     Ok(())

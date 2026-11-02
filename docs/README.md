@@ -24,6 +24,7 @@
 | [status.md](status.md) | 已实现/未实现/未验证的逐项状态 |
 | [verification.md](verification.md) | 数学证明硬门槛、性质登记、执行与信任边界 |
 | [batch-boundaries.md](batch-boundaries.md) | 语义更新/绘制/传输及内置/自带宿主边界 |
+| [host-rendering.md](host-rendering.md) | Surface 代数、DPI/尺寸、暂停/恢复/退休、GPU TextureView/present 与能力矩阵 |
 | [size.md](size.md) | release 体积基线（rlib / 示例 / strip） |
 
 ## 重要声明

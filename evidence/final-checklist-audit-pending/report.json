@@ -69,15 +69,21 @@
         "DPI bit-domain admission and host viewport mutation",
         "host-ordered injected font stacks, real faces, bold stand-in and synthetic italic",
         "host-provided wgpu instance/adapter/device/queue and direct TextureView rendering",
-        "CPU/GPU frames, size changes, damage and software write regressions"
+        "CPU/GPU frames, size changes, damage and software write regressions",
+        "HostRenderer binds resize/DPI/suspend/resume/retire to strict Surface generations",
+        "GPU needs_frame stays pending until the host present is acknowledged",
+        "compile-time capability matrix separates native contracts, host-owned operations, unsupported and unverified hardware behavior",
+        "production surface-state source passed Proptest/Miri/Kani finite checks"
       ],
       "blocking_gaps": [
         "Xvfb now validates software X11 Surface acquire/present/resize, but no compositor/vsync/hardware display surface or real suspend/resume is observed",
         "hardware GPU and device-loss behavior are not verified on the software adapter",
-        "the capability matrix and lifecycle contract still need final cross-host evidence",
-        "host GPU orchestration lacks the requested six-stage implementation proof; wgpu/Vello are explicit TCB"
+        "the lifecycle state machine has finite checks, but the whole HostRenderer orchestration lacks the requested six-stage implementation proof; wgpu/Vello are explicit TCB",
+        "jasper-os host integration remains unimplemented and is not represented by Xvfb"
       ],
       "evidence": [
+        "../native-host-render-lifecycle/report.json",
+        "../window-xvfb-presentation/report.json",
         "../native-gpu-host-target-pending/report.json",
         "../native-font-bold-alias-chain/report.json",
         "../native-dpi-scale-admission-chain/report.json",
@@ -156,6 +162,8 @@
     "full_scene": "VM run passed and emitted PPM 320x180, 172815 bytes",
     "window_xvfb": "800x600 and resized 640x360 X11 window present completed; exact background/red/blue pixel counts retained",
     "gpu_window_xvfb": "host-owned X11 wgpu Surface, llvmpipe Vulkan, root Engine TextureView render and host present completed in one frame",
+    "host_surface_lifecycle": "production state source Proptest 3/3, strict-provenance Miri 2/2, cargo-fuzz 686245 runs, Kani 2 harnesses/381 checks; full HostRenderer orchestration proof remains pending",
+    "host_renderer_integration": "CPU lifecycle 3/3 and GPU TextureView/present 2/2 in VM",
     "proof_mapping": "scripts/test-blitz-proof-mapping.py current=true with all negative controls rejected",
     "expanded_kani_resources": "8G guest RAM + 24G VM-disk swap, 3600s, host CPUs 12-19 only, host available memory above 8G; no accepted real-Map result"
   },

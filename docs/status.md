@@ -54,6 +54,10 @@
 | 系统无障碍 | unsupported | unsupported | unsupported | 外部后端 |
 | GPU 绘制 | 原生路径无头离屏（`gpu-pending`），仅软件 Vulkan 实测 | unsupported，仅枚举 | unsupported | 外部后端 |
 
+渲染宿主的具体声明与生命周期契约见 [host-rendering.md](host-rendering.md)。`HostRenderer`
+把 Surface 代数绑定到尺寸、DPI、暂停、恢复与退休；GPU 纹理帧只在宿主 present 确认后结束
+待呈现状态。能力矩阵是编译契约，不把 Xvfb/llvmpipe 夹具称为 jasper-os 或硬件 GPU 支持。
+
 ## 证据与下一步
 
 2026-10-23 前序核查默认配置测试 100 项通过，未覆盖可选特性完整矩阵。此次版本耗尽修复后，在构建虚拟机中默认配置 101 项测试通过（94 单元、1 smoke、5 布局、1 文档）；版本函数 Verus 复核 1 verified/0 errors，反例被拒。证据见 `evidence/version-kernel/`。历史窗口单帧运行记录不等于本次实测，也不等于系统桌面已验收。
@@ -732,3 +736,24 @@ VM 实跑成功，输出 `evidence/full-scene/full_scene.ppm`（P6 320×180，17
 受限 VM 结果：`cargo test --locked --no-default-features --features native-engine-cpu --all-targets` 全绿（175 个库测试、新增序列 3/3、全部集成与示例目标）；独立诊断 `typed_facade` 38/38；`cargo check --features native-engine --all-targets` 与默认 `cargo test --all-targets` 通过；Blitz 固定提交依赖检查通过。受影响的既有场景准入/完成门/关闭/快照身份/语义标签证明映射仍当前。证据：`evidence/native-engine-frame-sequence/report.json`。
 
 第 2 项工程范围已收敛，但仍不勾选：任意整帧 `Scene` 应用、Blitz 候选构造、状态恢复与单次替换的完整 Verus/实现级有序证明尚缺；第三方 panic 回滚未承诺。证明项已登记给 Claude，不能用本轮 32 例属性测试替代。
+
+## 2026-11-02：宿主渲染生命周期与能力矩阵
+
+新增 `surface_lifecycle::SurfaceLifecycle` 与 `native::host::HostRenderer`。宿主完成尺寸/DPI
+重配、暂停或恢复后得到严格递增的 Surface 代数；旧代数渲染与迟到生命周期回调被拒绝。
+暂停保留场景、版本与语义，只清理原生交互并释放宿主呈现资源；恢复重建 viewport 与资源；
+退休永久关闭且只成功一次。
+
+GPU 直接绘制到宿主 `TextureView` 后，`needs_frame` 在宿主 `Queue::present` 确认前保持
+`true`；`gpu_presented(owner, generation)` 只接受当前活动代数。后端提交或 present 返回错误
+时视图重新标脏，允许重试。新增 CPU 生命周期集成测试与 GPU TextureView/present 确认测试均已
+在实际公开入口通过。`HostCapabilityMatrix` 明确 CPU/DPI/字体/生命周期、GPU TextureView、
+宿主 Surface/present/vsync 与未验收硬件/device-loss/jasper-os 边界，不以 Xvfb 或 llvmpipe
+夹具冒充平台支持。
+
+有限验证已从生产 `SurfaceLifecycle` 原样提取：Proptest 3/3、严格 provenance Miri 的
+2 个确定性用例、Kani 2 个 harness/381 checks、cargo-fuzz 686245 次运行通过；Miri 跳过了
+依赖文件系统持久化的 Proptest 执行器，不把这个跳过计作属性通过。Xvfb 复跑保持 800×600 与 640×360 的精确
+背景/红/蓝像素计数，llvmpipe Vulkan 路径完成宿主 present 与代数确认并以 0 退出。
+完整 HostRenderer 有序证明、硬件 GPU、device-loss、vsync、真实平台暂停恢复和 jasper-os
+接入仍未完成，第 3 项保持未勾选。证据：`evidence/native-host-render-lifecycle/report.json`。

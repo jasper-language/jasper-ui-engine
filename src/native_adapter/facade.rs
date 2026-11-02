@@ -12,11 +12,15 @@ pub use native_events::{NativeFocusEvent as TextFocusEvent,NativePointerEvent as
 pub use jasper_ui_engine::input::Modifiers;
 pub use native_events::NativeEventReply as EventReply;
 pub use scene_events::{ScenePointerInput,SceneKeyEvent,SceneEvent,SceneEventKind,SceneSemanticsNode,SceneSemanticsSnapshot,SceneActivationEvent,SceneFocusEvent};
+pub use crate::render_host::{HostRenderError,HostRenderer};
+pub use crate::surface_lifecycle::{SurfaceLifecycleError,SurfaceState,SurfaceStatus};
 
 /// Embedding-host adapter; application declarations use Scene/ScenePatch values above.
 /// This module does not acquire windows, surfaces, devices or OS services.
 pub mod host {
 use super::*;
+pub use crate::render_host::{HostRenderError,HostRenderer};
+pub use crate::surface_lifecycle::{SurfaceLifecycleError,SurfaceState,SurfaceStatus};
 pub use jasper_ui_engine::input_identity::{UiInputBinding,UiInputContext,UiInputTicket};
 pub use jasper_ui_engine::composition_identity::UiCompositionToken;
 #[cfg(feature="cpu-pending")]

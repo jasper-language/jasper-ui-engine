@@ -1,3 +1,4 @@
+   Compiling jasper-ui-engine v0.1.0 (<repo>)
 warning: multiple associated items are never used
    --> src/native_adapter/native_view.rs:79:19
     |
@@ -146,7 +147,7 @@ warning: methods `up` and `focus_lost` are never used
     |                     ^^^^^^^^^^
 
 warning: `jasper-ui-engine` (lib) generated 12 warnings
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.30s
-     Running `target/debug/examples/window /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf`
+    Finished `dev` profile [unoptimized] target(s) in 2.59s
+     Running `experiments/blitz-host/target/debug/examples/window /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf`
 input: [ImeEnabled(false)]
-input: [Pointer(PointerEvent { pointer_id: PointerId(0), kind: Mouse, phase: Hover, position: Point { x: 640.0, y: 360.0 }, pressure: 0.0, tilt: Point { x: 0.0, y: 0.0 }, twist: 0.0, contact: Size { width: 0.0, height: 0.0 }, is_primary: true, eraser: false, button: None, modifiers: Modifiers { shift: false, control: false, alt: false, meta: false }, timestamp_millis: 1 })]
+input: [Pointer(PointerEvent { pointer_id: PointerId(0), kind: Mouse, phase: Hover, position: Point { x: 640.0, y: 360.0 }, pressure: 0.0, tilt: Point { x: 0.0, y: 0.0 }, twist: 0.0, contact: Size { width: 0.0, height: 0.0 }, is_primary: true, eraser: false, button: None, modifiers: Modifiers { shift: false, control: false, alt: false, meta: false }, timestamp_millis: 2 })]

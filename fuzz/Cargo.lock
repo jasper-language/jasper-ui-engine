@@ -55,9 +55,14 @@ name = "jasper-ui-fuzz"
 version = "0.0.0"
 dependencies = [
  "jasper-ui-engine",
+ "jasper-ui-host-surface-verification",
  "jasper-ui-read-verification",
  "libfuzzer-sys",
 ]
+
+[[package]]
+name = "jasper-ui-host-surface-verification"
+version = "0.0.0"
 
 [[package]]
 name = "jasper-ui-read-verification"

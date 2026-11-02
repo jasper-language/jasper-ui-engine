@@ -1,8 +1,7 @@
 //! Host-owned wgpu device and texture acceptance for direct GPU presentation.
 //! 宿主持有 wgpu 设备与纹理的直接 GPU 呈现验收。
 #![cfg(feature="gpu-pending")]
-use jasper_ui_engine::engine::Engine;
-use jasper_ui_engine::native::host::{GpuFrameError,GpuRenderer};
+use jasper_ui_engine::native::host::{GpuFrameError,GpuRenderer,HostRenderer};
 use jasper_ui_engine::scene::{Node,NodeId,Scene};
 use jasper_ui_engine::style::{Color,Length,Style};
 use wgpu_context::DeviceHandle;
@@ -43,14 +42,17 @@ fn host_device_and_texture_are_used_without_engine_device_acquisition() {
     });
     let view=target.create_view(&wgpu::TextureViewDescriptor::default());
     let source=scene();
-    let mut engine=Engine::new(OWNER,&source,&font(),W,H).expect("native import");
-    assert_eq!(engine.needs_frame(OWNER),Some(true));
-    assert_eq!(engine.render_gpu_to_host_view(OWNER+1,source.version(),&mut gpu,FORMAT,&view,BUDGET),
+    let mut engine=HostRenderer::new(OWNER,&source,&font(),W,H).expect("native import");
+    let generation=engine.surface_status(OWNER).unwrap().generation;
+    assert_eq!(engine.needs_frame(OWNER,generation),Some(true));
+    assert_eq!(engine.render_gpu_to_host_view(OWNER+1,source.version(),generation,&mut gpu,FORMAT,&view,BUDGET),
         Err(GpuFrameError::Rejected));
-    assert_eq!(engine.needs_frame(OWNER),Some(true),"foreign rejection must not change scheduling");
-    engine.render_gpu_to_host_view(OWNER,source.version(),&mut gpu,FORMAT,&view,BUDGET)
+    assert_eq!(engine.needs_frame(OWNER,generation),Some(true),"foreign rejection must not change scheduling");
+    engine.render_gpu_to_host_view(OWNER,source.version(),generation,&mut gpu,FORMAT,&view,BUDGET)
         .expect("direct host view render");
-    assert_eq!(engine.needs_frame(OWNER),Some(false));
+    assert_eq!(engine.needs_frame(OWNER,generation),Some(true),"render is not present");
+    assert!(engine.gpu_presented(OWNER,generation));
+    assert_eq!(engine.needs_frame(OWNER,generation),Some(false));
 
     // Host reads its own texture back. The engine never owns or presents this target.
     let row=W*4;
@@ -88,8 +90,9 @@ fn unsupported_host_format_is_explicit_and_fails_closed() {
         dimension:wgpu::TextureDimension::D2,format,usage:wgpu::TextureUsages::RENDER_ATTACHMENT,view_formats:&[]});
     let view=target.create_view(&wgpu::TextureViewDescriptor::default());
     let source=scene();
-    let mut engine=Engine::new(OWNER,&source,&font(),W,H).expect("native import");
-    assert!(matches!(engine.render_gpu_to_host_view(OWNER,source.version(),&mut gpu,format,&view,BUDGET),
+    let mut engine=HostRenderer::new(OWNER,&source,&font(),W,H).expect("native import");
+    let generation=engine.surface_status(OWNER).unwrap().generation;
+    assert!(matches!(engine.render_gpu_to_host_view(OWNER,source.version(),generation,&mut gpu,format,&view,BUDGET),
         Err(GpuFrameError::Unsupported(_))));
-    assert_eq!(engine.needs_frame(OWNER),Some(true));
+    assert_eq!(engine.needs_frame(OWNER,generation),Some(true));
 }

@@ -50,7 +50,8 @@ Jasper UI 的 **宿主无关 Native 引擎底座**（Rust）。它只负责底�
 - **Canvas 组件**：记录式绘制指令（矩形/线/文字/裁剪），参与布局与内容裁剪；CPU 渲染走 `tiny-skia`
 - **GPU 选择策略**：自动/集成/独立/指定适配器/纯软件，支持软件回退与运行时切换规划
 - **桌面输入**：`--features desktop` 把 winit 鼠标/键盘/滚轮/IME/Focus 规范化为引擎事件
-- **桌面窗口**：`--features desktop,native-engine-cpu --example window -- FONT [--once]` 使用根原生 CPU 候选，经宿主持有的 winit/softbuffer 呈现；新路径实际窗口验收待完成
+- **桌面窗口**：`--features desktop,native-engine-cpu --example window -- FONT [--once]` 使用根原生 CPU 候选，经宿主持有的 winit/softbuffer 呈现；Xvfb 下已实测一帧、缩放和点击，硬件/平台生命周期仍待验收
+- **宿主渲染生命周期**：`native::host::HostRenderer` 绑定尺寸/DPI/Surface 代数，协调暂停、恢复、退休和 GPU present 确认；见 [host-rendering.md](docs/host-rendering.md)
 - **GPU 选择**：`--features gpu` 用 wgpu 枚举真实适配器，套用自动/集成/独立/指定/纯软件策略
 - 正式原生流水线：场景更新 → Blitz 树/样式/布局/事件 → Parley/Vello → 宿主后端或 Surface
 - 旧兼容流水线：场景 → Taffy 布局 → PaintOp → UiBatch → 后端，仅由 `LegacyEngine` 显式调用
@@ -59,7 +60,7 @@ Jasper UI 的 **宿主无关 Native 引擎底座**（Rust）。它只负责底�
 ## v0.1 明确未实现
 
 - 真实文字光栅化（`DrawText` 在 Headless 后端返回 `Unsupported`；需要 Parley/字体后端）
-- 实际 GPU 绘制后端、系统无障碍桥、图片/SVG 解码（winit 窗口与软件呈现示例已实现）
+- 硬件 GPU 验收、device-loss 恢复、系统无障碍桥、图片/SVG 解码（winit 软件 Surface 与 llvmpipe Vulkan TextureView 路径已实现并实测）
 - Jasper ABI、Jasper UI Framework、UI IR、状态/事件/动画/路由
 - Web HTML/CSS/JS/WASM 输出
 - 完整文本编辑与 IME 往返、过冲回弹、系统无障碍桥（文本/组合事件映射与焦点路由已有实现）

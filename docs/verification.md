@@ -911,3 +911,21 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 `tests/native_frame_sequences.rs` 经根 `engine::Engine` 验证：整帧新增、删除、同批 Remove+Insert 换序及样式更新后的版本、节点数、焦点与所有 RGBA 字节等于终态新导入；32 例任意序列覆盖合法/非法混合，所有拒绝分支保持旧帧；Remove 后复用同一 `NodeId` 不迁移焦点/按下身份，迟到 Up 不激活替代节点。独立 `typed_facade` 38 项同时通过。
 
 这些是 Proptest/集成证据，不是整帧实现级 Verus 证明。尚无证明的依赖仍是：任意 `ScenePatch` 序列表执行、终态 Blitz 候选精化、焦点/滚动/悬停/按下/帧缓存恢复、单次活动替换及第三方 panic 回滚。既有 `scene-frame-completion` 的 Verus 结果只覆盖来源成功、精确后继和候选就绪后的提交门。证据：`evidence/native-engine-frame-sequence/report.json`。
+
+## 2026-11-02：宿主 Surface 生命周期有限验证
+
+`verification/host-surface/build.rs` 从生产 `src/surface_lifecycle.rs` 提取实现，仅把文件级
+文档注释转为普通注释以嵌入验证子模块，不维护第二份状态机。结果：
+
+- Proptest 3/3：成功重配→暂停→恢复保持活动并严格递增代数，外部 owner 拒绝不改变状态。
+- Miri 2/2：严格 provenance 下执行两个确定性生命周期用例。Proptest 执行器因其失败持久化
+  使用隔离环境不支持的 `statx` 被显式过滤；过滤不计作属性通过。
+- Kani 2/2 harness、381 checks：审查实际提取实现，成功转移、owner/generation 拒绝与退休后
+  不可渲染均为 0 失败。
+- cargo-fuzz 686245 次运行、11 秒，无失败产物：驱动任意 owner 与生命周期命令流，检查拒绝
+  不改状态、成功代数不倒退及仅活动精确代数可渲染。
+- Loom 不适用：对象无共享/并发状态。
+- Verus 与整个 `HostRenderer` 外包编排仍未证明；Blitz/Parley/Vello、wgpu 与宿主显示栈继续
+  为显式 TCB。不得把上述有限验证扩大为硬件 GPU、device-loss、真实平台暂停恢复或整项验收。
+
+日志、锁文件、源码与测试哈希见 `evidence/native-host-render-lifecycle/report.json`。

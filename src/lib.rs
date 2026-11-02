@@ -41,6 +41,7 @@ pub mod gesture;
 pub mod gpu_wgpu;
 pub mod graphics;
 pub mod hit_test;
+pub mod host_capabilities;
 pub mod input;
 pub mod input_identity;
 pub mod keyboard;
@@ -56,6 +57,7 @@ pub mod scrollbar;
 pub mod semantics;
 pub mod style;
 pub mod surface;
+pub mod surface_lifecycle;
 pub mod text;
 #[cfg(feature = "real-text")]
 pub mod text_cosmic;
@@ -130,6 +132,9 @@ mod frame_schedule;
 #[cfg(feature="gpu-pending")]
 #[path="native_adapter/gpu_render.rs"]
 mod gpu_render;
+#[cfg(feature="native-blitz-pending")]
+#[path="native_adapter/render_host.rs"]
+mod render_host;
 #[cfg(feature="cpu-pending")]
 #[path="native_adapter/glyph_skew.rs"]
 mod glyph_skew;

@@ -1,0 +1,162 @@
+warning: multiple associated items are never used
+   --> src/native_adapter/native_view.rs:79:19
+    |
+ 72 | impl NativeTextView {
+    | ------------------- associated items in this implementation
+...
+ 79 |     pub(crate) fn new_button(session: u64, context: UiInputContext, font_bytes: &[u8], caption: &str, width: u32, height: u32) -> S...
+    |                   ^^^^^^^^^^
+...
+214 |     pub(crate) fn pointer_from_host(
+    |                   ^^^^^^^^^^^^^^^^^
+...
+224 |     pub(crate) fn pointer_with_events_from_host(
+    |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+234 |     pub(crate) fn pointer_with_capture_from_host(
+    |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+244 |     pub(crate) fn button_pointer_from_host(&mut self, caller: u64, expected: UiInputContext,
+    |                   ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+257 |     pub(crate) fn dispatch_pointer_from_host(&mut self, caller: u64, expected: UiInputContext, phase: PointerAction,
+    |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+329 |     pub(crate) fn focus_from_host(&mut self, binding: &UiInputBinding, caller: u64, ticket: UiInputTicket) -> bool {
+    |                   ^^^^^^^^^^^^^^^
+...
+370 |     pub(crate) fn button_enter_from_host(&mut self, binding: &UiInputBinding, caller: u64,
+    |                   ^^^^^^^^^^^^^^^^^^^^^^
+...
+390 |     pub(crate) fn activate_from_host(&self, caller: u64, expected: UiInputContext, expected_version: u64,
+    |                   ^^^^^^^^^^^^^^^^^^
+...
+449 |     pub(crate) fn scroll_position(&self) -> Option<(f64, f64)> {
+    |                   ^^^^^^^^^^^^^^^
+...
+456 |     pub(crate) fn close_focus_from_host(
+    |                   ^^^^^^^^^^^^^^^^^^^^^
+...
+494 |     pub(crate) fn apply_component_update(
+    |                   ^^^^^^^^^^^^^^^^^^^^^^
+...
+546 |     pub(crate) fn apply_component_update_with_focus_events(
+    |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+556 |     pub(crate) fn apply_component_batch_with_focus_events(
+    |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+617 |     pub(crate) fn accessible_label(&self) -> Option<&str> {
+    |                   ^^^^^^^^^^^^^^^^
+...
+698 |     pub(crate) fn host_scale(&self) -> Option<f32> {
+    |                   ^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: variant `Button` is never constructed
+   --> src/native_adapter/native_view.rs:758:32
+    |
+758 | enum NativeElementKind { Text, Button }
+    |      -----------------         ^^^^^^
+    |      |
+    |      variant in this enum
+    |
+    = note: `NativeElementKind` has a derived impl for the trait `Clone`, but this is intentionally ignored during dead code analysis
+
+warning: enum `PreparedSceneMutation` is never used
+  --> src/native_adapter/native_scene.rs:10:6
+   |
+10 | enum PreparedSceneMutation {
+   |      ^^^^^^^^^^^^^^^^^^^^^
+
+warning: field `families` is never read
+   --> src/native_adapter/native_scene.rs:136:5
+    |
+121 | pub(crate) struct NativeScene {
+    |                   ----------- field in this struct
+...
+136 |     families:BTreeSet<String>,
+    |     ^^^^^^^^
+
+warning: methods `insert_prepared` and `semantics_from_host` are never used
+   --> src/native_adapter/native_scene.rs:227:8
+    |
+140 | impl NativeScene {
+    | ---------------- methods in this implementation
+...
+227 |     fn insert_prepared(&mut self,parent:NodeId,index:usize,anchor:Option<NodeId>,node:&Node,
+    |        ^^^^^^^^^^^^^^^
+...
+472 |     pub(crate) fn semantics_from_host(&self,caller:u64,id:NodeId)->Option<&Semantics> {
+    |                   ^^^^^^^^^^^^^^^^^^^
+
+warning: function `source_subtree_contains` is never used
+   --> src/native_adapter/native_scene.rs:869:4
+    |
+869 | fn source_subtree_contains(parents:&BTreeMap<NodeId,Option<NodeId>>,node:NodeId,ancestor:NodeId)->bool {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `source_insert_index` is never used
+   --> src/native_adapter/native_scene.rs:895:15
+    |
+895 | pub(crate) fn source_insert_index(index:usize,children:usize)->usize {
+    |               ^^^^^^^^^^^^^^^^^^^
+
+warning: function `accepts_scene_update` is never used
+   --> src/native_adapter/native_scene.rs:918:15
+    |
+918 | pub(crate) fn accepts_scene_update(owner:u64,caller:u64,current:u64,expected:u64,next:u64,count:usize,open:bool)->bool {
+    |               ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `semantic_role_update_preserves_tag` is never used
+    --> src/native_adapter/native_scene.rs:1541:15
+     |
+1541 | pub(crate) fn semantic_role_update_preserves_tag(current:Role,next:Role)->bool {
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: associated function `new` is never used
+  --> src/native_adapter/pointer_host.rs:31:19
+   |
+30 | impl PointerHostBridge<DefaultSink> {
+   | ----------------------------------- associated function in this implementation
+31 |     pub(crate) fn new(session: u64, slot: u64) -> Self {
+   |                   ^^^
+
+warning: associated function `with_sink` is never used
+  --> src/native_adapter/pointer_host.rs:38:19
+   |
+35 | impl<F: FnMut(NativePointerEvent) -> NativeEventReply> PointerHostBridge<F> {
+   | --------------------------------------------------------------------------- associated function in this implementation
+...
+38 |     pub(crate) fn with_sink(session: u64, slot: u64, sink: F) -> Self {
+   |                   ^^^^^^^^^
+
+warning: methods `up` and `focus_lost` are never used
+   --> src/native_adapter/pointer_host.rs:96:19
+    |
+ 42 | / impl<F: FnMut(NativePointerEvent) -> NativeEventReply,
+ 43 | |     G: FnMut(NativeActivationEvent) -> NativeEventReply> PointerHostBridge<F,G> {
+    | |_______________________________________________________________________________- methods in this implementation
+...
+ 96 |       pub(crate) fn up(&mut self, view: &mut NativeTextView, host: &mut impl PointerCaptureHost,
+    |                     ^^
+...
+133 |       pub(crate) fn focus_lost(&mut self, view: &mut NativeTextView, host: &mut impl PointerCaptureHost,
+    |                     ^^^^^^^^^^
+
+warning: `jasper-ui-engine` (lib) generated 12 warnings
+    Finished `test` profile [unoptimized] target(s) in 0.18s
+     Running tests/native_gpu_host_view.rs (experiments/blitz-host/target/debug/build/jasper-ui-engine/80390029c6801498/out/native_gpu_host_view-80390029c6801498)
+
+running 2 tests
+libEGL warning: failed to open /dev/dri/renderD128: Permission denied
+
+libEGL warning: failed to open /dev/dri/renderD128: Permission denied
+
+libEGL warning: failed to open /dev/dri/card0: Permission denied
+
+test unsupported_host_format_is_explicit_and_fails_closed ... ok
+test host_device_and_texture_are_used_without_engine_device_acquisition ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.34s

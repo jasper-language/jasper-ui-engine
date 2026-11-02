@@ -2,8 +2,7 @@
 //! Run: cargo run --features desktop,gpu-pending --example gpu_window -- FONT [--once].
 use std::sync::Arc;
 
-use jasper_ui_engine::engine::Engine;
-use jasper_ui_engine::native::host::GpuRenderer;
+use jasper_ui_engine::native::host::{GpuRenderer, HostRenderer, SurfaceState};
 use jasper_ui_engine::scene::{Node, NodeId, Scene};
 use jasper_ui_engine::style::{Color, FlexDirection, Length, Style};
 use wgpu_context::DeviceHandle;
@@ -33,7 +32,8 @@ struct GpuApp {
     device: Option<wgpu::Device>,
     queue: Option<wgpu::Queue>,
     gpu: Option<GpuRenderer>,
-    engine: Engine,
+    engine: HostRenderer,
+    generation: u64,
     scene: Scene,
     once: bool,
     presentation_error: Option<String>,
@@ -66,7 +66,11 @@ impl GpuApp {
                 ),
         );
         let engine =
-            Engine::new(OWNER, &scene, font, 640, 360).ok_or("native scene import rejected")?;
+            HostRenderer::new(OWNER, &scene, font, 640, 360).ok_or("native scene import rejected")?;
+        let generation = engine
+            .surface_status(OWNER)
+            .ok_or("native surface missing")?
+            .generation;
         Ok(Self {
             window: None,
             surface: None,
@@ -75,6 +79,7 @@ impl GpuApp {
             queue: None,
             gpu: None,
             engine,
+            generation,
             scene,
             once,
             presentation_error: None,
@@ -103,6 +108,27 @@ impl GpuApp {
         Ok(())
     }
 
+    fn reconfigure_engine(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        let Some(window) = self.window.clone() else {
+            return Ok(());
+        };
+        let size = window.inner_size();
+        if size.width == 0 || size.height == 0 {
+            return Ok(());
+        }
+        self.generation = self
+            .engine
+            .reconfigure(
+                OWNER,
+                self.generation,
+                size.width,
+                size.height,
+                window.scale_factor() as f32,
+            )
+            .map_err(|error| format!("native surface reconfigure rejected: {error:?}"))?;
+        Ok(())
+    }
+
     fn render(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let Some(window) = self.window.clone() else {
             return Ok(());
@@ -116,17 +142,12 @@ impl GpuApp {
             .config
             .as_ref()
             .ok_or("missing GPU surface configuration")?;
-        if !self
-            .engine
-            .set_viewport(OWNER, size.width, size.height, window.scale_factor() as f32)
-        {
-            return Err("native viewport rejected".into());
-        }
         let frame = match surface.get_current_texture() {
             wgpu::CurrentSurfaceTexture::Success(frame)
             | wgpu::CurrentSurfaceTexture::Suboptimal(frame) => frame,
             wgpu::CurrentSurfaceTexture::Outdated | wgpu::CurrentSurfaceTexture::Lost => {
                 self.configure_surface()?;
+                self.reconfigure_engine()?;
                 window.request_redraw();
                 return Ok(());
             }
@@ -145,6 +166,7 @@ impl GpuApp {
             .render_gpu_to_host_view(
                 OWNER,
                 self.scene.version(),
+                self.generation,
                 gpu,
                 config.format,
                 &view,
@@ -155,6 +177,9 @@ impl GpuApp {
             .as_ref()
             .ok_or("missing GPU queue")?
             .present(frame);
+        if !self.engine.gpu_presented(OWNER, self.generation) {
+            return Err("GPU present acknowledgement rejected".into());
+        }
         Ok(())
     }
 }
@@ -204,12 +229,41 @@ impl ApplicationHandler for GpuApp {
         self.surface = Some(surface);
         self.config = Some(config);
         self.window = Some(window.clone());
+        let size = window.inner_size();
+        let scale = window.scale_factor() as f32;
+        let Some(state) = self.engine.surface_status(OWNER) else {
+            self.presentation_error = Some("native surface missing".into());
+            event_loop.exit();
+            return;
+        };
+        let generation = if state.state == SurfaceState::Suspended {
+            self.engine.resume(OWNER, self.generation, size.width.max(1), size.height.max(1), scale)
+        } else {
+            self.engine.reconfigure(OWNER, self.generation, size.width.max(1), size.height.max(1), scale)
+        };
+        match generation {
+            Ok(generation) => self.generation = generation,
+            Err(error) => {
+                self.presentation_error = Some(format!("native surface activation rejected: {error:?}"));
+                event_loop.exit();
+                return;
+            }
+        }
         window.request_redraw();
     }
 
-    fn suspended(&mut self, _event_loop: &ActiveEventLoop) {
-        self.engine
-            .deactivate(OWNER, self.scene.version(), &mut |_| {});
+    fn suspended(&mut self, event_loop: &ActiveEventLoop) {
+        match self
+            .engine
+            .suspend(OWNER, self.scene.version(), self.generation, &mut |_| {})
+        {
+            Ok(generation) => self.generation = generation,
+            Err(error) => {
+                self.presentation_error = Some(format!("native suspend rejected: {error:?}"));
+                event_loop.exit();
+                return;
+            }
+        }
         self.surface = None;
         self.config = None;
         self.device = None;
@@ -229,15 +283,22 @@ impl ApplicationHandler for GpuApp {
         }
         match event {
             WindowEvent::CloseRequested => {
-                self.engine.close(OWNER);
+                let _ = self.engine.retire(
+                    OWNER,
+                    self.scene.version(),
+                    self.generation,
+                    &mut |_| {},
+                );
                 event_loop.exit();
             }
-            WindowEvent::Focused(false) => {
-                self.engine
-                    .deactivate(OWNER, self.scene.version(), &mut |_| {});
-            }
+            WindowEvent::Focused(false) => {}
             WindowEvent::Resized(_) | WindowEvent::ScaleFactorChanged { .. } => {
                 if let Err(error) = self.configure_surface() {
+                    self.presentation_error = Some(error.to_string());
+                    event_loop.exit();
+                    return;
+                }
+                if let Err(error) = self.reconfigure_engine() {
                     self.presentation_error = Some(error.to_string());
                     event_loop.exit();
                     return;
@@ -277,7 +338,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let event_loop = EventLoop::new()?;
     let mut app = GpuApp::new(once, &font)?;
     let result = event_loop.run_app(&mut app);
-    app.engine.close(OWNER);
+    app.engine.close(OWNER, app.scene.version(), &mut |_| {});
     result?;
     if let Some(error) = app.presentation_error {
         return Err(error.into());

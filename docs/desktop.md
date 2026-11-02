@@ -27,9 +27,14 @@
 - 完整六阶段实现验收、真实窗口/DPI/暂停恢复组合验收仍未完成。
 - 输入事件经 `DesktopInput` 规范化并打印到 stderr。
 
+当前示例通过 `native::host::HostRenderer` 绑定 viewport 与 Surface 代数。尺寸/DPI 变化在
+宿主完成 Surface 重配后生成新代数；暂停会释放宿主资源并保留原生场景，恢复重建资源和
+viewport，关闭只退休一次。GPU 示例在 `Queue::present` 后确认 `gpu_presented`，present 前
+继续视为待呈现。窗口失活只清原生 hover/press/focus，不冒充 Surface 暂停。
+
 ## 下一片
 
-- DPI/缩放与窗口尺寸变化的真实宿主组合验收
+- 真实合成器/vsync、硬件 GPU/device-loss 与平台休眠恢复验收
 - 触控/笔事件（winit `Touch` / 平台扩展）
 - 窗口生命周期与多窗口
 

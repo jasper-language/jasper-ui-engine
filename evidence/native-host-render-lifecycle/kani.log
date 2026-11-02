@@ -1,0 +1,2066 @@
+Kani Rust Verifier 0.68.0 (cargo plugin)
+CBMC 6.11.0
+    Finishedwarning: methods `active_for_owner` and `retire_current` are never used
+   --> <repo>/experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:99:19
+    |
+ 63 | impl SurfaceLifecycle {
+    | --------------------- methods in this implementation
+...
+ 99 |     pub(crate) fn active_for_owner(&self, caller: u64) -> bool {
+    |                   ^^^^^^^^^^^^^^^^
+...
+175 |     pub(crate) fn retire_current(&mut self, caller: u64) -> bool {
+    |                   ^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+ `dev` profile [unoptimized] target(s) in 0.00s
+warning: use of an unstable feature
+ --> <crate attribute>:1:12
+  |
+1 | #![feature(register_tool)]
+  |            ^^^^^^^^^^^^^
+  |
+  = note: requested on the command line with `--force-warn unstable-features`
+
+warning: Found the following unsupported constructs:
+             - caller_location (1)
+             - foreign function (1)
+
+         Verification will fail if one or more of these constructs is reachable.
+         See https://model-checking.github.io/kani/rust-feature-support.html for more details.
+
+Checking harness proofs::stale_owner_and_generation_are_rejected_without_transition...
+CBMC 6.11.0 (cbmc-6.11.0)
+CBMC version 6.11.0 (cbmc-6.11.0) 64-bit x86_64 linux
+Reading GOTO program from file <repo>/experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/9002a0936389efa9/out/jasper_ui_host_surface_verification-9002a0936389efa9__RNvNtCsb7PrPDXrCz2_35jasper_ui_host_surface_verification6proofs58stale_owner_and_generation_are_rejected_without_transition.out
+Generating GOTO Program
+Adding CPROVER library (x86_64)
+Removal of function pointers and virtual functions
+Generic Property Instrumentation
+Running with 16 object bits, 48 offset bits (user-specified)
+Starting Bounded Model Checking
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1012 column 15 function std::option::Option::<actual::SurfaceStatus>::unwrap thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 2248 column 5 function std::option::unwrap_failed thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1014 column 21 function std::option::Option::<actual::SurfaceStatus>::unwrap thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<(), actual::SurfaceLifecycleError> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file <repo>/experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs line 191 column 9 function actual::SurfaceLifecycle::require_active thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<(), actual::SurfaceLifecycleError> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file src/lib.rs line 0 column 0 function actual::SurfaceLifecycle::reconfigure thread 0
+aborting path on assume(false) at file src/lib.rs line 0 column 0 function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1012 column 15 function std::option::Option::<actual::SurfaceStatus>::unwrap thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 2248 column 5 function std::option::unwrap_failed thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1014 column 21 function std::option::Option::<actual::SurfaceStatus>::unwrap thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<(), actual::SurfaceLifecycleError> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file <repo>/experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs line 191 column 9 function actual::SurfaceLifecycle::require_active thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<(), actual::SurfaceLifecycleError> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1334 column 15 function std::option::Option::<u64>::ok_or::<actual::SurfaceLifecycleError> thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file src/lib.rs line 0 column 0 function actual::SurfaceLifecycle::suspend thread 0
+aborting path on assume(false) at file src/lib.rs line 0 column 0 function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1012 column 15 function std::option::Option::<actual::SurfaceStatus>::unwrap thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 2248 column 5 function std::option::unwrap_failed thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1014 column 21 function std::option::Option::<actual::SurfaceStatus>::unwrap thread 0
+Runtime Symex: 0.155998s
+size of program expression: 3626 steps
+slicing removed 2371 assignments
+Generated 436 VCC(s), 29 remaining after simplification
+Runtime Postprocess Equation: 0.00122887s
+Passing problem to propositional reduction
+converting SSA
+Runtime Convert SSA: 0.00739047s
+Running propositional reduction
+Post-processing
+Runtime Post-process: 7.449e-06s
+Solving with CaDiCaL 3.0.0
+8923 variables, 16302 clauses
+SAT checker: instance is SATISFIABLE
+Runtime Solver: 0.000411971s
+Runtime decision procedure: 0.00821354s
+Running propositional reduction
+Solving with CaDiCaL 3.0.0
+8924 variables, 16303 clauses
+SAT checker: instance is UNSATISFIABLE
+Runtime Solver: 0.00213114s
+Runtime decision procedure: 0.00220708s
+
+RESULTS:
+Check 1: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::ops::Try>::branch.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2177:15 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::ops::Try>::branch
+
+Check 2: std::option::Option::<actual::SurfaceStatus>::unwrap.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1012:15 in function std::option::Option::<actual::SurfaceStatus>::unwrap
+
+Check 3: std::option::Option::<u64>::ok_or::<actual::SurfaceLifecycleError>.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1334:15 in function std::option::Option::<u64>::ok_or::<actual::SurfaceLifecycleError>
+
+Check 4: proofs::stale_owner_and_generation_are_rejected_without_transition.assertion.1
+	 - Status: SUCCESS
+	 - Description: "assertion failed: surface.reconfigure(other, initial.generation, 2, 2) ==
+Err(SurfaceLifecycleError::WrongOwner)"
+	 - Location: src/lib.rs:42:9 in function proofs::stale_owner_and_generation_are_rejected_without_transition
+
+Check 5: proofs::stale_owner_and_generation_are_rejected_without_transition.assertion.2
+	 - Status: SUCCESS
+	 - Description: "assertion failed: surface.status(owner).unwrap() == initial"
+	 - Location: src/lib.rs:46:9 in function proofs::stale_owner_and_generation_are_rejected_without_transition
+
+Check 6: proofs::stale_owner_and_generation_are_rejected_without_transition.assertion.3
+	 - Status: SUCCESS
+	 - Description: "attempt to add with overflow"
+	 - Location: src/lib.rs:48:36 in function proofs::stale_owner_and_generation_are_rejected_without_transition
+
+Check 7: proofs::stale_owner_and_generation_are_rejected_without_transition.assertion.4
+	 - Status: SUCCESS
+	 - Description: "assertion failed: surface.suspend(owner, initial.generation + 1) ==
+Err(SurfaceLifecycleError::StaleGeneration)"
+	 - Location: src/lib.rs:47:9 in function proofs::stale_owner_and_generation_are_rejected_without_transition
+
+Check 8: proofs::stale_owner_and_generation_are_rejected_without_transition.assertion.5
+	 - Status: SUCCESS
+	 - Description: "assertion failed: surface.status(owner).unwrap() == initial"
+	 - Location: src/lib.rs:51:9 in function proofs::stale_owner_and_generation_are_rejected_without_transition
+
+Check 9: <std::result::Result<(), actual::SurfaceLifecycleError> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, actual::SurfaceLifecycleError>>>::from_residual.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2192:15 in function <std::result::Result<(), actual::SurfaceLifecycleError> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, actual::SurfaceLifecycleError>>>::from_residual
+
+Check 10: actual::SurfaceLifecycle::require_active.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:191:9 in function actual::SurfaceLifecycle::require_active
+
+Check 11: actual::SurfaceLifecycle::reconfigure.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/lib.rs:0:0 in function actual::SurfaceLifecycle::reconfigure
+
+Check 12: core::num::<impl u64>::checked_add.arithmetic_overflow.1
+	 - Status: SUCCESS
+	 - Description: "attempt to compute `unchecked_add` which would overflow"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:942:31 in function core::num::<impl u64>::checked_add
+
+Check 13: actual::SurfaceLifecycle::suspend.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/lib.rs:0:0 in function actual::SurfaceLifecycle::suspend
+
+Check 14: <std::result::Result<(), actual::SurfaceLifecycleError> as std::ops::Try>::branch.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2177:15 in function <std::result::Result<(), actual::SurfaceLifecycleError> as std::ops::Try>::branch
+
+Check 15: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/lib.rs:0:0 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 16: std::option::unwrap_failed.assertion.1
+	 - Status: SUCCESS
+	 - Description: "called `Option::unwrap()` on a `None` value"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:2248:5 in function std::option::unwrap_failed
+
+Check 17: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, actual::SurfaceLifecycleError>>>::from_residual.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2192:15 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, actual::SurfaceLifecycleError>>>::from_residual
+
+Check 18: std::option::Option::<actual::SurfaceStatus>::unwrap.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1012:15 in function std::option::Option::<actual::SurfaceStatus>::unwrap
+
+Check 19: actual::SurfaceLifecycle::reconfigure.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:112:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 20: actual::SurfaceLifecycle::reconfigure.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:114:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 21: actual::SurfaceLifecycle::reconfigure.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:114:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 22: actual::SurfaceLifecycle::reconfigure.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:114:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 23: actual::SurfaceLifecycle::reconfigure.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:114:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 24: actual::SurfaceLifecycle::reconfigure.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:114:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 25: actual::SurfaceLifecycle::reconfigure.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:114:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 26: actual::SurfaceLifecycle::reconfigure.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:115:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 27: actual::SurfaceLifecycle::reconfigure.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:115:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 28: actual::SurfaceLifecycle::reconfigure.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:115:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 29: actual::SurfaceLifecycle::reconfigure.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:115:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 30: actual::SurfaceLifecycle::reconfigure.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:115:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 31: actual::SurfaceLifecycle::reconfigure.pointer_dereference.13
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:115:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 32: actual::SurfaceLifecycle::reconfigure.pointer_dereference.14
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:116:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 33: actual::SurfaceLifecycle::reconfigure.pointer_dereference.15
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:116:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 34: actual::SurfaceLifecycle::reconfigure.pointer_dereference.16
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:116:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 35: actual::SurfaceLifecycle::reconfigure.pointer_dereference.17
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:116:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 36: actual::SurfaceLifecycle::reconfigure.pointer_dereference.18
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:116:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 37: actual::SurfaceLifecycle::reconfigure.pointer_dereference.19
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:116:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 38: actual::SurfaceLifecycle::require_active.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:191:9 in function actual::SurfaceLifecycle::require_active
+
+Check 39: actual::SurfaceLifecycle::require_active.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:195:9 in function actual::SurfaceLifecycle::require_active
+
+Check 40: actual::SurfaceLifecycle::next_generation.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:213:9 in function actual::SurfaceLifecycle::next_generation
+
+Check 41: actual::SurfaceLifecycle::next_generation.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:213:9 in function actual::SurfaceLifecycle::next_generation
+
+Check 42: actual::SurfaceLifecycle::next_generation.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:213:9 in function actual::SurfaceLifecycle::next_generation
+
+Check 43: actual::SurfaceLifecycle::next_generation.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:213:9 in function actual::SurfaceLifecycle::next_generation
+
+Check 44: actual::SurfaceLifecycle::next_generation.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:213:9 in function actual::SurfaceLifecycle::next_generation
+
+Check 45: actual::SurfaceLifecycle::next_generation.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:213:9 in function actual::SurfaceLifecycle::next_generation
+
+Check 46: actual::SurfaceLifecycle::status.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:77:22 in function actual::SurfaceLifecycle::status
+
+Check 47: actual::SurfaceLifecycle::status.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:77:22 in function actual::SurfaceLifecycle::status
+
+Check 48: actual::SurfaceLifecycle::status.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:77:22 in function actual::SurfaceLifecycle::status
+
+Check 49: actual::SurfaceLifecycle::status.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:77:22 in function actual::SurfaceLifecycle::status
+
+Check 50: actual::SurfaceLifecycle::status.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:77:22 in function actual::SurfaceLifecycle::status
+
+Check 51: actual::SurfaceLifecycle::status.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:77:22 in function actual::SurfaceLifecycle::status
+
+Check 52: actual::SurfaceLifecycle::status.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:78:20 in function actual::SurfaceLifecycle::status
+
+Check 53: actual::SurfaceLifecycle::status.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:81:20 in function actual::SurfaceLifecycle::status
+
+Check 54: actual::SurfaceLifecycle::status.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:81:20 in function actual::SurfaceLifecycle::status
+
+Check 55: actual::SurfaceLifecycle::status.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:81:20 in function actual::SurfaceLifecycle::status
+
+Check 56: actual::SurfaceLifecycle::status.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:81:20 in function actual::SurfaceLifecycle::status
+
+Check 57: actual::SurfaceLifecycle::status.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:81:20 in function actual::SurfaceLifecycle::status
+
+Check 58: actual::SurfaceLifecycle::status.pointer_dereference.13
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:81:20 in function actual::SurfaceLifecycle::status
+
+Check 59: actual::SurfaceLifecycle::status.pointer_dereference.14
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:82:25 in function actual::SurfaceLifecycle::status
+
+Check 60: actual::SurfaceLifecycle::status.pointer_dereference.15
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:82:25 in function actual::SurfaceLifecycle::status
+
+Check 61: actual::SurfaceLifecycle::status.pointer_dereference.16
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:82:25 in function actual::SurfaceLifecycle::status
+
+Check 62: actual::SurfaceLifecycle::status.pointer_dereference.17
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:82:25 in function actual::SurfaceLifecycle::status
+
+Check 63: actual::SurfaceLifecycle::status.pointer_dereference.18
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:82:25 in function actual::SurfaceLifecycle::status
+
+Check 64: actual::SurfaceLifecycle::status.pointer_dereference.19
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:82:25 in function actual::SurfaceLifecycle::status
+
+Check 65: actual::SurfaceLifecycle::status.pointer_dereference.20
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:83:20 in function actual::SurfaceLifecycle::status
+
+Check 66: actual::SurfaceLifecycle::status.pointer_dereference.21
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:83:20 in function actual::SurfaceLifecycle::status
+
+Check 67: actual::SurfaceLifecycle::status.pointer_dereference.22
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:83:20 in function actual::SurfaceLifecycle::status
+
+Check 68: actual::SurfaceLifecycle::status.pointer_dereference.23
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:83:20 in function actual::SurfaceLifecycle::status
+
+Check 69: actual::SurfaceLifecycle::status.pointer_dereference.24
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:83:20 in function actual::SurfaceLifecycle::status
+
+Check 70: actual::SurfaceLifecycle::status.pointer_dereference.25
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:83:20 in function actual::SurfaceLifecycle::status
+
+Check 71: actual::SurfaceLifecycle::status.pointer_dereference.26
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:84:21 in function actual::SurfaceLifecycle::status
+
+Check 72: actual::SurfaceLifecycle::status.pointer_dereference.27
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:84:21 in function actual::SurfaceLifecycle::status
+
+Check 73: actual::SurfaceLifecycle::status.pointer_dereference.28
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:84:21 in function actual::SurfaceLifecycle::status
+
+Check 74: actual::SurfaceLifecycle::status.pointer_dereference.29
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:84:21 in function actual::SurfaceLifecycle::status
+
+Check 75: actual::SurfaceLifecycle::status.pointer_dereference.30
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:84:21 in function actual::SurfaceLifecycle::status
+
+Check 76: actual::SurfaceLifecycle::status.pointer_dereference.31
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:84:21 in function actual::SurfaceLifecycle::status
+
+Check 77: actual::SurfaceLifecycle::require.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:203:22 in function actual::SurfaceLifecycle::require
+
+Check 78: actual::SurfaceLifecycle::require.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:203:22 in function actual::SurfaceLifecycle::require
+
+Check 79: actual::SurfaceLifecycle::require.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:203:22 in function actual::SurfaceLifecycle::require
+
+Check 80: actual::SurfaceLifecycle::require.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:203:22 in function actual::SurfaceLifecycle::require
+
+Check 81: actual::SurfaceLifecycle::require.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:203:22 in function actual::SurfaceLifecycle::require
+
+Check 82: actual::SurfaceLifecycle::require.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:203:22 in function actual::SurfaceLifecycle::require
+
+Check 83: actual::SurfaceLifecycle::require.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:206:35 in function actual::SurfaceLifecycle::require
+
+Check 84: actual::SurfaceLifecycle::require.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:206:35 in function actual::SurfaceLifecycle::require
+
+Check 85: actual::SurfaceLifecycle::require.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:206:35 in function actual::SurfaceLifecycle::require
+
+Check 86: actual::SurfaceLifecycle::require.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:206:35 in function actual::SurfaceLifecycle::require
+
+Check 87: actual::SurfaceLifecycle::require.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:206:35 in function actual::SurfaceLifecycle::require
+
+Check 88: actual::SurfaceLifecycle::require.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:206:35 in function actual::SurfaceLifecycle::require
+
+Check 89: actual::SurfaceLifecycle::require.pointer_dereference.13
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:209:9 in function actual::SurfaceLifecycle::require
+
+Check 90: actual::SurfaceLifecycle::suspend.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:127:9 in function actual::SurfaceLifecycle::suspend
+
+Check 91: actual::SurfaceLifecycle::suspend.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:129:9 in function actual::SurfaceLifecycle::suspend
+
+Check 92: actual::SurfaceLifecycle::suspend.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:129:9 in function actual::SurfaceLifecycle::suspend
+
+Check 93: actual::SurfaceLifecycle::suspend.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:129:9 in function actual::SurfaceLifecycle::suspend
+
+Check 94: actual::SurfaceLifecycle::suspend.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:129:9 in function actual::SurfaceLifecycle::suspend
+
+Check 95: actual::SurfaceLifecycle::suspend.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:129:9 in function actual::SurfaceLifecycle::suspend
+
+Check 96: actual::SurfaceLifecycle::suspend.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:129:9 in function actual::SurfaceLifecycle::suspend
+
+Check 97: actual::SurfaceLifecycle::suspend.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:130:9 in function actual::SurfaceLifecycle::suspend
+
+Check 98: actual::SurfaceLifecycle::suspend.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:130:9 in function actual::SurfaceLifecycle::suspend
+
+Check 99: actual::SurfaceLifecycle::suspend.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:130:9 in function actual::SurfaceLifecycle::suspend
+
+Check 100: actual::SurfaceLifecycle::suspend.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:130:9 in function actual::SurfaceLifecycle::suspend
+
+Check 101: actual::SurfaceLifecycle::suspend.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:130:9 in function actual::SurfaceLifecycle::suspend
+
+Check 102: actual::SurfaceLifecycle::suspend.pointer_dereference.13
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:130:9 in function actual::SurfaceLifecycle::suspend
+
+Check 103: <actual::SurfaceState as std::cmp::PartialEq>::eq.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:12:30 in function <actual::SurfaceState as std::cmp::PartialEq>::eq
+
+Check 104: <actual::SurfaceState as std::cmp::PartialEq>::eq.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:12:30 in function <actual::SurfaceState as std::cmp::PartialEq>::eq
+
+Check 105: <actual::SurfaceState as std::cmp::PartialEq>::eq.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:12:30 in function <actual::SurfaceState as std::cmp::PartialEq>::eq
+
+Check 106: <actual::SurfaceState as std::cmp::PartialEq>::eq.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:12:30 in function <actual::SurfaceState as std::cmp::PartialEq>::eq
+
+Check 107: <actual::SurfaceState as std::cmp::PartialEq>::eq.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:12:30 in function <actual::SurfaceState as std::cmp::PartialEq>::eq
+
+Check 108: <actual::SurfaceState as std::cmp::PartialEq>::eq.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:12:30 in function <actual::SurfaceState as std::cmp::PartialEq>::eq
+
+Check 109: <actual::SurfaceState as std::cmp::PartialEq>::eq.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:12:30 in function <actual::SurfaceState as std::cmp::PartialEq>::eq
+
+Check 110: <actual::SurfaceState as std::cmp::PartialEq>::eq.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:12:30 in function <actual::SurfaceState as std::cmp::PartialEq>::eq
+
+Check 111: <actual::SurfaceState as std::cmp::PartialEq>::eq.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:12:30 in function <actual::SurfaceState as std::cmp::PartialEq>::eq
+
+Check 112: <actual::SurfaceState as std::cmp::PartialEq>::eq.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:12:30 in function <actual::SurfaceState as std::cmp::PartialEq>::eq
+
+Check 113: <actual::SurfaceState as std::cmp::PartialEq>::eq.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:12:30 in function <actual::SurfaceState as std::cmp::PartialEq>::eq
+
+Check 114: <actual::SurfaceState as std::cmp::PartialEq>::eq.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:12:30 in function <actual::SurfaceState as std::cmp::PartialEq>::eq
+
+Check 115: std::cmp::impls::<impl std::cmp::PartialEq for &actual::SurfaceLifecycleError>::eq.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:27 in function std::cmp::impls::<impl std::cmp::PartialEq for &actual::SurfaceLifecycleError>::eq
+
+Check 116: std::cmp::impls::<impl std::cmp::PartialEq for &actual::SurfaceLifecycleError>::eq.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:27 in function std::cmp::impls::<impl std::cmp::PartialEq for &actual::SurfaceLifecycleError>::eq
+
+Check 117: std::cmp::impls::<impl std::cmp::PartialEq for &actual::SurfaceLifecycleError>::eq.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:27 in function std::cmp::impls::<impl std::cmp::PartialEq for &actual::SurfaceLifecycleError>::eq
+
+Check 118: std::cmp::impls::<impl std::cmp::PartialEq for &actual::SurfaceLifecycleError>::eq.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:27 in function std::cmp::impls::<impl std::cmp::PartialEq for &actual::SurfaceLifecycleError>::eq
+
+Check 119: std::cmp::impls::<impl std::cmp::PartialEq for &actual::SurfaceLifecycleError>::eq.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:27 in function std::cmp::impls::<impl std::cmp::PartialEq for &actual::SurfaceLifecycleError>::eq
+
+Check 120: std::cmp::impls::<impl std::cmp::PartialEq for &actual::SurfaceLifecycleError>::eq.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:27 in function std::cmp::impls::<impl std::cmp::PartialEq for &actual::SurfaceLifecycleError>::eq
+
+Check 121: std::cmp::impls::<impl std::cmp::PartialEq for &actual::SurfaceLifecycleError>::eq.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:34 in function std::cmp::impls::<impl std::cmp::PartialEq for &actual::SurfaceLifecycleError>::eq
+
+Check 122: std::cmp::impls::<impl std::cmp::PartialEq for &actual::SurfaceLifecycleError>::eq.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:34 in function std::cmp::impls::<impl std::cmp::PartialEq for &actual::SurfaceLifecycleError>::eq
+
+Check 123: std::cmp::impls::<impl std::cmp::PartialEq for &actual::SurfaceLifecycleError>::eq.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:34 in function std::cmp::impls::<impl std::cmp::PartialEq for &actual::SurfaceLifecycleError>::eq
+
+Check 124: std::cmp::impls::<impl std::cmp::PartialEq for &actual::SurfaceLifecycleError>::eq.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:34 in function std::cmp::impls::<impl std::cmp::PartialEq for &actual::SurfaceLifecycleError>::eq
+
+Check 125: std::cmp::impls::<impl std::cmp::PartialEq for &actual::SurfaceLifecycleError>::eq.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:34 in function std::cmp::impls::<impl std::cmp::PartialEq for &actual::SurfaceLifecycleError>::eq
+
+Check 126: std::cmp::impls::<impl std::cmp::PartialEq for &actual::SurfaceLifecycleError>::eq.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:34 in function std::cmp::impls::<impl std::cmp::PartialEq for &actual::SurfaceLifecycleError>::eq
+
+Check 127: std::cmp::impls::<impl std::cmp::PartialEq for &u64>::eq.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:27 in function std::cmp::impls::<impl std::cmp::PartialEq for &u64>::eq
+
+Check 128: std::cmp::impls::<impl std::cmp::PartialEq for &u64>::eq.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:27 in function std::cmp::impls::<impl std::cmp::PartialEq for &u64>::eq
+
+Check 129: std::cmp::impls::<impl std::cmp::PartialEq for &u64>::eq.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:27 in function std::cmp::impls::<impl std::cmp::PartialEq for &u64>::eq
+
+Check 130: std::cmp::impls::<impl std::cmp::PartialEq for &u64>::eq.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:27 in function std::cmp::impls::<impl std::cmp::PartialEq for &u64>::eq
+
+Check 131: std::cmp::impls::<impl std::cmp::PartialEq for &u64>::eq.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:27 in function std::cmp::impls::<impl std::cmp::PartialEq for &u64>::eq
+
+Check 132: std::cmp::impls::<impl std::cmp::PartialEq for &u64>::eq.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:27 in function std::cmp::impls::<impl std::cmp::PartialEq for &u64>::eq
+
+Check 133: std::cmp::impls::<impl std::cmp::PartialEq for &u64>::eq.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:34 in function std::cmp::impls::<impl std::cmp::PartialEq for &u64>::eq
+
+Check 134: std::cmp::impls::<impl std::cmp::PartialEq for &u64>::eq.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:34 in function std::cmp::impls::<impl std::cmp::PartialEq for &u64>::eq
+
+Check 135: std::cmp::impls::<impl std::cmp::PartialEq for &u64>::eq.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:34 in function std::cmp::impls::<impl std::cmp::PartialEq for &u64>::eq
+
+Check 136: std::cmp::impls::<impl std::cmp::PartialEq for &u64>::eq.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:34 in function std::cmp::impls::<impl std::cmp::PartialEq for &u64>::eq
+
+Check 137: std::cmp::impls::<impl std::cmp::PartialEq for &u64>::eq.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:34 in function std::cmp::impls::<impl std::cmp::PartialEq for &u64>::eq
+
+Check 138: std::cmp::impls::<impl std::cmp::PartialEq for &u64>::eq.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:34 in function std::cmp::impls::<impl std::cmp::PartialEq for &u64>::eq
+
+Check 139: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:24:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 140: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:24:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 141: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:24:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 142: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:24:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 143: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:24:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 144: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:24:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 145: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:24:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 146: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:24:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 147: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:24:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 148: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:24:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 149: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:24:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 150: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:24:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 151: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.13
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:25:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 152: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.14
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:25:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 153: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.15
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:25:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 154: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.16
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:25:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 155: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.17
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:25:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 156: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.18
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:25:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 157: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.19
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:25:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 158: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.20
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:25:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 159: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.21
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:25:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 160: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.22
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:25:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 161: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.23
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:25:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 162: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.24
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:25:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 163: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.25
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:26:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 164: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.26
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:26:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 165: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.27
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:26:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 166: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.28
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:26:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 167: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.29
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:26:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 168: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.30
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:26:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 169: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.31
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:26:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 170: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.32
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:26:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 171: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.33
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:26:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 172: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.34
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:26:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 173: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.35
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:26:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 174: <actual::SurfaceStatus as std::cmp::PartialEq>::eq.pointer_dereference.36
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:26:5 in function <actual::SurfaceStatus as std::cmp::PartialEq>::eq
+
+Check 175: <actual::SurfaceLifecycleError as std::cmp::PartialEq>::eq.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:31:30 in function <actual::SurfaceLifecycleError as std::cmp::PartialEq>::eq
+
+Check 176: <actual::SurfaceLifecycleError as std::cmp::PartialEq>::eq.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:31:30 in function <actual::SurfaceLifecycleError as std::cmp::PartialEq>::eq
+
+Check 177: <actual::SurfaceLifecycleError as std::cmp::PartialEq>::eq.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:31:30 in function <actual::SurfaceLifecycleError as std::cmp::PartialEq>::eq
+
+Check 178: <actual::SurfaceLifecycleError as std::cmp::PartialEq>::eq.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:31:30 in function <actual::SurfaceLifecycleError as std::cmp::PartialEq>::eq
+
+Check 179: <actual::SurfaceLifecycleError as std::cmp::PartialEq>::eq.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:31:30 in function <actual::SurfaceLifecycleError as std::cmp::PartialEq>::eq
+
+Check 180: <actual::SurfaceLifecycleError as std::cmp::PartialEq>::eq.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:31:30 in function <actual::SurfaceLifecycleError as std::cmp::PartialEq>::eq
+
+Check 181: <actual::SurfaceLifecycleError as std::cmp::PartialEq>::eq.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:31:30 in function <actual::SurfaceLifecycleError as std::cmp::PartialEq>::eq
+
+Check 182: <actual::SurfaceLifecycleError as std::cmp::PartialEq>::eq.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:31:30 in function <actual::SurfaceLifecycleError as std::cmp::PartialEq>::eq
+
+Check 183: <actual::SurfaceLifecycleError as std::cmp::PartialEq>::eq.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:31:30 in function <actual::SurfaceLifecycleError as std::cmp::PartialEq>::eq
+
+Check 184: <actual::SurfaceLifecycleError as std::cmp::PartialEq>::eq.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:31:30 in function <actual::SurfaceLifecycleError as std::cmp::PartialEq>::eq
+
+Check 185: <actual::SurfaceLifecycleError as std::cmp::PartialEq>::eq.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:31:30 in function <actual::SurfaceLifecycleError as std::cmp::PartialEq>::eq
+
+Check 186: <actual::SurfaceLifecycleError as std::cmp::PartialEq>::eq.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:31:30 in function <actual::SurfaceLifecycleError as std::cmp::PartialEq>::eq
+
+Check 187: std::cmp::impls::<impl std::cmp::PartialEq for u64>::eq.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2153:54 in function std::cmp::impls::<impl std::cmp::PartialEq for u64>::eq
+
+Check 188: std::cmp::impls::<impl std::cmp::PartialEq for u64>::eq.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2153:54 in function std::cmp::impls::<impl std::cmp::PartialEq for u64>::eq
+
+Check 189: std::cmp::impls::<impl std::cmp::PartialEq for u64>::eq.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2153:54 in function std::cmp::impls::<impl std::cmp::PartialEq for u64>::eq
+
+Check 190: std::cmp::impls::<impl std::cmp::PartialEq for u64>::eq.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2153:54 in function std::cmp::impls::<impl std::cmp::PartialEq for u64>::eq
+
+Check 191: std::cmp::impls::<impl std::cmp::PartialEq for u64>::eq.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2153:54 in function std::cmp::impls::<impl std::cmp::PartialEq for u64>::eq
+
+Check 192: std::cmp::impls::<impl std::cmp::PartialEq for u64>::eq.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2153:54 in function std::cmp::impls::<impl std::cmp::PartialEq for u64>::eq
+
+Check 193: std::cmp::impls::<impl std::cmp::PartialEq for u64>::eq.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2153:63 in function std::cmp::impls::<impl std::cmp::PartialEq for u64>::eq
+
+Check 194: std::cmp::impls::<impl std::cmp::PartialEq for u64>::eq.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2153:63 in function std::cmp::impls::<impl std::cmp::PartialEq for u64>::eq
+
+Check 195: std::cmp::impls::<impl std::cmp::PartialEq for u64>::eq.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2153:63 in function std::cmp::impls::<impl std::cmp::PartialEq for u64>::eq
+
+Check 196: std::cmp::impls::<impl std::cmp::PartialEq for u64>::eq.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2153:63 in function std::cmp::impls::<impl std::cmp::PartialEq for u64>::eq
+
+Check 197: std::cmp::impls::<impl std::cmp::PartialEq for u64>::eq.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2153:63 in function std::cmp::impls::<impl std::cmp::PartialEq for u64>::eq
+
+Check 198: std::cmp::impls::<impl std::cmp::PartialEq for u64>::eq.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2153:63 in function std::cmp::impls::<impl std::cmp::PartialEq for u64>::eq
+
+Check 199: <std::result::Result<(), actual::SurfaceLifecycleError> as std::ops::Try>::branch.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2177:15 in function <std::result::Result<(), actual::SurfaceLifecycleError> as std::ops::Try>::branch
+
+Check 200: <std::result::Result<(), actual::SurfaceLifecycleError> as std::ops::Try>::branch.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2178:22 in function <std::result::Result<(), actual::SurfaceLifecycleError> as std::ops::Try>::branch
+
+Check 201: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 202: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 203: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 204: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 205: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 206: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 207: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 208: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 209: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 210: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 211: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 212: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 213: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.13
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 214: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.14
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 215: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.15
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 216: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.16
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 217: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.17
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 218: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.18
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 219: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.19
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 220: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.20
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 221: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.21
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 222: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.22
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 223: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.23
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 224: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.24
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 225: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.25
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 226: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.26
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 227: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.27
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 228: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.28
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 229: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.29
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+Check 230: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq.pointer_dereference.30
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::cmp::PartialEq>::eq
+
+
+SUMMARY:
+ ** 0 of 230 failed
+
+VERIFICATION:- SUCCESSFUL
+Verification Time: 0.29857406s
+
+Checking harness proofs::successful_lifecycle_is_monotone_and_final...
+CBMC 6.11.0 (cbmc-6.11.0)
+CBMC version 6.11.0 (cbmc-6.11.0) 64-bit x86_64 linux
+Reading GOTO program from file <repo>/experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/9002a0936389efa9/out/jasper_ui_host_surface_verification-9002a0936389efa9__RNvNtCsb7PrPDXrCz2_35jasper_ui_host_surface_verification6proofs42successful_lifecycle_is_monotone_and_final.out
+Generating GOTO Program
+Adding CPROVER library (x86_64)
+Removal of function pointers and virtual functions
+Generic Property Instrumentation
+Running with 16 object bits, 48 offset bits (user-specified)
+Starting Bounded Model Checking
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<(), actual::SurfaceLifecycleError> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file <repo>/experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs line 191 column 9 function actual::SurfaceLifecycle::require_active thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<(), actual::SurfaceLifecycleError> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file src/lib.rs line 0 column 0 function actual::SurfaceLifecycle::reconfigure thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 1230 column 15 function std::result::Result::<u64, actual::SurfaceLifecycleError>::unwrap thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 1871 column 5 function std::result::unwrap_failed thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 1232 column 23 function std::result::Result::<u64, actual::SurfaceLifecycleError>::unwrap thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<(), actual::SurfaceLifecycleError> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file <repo>/experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs line 191 column 9 function actual::SurfaceLifecycle::require_active thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<(), actual::SurfaceLifecycleError> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1334 column 15 function std::option::Option::<u64>::ok_or::<actual::SurfaceLifecycleError> thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file src/lib.rs line 0 column 0 function actual::SurfaceLifecycle::suspend thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 1230 column 15 function std::result::Result::<u64, actual::SurfaceLifecycleError>::unwrap thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 1871 column 5 function std::result::unwrap_failed thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 1232 column 23 function std::result::Result::<u64, actual::SurfaceLifecycleError>::unwrap thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<(), actual::SurfaceLifecycleError> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1334 column 15 function std::option::Option::<u64>::ok_or::<actual::SurfaceLifecycleError> thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file src/lib.rs line 0 column 0 function actual::SurfaceLifecycle::resume thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 1230 column 15 function std::result::Result::<u64, actual::SurfaceLifecycleError>::unwrap thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 1871 column 5 function std::result::unwrap_failed thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 1232 column 23 function std::result::Result::<u64, actual::SurfaceLifecycleError>::unwrap thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<(), actual::SurfaceLifecycleError> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file <repo>/experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs line 162 column 9 function actual::SurfaceLifecycle::retire thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 1230 column 15 function std::result::Result::<(), actual::SurfaceLifecycleError>::unwrap thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 1871 column 5 function std::result::unwrap_failed thread 0
+aborting path on assume(false) at file <home>/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 1232 column 23 function std::result::Result::<(), actual::SurfaceLifecycleError>::unwrap thread 0
+Runtime Symex: 0.380489s
+size of program expression: 6764 steps
+slicing removed 4866 assignments
+Generated 306 VCC(s), 38 remaining after simplification
+Runtime Postprocess Equation: 0.00202039s
+Passing problem to propositional reduction
+converting SSA
+Runtime Convert SSA: 0.0120114s
+Running propositional reduction
+Post-processing
+Runtime Post-process: 6.872e-06s
+Solving with CaDiCaL 3.0.0
+14246 variables, 24111 clauses
+SAT checker: instance is SATISFIABLE
+Runtime Solver: 0.000383945s
+Runtime decision procedure: 0.0129247s
+Running propositional reduction
+Solving with CaDiCaL 3.0.0
+14247 variables, 24112 clauses
+SAT checker: instance is UNSATISFIABLE
+Runtime Solver: 1.9207e-05s
+Runtime decision procedure: 0.000166023s
+
+RESULTS:
+Check 1: std::result::Result::<u64, actual::SurfaceLifecycleError>::unwrap.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:1230:15 in function std::result::Result::<u64, actual::SurfaceLifecycleError>::unwrap
+
+Check 2: actual::SurfaceLifecycle::resume.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/lib.rs:0:0 in function actual::SurfaceLifecycle::resume
+
+Check 3: <std::result::Result<(), actual::SurfaceLifecycleError> as std::ops::Try>::branch.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2177:15 in function <std::result::Result<(), actual::SurfaceLifecycleError> as std::ops::Try>::branch
+
+Check 4: std::result::unwrap_failed.assertion.1
+	 - Status: SUCCESS
+	 - Description: "This is a placeholder message; Kani doesn't support message formatted at runtime"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:1871:5 in function std::result::unwrap_failed
+
+Check 5: std::result::Result::<(), actual::SurfaceLifecycleError>::unwrap.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:1230:15 in function std::result::Result::<(), actual::SurfaceLifecycleError>::unwrap
+
+Check 6: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, actual::SurfaceLifecycleError>>>::from_residual.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2192:15 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, actual::SurfaceLifecycleError>>>::from_residual
+
+Check 7: <std::result::Result<(), actual::SurfaceLifecycleError> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, actual::SurfaceLifecycleError>>>::from_residual.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2192:15 in function <std::result::Result<(), actual::SurfaceLifecycleError> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, actual::SurfaceLifecycleError>>>::from_residual
+
+Check 8: actual::SurfaceLifecycle::suspend.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/lib.rs:0:0 in function actual::SurfaceLifecycle::suspend
+
+Check 9: actual::SurfaceLifecycle::retire.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:162:9 in function actual::SurfaceLifecycle::retire
+
+Check 10: actual::SurfaceLifecycle::retire.assertion.1
+	 - Status: SUCCESS
+	 - Description: "attempt to add with overflow"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:167:13 in function actual::SurfaceLifecycle::retire
+
+Check 11: std::option::Option::<u64>::ok_or::<actual::SurfaceLifecycleError>.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1334:15 in function std::option::Option::<u64>::ok_or::<actual::SurfaceLifecycleError>
+
+Check 12: actual::SurfaceLifecycle::require_active.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:191:9 in function actual::SurfaceLifecycle::require_active
+
+Check 13: <std::result::Result<u64, actual::SurfaceLifecycleError> as std::ops::Try>::branch.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2177:15 in function <std::result::Result<u64, actual::SurfaceLifecycleError> as std::ops::Try>::branch
+
+Check 14: core::num::<impl u64>::checked_add.arithmetic_overflow.1
+	 - Status: SUCCESS
+	 - Description: "attempt to compute `unchecked_add` which would overflow"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:942:31 in function core::num::<impl u64>::checked_add
+
+Check 15: proofs::successful_lifecycle_is_monotone_and_final.assertion.1
+	 - Status: SUCCESS
+	 - Description: "reconfigure must advance"
+	 - Location: src/lib.rs:17:9 in function proofs::successful_lifecycle_is_monotone_and_final
+
+Check 16: proofs::successful_lifecycle_is_monotone_and_final.assertion.2
+	 - Status: SUCCESS
+	 - Description: "suspend must advance"
+	 - Location: src/lib.rs:19:9 in function proofs::successful_lifecycle_is_monotone_and_final
+
+Check 17: proofs::successful_lifecycle_is_monotone_and_final.assertion.3
+	 - Status: SUCCESS
+	 - Description: "resume must advance"
+	 - Location: src/lib.rs:23:9 in function proofs::successful_lifecycle_is_monotone_and_final
+
+Check 18: proofs::successful_lifecycle_is_monotone_and_final.assertion.4
+	 - Status: SUCCESS
+	 - Description: "resumed generation must be active"
+	 - Location: src/lib.rs:24:9 in function proofs::successful_lifecycle_is_monotone_and_final
+
+Check 19: proofs::successful_lifecycle_is_monotone_and_final.assertion.5
+	 - Status: SUCCESS
+	 - Description: "retirement must invalidate the live generation"
+	 - Location: src/lib.rs:29:9 in function proofs::successful_lifecycle_is_monotone_and_final
+
+Check 20: actual::SurfaceLifecycle::reconfigure.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/lib.rs:0:0 in function actual::SurfaceLifecycle::reconfigure
+
+Check 21: std::result::Result::<(), actual::SurfaceLifecycleError>::unwrap.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:1230:15 in function std::result::Result::<(), actual::SurfaceLifecycleError>::unwrap
+
+Check 22: actual::SurfaceLifecycle::reconfigure.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:112:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 23: actual::SurfaceLifecycle::reconfigure.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:114:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 24: actual::SurfaceLifecycle::reconfigure.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:114:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 25: actual::SurfaceLifecycle::reconfigure.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:114:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 26: actual::SurfaceLifecycle::reconfigure.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:114:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 27: actual::SurfaceLifecycle::reconfigure.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:114:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 28: actual::SurfaceLifecycle::reconfigure.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:114:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 29: actual::SurfaceLifecycle::reconfigure.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:115:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 30: actual::SurfaceLifecycle::reconfigure.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:115:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 31: actual::SurfaceLifecycle::reconfigure.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:115:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 32: actual::SurfaceLifecycle::reconfigure.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:115:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 33: actual::SurfaceLifecycle::reconfigure.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:115:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 34: actual::SurfaceLifecycle::reconfigure.pointer_dereference.13
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:115:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 35: actual::SurfaceLifecycle::reconfigure.pointer_dereference.14
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:116:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 36: actual::SurfaceLifecycle::reconfigure.pointer_dereference.15
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:116:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 37: actual::SurfaceLifecycle::reconfigure.pointer_dereference.16
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:116:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 38: actual::SurfaceLifecycle::reconfigure.pointer_dereference.17
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:116:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 39: actual::SurfaceLifecycle::reconfigure.pointer_dereference.18
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:116:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 40: actual::SurfaceLifecycle::reconfigure.pointer_dereference.19
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:116:9 in function actual::SurfaceLifecycle::reconfigure
+
+Check 41: actual::SurfaceLifecycle::render_allowed.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:91:19 in function actual::SurfaceLifecycle::render_allowed
+
+Check 42: actual::SurfaceLifecycle::render_allowed.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:91:19 in function actual::SurfaceLifecycle::render_allowed
+
+Check 43: actual::SurfaceLifecycle::render_allowed.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:91:19 in function actual::SurfaceLifecycle::render_allowed
+
+Check 44: actual::SurfaceLifecycle::render_allowed.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:91:19 in function actual::SurfaceLifecycle::render_allowed
+
+Check 45: actual::SurfaceLifecycle::render_allowed.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:91:19 in function actual::SurfaceLifecycle::render_allowed
+
+Check 46: actual::SurfaceLifecycle::render_allowed.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:91:19 in function actual::SurfaceLifecycle::render_allowed
+
+Check 47: actual::SurfaceLifecycle::render_allowed.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:93:16 in function actual::SurfaceLifecycle::render_allowed
+
+Check 48: actual::SurfaceLifecycle::render_allowed.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:93:16 in function actual::SurfaceLifecycle::render_allowed
+
+Check 49: actual::SurfaceLifecycle::render_allowed.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:93:16 in function actual::SurfaceLifecycle::render_allowed
+
+Check 50: actual::SurfaceLifecycle::render_allowed.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:93:16 in function actual::SurfaceLifecycle::render_allowed
+
+Check 51: actual::SurfaceLifecycle::render_allowed.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:93:16 in function actual::SurfaceLifecycle::render_allowed
+
+Check 52: actual::SurfaceLifecycle::render_allowed.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:93:16 in function actual::SurfaceLifecycle::render_allowed
+
+Check 53: actual::SurfaceLifecycle::require_active.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:191:9 in function actual::SurfaceLifecycle::require_active
+
+Check 54: actual::SurfaceLifecycle::require_active.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:195:9 in function actual::SurfaceLifecycle::require_active
+
+Check 55: actual::SurfaceLifecycle::next_generation.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:213:9 in function actual::SurfaceLifecycle::next_generation
+
+Check 56: actual::SurfaceLifecycle::next_generation.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:213:9 in function actual::SurfaceLifecycle::next_generation
+
+Check 57: actual::SurfaceLifecycle::next_generation.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:213:9 in function actual::SurfaceLifecycle::next_generation
+
+Check 58: actual::SurfaceLifecycle::next_generation.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:213:9 in function actual::SurfaceLifecycle::next_generation
+
+Check 59: actual::SurfaceLifecycle::next_generation.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:213:9 in function actual::SurfaceLifecycle::next_generation
+
+Check 60: actual::SurfaceLifecycle::next_generation.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:213:9 in function actual::SurfaceLifecycle::next_generation
+
+Check 61: actual::SurfaceLifecycle::resume.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:143:9 in function actual::SurfaceLifecycle::resume
+
+Check 62: actual::SurfaceLifecycle::resume.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:148:9 in function actual::SurfaceLifecycle::resume
+
+Check 63: actual::SurfaceLifecycle::resume.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:148:9 in function actual::SurfaceLifecycle::resume
+
+Check 64: actual::SurfaceLifecycle::resume.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:148:9 in function actual::SurfaceLifecycle::resume
+
+Check 65: actual::SurfaceLifecycle::resume.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:148:9 in function actual::SurfaceLifecycle::resume
+
+Check 66: actual::SurfaceLifecycle::resume.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:148:9 in function actual::SurfaceLifecycle::resume
+
+Check 67: actual::SurfaceLifecycle::resume.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:148:9 in function actual::SurfaceLifecycle::resume
+
+Check 68: actual::SurfaceLifecycle::resume.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:149:9 in function actual::SurfaceLifecycle::resume
+
+Check 69: actual::SurfaceLifecycle::resume.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:149:9 in function actual::SurfaceLifecycle::resume
+
+Check 70: actual::SurfaceLifecycle::resume.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:149:9 in function actual::SurfaceLifecycle::resume
+
+Check 71: actual::SurfaceLifecycle::resume.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:149:9 in function actual::SurfaceLifecycle::resume
+
+Check 72: actual::SurfaceLifecycle::resume.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:149:9 in function actual::SurfaceLifecycle::resume
+
+Check 73: actual::SurfaceLifecycle::resume.pointer_dereference.13
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:149:9 in function actual::SurfaceLifecycle::resume
+
+Check 74: actual::SurfaceLifecycle::resume.pointer_dereference.14
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:150:9 in function actual::SurfaceLifecycle::resume
+
+Check 75: actual::SurfaceLifecycle::resume.pointer_dereference.15
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:150:9 in function actual::SurfaceLifecycle::resume
+
+Check 76: actual::SurfaceLifecycle::resume.pointer_dereference.16
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:150:9 in function actual::SurfaceLifecycle::resume
+
+Check 77: actual::SurfaceLifecycle::resume.pointer_dereference.17
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:150:9 in function actual::SurfaceLifecycle::resume
+
+Check 78: actual::SurfaceLifecycle::resume.pointer_dereference.18
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:150:9 in function actual::SurfaceLifecycle::resume
+
+Check 79: actual::SurfaceLifecycle::resume.pointer_dereference.19
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:150:9 in function actual::SurfaceLifecycle::resume
+
+Check 80: actual::SurfaceLifecycle::resume.pointer_dereference.20
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:151:9 in function actual::SurfaceLifecycle::resume
+
+Check 81: actual::SurfaceLifecycle::resume.pointer_dereference.21
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:151:9 in function actual::SurfaceLifecycle::resume
+
+Check 82: actual::SurfaceLifecycle::resume.pointer_dereference.22
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:151:9 in function actual::SurfaceLifecycle::resume
+
+Check 83: actual::SurfaceLifecycle::resume.pointer_dereference.23
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:151:9 in function actual::SurfaceLifecycle::resume
+
+Check 84: actual::SurfaceLifecycle::resume.pointer_dereference.24
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:151:9 in function actual::SurfaceLifecycle::resume
+
+Check 85: actual::SurfaceLifecycle::resume.pointer_dereference.25
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:151:9 in function actual::SurfaceLifecycle::resume
+
+Check 86: actual::SurfaceLifecycle::retire.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:162:9 in function actual::SurfaceLifecycle::retire
+
+Check 87: actual::SurfaceLifecycle::retire.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:166:12 in function actual::SurfaceLifecycle::retire
+
+Check 88: actual::SurfaceLifecycle::retire.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:166:12 in function actual::SurfaceLifecycle::retire
+
+Check 89: actual::SurfaceLifecycle::retire.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:166:12 in function actual::SurfaceLifecycle::retire
+
+Check 90: actual::SurfaceLifecycle::retire.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:166:12 in function actual::SurfaceLifecycle::retire
+
+Check 91: actual::SurfaceLifecycle::retire.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:166:12 in function actual::SurfaceLifecycle::retire
+
+Check 92: actual::SurfaceLifecycle::retire.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:166:12 in function actual::SurfaceLifecycle::retire
+
+Check 93: pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+
+Check 94: pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+
+Check 95: pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+
+Check 96: pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+
+Check 97: pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+
+Check 98: pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+
+Check 99: actual::SurfaceLifecycle::retire.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:167:13 in function actual::SurfaceLifecycle::retire
+
+Check 100: actual::SurfaceLifecycle::retire.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:167:13 in function actual::SurfaceLifecycle::retire
+
+Check 101: actual::SurfaceLifecycle::retire.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:167:13 in function actual::SurfaceLifecycle::retire
+
+Check 102: actual::SurfaceLifecycle::retire.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:167:13 in function actual::SurfaceLifecycle::retire
+
+Check 103: actual::SurfaceLifecycle::retire.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:167:13 in function actual::SurfaceLifecycle::retire
+
+Check 104: actual::SurfaceLifecycle::retire.pointer_dereference.13
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:167:13 in function actual::SurfaceLifecycle::retire
+
+Check 105: actual::SurfaceLifecycle::retire.pointer_dereference.14
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:169:9 in function actual::SurfaceLifecycle::retire
+
+Check 106: actual::SurfaceLifecycle::retire.pointer_dereference.15
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:169:9 in function actual::SurfaceLifecycle::retire
+
+Check 107: actual::SurfaceLifecycle::retire.pointer_dereference.16
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:169:9 in function actual::SurfaceLifecycle::retire
+
+Check 108: actual::SurfaceLifecycle::retire.pointer_dereference.17
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:169:9 in function actual::SurfaceLifecycle::retire
+
+Check 109: actual::SurfaceLifecycle::retire.pointer_dereference.18
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:169:9 in function actual::SurfaceLifecycle::retire
+
+Check 110: actual::SurfaceLifecycle::retire.pointer_dereference.19
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:169:9 in function actual::SurfaceLifecycle::retire
+
+Check 111: actual::SurfaceLifecycle::retire.pointer_dereference.20
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:170:9 in function actual::SurfaceLifecycle::retire
+
+Check 112: actual::SurfaceLifecycle::require.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:203:22 in function actual::SurfaceLifecycle::require
+
+Check 113: actual::SurfaceLifecycle::require.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:203:22 in function actual::SurfaceLifecycle::require
+
+Check 114: actual::SurfaceLifecycle::require.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:203:22 in function actual::SurfaceLifecycle::require
+
+Check 115: actual::SurfaceLifecycle::require.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:203:22 in function actual::SurfaceLifecycle::require
+
+Check 116: actual::SurfaceLifecycle::require.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:203:22 in function actual::SurfaceLifecycle::require
+
+Check 117: actual::SurfaceLifecycle::require.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:203:22 in function actual::SurfaceLifecycle::require
+
+Check 118: actual::SurfaceLifecycle::require.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:206:35 in function actual::SurfaceLifecycle::require
+
+Check 119: actual::SurfaceLifecycle::require.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:206:35 in function actual::SurfaceLifecycle::require
+
+Check 120: actual::SurfaceLifecycle::require.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:206:35 in function actual::SurfaceLifecycle::require
+
+Check 121: actual::SurfaceLifecycle::require.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:206:35 in function actual::SurfaceLifecycle::require
+
+Check 122: actual::SurfaceLifecycle::require.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:206:35 in function actual::SurfaceLifecycle::require
+
+Check 123: actual::SurfaceLifecycle::require.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:206:35 in function actual::SurfaceLifecycle::require
+
+Check 124: actual::SurfaceLifecycle::require.pointer_dereference.13
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:209:9 in function actual::SurfaceLifecycle::require
+
+Check 125: actual::SurfaceLifecycle::suspend.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:127:9 in function actual::SurfaceLifecycle::suspend
+
+Check 126: actual::SurfaceLifecycle::suspend.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:129:9 in function actual::SurfaceLifecycle::suspend
+
+Check 127: actual::SurfaceLifecycle::suspend.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:129:9 in function actual::SurfaceLifecycle::suspend
+
+Check 128: actual::SurfaceLifecycle::suspend.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:129:9 in function actual::SurfaceLifecycle::suspend
+
+Check 129: actual::SurfaceLifecycle::suspend.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:129:9 in function actual::SurfaceLifecycle::suspend
+
+Check 130: actual::SurfaceLifecycle::suspend.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:129:9 in function actual::SurfaceLifecycle::suspend
+
+Check 131: actual::SurfaceLifecycle::suspend.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:129:9 in function actual::SurfaceLifecycle::suspend
+
+Check 132: actual::SurfaceLifecycle::suspend.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:130:9 in function actual::SurfaceLifecycle::suspend
+
+Check 133: actual::SurfaceLifecycle::suspend.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:130:9 in function actual::SurfaceLifecycle::suspend
+
+Check 134: actual::SurfaceLifecycle::suspend.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:130:9 in function actual::SurfaceLifecycle::suspend
+
+Check 135: actual::SurfaceLifecycle::suspend.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:130:9 in function actual::SurfaceLifecycle::suspend
+
+Check 136: actual::SurfaceLifecycle::suspend.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:130:9 in function actual::SurfaceLifecycle::suspend
+
+Check 137: actual::SurfaceLifecycle::suspend.pointer_dereference.13
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:130:9 in function actual::SurfaceLifecycle::suspend
+
+Check 138: <actual::SurfaceState as std::cmp::PartialEq>::eq.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:12:30 in function <actual::SurfaceState as std::cmp::PartialEq>::eq
+
+Check 139: <actual::SurfaceState as std::cmp::PartialEq>::eq.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:12:30 in function <actual::SurfaceState as std::cmp::PartialEq>::eq
+
+Check 140: <actual::SurfaceState as std::cmp::PartialEq>::eq.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:12:30 in function <actual::SurfaceState as std::cmp::PartialEq>::eq
+
+Check 141: <actual::SurfaceState as std::cmp::PartialEq>::eq.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:12:30 in function <actual::SurfaceState as std::cmp::PartialEq>::eq
+
+Check 142: <actual::SurfaceState as std::cmp::PartialEq>::eq.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:12:30 in function <actual::SurfaceState as std::cmp::PartialEq>::eq
+
+Check 143: <actual::SurfaceState as std::cmp::PartialEq>::eq.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:12:30 in function <actual::SurfaceState as std::cmp::PartialEq>::eq
+
+Check 144: <actual::SurfaceState as std::cmp::PartialEq>::eq.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:12:30 in function <actual::SurfaceState as std::cmp::PartialEq>::eq
+
+Check 145: <actual::SurfaceState as std::cmp::PartialEq>::eq.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:12:30 in function <actual::SurfaceState as std::cmp::PartialEq>::eq
+
+Check 146: <actual::SurfaceState as std::cmp::PartialEq>::eq.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:12:30 in function <actual::SurfaceState as std::cmp::PartialEq>::eq
+
+Check 147: <actual::SurfaceState as std::cmp::PartialEq>::eq.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:12:30 in function <actual::SurfaceState as std::cmp::PartialEq>::eq
+
+Check 148: <actual::SurfaceState as std::cmp::PartialEq>::eq.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:12:30 in function <actual::SurfaceState as std::cmp::PartialEq>::eq
+
+Check 149: <actual::SurfaceState as std::cmp::PartialEq>::eq.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: experiments/blitz-host/target/kani/x86_64-unknown-linux-gnu/debug/build/jasper-ui-host-surface-verification/2d2e5707ea6714ef/out/actual.rs:12:30 in function <actual::SurfaceState as std::cmp::PartialEq>::eq
+
+Check 150: <std::result::Result<(), actual::SurfaceLifecycleError> as std::ops::Try>::branch.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2177:15 in function <std::result::Result<(), actual::SurfaceLifecycleError> as std::ops::Try>::branch
+
+Check 151: <std::result::Result<(), actual::SurfaceLifecycleError> as std::ops::Try>::branch.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2178:22 in function <std::result::Result<(), actual::SurfaceLifecycleError> as std::ops::Try>::branch
+
+
+SUMMARY:
+ ** 0 of 151 failed
+
+VERIFICATION:- SUCCESSFUL
+Verification Time: 0.6425829s
+
+Manual Harness Summary:
+Complete - 2 successfully verified harnesses, 0 failures, 2 total.

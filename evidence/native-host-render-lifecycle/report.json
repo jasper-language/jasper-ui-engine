@@ -1,0 +1,152 @@
+{
+  "status": "engineering_lifecycle_passed_hardware_and_ordered_proof_pending",
+  "checklist_item": 3,
+  "date": "2026-11-02",
+  "scope": "HostRenderer binds the canonical native SceneHostView to authenticated ownership, physical extent, DPI, injected font resources, Surface generations, suspend/resume/retire, a host-owned software target, and a host-owned wgpu TextureView present boundary.",
+  "sources": {
+    "src/surface_lifecycle.rs": "e3eaf692561675854eb2c65194e3db7d8c9573d23a5a3c280034a3d845d52906",
+    "src/host_capabilities.rs": "90ae1b7cef16e2116949d397cc0dddcdd55514a563157fd9d931f02036be2b56",
+    "src/native_adapter/render_host.rs": "745f73f0e00c2dfdb5870cd1e4bce785dfbefaaea243f9d8fd6564ba7b302e66",
+    "tests/native_host_renderer.rs": "c2e2d4c999120e59fefed5d389ef8387db4bf049d39617ad068b9057a9ea36b6",
+    "tests/native_gpu_host_view.rs": "791d78728090068d085b265792492854c9b96f51d0855acec406c2128eb97c5f",
+    "examples/window.rs": "6d2dc8a1cb8fd6fd92100a689eea97a92556051dfd33b3cf1ba6b401fbc9b193",
+    "examples/gpu_window.rs": "d788153c17c41ccfdc9580329a66bd274a0a1c9660aeadb4f5c28c00cf09cec7",
+    "scripts/capture-window-xvfb.sh": "ff1da2489ad3828d030ac187af28918faecb6873498abdb2a72aa1028a259c22",
+    "scripts/verify-host-surface.sh": "fd242f766ebfc73bc005aeb3153488d72c2797861b30b16085301d5b2ae829b7",
+    "fuzz/fuzz_targets/host_surface.rs": "ab1b3fdde3eb50a33473cbb06aafad62ae90a6cefeb4d439efd2b5215d538e62",
+    "fuzz/Cargo.toml": "c8e86273523cc67bd6c3da20c9ad0b41d87f5e453935c93df3364ce51545e005",
+    "fuzz/Cargo.lock": "f4098edf5b3879cf07b3ad401896df63378dd1c7cd2ef30c441ea5327740af99",
+    "verification/host-surface/build.rs": "020a7163edcb2551cdb8602a0f3dfefcfc53b980cf646a6946fe0b3cca7bae66",
+    "verification/host-surface/src/lib.rs": "5f7050bc14b77cf6e12451a0c4e51ae3341b978bc53249969f33819241bb78d5",
+    "verification/host-surface/Cargo.lock": "392e5d90ba70b73c43f8dd1343a4d1c12607b8d6832323dda20d7289699ec1e4"
+  },
+  "api": {
+    "entry": "native::host::HostRenderer",
+    "surface_generation": "initial generation is active; successful resize/DPI reconfigure, suspend, and resume each produce a strictly newer generation",
+    "render_entry": [
+      "render_to_surface(owner, version, generation, bytes, stride, budget)",
+      "render_to_backend(owner, version, generation, backend, budget)",
+      "render_gpu_to_host_view(owner, version, generation, gpu, format, view, budget)"
+    ],
+    "gpu_present_ack": "gpu_presented(owner, generation) succeeds only after the host's Queue::present succeeds; the frame remains pending before acknowledgement",
+    "rejection": "foreign owner, stale generation, suspended/retired state, zero extent, invalid DPI, generation exhaustion and unsupported GPU format fail closed",
+    "capability_matrix": "host_capabilities::HostCapabilityMatrix::native()"
+  },
+  "tests": {
+    "native_host_renderer": {
+      "status": "passed",
+      "count": "3/3",
+      "covers": [
+        "injected font resource install, borrow and stale-generation release",
+        "invalid and empty font stacks fail before view construction",
+        "foreign owner writes nothing",
+        "CPU RGBA8 surface and stride",
+        "extent and 2x DPI reconfigure",
+        "same-extent DPI reconfigure invalidates the old host pixel copy",
+        "stale generation rejection",
+        "suspend with retained scene state and suspended render rejection",
+        "resume with new generation and repaint",
+        "single retirement and rejected resume",
+        "backend present failure keeps the view dirty for retry"
+      ]
+    },
+    "native_gpu_host_view": {
+      "status": "passed",
+      "count": "2/2",
+      "covers": [
+        "host-created wgpu instance, adapter, device, queue and texture",
+        "foreign owner rejection",
+        "direct TextureView rendering and exact pixel readback",
+        "present acknowledgement keeps needs_frame true until host confirmation",
+        "unsupported RGBA16Float fails closed without acknowledging presentation"
+      ]
+    }
+  },
+  "capability_matrix": {
+    "cpu_rgba8_surface": "native contract when native-blitz-cpu-pending is enabled",
+    "dpi_and_extent_reconfigure": "native contract when native-blitz-pending is enabled",
+    "injected_font_resources": "native contract when native-blitz-pending is enabled",
+    "surface_pause_resume_retire": "native contract when native-blitz-pending is enabled",
+    "gpu_texture_view": "native contract when gpu-pending is enabled",
+    "gpu_surface_acquire_and_configure": "host owned",
+    "gpu_present": "host owned",
+    "host_vsync": "host owned",
+    "gpu_hardware_present": "unverified",
+    "gpu_device_loss_recovery": "unverified",
+    "jasper_os_host_integration": "unsupported"
+  },
+  "observed_environment": {
+    "cpu_x11": "Replayed: Xvfb X11 + softbuffer; 800x600 initial and 640x360 resize captures produced exact background/red/blue pixel counts",
+    "gpu_x11": "Replayed: Xvfb X11 + llvmpipe Vulkan; HostRenderer drew into the acquired TextureView, the host presented, acknowledgement succeeded and the process exited 0",
+    "hardware_gpu": "not available",
+    "jasper_os": "not exercised"
+  },
+  "proofs": {
+    "surface_lifecycle": {
+      "status": "scoped_finite_checks_passed_full_ordered_proof_pending",
+      "source_extraction": "verification/host-surface/build.rs copies src/surface_lifecycle.rs verbatim except converting its leading module documentation comments to ordinary comments so the body can be included in a verification submodule",
+      "Proptest": {
+        "result": "3/3 passed",
+        "log": "proptest.log",
+        "sha256": "4f329441095ec845819964828efcd75498a27dfbae32b0b9a579c098b7fbc186"
+      },
+      "Miri": {
+        "result": "2/2 deterministic same-source tests passed under strict provenance; Proptest runner filtered because its failure persistence uses unsupported isolated statx",
+        "log": "miri.log",
+        "sha256": "129f2da7084d4c9a7828d63c6bd5e2b1dc3b0ce6169b2d55bcf0164bda1ecc33"
+      },
+      "Kani": {
+        "result": "2/2 harnesses, 381 checks (230 + 151), 0 failures",
+        "log": "kani.log",
+        "sha256": "e41f10a9478f71a403672021daf6f055ebe1aa332ee1707df687a097d657c6ed"
+      },
+      "verus": "pending; control transitions and mutation relations are not represented in the prior scalar extraction registry",
+      "cargo-fuzz": {
+        "result": "686245 runs passed in 11 seconds; no artifact produced",
+        "log": "fuzz.log",
+        "sha256": "9623f7075ff4bead77061eafdbf0a765874b3d27a52f4a9d3010fc57d92fdde0"
+      },
+      "Loom": "not applicable: no shared or concurrent state"
+    },
+    "runtime": {
+      "cpu_integration_log": "cpu-integration.log",
+      "cpu_integration_sha256": "1b149865f0cb41cd29b0f9fae2bd6835215bacf21cf2bc064d7aba8b11c3b84a",
+      "gpu_integration_log": "gpu-integration.log",
+      "gpu_integration_sha256": "57619c344c0a11ea75d19d56d898ce819213d29d60b24edb54ac851f71853c3a"
+    },
+    "regressions": {
+      "library_units": "179/179 passed",
+      "existing_gpu": "native_gpu_render 3/3 and native_gpu_frame_damage 3/3 passed on llvmpipe Vulkan",
+      "full_cpu_all_targets": "stopped at native_cpu_acceptance because this VM only exposes DroidSansFallbackFull for CJK while the pre-existing assertions pin Noto Sans CJK metrics; the preceding 179 library tests passed and this fixture mismatch is not treated as a rendering pass"
+    },
+    "third_party_tcb": [
+      "Blitz/Parley/Vello",
+      "wgpu instance/adapter/device/queue/Surface/TextureView and present",
+      "X11/Xvfb/softbuffer and the platform display stack"
+    ]
+  },
+  "limitations": [
+    "The Xvfb Surface is a real X11 protocol endpoint but not a compositor, hardware display controller, vsync source, or hardware swapchain.",
+    "llvmpipe Vulkan validates the adapter path but not hardware GPU or device-loss recovery.",
+    "The supported suspend/resume contract is exercised at the native-host state boundary; platform session-manager delivery is not available.",
+    "The engine checks the requested TextureView extent and format but cannot introspect the host texture creation descriptor.",
+    "HostRenderer composition over Blitz/wgpu and all third-party Surface behavior do not yet have the full ordered implementation proof.",
+    "The full CPU all-target run is not claimed complete: native_cpu_acceptance requires the exact Noto CJK fixture whose pinned metrics differ from the available Droid fallback.",
+    "The capability matrix is a compile contract, not a claim that jasper-os provides these resources."
+  ],
+  "handoff_to_claude": [
+    {
+      "topic": "full ordered HostRenderer proof",
+      "reason": "The finite surface-generation machine is suitable for Kani/Miri, while Blitz, Vello and wgpu object lineage require a larger explicit TCB or an extractable orchestration model."
+    },
+    {
+      "topic": "hardware GPU, device loss and vsync",
+      "reason": "The available VM exposes llvmpipe software Vulkan and no /dev/dri permission; no hardware or display-controller lifecycle evidence can be produced here."
+    },
+    {
+      "topic": "real platform suspend/resume and jasper-os host adapters",
+      "reason": "Xvfb does not deliver platform session lifecycle, and jasper-os integration is explicitly outside this worktree."
+    }
+  ],
+  "checklist_item_3_complete": false
+}

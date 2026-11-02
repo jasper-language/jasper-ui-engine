@@ -1,12 +1,12 @@
 {
-  "status": "software_x11_window_presentation_passed_hardware_lifecycle_pending",
-  "scope": "Root native Engine CPU frame through the winit/softbuffer example on a real X11 protocol surface supplied by Xvfb.",
+  "status": "software_x11_cpu_and_texture_view_passed_hardware_lifecycle_pending",
+  "scope": "HostRenderer and the canonical native Engine present a CPU frame through winit/softbuffer and a Vello GPU frame into a host-owned wgpu TextureView on a real X11 protocol surface supplied by Xvfb.",
   "environment": {
     "display_server": "Xvfb 2:21.1.22-1ubuntu1.3",
     "virtual_screen": "1280x720x24",
-    "vm_memory": "6G",
-    "vm_swap": "2G",
-    "timeout_seconds": 900,
+    "vm_memory": "8G",
+    "vm_swap": "24G",
+    "timeout_seconds": 1200,
     "host_cpu_affinity": "12-19; host CPUs 0-3 unused",
     "font": "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
   },
@@ -14,14 +14,14 @@
     "one_frame_clean_exit": {
       "log": "window-once.log",
       "exit_code": 0,
-      "observed": "winit created the X11 window, softbuffer acquired its surface and presented one Blitz/Vello CPU frame; the translated event stream contained ImeEnabled(false) and pointer Hover."
+      "observed": "HostRenderer bound the active Surface generation, winit created the X11 window, softbuffer acquired its surface and presented one Blitz/Vello CPU frame; the translated event stream contained ImeEnabled(false) and pointer Hover."
     },
     "gpu_one_frame_clean_exit": {
       "log": "gpu-window-once.log",
       "exit_code": 0,
       "adapter": "llvmpipe (LLVM 21.1.8, 256 bits)",
       "backend": "Vulkan",
-      "observed": "The host won the X11 Surface and wgpu device; Engine rendered through Vello hybrid directly into the acquired Surface texture and the host queue presented it."
+      "observed": "The host owned the X11 Surface and wgpu device; HostRenderer rendered through Vello hybrid directly into the acquired Surface texture, the host queue presented it and gpu_presented acknowledged the exact live generation."
     },
     "initial_capture": {
       "window_physical_size": "800x600",
@@ -52,9 +52,11 @@
     },
     "runner": {
       "script": "scripts/capture-window-xvfb.sh",
+      "script_sha256": "ff1da2489ad3828d030ac187af28918faecb6873498abdb2a72aa1028a259c22",
       "window_log": "window.log",
-      "window_log_sha256": "6ce16df0228ba653700243a8b1de251b8c43a3fd90d0ec2b13beb45f8141ad85",
-      "gpu_window_log_sha256": "1e270791d13fa7bd75b59f5e7077ae2b3d81d714883b92dfce683560866cb2af"
+      "window_log_sha256": "1e7d103bc92ff15a47a830803d422292053f221bd3d1ee65498d02b5aa038331",
+      "window_once_log_sha256": "102a8b91a24201a01be08c30a476c94dda02b170e4f3036e47962cca33bd9563",
+      "gpu_window_log_sha256": "d531159b5756e622fb3b537d8e9d57aed6fdbd93d722bbd4054d49eab4d33ed2"
     }
   },
   "limitations": [
@@ -63,6 +65,9 @@
     "The capture script terminates the long-running diagnostic after taking both screenshots; the separate --once run validates clean application exit after present.",
     "The GPU window uses the llvmpipe software Vulkan adapter; no hardware GPU swapchain, device-loss recovery, real system accessibility bridge or live external IME service is claimed.",
     "The scene/update orchestration proof remains separate; this report is presentation integration evidence."
+  ],
+  "diagnostics": [
+    "Early recapture attempts used a fixed four-second startup delay and timed out during VM recompilation before the winit window existed. The runner now waits up to 300 seconds for the exact window title while checking that the process remains alive; the successful run above used that path."
   ],
   "checklist_item_2_complete": false,
   "checklist_item_3_complete": false,
