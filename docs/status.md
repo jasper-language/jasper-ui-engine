@@ -613,3 +613,21 @@ UI19 刻画的反斜体已修正。新增 `src/native_adapter/glyph_skew.rs`：�
 构建虚拟机复测：默认配置 140 项通过；`native-blitz-cpu-pending`（注入字体）253 项通过；`native-blitz-cpu-pending,gpu-pending` 260 项通过；`accesskit-pending` 200 项通过；均 0 失败。整链 `scripts/verify-ui.py`：Verus/Z3、Proptest（读边界属性 47 项）、Miri、cargo-fuzz（16.0 万/172.8 万次）、Kani（52 个 harness）、Loom 全部 scoped 通过；报告仍为 `slice_complete=false`，原因仍是既有 capture-query 双键 Kani 义务未闭合，与本切片无关。转发绘制器与绘制路径接入为第三方 PaintScene 之上的编排，由集成测试覆盖，不在证明范围。
 
 未完成：合成粗体（绘制器只有全局加粗开关、不传递逐字形串的加粗合成信息；需另得合成信息，或在只有常规字面时明确拒绝）、按钮的多字体公开入口、双向文字验收、TextDisplayView 的族名选择。根入口仍标记 not yet accepted。
+
+## 2026-11-02：真实 Map 子树遍历的后端能力诊断（第 1 项仍阻塞）
+
+在固定 Kani 0.68.0 / CBMC 6.11.0、3G 内存、零 swap、128 tasks、单 job、180 秒的 UI VM 限额内，继续尝试解决 `source_subtree_contains` 的真实两节点 `BTreeMap` 验证缺口。未改生产函数、原符号输入域、独立 oracle、安全检查或 Map 类型。
+
+| 配置 | 结果 |
+|---|---|
+| `unwind=2` + Bitwuzla | 22.77 秒得到结论，但 Map 与生产循环的展开断言失败；0 个 harness 成功，未计通过 |
+| `unwind=4` + Bitwuzla | 默认对象编码在 SMT2 `QF_AUFBV` 转换阶段报告 3G 内存不足 |
+| `unwind=4` + Bitwuzla `object-bits=8/9/10` | 分别因超过 256/512/1024 个被寻址对象的明确容量错误失败 |
+| `unwind=4` + Bitwuzla `object-bits=11` | 85.86 秒到达结论，但展开断言失败，说明 `unwind=4` 并不充分 |
+| `unwind=8` + Bitwuzla `object-bits=11` | 180 秒限额内未完成，退出 124 |
+| `unwind=4` + Z3/CVC5 | CBMC SMT 转换在 `map::at` / status 6 失败 |
+| `unwind=4` + Bitwuzla `arrays-uf-always` / `full-slice` | 仍在转换阶段内存不足；`full-slice` 反使剩余 VCC 增至 6944 |
+
+此外，Kissat 在 `unwind=2` 的 SAT 阶段超时。上述运行保留为后端能力负控，明确证明旧超时不能解释为边界充分，也没有资格据 object 参数或较小展开界宣称通过。完整记录见 `evidence/native-subtree-solver-capability/report.json`。
+
+第 1 项仍保持未勾选：真实 Map 的 Kani 义务未完成，`apply_update → apply_patches` 的完整整帧变更证明也仍缺；后续需要新的验证器/后端编码，或保持真实 Map、完整性质、原始域与全部断言的非缩减分解。

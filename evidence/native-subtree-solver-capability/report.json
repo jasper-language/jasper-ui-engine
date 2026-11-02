@@ -1,0 +1,102 @@
+{
+  "status": "incomplete_no_supported_backend_completed_within_fixed_vm_limits",
+  "scope": "The unchanged actual source_subtree_contains function, the original two-entry real BTreeMap input domain, independent scalar oracle, safety checks, and unwinding assertions. Only CBMC/Kani backend encoding and loop bounds were varied.",
+  "resource_limits": {
+    "memory": "3G",
+    "swap": 0,
+    "tasks": 128,
+    "cargo_jobs": 1,
+    "each_workload_timeout_seconds": 180
+  },
+  "tool_versions": {
+    "kani": "0.68.0",
+    "cbmc": "6.11.0"
+  },
+  "harness": "ancestry::proofs::two_node_ancestry",
+  "manifest": "verification/native-activation/Cargo.toml",
+  "attempts": [
+    {
+      "configuration": "--unwind 2 (CaDiCaL)",
+      "result": "not_passed",
+      "exit_code": 124,
+      "observed": "Symex completed in 8.15s with 137051 program-expression steps, 6205 generated VCCs, and 2478 remaining after simplification. No property or unwinding result completed before the fixed workload timeout."
+    },
+    {
+      "configuration": "--unwind 2 --solver kissat",
+      "result": "not_passed",
+      "exit_code": 124,
+      "observed": "The same 137051 program-expression steps and 2478 remaining VCCs reached SSA conversion; the solver did not complete."
+    },
+    {
+      "configuration": "--unwind 2 --solver bitwuzla",
+      "result": "failed_unwinding_assertions",
+      "exit_code": 1,
+      "verification_time_seconds": 22.765783,
+      "observed": "0 of 1116 checks failed and 4 were unreachable, but the harness was rejected because required Map and production-loop unwinding assertions failed. The summary reported 0 successfully verified harnesses and 1 failure. This bound is therefore insufficient and was not counted as a pass."
+    },
+    {
+      "configuration": "--unwind 4 --solver bitwuzla",
+      "result": "not_passed_memory_failure",
+      "observed": "Symex completed in 29.6722s with 395525 program-expression steps, 18347 generated VCCs, and 6388 remaining after simplification. SSA conversion completed in 17.29s, then CBMC reported it appeared to have run out of memory during SMT2 QF_AUFBV conversion."
+    },
+    {
+      "configuration": "-Z unstable-options --unwind 4 --solver bitwuzla --cbmc-args --object-bits 8",
+      "result": "failed_object_capacity",
+      "observed": "SMT2 conversion reached 8-bit object encoding and rejected the program because more than 256 addressed objects existed."
+    },
+    {
+      "configuration": "-Z unstable-options --unwind 4 --solver bitwuzla --cbmc-args --object-bits 12",
+      "result": "not_passed_memory_failure",
+      "observed": "The increased object encoding admitted the formula, but SSA conversion completed and CBMC again reported apparent memory exhaustion."
+    },
+    {
+      "configuration": "-Z unstable-options --unwind 4 --solver bitwuzla --cbmc-args --object-bits 9",
+      "result": "failed_object_capacity",
+      "observed": "The backend rejected the formula because more than 512 addressed objects existed."
+    },
+    {
+      "configuration": "-Z unstable-options --unwind 4 --solver bitwuzla --cbmc-args --object-bits 10",
+      "result": "failed_object_capacity",
+      "observed": "The backend rejected the formula because more than 1024 addressed objects existed."
+    },
+    {
+      "configuration": "-Z unstable-options --unwind 4 --solver bitwuzla --cbmc-args --object-bits 11",
+      "result": "failed_unwinding_assertions",
+      "verification_time_seconds": 85.85787,
+      "observed": "The backend admitted the formula and reached a verdict, but Map insertion/search and production-loop unwinding assertions failed. This establishes that unwind=4 is insufficient even though earlier solver timeouts had not exposed the boundary failure."
+    },
+    {
+      "configuration": "-Z unstable-options --unwind 8 --solver bitwuzla --cbmc-args --object-bits 11",
+      "result": "not_passed",
+      "exit_code": 124,
+      "observed": "The enlarged verified program did not complete within the fixed 180-second workload limit; no pass or counterexample result is claimed."
+    },
+    {
+      "configuration": "--unwind 4 --solver cvc5",
+      "result": "failed_backend_translation",
+      "observed": "SMT2 conversion stopped with the CBMC backend diagnostic map::at and status 6."
+    },
+    {
+      "configuration": "-Z unstable-options --unwind 4 --solver bitwuzla --cbmc-args --arrays-uf-always",
+      "result": "not_passed_memory_failure",
+      "observed": "The array-to-UF encoding completed SSA conversion but CBMC still reported apparent memory exhaustion."
+    },
+    {
+      "configuration": "-Z unstable-options --unwind 4 --solver bitwuzla --cbmc-args --full-slice",
+      "result": "not_passed_memory_failure",
+      "observed": "Full slicing increased the expression to 429705 steps and 6944 remaining VCCs; CBMC then reported apparent memory exhaustion."
+    }
+  ],
+  "negative_controls_retained": [
+    "The --unwind 2 Bitwuzla run explicitly failed unwinding assertions instead of yielding a false pass.",
+    "The --unwind 4 / object-bits 11 Bitwuzla run reached a verdict and explicitly failed Map and production-loop unwinding assertions, proving that the prior timed-out boundary is not sufficient.",
+    "object-bits 8, 9, and 10 explicitly failed object-capacity admission and are not recorded as memory failures."
+  ],
+  "production_changed": false,
+  "input_domain_reduced": false,
+  "checks_disabled": false,
+  "substituted_map": false,
+  "conclusion": "Neither the default SAT path nor the available Kani 0.68.0 SMT/SAT backends that preserve this real Map harness and complete assertion set can finish within 3G. A working object encoding exposed that unwind=4 is insufficient; unwind=8 then exceeded the fixed time limit. No backend attempt is recorded as passed.",
+  "required_next_step": "A future verifier/backend that can encode this real BTreeMap harness within the fixed limits, or a non-shrinking verifier-supported implementation-level decomposition preserving the production map, full property, original symbolic domain, safety checks, and unwinding assertions.",
+  "whole_adapter_accepted": false
+}
