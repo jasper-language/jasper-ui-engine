@@ -108,6 +108,20 @@ pub fn check_scene_update(owner:u64,caller:u64,current:u64,expected:u64,next:u64
     let model=owner==caller && open && current==expected && current.checked_add(1)==Some(next) && count>0 && count<=4096;
     assert_eq!(accepted,model);
 }
+/// Exact structured rejection ordering for the production scene-update admission.
+pub fn check_scene_update_result(owner:u64,caller:u64,current:u64,expected:u64,next:u64,count:usize,open:bool) {
+    use scene_gate::SceneUpdateError as E;
+    let actual=scene_gate::admit_scene_update(owner,caller,current,expected,next,count,open);
+    let model=if owner!=caller {Err(E::OwnerMismatch)}
+        else if !open {Err(E::Closed)}
+        else if count==0 {Err(E::EmptyFrame)}
+        else if count>4096 {Err(E::CapacityExceeded)}
+        else if current!=expected {Err(E::StaleVersion {expected,current})}
+        else if current.checked_add(1)!=Some(next) {Err(E::InvalidSuccessor {expected,next})}
+        else {Ok(())};
+    assert_eq!(actual,model);
+    check_scene_update(owner,caller,current,expected,next,count,open);
+}
 #[cfg(test)]
 mod scene_gate_tests {
     use super::*;use proptest::prelude::*;
@@ -117,6 +131,8 @@ mod scene_gate_tests {
         fn scene_update(owner in any::<u64>(),caller in any::<u64>(),current in any::<u64>(),expected in any::<u64>(),next in any::<u64>(),count in any::<usize>(),open in any::<bool>()) {
             check_scene_update(owner,caller,current,expected,next,count,open);
             check_scene_update(owner,owner,current,current,current.wrapping_add(1),count%4097,open);
+            check_scene_update_result(owner,caller,current,expected,next,count,open);
+            check_scene_update_result(owner,owner,current,current,current.wrapping_add(1),count%4097,open);
         }
     }
     #[test]
@@ -124,6 +140,8 @@ mod scene_gate_tests {
         for version in [0,1,u64::MAX-1,u64::MAX] {for count in [0,1,4096,4097,usize::MAX] {for open in [false,true] {
             check_scene_update(10,10,version,version,version.wrapping_add(1),count,open);
             check_scene_update(10,11,version,version,version.wrapping_add(1),count,open);
+            check_scene_update_result(10,10,version,version,version.wrapping_add(1),count,open);
+            check_scene_update_result(10,11,version,version,version.wrapping_add(1),count,open);
         }}}
     }
 }
@@ -131,6 +149,8 @@ mod scene_gate_tests {
 mod scene_gate_proofs {
     #[kani::proof]
     fn scene_update() {super::check_scene_update(kani::any(),kani::any(),kani::any(),kani::any(),kani::any(),kani::any(),kani::any());}
+    #[kani::proof]
+    fn scene_update_result() {super::check_scene_update_result(kani::any(),kani::any(),kani::any(),kani::any(),kani::any(),kani::any(),kani::any());}
 }
 
 mod insert_index {include!(concat!(env!("OUT_DIR"),"/insert_index.rs"));}

@@ -14,6 +14,7 @@
       "status": "blocked_incomplete",
       "working_evidence": [
         "typed SceneUpdate and public Engine/facade exist",
+        "structured SceneUpdateError distinguishes all admission and source/native construction stages",
         "external CPU/no-CPU callers and backend private-type boundary checks pass",
         "transaction candidate now rejects atomically at the application view level"
       ],
@@ -142,6 +143,7 @@
     "full_cpu_tests": "all unit/integration/doc tests passed with only the unavailable same-family sans-oblique fixture test skipped",
     "gpu_tests": "native_gpu_host_view 2/2, native_gpu_render 3/3, native_gpu_frame_damage 3/3, GPU font synthesis 2/2 on software wgpu",
     "bold_alias_chain": "Verus 3/0 + Proptest 256 + Miri + fuzz 200000 + Kani 185 checks, Loom N/A",
+    "scene_update_error_chain": "Verus 5/0 + Proptest 256 + Miri + fuzz 200000 + Kani 148 checks, Loom N/A; public API covers all eight variants",
     "full_scene": "VM run passed and emitted PPM 320x180, 172815 bytes",
     "proof_mapping": "scripts/test-blitz-proof-mapping.py current=true with all negative controls rejected"
   },

@@ -680,3 +680,11 @@ VM 实跑成功，输出 `evidence/full-scene/full_scene.ppm`（P6 320×180，17
 - 第 6 项：前置 1–5 未完成；真实 Map/浮点缺口仍在，不能做最终完成声明。
 
 当前可复核的工程结果：默认、原生 CPU、原生 GPU 全 targets 编译通过；全量 CPU 测试除“无同族 sans oblique 夹具”外通过；GPU 宿主/CPU 对照/损伤/字体测试通过；bold-alias 六阶段限定验收通过；`test-blitz-proof-mapping.py` 当前映射与负控通过。该审计不提升任何清单项为完成。
+
+## 2026-11-02：场景更新结构化拒绝契约
+
+公共 `SceneHostView` 新增 `try_apply` / `try_apply_update -> Result<(), SceneUpdateError>`，明确区分归属、关闭、空帧、4096 补丁容量、过期版本及 expected/current、非法后继及 expected/next、来源拒绝和原生候选构造拒绝；不暴露 Blitz 类型或补丁内容。现有 bool 入口保持为 `is_ok()` 兼容投影。
+
+`admit_scene_update` 实际分类器完成有序限定验收：Verus+Z3 5 verified/0 errors，所有权与后继版本两个负控拒绝；Proptest 256 例、严格 provenance Miri、cargo-fuzz 200000 次、Kani 148 checks（全 u64 版本/身份、全 usize 计数和 bool 状态，0 失败）通过，Loom 因纯同步无共享状态不适用。外部公共 API 测试覆盖全部八类结果并确认拒绝后版本/节点数保持。证据：`evidence/scene-update-error-contract-chain/report.json`。
+
+第 1 项仍不勾选：该结果只证明准入分类，不证明来源场景事务、Blitz 候选构造、真实 Map 遍历或完整 `apply_update→apply_patches`。

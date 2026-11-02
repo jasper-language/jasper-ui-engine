@@ -1,0 +1,101 @@
+{
+  "status": "scoped_ordered_acceptance_complete",
+  "property": "UI-SCENE-UPDATE-ADMISSION-001 structured error extension",
+  "scope": "The actual admit_scene_update function classifies ownership, closed state, empty frame, capacity, stale version and invalid successor. SourceRejected/NativeRejected are assigned by the candidate construction transaction after admission and are covered by the public integration test, not this pure admission kernel.",
+  "public_contract": {
+    "type": "jasper_ui_engine::native::SceneUpdateError",
+    "methods": [
+      "SceneHostView::try_apply",
+      "SceneHostView::try_apply_update"
+    ],
+    "compatibility": "The existing bool apply/apply_update methods remain as is_ok projections.",
+    "variants": [
+      "OwnerMismatch",
+      "Closed",
+      "EmptyFrame",
+      "CapacityExceeded",
+      "StaleVersion { expected, current }",
+      "InvalidSuccessor { expected, next }",
+      "SourceRejected",
+      "NativeRejected"
+    ]
+  },
+  "sources": {
+    "src/native_adapter/native_scene.rs": "629ab770cbfa7a272af756a896c1b218bdbd19974518fb5f9cbeb6032bcabb67",
+    "src/native_adapter/facade.rs": "614588af1896f6eeeb75ae2afb5fefe0ba6737ffb106f8b0b23ecc25aa43edc7",
+    "verification/native-activation/build.rs": "79dbd12c3683f8c063e5eae305198bfc488d3a0b2bb69de81e84586bae812756",
+    "verification/native-activation/src/lib.rs": "38bba1210c0b062bf216dc3cb9dda73684c84e6c8c54c0552ded3294e0b3a33f",
+    "verification/native-activation/fuzz/fuzz_targets/scene_update.rs": "da32b366c65f9ceaaef5f3dafa1d749edb4ad75369cc6d451a548393b27d1e80",
+    "tests/native_update_contract.rs": "d93c37ba11f964b7179729e8c18b421e7ae68c143df5aef704812b354323e9ac",
+    "scripts/verify-version.py": "52c6db7735e9da201f154d002836a17ec087e3d9950f6feb155d627e141140f5"
+  },
+  "ordered_stages": [
+    {
+      "stage": "Verus+Z3",
+      "status": "passed",
+      "verified_including_dependencies": 5,
+      "negative_controls_rejected": [
+        "ignore-scene-owner",
+        "ignore-next-version"
+      ],
+      "evidence": "../scene-update-admission-kernel/report.json"
+    },
+    {
+      "stage": "Proptest",
+      "status": "passed",
+      "test": "scene_gate_tests::scene_update",
+      "cases": 256,
+      "seed": 20261102
+    },
+    {
+      "stage": "Miri",
+      "status": "passed",
+      "test": "scene_gate_tests::miri_scene_update_boundaries",
+      "toolchain": "nightly-2026-10-17",
+      "flags": "-Zmiri-strict-provenance"
+    },
+    {
+      "stage": "cargo-fuzz",
+      "status": "passed",
+      "target": "scene_update",
+      "runs": 200000,
+      "seconds": 3,
+      "max_len": 42,
+      "seed": 20261102,
+      "crashes": 0
+    },
+    {
+      "stage": "Kani",
+      "status": "passed",
+      "harness": "scene_gate_proofs::scene_update_result",
+      "checks": 148,
+      "failed": 0,
+      "domain": "all u64 owner/caller/current/expected/next values, all usize counts and bool open state"
+    },
+    {
+      "stage": "Loom applicability",
+      "status": "not_applicable",
+      "reason": "The classifier is a synchronous pure function over scalar inputs with no threads, locks, atomics, queues, allocation or shared mutation."
+    }
+  ],
+  "integration": {
+    "test": "native_update_contract::public_update_errors_distinguish_every_admission_and_construction_stage",
+    "result": "passed",
+    "checks": [
+      "foreign owner",
+      "empty frame",
+      "stale version with exact expected/current payload",
+      "invalid successor with exact expected/next payload",
+      "source Scene rejection",
+      "native candidate construction rejection",
+      "4097-patch capacity rejection",
+      "closed view",
+      "every rejection left version and node count unchanged"
+    ]
+  },
+  "limits": [
+    "This does not prove Scene::apply_batch_at, Blitz candidate construction, full-frame rollback of third-party panic, or the whole apply_update transaction.",
+    "Host authentication remains separate; owner equality is an adapter guard, not a credential.",
+    "Checklist item 1 remains incomplete because the real Map obligation, whole-frame proof and float specification gaps remain."
+  ]
+}

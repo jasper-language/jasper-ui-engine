@@ -18,7 +18,8 @@ fn main() {
     let body=text.split_once(begin).unwrap().1.split_once(end).unwrap().0;
     fs::write(PathBuf::from(env::var_os("OUT_DIR").unwrap()).join("capacity.rs"),body).unwrap();
     let mut gate=String::new();
-    for (path,marker) in [("../../src/input_identity.rs","UI UPDATE NEXT"),
+    for (path,marker) in [("../../src/native_adapter/native_scene.rs","SCENE UPDATE ERROR TYPE"),
+        ("../../src/input_identity.rs","UI UPDATE NEXT"),
         ("../../src/native_adapter/native_scene.rs","SCENE WORK CAPACITY"),
         ("../../src/native_adapter/native_scene.rs","SCENE UPDATE ADMISSION")] {
         let source=root.join(path);println!("cargo:rerun-if-changed={}",source.display());

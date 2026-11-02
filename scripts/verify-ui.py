@@ -24,7 +24,7 @@ if a.fuzz_seconds < 1:
 os.chdir(ROOT)
 out = ROOT / "evidence" / "validation-chain"
 out.mkdir(parents=True, exist_ok=True)
-report = {"started_at": datetime.now(timezone.utc).isoformat(), "scope": "six-stage read-boundary, version admission and surface row/span/borrow/write and scalar/header/payload-read and checked surface view/transfer and RGB packing/conversion and owned Canvas import/getter and Canvas pixel read and native font stack admission/fallback order/bold-alias admission and on-demand frame reuse admission and frame damage span/scan/rect admission/damage-only surface write and refresh-clock frame tick/pacing and surface segment write and resource gate/byte storage/keyboard role/modifier and approximate text classifier and focus cleanup/retirement slices; additional batch checks have partial proof coverage",
+report = {"started_at": datetime.now(timezone.utc).isoformat(), "scope": "six-stage read-boundary, version admission/structured scene-update rejection and surface row/span/borrow/write and scalar/header/payload-read and checked surface view/transfer and RGB packing/conversion and owned Canvas import/getter and Canvas pixel read and native font stack admission/fallback order/bold-alias admission and on-demand frame reuse admission and frame damage span/scan/rect admission/damage-only surface write and refresh-clock frame tick/pacing and surface segment write and resource gate/byte storage/keyboard role/modifier and approximate text classifier and focus cleanup/retirement slices; additional batch checks have partial proof coverage",
           "slice_complete": False, "scoped_checks_complete": False,
           "acceptance_pending": ["capture-query: original arbitrary two-key Kani obligation is unresolved; single-key harness is diagnostic only"],
           "sources": {}, "stages": [], "complete": False}
@@ -166,7 +166,7 @@ for stage in report["stages"]:
     required = {
         "Proptest": [("test result: ok. 2 passed", 3), ("test result: ok. 3 passed", 1), ("test result: ok. 48 passed", 1), ("test result: ok. 6 passed", 1)],
         "Miri": [("test result: ok. 2 passed", 4), ("test result: ok. 1 passed", 1)],
-        "Kani": [("VERIFICATION:- SUCCESSFUL", 53)],
+        "Kani": [("VERIFICATION:- SUCCESSFUL", 54)],
         "Loom": [("test result: ok. 1 passed", 1)],
     }
     matched = all(output.count(token) >= count for token, count in required.get(stage["name"], []))

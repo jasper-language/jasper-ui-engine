@@ -16,6 +16,40 @@ enum PreparedSceneMutation {
     Insert {styles:Vec<Vec<(&'static str,String)>>,index:usize,anchor:Option<NodeId>},
 }
 
+/// Publicly consumable reason a scene update was not committed. This contains no backend type
+/// and no patch payload; a rejected update leaves the active view at its prior version.
+/// 场景更新未提交的可消费原因；不包含后端类型或补丁载荷，拒绝后活动视图保持原版本。
+// BEGIN VERIFIED SCENE UPDATE ERROR TYPE KERNEL
+#[derive(Clone,Copy,Debug,PartialEq,Eq)]
+pub enum SceneUpdateError {
+    OwnerMismatch,
+    Closed,
+    EmptyFrame,
+    CapacityExceeded,
+    StaleVersion {expected:u64,current:u64},
+    InvalidSuccessor {expected:u64,next:u64},
+    SourceRejected,
+    NativeRejected,
+}
+// END VERIFIED SCENE UPDATE ERROR TYPE KERNEL
+
+impl std::fmt::Display for SceneUpdateError {
+    fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result {
+        match self {
+            Self::OwnerMismatch=>write!(f,"scene update owner does not match the view"),
+            Self::Closed=>write!(f,"scene view is closed"),
+            Self::EmptyFrame=>write!(f,"scene update frame is empty"),
+            Self::CapacityExceeded=>write!(f,"scene update exceeds the 4096-patch capacity"),
+            Self::StaleVersion {expected,current}=>write!(f,"scene update expected version {expected}, current version is {current}"),
+            Self::InvalidSuccessor {expected,next}=>write!(f,"scene update cannot advance from {expected} to {next}"),
+            Self::SourceRejected=>write!(f,"source scene rejected the update frame"),
+            Self::NativeRejected=>write!(f,"native scene could not construct the update candidate"),
+        }
+    }
+}
+
+impl std::error::Error for SceneUpdateError {}
+
 /// IEEE-754 positive finite values are ordered by their unsigned bit pattern.
 /// Keep host DPI admission integer-only so the exact boundary can be verified
 /// without delegating our policy to an unmodelled floating-point comparison.
@@ -206,16 +240,23 @@ impl NativeScene {
     /// Apply one complete frame to a candidate source/native view, then swap it into place.
     /// No active document or metadata is mutated before both stages succeed.
     pub(crate) fn apply_patches(&mut self,caller:u64,expected:u64,next:u64,patches:&[ScenePatch])->bool {
+        self.apply_patches_result(caller,expected,next,patches).is_ok()
+    }
+    /// Structured form of frame admission and candidate construction.
+    pub(crate) fn apply_patches_result(&mut self,caller:u64,expected:u64,next:u64,
+        patches:&[ScenePatch])->Result<(),SceneUpdateError> {
         self.invalidate_frame();
-        if !accepts_scene_update(self.owner,caller,self.scene_version,expected,next,
-            patches.len(),self.document.is_open()) {return false;}
+        admit_scene_update(self.owner,caller,self.scene_version,expected,next,
+            patches.len(),self.document.is_open())?;
         let focused=self.focused_node(caller,expected);
         let mut source=self.source.clone();
-        if source.apply_batch_at(expected,patches).is_err() {return false;}
-        if source.version()!=next {return false;}
-        let Some(candidate)=self.rebuild_candidate(source,focused) else {return false;};
+        if source.apply_batch_at(expected,patches).is_err() {return Err(SceneUpdateError::SourceRejected);}
+        if source.version()!=next {return Err(SceneUpdateError::SourceRejected);}
+        let Some(candidate)=self.rebuild_candidate(source,focused) else {
+            return Err(SceneUpdateError::NativeRejected);
+        };
         *self=candidate;
-        true
+        Ok(())
     }
     /// Build and restore host-visible state in a detached candidate document.
     fn rebuild_candidate(&self,source:Scene,focused:Option<NodeId>)->Option<Self> {
@@ -856,13 +897,25 @@ pub(crate) fn source_insert_index(index:usize,children:usize)->usize {
 // END VERIFIED SOURCE INSERT INDEX KERNEL
 
 // BEGIN VERIFIED SCENE UPDATE ADMISSION KERNEL
-/// Own patch admission only; host authentication and native mutation remain separate.
-pub(crate) fn accepts_scene_update(owner:u64,caller:u64,current:u64,expected:u64,next:u64,count:usize,open:bool)->bool {
-    if owner!=caller || !open || count==0 || !scene_work_fits(0,0,count) {return false;}
+/// Classify all update-admission rejection reasons without touching source or native state.
+/// 在不接触来源或原生状态的情况下分类全部更新准入拒绝原因。
+pub(crate) fn admit_scene_update(owner:u64,caller:u64,current:u64,expected:u64,next:u64,
+    count:usize,open:bool)->Result<(),SceneUpdateError> {
+    if owner!=caller {return Err(SceneUpdateError::OwnerMismatch);}
+    if !open {return Err(SceneUpdateError::Closed);}
+    if count==0 {return Err(SceneUpdateError::EmptyFrame);}
+    if count>4096 {return Err(SceneUpdateError::CapacityExceeded);}
+    if current!=expected {return Err(SceneUpdateError::StaleVersion {expected,current});}
     match next_ui_update_version(current,expected) {
-        Some(successor)=>next==successor,
-        None=>false,
+        Some(successor) if next==successor=>Ok(()),
+        _=>Err(SceneUpdateError::InvalidSuccessor {expected,next}),
     }
+}
+
+/// Compatibility boolean projection of the structured admission decision.
+/// 结构化准入决策的兼容布尔投影。
+pub(crate) fn accepts_scene_update(owner:u64,caller:u64,current:u64,expected:u64,next:u64,count:usize,open:bool)->bool {
+    admit_scene_update(owner,caller,current,expected,next,count,open).is_ok()
 }
 // END VERIFIED SCENE UPDATE ADMISSION KERNEL
 

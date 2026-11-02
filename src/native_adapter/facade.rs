@@ -1,4 +1,5 @@
 pub use update_contract::SceneUpdate;
+pub use native_scene::SceneUpdateError;
 pub use jasper_ui_engine::style;
 pub use jasper_ui_engine::geometry::{Point,Rect};
 pub use jasper_ui_engine::{scene::{Scene,ScenePatch,Node,NodeId},semantics::{Semantics,Role}};
@@ -179,10 +180,22 @@ impl SceneHostView {
     pub fn apply(&mut self,owner:u64,expected:u64,next:u64,patches:&[ScenePatch])->bool {
         self.inner.apply_patches(owner,expected,next,patches)
     }
+    /// Structured scene update admission/construction result.
+    /// 结构化场景更新准入/构造结果。
+    pub fn try_apply(&mut self,owner:u64,expected:u64,next:u64,patches:&[ScenePatch])
+        ->Result<(),SceneUpdateError> {
+        self.inner.apply_patches_result(owner,expected,next,patches)
+    }
     /// Consume a Framework update value; authenticated owner stays in the embedding host.
     /// 消费 Framework 更新值；已认证的归属身份只由嵌入宿主提供。
     pub fn apply_update(&mut self,owner:u64,update:SceneUpdate<'_>)->bool {
         self.inner.apply_patches(owner,update.expected_version,update.next_version,update.patches)
+    }
+    /// Structured form of `apply_update`; callers can distinguish ownership, lifecycle,
+    /// version, capacity, source rejection and native capability rejection.
+    /// `apply_update` 的结构化形式；调用方可区分归属、生命周期、版本、容量、来源拒绝与原生能力拒绝。
+    pub fn try_apply_update(&mut self,owner:u64,update:SceneUpdate<'_>)->Result<(),SceneUpdateError> {
+        self.inner.apply_patches_result(owner,update.expected_version,update.next_version,update.patches)
     }
     /// Unclipped logical client border box for a source-visible node, not a paint/hit rectangle.
     /// Returns None for a node with its own nonzero scroll (pinned backend geometry limitation).

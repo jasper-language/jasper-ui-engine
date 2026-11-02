@@ -1809,17 +1809,35 @@ KERNELS["scene-work-capacity"] = {
 }
 
 
+KERNELS["scene-update-error-type"]={"source":"src/native_adapter/native_scene.rs","marker":"SCENE UPDATE ERROR","suffix":"TYPE KERNEL","signature":None,"depends":[],"internal_only":True}
+
 KERNELS["scene-update-admission"] = {
     "source":"src/native_adapter/native_scene.rs", "marker":"SCENE UPDATE ADMISSION",
     "property":"UI-SCENE-UPDATE-ADMISSION-001",
-    "signature":"pub(crate) fn accepts_scene_update(owner:u64,caller:u64,current:u64,expected:u64,next:u64,count:usize,open:bool)->bool {",
-    "contract":"""pub(crate) fn accepts_scene_update(owner:u64,caller:u64,current:u64,expected:u64,next:u64,count:usize,open:bool)->(result:bool)
-        ensures result == (owner == caller && open && current == expected && current < u64::MAX
-            && next as int == current as int + 1 && count > 0 && count <= 4096),
+    "signature":"pub(crate) fn admit_scene_update(owner:u64,caller:u64,current:u64,expected:u64,next:u64,\n    count:usize,open:bool)->Result<(),SceneUpdateError> {",
+    "contract":"""pub(crate) fn admit_scene_update(owner:u64,caller:u64,current:u64,expected:u64,next:u64,
+    count:usize,open:bool)->(result:Result<(),SceneUpdateError>)
+        ensures match result {
+            Err(SceneUpdateError::OwnerMismatch)=>owner!=caller,
+            Err(SceneUpdateError::Closed)=>owner==caller && !open,
+            Err(SceneUpdateError::EmptyFrame)=>owner==caller && open && count==0,
+            Err(SceneUpdateError::CapacityExceeded)=>owner==caller && open && count>4096,
+            Err(SceneUpdateError::StaleVersion {expected:reported_expected,current:reported_current})=>
+                owner==caller && open && 0<count<=4096 && current!=expected
+                && reported_expected==expected && reported_current==current,
+            Err(SceneUpdateError::InvalidSuccessor {expected:reported_expected,next:reported_next})=>
+                owner==caller && open && 0<count<=4096 && current==expected
+                && (current>=u64::MAX || next as int!=current as int+1)
+                && reported_expected==expected && reported_next==next,
+            Err(SceneUpdateError::SourceRejected)=>false,
+            Err(SceneUpdateError::NativeRejected)=>false,
+            Ok(()) => owner==caller && open && 0<count<=4096 && current==expected
+                && current<u64::MAX && next as int==current as int+1,
+        },
     {""",
-    "depends":["scene-work-capacity","ui-update-next"], "evidence":"scene-update-admission-kernel", "function_count":1,
-    "scope":"Exact production patch admission and real reused version/count predicates; no native mutation loop or host authentication proof.",
-    "mutations":[("ignore-scene-owner","if owner!=caller || !open", "if false || !open"),("ignore-next-version","Some(successor)=>next==successor", "Some(successor)=>true")],
+    "depends":["scene-update-error-type","scene-work-capacity","ui-update-next"], "evidence":"scene-update-admission-kernel", "function_count":1,
+    "scope":"Exact production structured patch admission and real reused version/count predicates; source/native rejection variants are assigned outside this kernel and are excluded. No native mutation loop or host authentication proof.",
+    "mutations":[("ignore-scene-owner","if owner!=caller {return Err(SceneUpdateError::OwnerMismatch);}", "if false {return Err(SceneUpdateError::OwnerMismatch);}"),("ignore-next-version","Some(successor) if next==successor=>Ok(())", "Some(_)=>Ok(())")],
 }
 
 

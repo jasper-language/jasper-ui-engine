@@ -10,6 +10,8 @@
 
 Framework 产生 `native::SceneUpdate { expected_version, next_version, patches }`；嵌入宿主单独提供归属身份，调用 `Engine::apply_update`。补丁同步借用，拒绝不消耗版本；不承诺第三方 panic 的事务回滚。应用侧只使用自有声明和事件值，宿主侧提供字体字节、逻辑/物理尺寸、DPI 和呈现缓冲。
 
+除兼容的 bool `apply/apply_update` 外，`SceneHostView::try_apply/try_apply_update -> Result<(), SceneUpdateError>` 明确区分：`OwnerMismatch`、`Closed`、`EmptyFrame`、`CapacityExceeded`、带 expected/current 的 `StaleVersion`、带 expected/next 的 `InvalidSuccessor`、来源场景拒绝、原生候选构造拒绝。错误不携带 Blitz 类型或补丁载荷；bool 方法等价于结构化结果的 `is_ok()`。上述分类器已完成限定六阶段验收，但整个整帧事务证明仍待完成。
+
 原生 CPU 入口 `Engine::render_to_backend` 在归属/版本/存活/预算准入后，复用原生绘制并调用既有 `RenderBackend::submit_rgba8`、成功后才调用 `present`。默认后端明确返回 Unsupported；HeadlessBackend 接管已经绘制的像素，不重放 PaintOp。字节按上游输出原样保存，不提供宿主 alpha/合成转换或外部呈现回滚；旧 UiBatch 序列化格式不变。此新增编排与包装尚未完成有序证明验收。
 
 场景整帧更新现采用候选事务：`apply_update` 先在引擎保留的 `Scene` 快照副本上原子应用，再从终态构建独立原生候选；仅当两者都成功才一次替换活动视图。拒绝不会部分修改活动原生树、版本、焦点、视口、滚动或最近帧。成功后恢复焦点、悬停位置、按下节点身份和上一帧损伤基准；合法 Button↔非 Button 语义变化也通过候选重建完成，不再要求原生标签保持不变。完整实现级整帧证明仍待完成。
