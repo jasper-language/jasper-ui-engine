@@ -1795,6 +1795,38 @@ KERNELS["component-update-support"] = {
     "mutations": [("allow-text-button-update", "\n        ComponentUpdate::ButtonCaption(_) | ComponentUpdate::ButtonDisabled(_) => button,", "\n        ComponentUpdate::ButtonCaption(_) | ComponentUpdate::ButtonDisabled(_) => true,"), ("allow-zero-font", "\n        ComponentUpdate::Appearance(appearance) => appearance.font_size_px > 0,", "\n        ComponentUpdate::Appearance(appearance) => true,")],
 }
 
+KERNELS["component-update-error-type"]={"source":"src/native_adapter/native_view.rs","marker":"COMPONENT UPDATE ERROR","suffix":"TYPE KERNEL","signature":None,"depends":[],"internal_only":True}
+KERNELS["component-update-admission"] = {
+    "source":"src/native_adapter/native_view.rs", "marker":"COMPONENT UPDATE ADMISSION",
+    "property":"UI-COMPONENT-UPDATE-ADMISSION-001",
+    "signature":"pub(crate) fn admit_component_frame(owner_ok:bool,open:bool,count:usize,current:u64,expected:u64,\n    native_ready:bool,supported:bool)->Result<(),ComponentUpdateError> {",
+    "contract":"""pub(crate) fn admit_component_frame(owner_ok:bool,open:bool,count:usize,current:u64,expected:u64,
+    native_ready:bool,supported:bool)->(result:Result<(),ComponentUpdateError>)
+        ensures match result {
+            Err(ComponentUpdateError::OwnerContextMismatch)=>!owner_ok,
+            Err(ComponentUpdateError::Closed)=>owner_ok && !open,
+            Err(ComponentUpdateError::EmptyFrame)=>owner_ok && open && count==0,
+            Err(ComponentUpdateError::CapacityExceeded)=>owner_ok && open && count>4096,
+            Err(ComponentUpdateError::StaleSequence {expected:reported_expected,current:reported_current})=>
+                owner_ok && open && 0<count<=4096 && current!=expected
+                && reported_expected==expected && reported_current==current,
+            Err(ComponentUpdateError::SequenceExhausted {current:reported_current})=>
+                owner_ok && open && 0<count<=4096 && current==expected && current>=u64::MAX
+                && reported_current==current,
+            Err(ComponentUpdateError::NativeRejected)=>
+                owner_ok && open && 0<count<=4096 && current==expected && current<u64::MAX && !native_ready,
+            Err(ComponentUpdateError::UnsupportedForView)=>
+                owner_ok && open && 0<count<=4096 && current==expected && current<u64::MAX
+                && native_ready && !supported,
+            Ok(())=>owner_ok && open && 0<count<=4096 && current==expected && current<u64::MAX
+                && native_ready && supported,
+        },
+    {""",
+    "depends":["component-update-error-type"], "evidence":"component-update-admission-kernel", "function_count":1,
+    "scope":"Exact component-frame admission ordering before native mutation; actual element/view-type support is supplied as the proved predicate by the caller, and native mapping failure after preflight is excluded.",
+    "mutations":[("ignore-owner","if !owner_ok {return Err(ComponentUpdateError::OwnerContextMismatch);}","if false {return Err(ComponentUpdateError::OwnerContextMismatch);}"),("ignore-support","if !supported {return Err(ComponentUpdateError::UnsupportedForView);}","if false {return Err(ComponentUpdateError::UnsupportedForView);}")],
+}
+
 
 KERNELS["scene-work-capacity"] = {
     "source":"src/native_adapter/native_scene.rs", "marker":"SCENE WORK CAPACITY",

@@ -13,6 +13,7 @@ KEYS = (
     'ui-snapshot-admission', 'ui-input-payload', 'ui-composition-range',
     'ui-view-slot', 'ui-view-read-borrow', 'ui-view-write-borrow', 'ui-update-next',
     'native-component-version', 'native-activation-admission', 'component-update-support',
+    'component-update-admission',
     'scene-work-capacity', 'scene-update-admission', 'source-insert-index',
     'text-display-version', 'text-display-close', 'scene-host-close', 'cpu-frame-bytes', 'capture-cancel-policy', 'native-host-context', 'scene-snapshot-identity', 'scene-host-identity', 'semantic-role-tag', 'native-backend-frame-import',
 )

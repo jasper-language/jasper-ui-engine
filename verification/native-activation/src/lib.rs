@@ -74,6 +74,50 @@ mod component_proofs {
     fn component_support() { super::check_component_support(kani::any(),kani::any()); }
 }
 
+mod component_gate {include!(concat!(env!("OUT_DIR"),"/component_gate.rs"));}
+pub fn check_component_frame_admission(owner_ok:bool,open:bool,count:usize,current:u64,expected:u64,
+    native_ready:bool,supported:bool) {
+    use component_gate::ComponentUpdateError as E;
+    let actual=component_gate::admit_component_frame(owner_ok,open,count,current,expected,native_ready,supported);
+    let model=if !owner_ok {Err(E::OwnerContextMismatch)}
+        else if !open {Err(E::Closed)}
+        else if count==0 {Err(E::EmptyFrame)}
+        else if count>4096 {Err(E::CapacityExceeded)}
+        else if current!=expected {Err(E::StaleSequence {expected,current})}
+        else if current==u64::MAX {Err(E::SequenceExhausted {current})}
+        else if !native_ready {Err(E::NativeRejected)}
+        else if !supported {Err(E::UnsupportedForView)}
+        else {Ok(())};
+    assert_eq!(actual,model);
+}
+#[cfg(test)]
+mod component_gate_tests {
+    use super::*;use proptest::prelude::*;
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(256))]
+        #[test]
+        fn component_frame(owner_ok in any::<bool>(),open in any::<bool>(),count in any::<usize>(),
+                           current in any::<u64>(),expected in any::<u64>(),native_ready in any::<bool>(),
+                           supported in any::<bool>()) {
+            check_component_frame_admission(owner_ok,open,count,current,expected,native_ready,supported);
+            check_component_frame_admission(true,true,count%4097,current,current,native_ready,supported);
+        }
+    }
+    #[test]
+    fn miri_component_frame_boundaries() {
+        for current in [0,1,u64::MAX-1,u64::MAX] {for count in [0,1,4096,4097,usize::MAX] {
+            for flags in 0u8..16 {check_component_frame_admission(flags&1!=0,flags&2!=0,count,
+                current,current,flags&4!=0,flags&8!=0);}
+        }}
+    }
+}
+#[cfg(kani)]
+mod component_gate_proofs {
+    #[kani::proof]
+    fn component_frame(){super::check_component_frame_admission(kani::any(),kani::any(),kani::any(),
+        kani::any(),kani::any(),kani::any(),kani::any());}
+}
+
 mod capacity { include!(concat!(env!("OUT_DIR"),"/capacity.rs")); }
 pub fn check_scene_capacity(prepared:usize,pending:usize,incoming:usize) {
     let expected=(prepared as u128)+(pending as u128)+(incoming as u128)<=4096;

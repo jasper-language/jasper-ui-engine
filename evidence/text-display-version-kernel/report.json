@@ -3,12 +3,12 @@
   "status": "proved",
   "scope": "Actual public read-only owner/context/version projection plus actual own helper and slot getter; unused backend payloads opaque, no construction/render/other facade proof.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "469669e92b74041f24f67e25cb90473860626c3cd34abdf2055d41e64f971965",
+  "source_sha256": "ac54bd10ee888f5d06fdf99bf07a3c97df3facf1f11d9b38405d1c55f1c69f54",
   "sources": {
     "src/composition_identity.rs": "55077cb7228d1f2616114de7e195e6a933112bbb87ab069c0c401e207f5fbc71",
     "src/input_identity.rs": "481fda295574255d00f1b0952ee92a0772a08efe82f2c776250345d01b762fcd",
-    "src/native_adapter/facade.rs": "469669e92b74041f24f67e25cb90473860626c3cd34abdf2055d41e64f971965",
-    "src/native_adapter/native_view.rs": "b21a5719b2f7cca9cee2d5f254d3911980f03a61459c2b6b481c79cdddc5c0c9",
+    "src/native_adapter/facade.rs": "ac54bd10ee888f5d06fdf99bf07a3c97df3facf1f11d9b38405d1c55f1c69f54",
+    "src/native_adapter/native_view.rs": "cc1820ab15b3a75f1a4edf05978b1a6b4321c68617cc7b71cc5266e395d9a8da",
     "src/native_adapter/view_slot.rs": "eb3058520b3dfa250f894bd8419ada7076046bf50d5091c8d7b15fa48e82025c",
     "src/resource.rs": "fea8dda71b75d72155c99a984dd30a69d30a9873084770f04186e4d5afe55782",
     "src/scene.rs": "60a8c71dea8702de950b5a036ef4074732c0bed2865f48dc2015a47271f224c2"
@@ -28,7 +28,7 @@
     "text-display-type": "cdc2999138051282f6a1f5b48b61a1f6f227702efcd7c6c9316c4ef31537ebd1"
   },
   "proof_sha256": "fe7a149c775eb94fe4d2465561ce0729e2630ae79b5e5c3876db47bcd485fdf6",
-  "runner_sha256": "40ff191717edb56e95e13a43693de330faedc1ebc6dbaee280f56e6974ddab68",
+  "runner_sha256": "fa6ac67c4f8ef79d41ddb98564271733e96879fe96ae3f1f46f04c997686d551",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/.local/share/jasper-ui-verification/verus-x86-linux/verus",

@@ -1,0 +1,6 @@
+{
+  "status": "not_applicable",
+  "scope": "admit_component_frame",
+  "reason": "Synchronous pure scalar classification; no owned concurrency, synchronization primitive, allocation or shared mutable state.",
+  "caller_concurrency_excluded": "Host callback dispatch and native Blitz mutation are outside this classifier."
+}

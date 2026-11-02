@@ -30,6 +30,17 @@ fn main() {
         gate.push_str(text.split_once(&begin).unwrap().1.split_once(&end).unwrap().0);
     }
     fs::write(PathBuf::from(env::var_os("OUT_DIR").unwrap()).join("scene_gate.rs"),gate).unwrap();
+    let source=root.join("../../src/native_adapter/native_view.rs");
+    println!("cargo:rerun-if-changed={}",source.display());
+    let text=fs::read_to_string(source).unwrap();
+    let mut component_gate=String::new();
+    for marker in ["COMPONENT UPDATE ERROR TYPE","COMPONENT UPDATE ADMISSION"] {
+        let begin=format!("// BEGIN VERIFIED {marker} KERNEL\n");
+        let end=format!("// END VERIFIED {marker} KERNEL");
+        assert_eq!(text.matches(&begin).count(),1);assert_eq!(text.matches(&end).count(),1);
+        component_gate.push_str(text.split_once(&begin).unwrap().1.split_once(&end).unwrap().0);
+    }
+    fs::write(PathBuf::from(env::var_os("OUT_DIR").unwrap()).join("component_gate.rs"),component_gate).unwrap();
     let source=root.join("../../src/native_adapter/native_scene.rs");
     let text=fs::read_to_string(source).unwrap();
     let begin="// BEGIN VERIFIED SOURCE INSERT INDEX KERNEL\n";

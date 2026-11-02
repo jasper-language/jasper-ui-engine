@@ -852,3 +852,17 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 | 同上 | Loom | 共享只读输入跨线程构造一致 | `schedules::shared_immutable_buffer_independent_cursors` | 通过；函数无同步原语，仅覆盖调用侧 |
 
 假设：无。整链报告 `complete=false` 的原因不变（capture-query 任意双键 Kani 原义务未解决）。
+
+
+## 2026-11-02：UI-COMPONENT-UPDATE-ADMISSION-001
+
+| 代码 | 步骤 | 规格 / 范围 | 命令 | 结果 |
+|---|---|---|---|---|
+| `src/native_adapter/native_view.rs` `admit_component_frame` 与 `ComponentUpdateError`；公共 `TextDisplayView::try_update` | Verus/Z3 | 完整组件帧在任何值变更前的准入顺序；结构错误载荷精确；元素支持谓词由实际调用方输入 | `verify-version.py --kernel component-update-admission` | proved：2 verified / 0 errors；忽略归属、忽略视图支持两个负控被拒 |
+| 同上 | Proptest | 独立结果模型；全部 bool 控制位及任意 `usize`/`u64`；边界计数和序号补强 | `cargo test --manifest-path verification/native-activation/Cargo.toml component_gate_tests::component_frame` | 通过，256 例 |
+| 同上 | Miri | 0/1/4096/4097/`usize::MAX` 计数、0/1/`u64::MAX` 邻域及全部控制位组合 | `cargo +nightly miri test ... component_gate_tests::miri_component_frame_boundaries` | 通过（strict provenance） |
+| 同上 | cargo-fuzz | 相同独立模型，任意控制位、计数和序号 | `cargo fuzz run component_support -runs=200000` | 通过，200000 次，0 crash |
+| 同上 | Kani | 全 bool、全 `usize`、全 `u64` 符号输入 | `cargo kani ... component_gate_proofs::component_frame` | 通过，112 checks / 0 failed |
+| 同上 | Loom | 纯同步标量分类器，无线程、锁、原子、任务或共享变更 | 源码适用性审查 | 不适用 |
+
+公共 API 集成测试 `native_component_update_contract` 覆盖归属、空帧、容量、过期序号、视图不支持、合法两项帧、序号精确推进和关闭视图。逐值原生 setter、resolve、回调 panic 回滚及完整组件帧组合不在本次证明范围；第 1 项整体仍未完成。证据：`evidence/component-update-error-contract-chain/report.json`、`evidence/component-update-admission-kernel/report.json`。

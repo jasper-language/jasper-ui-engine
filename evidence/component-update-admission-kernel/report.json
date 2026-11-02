@@ -1,0 +1,49 @@
+{
+  "property": "UI-COMPONENT-UPDATE-ADMISSION-001",
+  "status": "proved",
+  "scope": "Exact component-frame admission ordering before native mutation; actual element/view-type support is supplied as the proved predicate by the caller, and native mapping failure after preflight is excluded.",
+  "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
+  "source_sha256": "cc1820ab15b3a75f1a4edf05978b1a6b4321c68617cc7b71cc5266e395d9a8da",
+  "sources": {
+    "src/native_adapter/native_view.rs": "cc1820ab15b3a75f1a4edf05978b1a6b4321c68617cc7b71cc5266e395d9a8da"
+  },
+  "kernel_sha256": "0973345b0b600725420b97f086ef6ca145abf88bb48a76281b7683b5634050b1",
+  "dependencies": {
+    "component-update-error-type": "f8c8c8197eae66aefc5b09237f6af7076bc27cf71703590ed830ba2ff18fd732"
+  },
+  "proof_sha256": "874f82e4950ee3a01f1d10a653f3382fcc0050f562a8f91870db503b1c43e8d0",
+  "runner_sha256": "fa6ac67c4f8ef79d41ddb98564271733e96879fe96ae3f1f46f04c997686d551",
+  "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
+  "command": [
+    "<home>/.local/share/jasper-ui-verification/verus-x86-linux/verus",
+    "--crate-type",
+    "lib",
+    "<repo>/evidence/component-update-admission-kernel/kernel.rs"
+  ],
+  "exit_code": 0,
+  "solver": {
+    "path": "<home>/.local/share/jasper-ui-verification/verus-x86-linux/z3",
+    "version": "Z3 version 4.16.0 - 64 bit\n",
+    "explicit_override": null
+  },
+  "verified_obligations": 2,
+  "negative_controls": [
+    {
+      "name": "ignore-owner",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "ignore-support",
+      "rejected": true,
+      "exit_code": 1
+    }
+  ],
+  "negative_control_rejected": true,
+  "trust_boundary": [
+    "Verus/vstd and SMT solver",
+    "Rust/Verus integer, references and slice semantics",
+    "signature annotation/extraction script",
+    "Rust compiler and target execution"
+  ]
+}

@@ -7,7 +7,8 @@
     "c562bdc UI21: subtree real-Map backend capability evidence",
     "83ff1ee UI21: synthetic bold, candidate frame transaction, host GPU target",
     "db59a6b UI22: full caller path and verification-chain wiring",
-    "5b0885e UI23: rerun affected native proofs and preserve unwind=5 failure"
+    "5b0885e UI23: rerun affected native proofs and preserve unwind=5 failure",
+    "3a52933 UI25: structured scene-update rejection contract"
   ],
   "items": {
     "1_public_contract": {
@@ -15,6 +16,7 @@
       "working_evidence": [
         "typed SceneUpdate and public Engine/facade exist",
         "structured SceneUpdateError distinguishes all admission and source/native construction stages",
+        "structured ComponentUpdateError and public TextDisplayView::try_update classify complete component frames before native value mutation",
         "external CPU/no-CPU callers and backend private-type boundary checks pass",
         "transaction candidate now rejects atomically at the application view level"
       ],
@@ -29,7 +31,9 @@
         "../native-map-ordered-replay/report.json",
         "../native-subtree-ordered-replay/report.json",
         "../native-subtree-partition-candidate/report.json",
-        "../blitz-framework-update-contract-pending/report.json"
+        "../blitz-framework-update-contract-pending/report.json",
+        "../scene-update-error-contract-chain/report.json",
+        "../component-update-error-contract-chain/report.json"
       ]
     },
     "2_engine_blitz": {
@@ -124,7 +128,7 @@
       "working_evidence": [
         "proof-correspondence audit is current for all listed extracted kernels",
         "affected proofs were rerun after native struct changes",
-        "downstream verify-ui now includes bold-alias kernel and updated Kani/property counts",
+        "downstream verify-ui now includes bold-alias and structured scene/component admission kernels",
         "Loom applicability and third-party TCBs are recorded per scoped report"
       ],
       "blocking_gaps": [
@@ -144,6 +148,7 @@
     "gpu_tests": "native_gpu_host_view 2/2, native_gpu_render 3/3, native_gpu_frame_damage 3/3, GPU font synthesis 2/2 on software wgpu",
     "bold_alias_chain": "Verus 3/0 + Proptest 256 + Miri + fuzz 200000 + Kani 185 checks, Loom N/A",
     "scene_update_error_chain": "Verus 5/0 + Proptest 256 + Miri + fuzz 200000 + Kani 148 checks, Loom N/A; public API covers all eight variants",
+    "component_update_error_chain": "Verus 2/0 + Proptest 256 + Miri + fuzz 200000 + Kani 112 checks, Loom N/A; public API covers all reachable structured variants",
     "full_scene": "VM run passed and emitted PPM 320x180, 172815 bytes",
     "proof_mapping": "scripts/test-blitz-proof-mapping.py current=true with all negative controls rejected"
   },

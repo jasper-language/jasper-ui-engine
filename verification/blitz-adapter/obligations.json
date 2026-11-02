@@ -1,8 +1,8 @@
 {
   "status": "candidate_not_accepted",
   "source": "src/native_adapter/native_view.rs",
-  "source_sha256": "f5ebae94baf26654ad0598003af9f4dcf505547213621e9db5812d2c888ce159",
-  "own_methods": 49,
+  "source_sha256": "cc1820ab15b3a75f1a4edf05978b1a6b4321c68617cc7b71cc5266e395d9a8da",
+  "own_methods": 50,
   "whole_method_implementation_proofs_complete": 3,
   "ordered_gates": [
     "Verus+Z3",
@@ -287,6 +287,13 @@
       "ordered_acceptance": "incomplete; native diagnostic only"
     },
     {
+      "name": "apply_component_batch_result",
+      "proof_obligation": "Admission classifies owner/context, closure, frame emptiness/capacity, exact expected sequence, exhaustion, native readiness and view support before native value mutation. Structured rejection preserves component sequence; native mapping failure after preflight is not atomic and remains pending.",
+      "implementation_proof": "Admission ordering and the public structured error contract are proved at the admitted classifier boundary; public try_update integration covers reachable variants.",
+      "ordered_acceptance": "scoped complete for classification, public scalar contract and reachable integration; per-value native setter, resolve, panic rollback and full-frame composition excluded",
+      "evidence": "evidence/component-update-error-contract-chain/report.json"
+    },
+    {
       "name": "apply_component_value",
       "proof_obligation": "Shared private typed native mapping; only caller preflight controls batch mutation; setter outcome and backend exceptions require implementation composition proof.",
       "implementation_proof": "pending",
@@ -319,7 +326,8 @@
     "UI-VIEW-LIFETIME-001",
     "UI-VIEW-READ-001",
     "UI-VIEW-WRITE-001",
-    "UI-UPDATE-NEXT-001"
+    "UI-UPDATE-NEXT-001",
+    "UI-COMPONENT-UPDATE-ADMISSION-001"
   ],
   "trust_boundary": [
     "pinned Blitz mutator/style/resolve/layout/selection",
@@ -333,6 +341,7 @@
     "composition-current-token": "evidence/composition-current-token-chain/report.json",
     "native-activation-admission": "evidence/native-activation-chain/report.json",
     "component-update-support": "evidence/component-update-support-chain/report.json",
+    "component-update-admission": "evidence/component-update-admission-kernel/report.json",
     "scene-work-capacity": "evidence/scene-work-capacity-chain/report.json",
     "scene-update-admission": "evidence/scene-update-admission-chain/report.json",
     "source-insert-index": "evidence/source-insert-index-chain/report.json"
@@ -608,8 +617,8 @@
       "evidence": "evidence/blitz-framework-update-contract-pending/report.json"
     },
     "src/native_adapter/facade.rs": {
-      "source_sha256": "3d6231733b312dc9ddca140dab6860ec6981b75f11e937fc3b0b9e9c75bf24c9",
-      "own_methods": 67,
+      "source_sha256": "ac54bd10ee888f5d06fdf99bf07a3c97df3facf1f11d9b38405d1c55f1c69f54",
+      "own_methods": 68,
       "implementation_proofs_complete": 4,
       "six_stage_acceptance_complete": 4,
       "scope": "Typed embedding-host library facade; application component semantics remain Scene/ScenePatch values, backend modules private",
@@ -629,7 +638,7 @@
       "scope": "Consumer-only re-export of root native facade; no adapter modules or own runtime methods"
     }
   },
-  "six_stage_complete_scope": "component_version and host_context_matches read-only projections; close logical normal-return retirement only; not whole native adapter acceptance",
+  "six_stage_complete_scope": "component_version and host_context_matches read-only projections; component-frame admission classifier in isolation; close logical normal-return retirement only; not whole native adapter acceptance",
   "unresolved_correctness": [],
   "native_close_logical_scope": "evidence/text-display-close-chain/report.json",
   "root_native_entry": {

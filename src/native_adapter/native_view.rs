@@ -25,6 +25,39 @@ pub(crate) struct NativeTextView {
 }
 // END VERIFIED NATIVE VIEW TYPE
 
+/// Public reason a typed component frame was not committed. No backend identity is exposed.
+/// 类型化组件帧未提交的公共原因；不暴露后端身份。
+// BEGIN VERIFIED COMPONENT UPDATE ERROR TYPE KERNEL
+#[derive(Clone,Copy,Debug,PartialEq,Eq)]
+pub enum ComponentUpdateError {
+    OwnerContextMismatch,
+    Closed,
+    EmptyFrame,
+    CapacityExceeded,
+    StaleSequence {expected:u64,current:u64},
+    SequenceExhausted {current:u64},
+    UnsupportedForView,
+    NativeRejected,
+}
+// END VERIFIED COMPONENT UPDATE ERROR TYPE KERNEL
+
+impl std::fmt::Display for ComponentUpdateError {
+    fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result {
+        match self {
+            Self::OwnerContextMismatch=>write!(f,"component update owner/context does not match the view"),
+            Self::Closed=>write!(f,"text display view is closed"),
+            Self::EmptyFrame=>write!(f,"component update frame is empty"),
+            Self::CapacityExceeded=>write!(f,"component update exceeds the 4096-update capacity"),
+            Self::StaleSequence {expected,current}=>write!(f,"component update expected sequence {expected}, current sequence is {current}"),
+            Self::SequenceExhausted {current}=>write!(f,"component update sequence is exhausted at {current}"),
+            Self::UnsupportedForView=>write!(f,"component update is unsupported for this view type"),
+            Self::NativeRejected=>write!(f,"native component update failed"),
+        }
+    }
+}
+
+impl std::error::Error for ComponentUpdateError {}
+
 // BEGIN VERIFIED NATIVE HOST CONTEXT KERNEL
 impl NativeTextView {
     /// Read-only owner/context admission for host lifecycle coordination.
@@ -470,19 +503,31 @@ impl NativeTextView {
     /// Backend/callback panic rollback is not provided by this candidate.
     pub(crate) fn apply_component_batch(&mut self, caller: u64, expected: UiInputContext,
         expected_update: u64, updates: &[ComponentUpdate<'_>]) -> bool {
-        if updates.is_empty() || !self.host_context_matches(caller,expected) { return false; }
-        let Some(next)=next_ui_update_version(self.component_version,expected_update) else { return false; };
-        let Some(document)=self.document.as_ref() else { return false; };
-        let Some(element)=document.get_node(self.text_element).and_then(|node| node.element_data()) else { return false; };
-        let button=element.name.local==LocalName::from("button");
+        self.apply_component_batch_result(caller,expected,expected_update,updates).is_ok()
+    }
+
+    /// Structured component-frame admission, preflight and native mapping.
+    pub(crate) fn apply_component_batch_result(&mut self, caller: u64, expected: UiInputContext,
+        expected_update: u64, updates: &[ComponentUpdate<'_>]) -> Result<(),ComponentUpdateError> {
+        let owner_ok=self.host_context_matches(caller,expected);
+        let document=self.document.as_ref();
+        let (native_ready,supported)=match document.and_then(|document|
+            document.get_node(self.text_element).and_then(|node|node.element_data())) {
+            Some(element)=>{
+                let button=element.name.local==LocalName::from("button");
+                (true,updates.iter().all(|update|supports_component_update(button,*update)))
+            },
+            None=>(false,false),
+        };
+        admit_component_frame(owner_ok,document.is_some(),updates.len(),self.component_version,
+            expected_update,native_ready,supported)?;
+        let next=next_ui_update_version(self.component_version,expected_update)
+            .ok_or(ComponentUpdateError::SequenceExhausted {current:self.component_version})?;
         for update in updates {
-            if !supports_component_update(button,*update) { return false; }
-        }
-        for update in updates {
-            if !self.apply_component_value(*update) { return false; }
+            if !self.apply_component_value(*update) { return Err(ComponentUpdateError::NativeRejected); }
         }
         self.component_version=next;
-        true
+        Ok(())
     }
 
     /// Internal mapping shared by single updates and preflighted frames.
@@ -680,6 +725,23 @@ impl NativeTextView {
     }
 
 }
+
+// BEGIN VERIFIED COMPONENT UPDATE ADMISSION KERNEL
+/// Classify a complete component frame before any native value mutation.
+/// 在任何原生值变更前分类完整组件帧。
+pub(crate) fn admit_component_frame(owner_ok:bool,open:bool,count:usize,current:u64,expected:u64,
+    native_ready:bool,supported:bool)->Result<(),ComponentUpdateError> {
+    if !owner_ok {return Err(ComponentUpdateError::OwnerContextMismatch);}
+    if !open {return Err(ComponentUpdateError::Closed);}
+    if count==0 {return Err(ComponentUpdateError::EmptyFrame);}
+    if count>4096 {return Err(ComponentUpdateError::CapacityExceeded);}
+    if current!=expected {return Err(ComponentUpdateError::StaleSequence {expected,current});}
+    if current==u64::MAX {return Err(ComponentUpdateError::SequenceExhausted {current});}
+    if !native_ready {return Err(ComponentUpdateError::NativeRejected);}
+    if !supported {return Err(ComponentUpdateError::UnsupportedForView);}
+    Ok(())
+}
+// END VERIFIED COMPONENT UPDATE ADMISSION KERNEL
 // BEGIN VERIFIED NATIVE VIEW CLOSE KERNEL
 impl NativeTextView {
     /// Closes this view permanently; later calls cannot access its upstream tree.

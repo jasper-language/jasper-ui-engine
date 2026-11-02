@@ -6,6 +6,7 @@ pub use jasper_ui_engine::{scene::{Scene,ScenePatch,Node,NodeId},semantics::{Sem
 pub use native_view::PointerAction;
 pub use native_semantics::{SemanticRole as TextSemanticRole,ViewSemantics as TextSemantics};
 pub use component_contract::{ComponentUpdate,ContentFlow,TextAppearance};
+pub use native_view::ComponentUpdateError;
 pub use native_keys::{HostKeyInput,KeyLocation,NativeKeyEvent as CommandKeyEvent};
 pub use native_events::{NativeFocusEvent as TextFocusEvent,NativePointerEvent as TextPointerEvent,NativeActivationEvent as TextActivationEvent,ViewPart as TextPart};
 pub use jasper_ui_engine::input::Modifiers;
@@ -58,6 +59,12 @@ impl TextDisplayView {
     /// Consume a Framework update frame; no Signal scheduling or runtime is implemented.
     pub fn update(&mut self,owner:u64,context:UiInputContext,expected:u64,updates:&[ComponentUpdate<'_>])->bool {
         self.inner.apply_component_batch(owner,context,expected,updates)
+    }
+    /// Structured component frame result; `update` is the bool compatibility projection.
+    /// 结构化组件帧结果；`update` 是 bool 兼容投影。
+    pub fn try_update(&mut self,owner:u64,context:UiInputContext,expected:u64,updates:&[ComponentUpdate<'_>])
+        ->Result<(),ComponentUpdateError> {
+        self.inner.apply_component_batch_result(owner,context,expected,updates)
     }
 
     /// Current display semantics for the embedding host; native focus excludes window focus.

@@ -1,0 +1,74 @@
+verification results:: 1 verified, 1 errors
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+  --> <repo>/evidence/component-update-admission-kernel/negative_ignore_owner.rs:19:1
+   |
+19 | / pub(crate) fn admit_component_frame(owner_ok:bool,open:bool,count:usize,current:u64,expected:u64,
+20 | |     native_ready:bool,supported:bool)->(result:Result<(),ComponentUpdateError>)
+   | |______________________________________________________________________________^
+
+error: postcondition not satisfied
+  --> <repo>/evidence/component-update-admission-kernel/negative_ignore_owner.rs:21:17
+   |
+21 |           ensures match result {
+   |  _________________^
+22 | |             Err(ComponentUpdateError::OwnerContextMismatch)=>!owner_ok,
+23 | |             Err(ComponentUpdateError::Closed)=>owner_ok && !open,
+24 | |             Err(ComponentUpdateError::EmptyFrame)=>owner_ok && open && count==0,
+...  |
+38 | |                 && native_ready && supported,
+39 | |         },
+   | |_________^ failed this postcondition
+...
+44 |       if count>4096 {return Err(ComponentUpdateError::CapacityExceeded);}
+   |                      -------------------------------------------------- at this exit
+
+error: postcondition not satisfied
+  --> <repo>/evidence/component-update-admission-kernel/negative_ignore_owner.rs:21:17
+   |
+21 |           ensures match result {
+   |  _________________^
+22 | |             Err(ComponentUpdateError::OwnerContextMismatch)=>!owner_ok,
+23 | |             Err(ComponentUpdateError::Closed)=>owner_ok && !open,
+24 | |             Err(ComponentUpdateError::EmptyFrame)=>owner_ok && open && count==0,
+...  |
+38 | |                 && native_ready && supported,
+39 | |         },
+   | |_________^ failed this postcondition
+...
+45 |       if current!=expected {return Err(ComponentUpdateError::StaleSequence {expected,current});}
+   |                             ------------------------------------------------------------------ at this exit
+
+error: postcondition not satisfied
+  --> <repo>/evidence/component-update-admission-kernel/negative_ignore_owner.rs:21:17
+   |
+21 |           ensures match result {
+   |  _________________^
+22 | |             Err(ComponentUpdateError::OwnerContextMismatch)=>!owner_ok,
+23 | |             Err(ComponentUpdateError::Closed)=>owner_ok && !open,
+24 | |             Err(ComponentUpdateError::EmptyFrame)=>owner_ok && open && count==0,
+...  |
+38 | |                 && native_ready && supported,
+39 | |         },
+   | |_________^ failed this postcondition
+...
+43 |       if count==0 {return Err(ComponentUpdateError::EmptyFrame);}
+   |                    -------------------------------------------- at this exit
+
+error: postcondition not satisfied
+  --> <repo>/evidence/component-update-admission-kernel/negative_ignore_owner.rs:21:17
+   |
+21 |           ensures match result {
+   |  _________________^
+22 | |             Err(ComponentUpdateError::OwnerContextMismatch)=>!owner_ok,
+23 | |             Err(ComponentUpdateError::Closed)=>owner_ok && !open,
+24 | |             Err(ComponentUpdateError::EmptyFrame)=>owner_ok && open && count==0,
+...  |
+38 | |                 && native_ready && supported,
+39 | |         },
+   | |_________^ failed this postcondition
+...
+42 |       if !open {return Err(ComponentUpdateError::Closed);}
+   |                 ---------------------------------------- at this exit
+
+error: aborting due to 4 previous errors
+

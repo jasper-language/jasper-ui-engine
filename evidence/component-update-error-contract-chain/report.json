@@ -1,0 +1,113 @@
+{
+  "status": "scoped_ordered_acceptance_complete",
+  "property": "UI-COMPONENT-UPDATE-ADMISSION-001 structured error extension",
+  "scope": "The actual admit_component_frame function orders ownership/context, closed, empty, capacity, stale sequence, sequence exhaustion, native readiness and view-support rejection before component value mutation.",
+  "public_contract": {
+    "type": "jasper_ui_engine::native::ComponentUpdateError",
+    "method": "TextDisplayView::try_update",
+    "variants": [
+      "OwnerContextMismatch",
+      "Closed",
+      "EmptyFrame",
+      "CapacityExceeded",
+      "StaleSequence { expected, current }",
+      "SequenceExhausted { current }",
+      "UnsupportedForView",
+      "NativeRejected"
+    ],
+    "compatibility": "TextDisplayView::update is the bool is_ok projection."
+  },
+  "sources": {
+    "src/native_adapter/native_view.rs": "cc1820ab15b3a75f1a4edf05978b1a6b4321c68617cc7b71cc5266e395d9a8da",
+    "src/native_adapter/facade.rs": "ac54bd10ee888f5d06fdf99bf07a3c97df3facf1f11d9b38405d1c55f1c69f54",
+    "verification/native-activation/build.rs": "b700150989dacf4db2aaa8dc3474eb43849b52f4136dac636b7a9bca8d096ad9",
+    "verification/native-activation/src/lib.rs": "4e57b31e0edb4c094fb3407bdde18a92cb1be3804781a1d735e153c96ef5dbba",
+    "verification/native-activation/fuzz/fuzz_targets/component_support.rs": "03e7ebaa5ee94a762c6484a8442c461cc4400220878adfd6d5e152ca6d5a8f20",
+    "tests/native_component_update_contract.rs": "4977624090dd71470ef8a5e09dd84d3dd1882dda3db8cfaf1992a2db178c0d27",
+    "scripts/verify-version.py": "fa6ac67c4f8ef79d41ddb98564271733e96879fe96ae3f1f46f04c997686d551"
+  },
+  "ordered_stages": [
+    {
+      "stage": "Verus+Z3",
+      "status": "passed",
+      "verified_including_dependencies": 2,
+      "negative_controls_rejected": [
+        "ignore-owner",
+        "ignore-support"
+      ],
+      "evidence": "../component-update-admission-kernel/report.json"
+    },
+    {
+      "stage": "Proptest",
+      "status": "passed",
+      "test": "component_gate_tests::component_frame",
+      "cases": 256,
+      "seed": 20261102
+    },
+    {
+      "stage": "Miri",
+      "status": "passed",
+      "test": "component_gate_tests::miri_component_frame_boundaries",
+      "toolchain": "nightly-2026-10-17",
+      "flags": "-Zmiri-strict-provenance"
+    },
+    {
+      "stage": "cargo-fuzz",
+      "status": "passed",
+      "target": "component_support",
+      "runs": 200000,
+      "seconds": 2,
+      "max_len": 42,
+      "seed": 20261102,
+      "crashes": 0
+    },
+    {
+      "stage": "Kani",
+      "status": "passed",
+      "harness": "component_gate_proofs::component_frame",
+      "checks": 112,
+      "failed": 0,
+      "domain": "all bool control flags, all usize counts and all u64 current/expected sequences"
+    },
+    {
+      "stage": "Loom applicability",
+      "status": "not_applicable",
+      "reason": "The component admission classifier is a pure synchronous function over scalar flags with no threads, locks, atomics, tasks or shared mutation."
+    }
+  ],
+  "integration": {
+    "test": "native_component_update_contract::public_component_update_errors_distinguish_rejection_stages",
+    "result": "passed",
+    "checks": [
+      "owner/context mismatch",
+      "empty frame",
+      "4097-update capacity",
+      "stale sequence",
+      "button-only update on a text view",
+      "valid two-update appearance+label frame",
+      "sequence advances exactly once",
+      "closed view"
+    ]
+  },
+  "current_source_reruns": {
+    "component update admission": "2 verified / 0 errors; ignore-owner and ignore-support negative controls rejected",
+    "Proptest": "component_gate_tests::component_frame passed with 256 configured cases",
+    "Miri": "component_gate_tests::miri_component_frame_boundaries passed with strict provenance",
+    "cargo-fuzz": "component_support completed 200000 runs in 2 seconds with 0 crashes",
+    "Kani": "component_gate_proofs::component_frame passed 112 checks with 0 failures",
+    "Loom applicability": "not applicable: pure synchronous scalar classifier with no shared concurrent state",
+    "native component version": "26 verified / 0 errors; both negative controls rejected",
+    "text display close": "30 verified / 0 errors; both negative controls rejected",
+    "text display version": "29 verified / 0 errors; both negative controls rejected",
+    "native host context": "27 verified / 0 errors; both negative controls rejected",
+    "public component test": "native_component_update_contract 1/1 passed with the injected DejaVu Sans font",
+    "public scene test": "native_update_contract 1/1 passed with the injected DejaVu Sans font",
+    "proof correspondence": "current=true; all negative controls rejected"
+  },
+  "limits": [
+    "The classifier does not prove actual Blitz value setters, resolve, callback dispatch or panic rollback.",
+    "The component support predicate is separately proved but this report does not combine every ComponentUpdate variant into one unbounded frame theorem.",
+    "SequenceExhausted and internal NativeRejected are defined for the contract; public construction cannot normally reach them without sequence exhaustion or a malformed internal document.",
+    "Checklist item 1 remains incomplete because the real Map, whole-frame and float gaps remain."
+  ]
+}

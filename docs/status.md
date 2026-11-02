@@ -688,3 +688,11 @@ VM 实跑成功，输出 `evidence/full-scene/full_scene.ppm`（P6 320×180，17
 `admit_scene_update` 实际分类器完成有序限定验收：Verus+Z3 5 verified/0 errors，所有权与后继版本两个负控拒绝；Proptest 256 例、严格 provenance Miri、cargo-fuzz 200000 次、Kani 148 checks（全 u64 版本/身份、全 usize 计数和 bool 状态，0 失败）通过，Loom 因纯同步无共享状态不适用。外部公共 API 测试覆盖全部八类结果并确认拒绝后版本/节点数保持。证据：`evidence/scene-update-error-contract-chain/report.json`。
 
 第 1 项仍不勾选：该结果只证明准入分类，不证明来源场景事务、Blitz 候选构造、真实 Map 遍历或完整 `apply_update→apply_patches`。
+
+## 2026-11-02：组件更新结构化拒绝契约
+
+公共 `TextDisplayView` 新增 `try_update -> Result<(), ComponentUpdateError>`，明确区分归属/上下文、关闭、空帧、4096 项容量、过期序号及 expected/current、序号耗尽、视图不支持和原生映射拒绝；不暴露 Blitz 类型或更新载荷。现有 `update` 保留为结构化结果的 `is_ok()` 兼容投影。`admit_component_frame` 在任一组件值变更前分类完整帧，元素存在性与视图类型支持由实际预检带入。
+
+该实际准入分类器完成限定有序验收：Verus+Z3 2 verified/0 errors，忽略归属与忽略视图支持两个负控被拒；Proptest 256 例、严格 provenance Miri、cargo-fuzz 200000 次、Kani 112 checks（全 bool 控制位、全 usize 计数和全 u64 序号，0 失败）通过；纯同步无共享状态，Loom 不适用。公共 API 集成测试覆盖归属、空帧、容量、过期序号、视图不支持、合法两项帧、序号精确推进和关闭视图。证据：`evidence/component-update-error-contract-chain/report.json`。
+
+第 1 项仍不勾选：本结果不证明逐值原生 setter、resolve、回调 panic 回滚或完整组件帧组合；真实两节点 `BTreeMap` Kani、整帧变更与浮点规格缺口仍未关闭。
