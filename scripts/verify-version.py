@@ -1891,7 +1891,7 @@ KERNELS["text-display-close"] = {
 }
 
 KERNELS["scene-semantics-type"]={"source":"src/semantics.rs","marker":"SCENE SEMANTICS","suffix":"TYPE","signature":None,"depends":["role-type"],"internal_only":True}
-KERNELS["native-scene-type"]={"source":"src/native_adapter/native_scene.rs","marker":"NATIVE SCENE","suffix":"TYPE","signature":None,"depends":["ui-view-slot","node-id-type","scene-semantics-type"],"internal_only":True,"spec_prelude":"use std::collections::{BTreeMap,BTreeSet}; pub mod blitz_dom {#[verifier::external_body] pub struct NodeId {}} #[verifier::external_body] pub struct BaseDocument {}"}
+KERNELS["native-scene-type"]={"source":"src/native_adapter/native_scene.rs","marker":"NATIVE SCENE","suffix":"TYPE","signature":None,"depends":["ui-view-slot","node-id-type","scene-semantics-type"],"internal_only":True,"spec_prelude":"use std::collections::{BTreeMap,BTreeSet}; pub mod blitz_dom {#[verifier::external_body] pub struct NodeId {} #[verifier::external_body] pub struct FontContext {}} #[verifier::external_body] pub struct BaseDocument {} #[verifier::external_body] pub struct Scene {}"}
 KERNELS["native-scene-close"]={
  "source":"src/native_adapter/native_scene.rs","marker":"NATIVE SCENE CLOSE",
  "signature":"pub(crate) fn close(&mut self,caller:u64)->bool {",
@@ -1997,7 +1997,7 @@ KERNELS["semantic-role-tag"]={
     ensures result == ((match current {Role::Button=>true,_=>false}) == (match next {Role::Button=>true,_=>false})),
     {""",
     "depends":["native-button-role"],"evidence":"semantic-role-tag-kernel","function_count":1,
-    "scope":"Exact tag-preservation decision used by semantic preflight; constructor mapping, maps and whole mutation frame unproved.",
+    "scope":"Exact legacy tag-preservation predicate retained for source compatibility; the transactional scene path now rebuilds native elements and no longer consumes this predicate; constructor mapping, maps and whole mutation frame unproved.",
     "mutations":[("wrong-native-class","matches!(role,Role::Button)","false"),
         ("invert-tag-relation","role_uses_native_button(current)==role_uses_native_button(next)","role_uses_native_button(current)!=role_uses_native_button(next)")],
 }

@@ -1,0 +1,15 @@
+   Compiling jasper-ui-blitz-host-probe v0.0.0 (<repo>/experiments/blitz-host)
+    Finished `test` profile [unoptimized] target(s) in 2.53s
+     Running unittests src/main.rs (experiments/blitz-host/target/debug/build/jasper-ui-blitz-host-probe/bb5cc86f0e6a8665/out/jasper_ui_blitz_host_probe-bb5cc86f0e6a8665)
+
+running 7 tests
+test native_view::tests::actual_dispatch_rejects_sequence_exhaustion ... ok
+test native_view::tests::snapshot_change_invalidates_old_preedit_and_selection ... ok
+test native_view::tests::two_native_views_isolate_application_and_close ... ok
+test native_view::tests::replacing_focus_binding_clears_previous_preedit_before_new_payload ... ok
+test native_view::tests::cancelled_preedit_cannot_resurrect_or_clear_successor ... ok
+test native_view::tests::appearance_updates_preserve_active_input_and_display_state ... ok
+test native_view::tests::actual_viewport_scroll_maps_and_restores ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.91s
+

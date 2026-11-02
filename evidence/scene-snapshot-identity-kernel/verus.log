@@ -1,0 +1,11 @@
+verification results:: 7 verified, 0 errors
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> <repo>/evidence/scene-snapshot-identity-kernel/kernel.rs:60:10
+   |
+60 | #[derive(Clone, Debug, Default, PartialEq, Eq)]
+   |          ^^^^^
+   |
+   = help: to suppress this warning, use `#[verifier::allow(autoderive_clone_without_spec)]` on the surrounding function, datatype, or module or `#![verifier::allow(autoderive_clone_without_spec)]` in the module or crate
+
+warning: 1 warning emitted
+

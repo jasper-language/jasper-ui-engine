@@ -624,6 +624,7 @@ UI19 刻画的反斜体已修正。新增 `src/native_adapter/glyph_skew.rs`：�
 | `unwind=4` + Bitwuzla | 默认对象编码在 SMT2 `QF_AUFBV` 转换阶段报告 3G 内存不足 |
 | `unwind=4` + Bitwuzla `object-bits=8/9/10` | 分别因超过 256/512/1024 个被寻址对象的明确容量错误失败 |
 | `unwind=4` + Bitwuzla `object-bits=11` | 85.86 秒到达结论，但展开断言失败，说明 `unwind=4` 并不充分 |
+| `unwind=5` + Bitwuzla `object-bits=11` | 59.44 秒完成符号执行，9309 个残留 VCC 后在 SSA 转换超时，退出 124 |
 | `unwind=8` + Bitwuzla `object-bits=11` | 180 秒限额内未完成，退出 124 |
 | `unwind=4` + Z3/CVC5 | CBMC SMT 转换在 `map::at` / status 6 失败 |
 | `unwind=4` + Bitwuzla `arrays-uf-always` / `full-slice` | 仍在转换阶段内存不足；`full-slice` 反使剩余 VCC 增至 6944 |
@@ -642,6 +643,8 @@ UI19 刻画的反斜体已修正。新增 `src/native_adapter/glyph_skew.rs`：�
 - Button→Container 语义更新成功，像素与同终态新导入逐字节一致，角色/标签和焦点均正确。
 
 受限 VM 中原生 CPU 库 175 项、`native_blitz_engine` 2 项、`native_cpu_acceptance` 4 项、`native_frame_differential` 1 项及新增事务 2 项全部通过。该事务编排尚缺完整 Verus/六阶段实现级证明，因此第 2 项仍不勾选。
+
+新增字段后重验受影响的提取依赖：scene-host-close 8/0、scene-snapshot-identity 7/0、scene-host-identity 9/0、native-component-version 26/0、text-display-close 30/0、text-display-version 29/0、native-host-context 27/0，负控均按后置条件失败；semantic-role-tag 3/0 仍保留，但其范围已改为“仅历史兼容谓词”，事务路径不再消费该标签保持限制。`test-blitz-proof-mapping.py` 当前映射与负控全部通过。全量 CPU 回归除“无同族 sans oblique 字体夹具”的既有测试外全部通过；该跳过不记实现失败，也不记六阶段通过。
 
 ## 2026-11-02：合成粗体替身完成限定验收
 

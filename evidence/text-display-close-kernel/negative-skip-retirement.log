@@ -1,0 +1,39 @@
+verification results:: 29 verified, 1 errors
+warning: type `NativeTextView` is more private than the item `native_component_version_model`
+   --> <repo>/evidence/text-display-close-kernel/negative_skip_retirement.rs:35:1
+    |
+ 35 | pub closed spec fn native_component_version_model(view: &NativeTextView) -> Option<u64> { if view.document.owned_value().is_some() ...
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ function `native_component_version_model` is reachable at visibility `pub`
+    |
+note: but type `NativeTextView` is only usable at visibility `pub(crate)`
+   --> <repo>/evidence/text-display-close-kernel/negative_skip_retirement.rs:389:1
+    |
+389 | pub(crate) struct NativeTextView {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = note: `#[warn(private_interfaces)]` on by default
+
+warning: type `NativeTextView` is more private than the item `native_metadata_same`
+   --> <repo>/evidence/text-display-close-kernel/negative_skip_retirement.rs:37:1
+    |
+ 37 | pub closed spec fn native_metadata_same(a:&NativeTextView,b:&NativeTextView)->bool {a.component_version==b.component_version && a.s...
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ function `native_metadata_same` is reachable at visibility `pub`
+    |
+note: but type `NativeTextView` is only usable at visibility `pub(crate)`
+   --> <repo>/evidence/text-display-close-kernel/negative_skip_retirement.rs:389:1
+    |
+389 | pub(crate) struct NativeTextView {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: postcondition not satisfied
+   --> <repo>/evidence/text-display-close-kernel/negative_skip_retirement.rs:458:10
+    |
+458 |    ensures text_display_close_post(old(self),final(self),owner,context,result),
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+459 | /  { proof { reveal(text_display_close_post); reveal(text_display_owner_model); }
+460 | |         if !self.inner.host_context_matches(owner,context) {return false;}
+461 | |         false
+462 | |     }
+    | |_____- at the end of the function body
+
+error: aborting due to 1 previous error; 2 warnings emitted
+

@@ -1,0 +1,51 @@
+{
+  "property": "UI-SEMANTIC-ROLE-TAG-001",
+  "status": "proved",
+  "scope": "Exact legacy tag-preservation predicate retained for source compatibility; the transactional scene path now rebuilds native elements and no longer consumes this predicate; constructor mapping, maps and whole mutation frame unproved.",
+  "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
+  "source_sha256": "adac56b1a8a9383397879e3d36de26da5f1add99daf45185fdad80b66c3e3275",
+  "sources": {
+    "src/native_adapter/native_scene.rs": "adac56b1a8a9383397879e3d36de26da5f1add99daf45185fdad80b66c3e3275",
+    "src/semantics.rs": "a698a75a61554e48a1dfcd2644544d071340037e96df276c58dd331bc1740755"
+  },
+  "kernel_sha256": "c132d2e1d10b7b34d2524b509751c21b3d8b9133971bfd4b329fb35b6fbac6b2",
+  "dependencies": {
+    "role-type": "cad90bc2ac24e004873b2641e0aa09bd9e09f36c93ed7f67e795a68293e3a019",
+    "native-button-role": "967f42acd9861679ab5451f9270406431a2583aca766d5d609e22cf42260b360"
+  },
+  "proof_sha256": "b30e0bb75b5f50a79862cecef3c5fa9cd135af3311cb2f7659544f48be589c15",
+  "runner_sha256": "eddbeb6c7d9795cd636c283dd36880d63ccc3f84bd77b17a9220f0448cb0203e",
+  "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
+  "command": [
+    "<home>/.local/share/jasper-ui-verification/verus-x86-linux/verus",
+    "--crate-type",
+    "lib",
+    "<repo>/evidence/semantic-role-tag-kernel/kernel.rs"
+  ],
+  "exit_code": 0,
+  "solver": {
+    "path": "<home>/.local/share/jasper-ui-verification/verus-x86-linux/z3",
+    "version": "Z3 version 4.16.0 - 64 bit\n",
+    "explicit_override": null
+  },
+  "verified_obligations": 3,
+  "negative_controls": [
+    {
+      "name": "wrong-native-class",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "invert-tag-relation",
+      "rejected": true,
+      "exit_code": 1
+    }
+  ],
+  "negative_control_rejected": true,
+  "trust_boundary": [
+    "Verus/vstd and SMT solver",
+    "Rust/Verus integer, references and slice semantics",
+    "signature annotation/extraction script",
+    "Rust compiler and target execution"
+  ]
+}

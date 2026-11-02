@@ -1,0 +1,16 @@
+verification results:: 1 verified, 1 errors
+error: postcondition not satisfied
+  --> <repo>/evidence/semantic-role-tag-kernel/negative_reject_attribute_update.rs:29:13
+   |
+29 |       ensures result == ((match current {Role::Button=>true,_=>false}) == (match next {Role::Button=>true,_=>false})),
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+30 |       {
+31 | /     match (current,next) {
+32 | |         (Role::Button,Role::Button)=>true,
+33 | |         (Role::Button,_)|(_,Role::Button)=>false,
+34 | |         _=>false,
+35 | |     }
+   | |_____- at the end of the function body
+
+error: aborting due to 1 previous error
+

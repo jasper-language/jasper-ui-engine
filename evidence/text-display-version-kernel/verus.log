@@ -1,0 +1,31 @@
+verification results:: 29 verified, 0 errors
+warning: type `NativeTextView` is more private than the item `native_component_version_model`
+   --> <repo>/evidence/text-display-version-kernel/kernel.rs:35:1
+    |
+ 35 | pub closed spec fn native_component_version_model(view: &NativeTextView) -> Option<u64> { if view.document.owned_value().is_some() ...
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ function `native_component_version_model` is reachable at visibility `pub`
+    |
+note: but type `NativeTextView` is only usable at visibility `pub(crate)`
+   --> <repo>/evidence/text-display-version-kernel/kernel.rs:387:1
+    |
+387 | pub(crate) struct NativeTextView {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = note: `#[warn(private_interfaces)]` on by default
+
+warning: 1 warning emitted
+
+warning: type `NativeTextView` is more private than the item `native_component_version_model`
+   --> <repo>/evidence/text-display-version-kernel/kernel.rs:35:1
+    |
+ 35 | pub closed spec fn native_component_version_model(view: &NativeTextView) -> Option<u64> { if view.document.owned_value().is_some() ...
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ function `native_component_version_model` is reachable at visibility `pub`
+    |
+note: but type `NativeTextView` is only usable at visibility `pub(crate)`
+   --> <repo>/evidence/text-display-version-kernel/kernel.rs:387:1
+    |
+387 | pub(crate) struct NativeTextView {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = note: `#[warn(private_interfaces)]` on by default
+
+warning: 1 warning emitted
+

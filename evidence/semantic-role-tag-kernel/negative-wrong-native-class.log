@@ -1,0 +1,12 @@
+verification results:: 2 verified, 1 errors
+error: postcondition not satisfied
+  --> <repo>/evidence/semantic-role-tag-kernel/negative_wrong_native_class.rs:29:13
+   |
+29 |     ensures result == (match role {Role::Button=>true,_=>false}),
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+30 |     {
+31 |     false
+   |     ----- at the end of the function body
+
+error: aborting due to 1 previous error
+

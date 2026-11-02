@@ -72,6 +72,12 @@
       "observed": "The enlarged verified program did not complete within the fixed 180-second workload limit; no pass or counterexample result is claimed."
     },
     {
+      "configuration": "-Z unstable-options --unwind 5 --solver bitwuzla --cbmc-args --object-bits 11",
+      "result": "not_passed",
+      "exit_code": 124,
+      "observed": "Symex completed in 59.44s with 621901 program-expression steps, 28228 generated VCCs and 9309 remaining after simplification; SSA conversion did not complete within the fixed workload limit."
+    },
+    {
       "configuration": "--unwind 4 --solver cvc5",
       "result": "failed_backend_translation",
       "observed": "SMT2 conversion stopped with the CBMC backend diagnostic map::at and status 6."
@@ -96,7 +102,7 @@
   "input_domain_reduced": false,
   "checks_disabled": false,
   "substituted_map": false,
-  "conclusion": "Neither the default SAT path nor the available Kani 0.68.0 SMT/SAT backends that preserve this real Map harness and complete assertion set can finish within 3G. A working object encoding exposed that unwind=4 is insufficient; unwind=8 then exceeded the fixed time limit. No backend attempt is recorded as passed.",
+  "conclusion": "Neither the default SAT path nor the available Kani 0.68.0 SMT/SAT backends that preserve this real Map harness and complete assertion set can finish within 3G. A working object encoding exposed that unwind=4 is insufficient; unwind=5 and unwind=8 then exceeded the fixed time limit. No backend attempt is recorded as passed.",
   "required_next_step": "A future verifier/backend that can encode this real BTreeMap harness within the fixed limits, or a non-shrinking verifier-supported implementation-level decomposition preserving the production map, full property, original symbolic domain, safety checks, and unwinding assertions.",
   "whole_adapter_accepted": false
 }

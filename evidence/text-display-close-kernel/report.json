@@ -1,0 +1,66 @@
+{
+  "property": "UI-TEXT-DISPLAY-CLOSE-001",
+  "status": "proved",
+  "scope": "Actual owner-admitted public close, preedit correlation retirement and owned Option closure; logical frame only, no backend destructor/service ACK proof.",
+  "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
+  "source_sha256": "469669e92b74041f24f67e25cb90473860626c3cd34abdf2055d41e64f971965",
+  "sources": {
+    "src/composition_identity.rs": "55077cb7228d1f2616114de7e195e6a933112bbb87ab069c0c401e207f5fbc71",
+    "src/input_identity.rs": "481fda295574255d00f1b0952ee92a0772a08efe82f2c776250345d01b762fcd",
+    "src/native_adapter/facade.rs": "469669e92b74041f24f67e25cb90473860626c3cd34abdf2055d41e64f971965",
+    "src/native_adapter/native_view.rs": "b21a5719b2f7cca9cee2d5f254d3911980f03a61459c2b6b481c79cdddc5c0c9",
+    "src/native_adapter/view_slot.rs": "eb3058520b3dfa250f894bd8419ada7076046bf50d5091c8d7b15fa48e82025c",
+    "src/resource.rs": "fea8dda71b75d72155c99a984dd30a69d30a9873084770f04186e4d5afe55782",
+    "src/scene.rs": "60a8c71dea8702de950b5a036ef4074732c0bed2865f48dc2015a47271f224c2"
+  },
+  "kernel_sha256": "ceafd664e6cd549a3866c3cbff413ab0cecdaa2b94c6362ce5c23a706ef407b5",
+  "dependencies": {
+    "ui-view-slot": "af6bb2ef156567f616ef0f160656d33be6983a729d5f8eb1a18c7f9796c28479",
+    "resource-gate": "771d8741e05fac4cc7114102a3e0c439cfab29c6585f6a489bab662d069ded49",
+    "node-id-type": "39ff7bd8c3c5c51e025059e0f104105a839165e2cb4a455f094a2d2bb9cfffad",
+    "ui-input-admission": "f9e57f18ca80bc82ea4d6fe3e39369dfd157e30b3ee281c9629ae4ab80a4a043",
+    "ui-input-binding": "5b240385fdb65b2da693354c30fb6ad6955a9bf0913a15a3e1064e8c2b68e524",
+    "ui-composition-identity": "0b725c498a977b9bcbd2253750f1c65b9d814aca4d3f61170aa0d2d3925e1bc8",
+    "native-view-type": "68d1a0e3d0d7dba8e4b79f9392f70895c9e22d5c3259dd9d1e0bf3d123bd8cb7",
+    "ui-view-owner": "44d6c23987aab6992643795e55582ffe3715154b0e96501398906346c19d3e76",
+    "native-host-context": "dc293931b43a639a55dd64b6f76682f798989ff5735db63bb0eda8771169f144",
+    "native-component-version": "340409aa33b73fecdfb13ddd48b4164282e05c0c3f34ec30ee24c1278c9d62af",
+    "text-display-type": "cdc2999138051282f6a1f5b48b61a1f6f227702efcd7c6c9316c4ef31537ebd1",
+    "native-view-close": "ce499b4fd3fa2d917cc54745645a668a3f59e7e7702a2b71def23d847ba2ccb7"
+  },
+  "proof_sha256": "b2baf594321fd1efae39ade52f5290f99d01810dba784823124ac80ac7f08213",
+  "runner_sha256": "40ff191717edb56e95e13a43693de330faedc1ebc6dbaee280f56e6974ddab68",
+  "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
+  "command": [
+    "<home>/.local/share/jasper-ui-verification/verus-x86-linux/verus",
+    "--crate-type",
+    "lib",
+    "<repo>/evidence/text-display-close-kernel/kernel.rs"
+  ],
+  "exit_code": 0,
+  "solver": {
+    "path": "<home>/.local/share/jasper-ui-verification/verus-x86-linux/z3",
+    "version": "Z3 version 4.16.0 - 64 bit\n",
+    "explicit_override": null
+  },
+  "verified_obligations": 30,
+  "negative_controls": [
+    {
+      "name": "ignore-owner-context",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "skip-retirement",
+      "rejected": true,
+      "exit_code": 1
+    }
+  ],
+  "negative_control_rejected": true,
+  "trust_boundary": [
+    "Verus/vstd and SMT solver",
+    "Rust/Verus integer, references and slice semantics",
+    "signature annotation/extraction script",
+    "Rust compiler and target execution"
+  ]
+}

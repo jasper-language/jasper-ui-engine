@@ -1,0 +1,39 @@
+verification results:: 9 verified, 0 errors
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> <repo>/evidence/scene-host-identity-kernel/kernel.rs:63:10
+   |
+63 | #[derive(Clone, Debug, Default, PartialEq, Eq)]
+   |          ^^^^^
+   |
+   = help: to suppress this warning, use `#[verifier::allow(autoderive_clone_without_spec)]` on the surrounding function, datatype, or module or `#![verifier::allow(autoderive_clone_without_spec)]` in the module or crate
+
+warning: type `NativeScene` is more private than the item `native_scene_metadata_same`
+  --> <repo>/evidence/scene-host-identity-kernel/kernel.rs:8:1
+   |
+ 8 | pub closed spec fn native_scene_metadata_same(a:&NativeScene,b:&NativeScene)->bool {a.owner==b.owner && a.scene_version==b.scene_ver...
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ function `native_scene_metadata_same` is reachable at visibility `pub`
+   |
+note: but type `NativeScene` is only usable at visibility `pub(crate)`
+  --> <repo>/evidence/scene-host-identity-kernel/kernel.rs:74:1
+   |
+74 | pub(crate) struct NativeScene {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = note: `#[warn(private_interfaces)]` on by default
+
+warning: 2 warnings emitted
+
+warning: type `NativeScene` is more private than the item `native_scene_metadata_same`
+  --> <repo>/evidence/scene-host-identity-kernel/kernel.rs:8:1
+   |
+ 8 | pub closed spec fn native_scene_metadata_same(a:&NativeScene,b:&NativeScene)->bool {a.owner==b.owner && a.scene_version==b.scene_ver...
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ function `native_scene_metadata_same` is reachable at visibility `pub`
+   |
+note: but type `NativeScene` is only usable at visibility `pub(crate)`
+  --> <repo>/evidence/scene-host-identity-kernel/kernel.rs:74:1
+   |
+74 | pub(crate) struct NativeScene {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = note: `#[warn(private_interfaces)]` on by default
+
+warning: 1 warning emitted
+

@@ -1,0 +1,48 @@
+verification results:: 7 verified, 1 errors
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> <repo>/evidence/scene-host-close-kernel/negative_ignore_owner.rs:62:10
+   |
+62 | #[derive(Clone, Debug, Default, PartialEq, Eq)]
+   |          ^^^^^
+   |
+   = help: to suppress this warning, use `#[verifier::allow(autoderive_clone_without_spec)]` on the surrounding function, datatype, or module or `#![verifier::allow(autoderive_clone_without_spec)]` in the module or crate
+
+warning: type `NativeScene` is more private than the item `native_scene_metadata_same`
+  --> <repo>/evidence/scene-host-close-kernel/negative_ignore_owner.rs:8:1
+   |
+ 8 | pub closed spec fn native_scene_metadata_same(a:&NativeScene,b:&NativeScene)->bool {a.owner==b.owner && a.scene_version==b.scene_ver...
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ function `native_scene_metadata_same` is reachable at visibility `pub`
+   |
+note: but type `NativeScene` is only usable at visibility `pub(crate)`
+  --> <repo>/evidence/scene-host-close-kernel/negative_ignore_owner.rs:73:1
+   |
+73 | pub(crate) struct NativeScene {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = note: `#[warn(private_interfaces)]` on by default
+
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+  --> <repo>/evidence/scene-host-close-kernel/negative_ignore_owner.rs:93:5
+   |
+93 |     pub(crate) fn close(&mut self,caller:u64)->(result:bool)
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: postcondition not satisfied
+  --> <repo>/evidence/scene-host-close-kernel/negative_ignore_owner.rs:94:10
+   |
+94 |  ensures result==(caller==old(self).owner && old(self).document.owned_value().is_some()),
+   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+98 |         self.document.close()
+   |         --------------------- at the end of the function body
+
+error: postcondition not satisfied
+  --> <repo>/evidence/scene-host-close-kernel/negative_ignore_owner.rs:95:5
+   |
+95 |     if caller==old(self).owner {final(self).document.owned_value().is_none()} else {final(self).document.owned_value()==old(self).document.owned_value()},
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+98 |         self.document.close()
+   |         --------------------- at the end of the function body
+
+error: aborting due to 2 previous errors; 2 warnings emitted
+

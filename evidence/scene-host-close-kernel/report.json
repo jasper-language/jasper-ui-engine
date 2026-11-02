@@ -1,0 +1,59 @@
+{
+  "property": "UI-SCENE-HOST-CLOSE-001",
+  "status": "proved",
+  "scope": "Actual Scene host/native close and exact map/semantic declarations; logical owned slot retirement plus metadata preservation, no map algorithm, rendering, destructor or host cleanup proof.",
+  "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
+  "source_sha256": "469669e92b74041f24f67e25cb90473860626c3cd34abdf2055d41e64f971965",
+  "sources": {
+    "src/native_adapter/facade.rs": "469669e92b74041f24f67e25cb90473860626c3cd34abdf2055d41e64f971965",
+    "src/native_adapter/native_scene.rs": "adac56b1a8a9383397879e3d36de26da5f1add99daf45185fdad80b66c3e3275",
+    "src/native_adapter/view_slot.rs": "eb3058520b3dfa250f894bd8419ada7076046bf50d5091c8d7b15fa48e82025c",
+    "src/scene.rs": "60a8c71dea8702de950b5a036ef4074732c0bed2865f48dc2015a47271f224c2",
+    "src/semantics.rs": "a698a75a61554e48a1dfcd2644544d071340037e96df276c58dd331bc1740755"
+  },
+  "kernel_sha256": "7beb8ca44a3a0d847af64912b92b59ca566bddaa443639370c8aeebe05af580c",
+  "dependencies": {
+    "ui-view-slot": "af6bb2ef156567f616ef0f160656d33be6983a729d5f8eb1a18c7f9796c28479",
+    "node-id-type": "39ff7bd8c3c5c51e025059e0f104105a839165e2cb4a455f094a2d2bb9cfffad",
+    "role-type": "cad90bc2ac24e004873b2641e0aa09bd9e09f36c93ed7f67e795a68293e3a019",
+    "scene-semantics-type": "c56530710ed3473bba239cc445b979fe73e8f94a76045b3432a31c14e953caa2",
+    "native-scene-type": "87eed3476a1cbac905a553ce4e93a4dcbc6bae28f9bdaa577aeeb593584effc6",
+    "native-scene-close": "ebb391525d089f36290d90d8c3464cc28a5664316a6d6e7b68f26b36e7cc7ec8",
+    "scene-host-type": "9634bb42ae8a8552b800da5972671e92cdff78ef11d6b67deb4ee0642856fab4"
+  },
+  "proof_sha256": "1b841840e3f1b288667a62a93ccd5ecc4fc89116831ca774e285fcc856cb90a5",
+  "runner_sha256": "40ff191717edb56e95e13a43693de330faedc1ebc6dbaee280f56e6974ddab68",
+  "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
+  "command": [
+    "<home>/.local/share/jasper-ui-verification/verus-x86-linux/verus",
+    "--crate-type",
+    "lib",
+    "<repo>/evidence/scene-host-close-kernel/kernel.rs"
+  ],
+  "exit_code": 0,
+  "solver": {
+    "path": "<home>/.local/share/jasper-ui-verification/verus-x86-linux/z3",
+    "version": "Z3 version 4.16.0 - 64 bit\n",
+    "explicit_override": null
+  },
+  "verified_obligations": 8,
+  "negative_controls": [
+    {
+      "name": "ignore-owner",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "skip-close",
+      "rejected": true,
+      "exit_code": 1
+    }
+  ],
+  "negative_control_rejected": true,
+  "trust_boundary": [
+    "Verus/vstd and SMT solver",
+    "Rust/Verus integer, references and slice semantics",
+    "signature annotation/extraction script",
+    "Rust compiler and target execution"
+  ]
+}

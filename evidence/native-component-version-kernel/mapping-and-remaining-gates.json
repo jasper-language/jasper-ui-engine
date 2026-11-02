@@ -1,0 +1,17 @@
+{
+  "own_body": "exact marked native component_version method",
+  "own_fields": "exact marked NativeTextView declaration",
+  "third_party_abstraction": [
+    "BaseDocument is an opaque payload in ViewSlot, never constructed or operated on by this proof",
+    "blitz_dom::NodeId is opaque and never read by this getter"
+  ],
+  "claims_excluded": [
+    "upstream representations/ABI",
+    "native construction/close transitions",
+    "other native methods",
+    "all remaining ordered gates"
+  ],
+  "native_regression_tests": 7,
+  "native_regression_exit_code": 0,
+  "source_sha256": "57fb894bdcffabe2aafb8cdf3d00767aab2d4636d9d1efdb95a24c11a6ff4fba"
+}

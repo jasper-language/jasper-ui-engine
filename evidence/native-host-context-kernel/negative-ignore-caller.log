@@ -1,0 +1,12 @@
+verification results:: 26 verified, 1 errors
+error: postcondition not satisfied
+   --> <repo>/evidence/native-host-context-kernel/negative_ignore_caller.rs:418:17
+    |
+418 | ...   ensures result == (self.session==caller && self.context.target.0==expected.target.0 && self.context.target_generation==expected.target_generation && self.context.document==expected.document && self.context.revision==expected.revision),
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+419 | ...
+420 | ...   matches_ui_view_owner(self.session,self.context,self.session,expected)
+    |       ---------------------------------------------------------------------- at the end of the function body
+
+error: aborting due to 1 previous error
+

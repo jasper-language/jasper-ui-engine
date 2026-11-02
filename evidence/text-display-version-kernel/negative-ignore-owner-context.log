@@ -1,0 +1,25 @@
+verification results:: 28 verified, 1 errors
+warning: type `NativeTextView` is more private than the item `native_component_version_model`
+   --> <repo>/evidence/text-display-version-kernel/negative_ignore_owner_context.rs:35:1
+    |
+ 35 | pub closed spec fn native_component_version_model(view: &NativeTextView) -> Option<u64> { if view.document.owned_value().is_some() ...
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ function `native_component_version_model` is reachable at visibility `pub`
+    |
+note: but type `NativeTextView` is only usable at visibility `pub(crate)`
+   --> <repo>/evidence/text-display-version-kernel/negative_ignore_owner_context.rs:387:1
+    |
+387 | pub(crate) struct NativeTextView {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = note: `#[warn(private_interfaces)]` on by default
+
+error: postcondition not satisfied
+   --> <repo>/evidence/text-display-version-kernel/negative_ignore_owner_context.rs:441:17
+    |
+441 |         ensures result==text_display_version_model(self,owner,context),
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+444 |         self.inner.component_version()
+    |         ------------------------------ at the end of the function body
+
+error: aborting due to 1 previous error; 1 warning emitted
+
