@@ -1,20 +1,12 @@
 {
   "schema_version": 1,
   "kind": "jasper-ui-closeout-audit",
-  "generated_at": "2026-11-02T17:23:04.242727+00:00",
+  "generated_at": "2026-11-02T17:23:55.161220+00:00",
   "claim": "audit only; no checklist completion or whole-engine acceptance is claimed",
   "git": {
     "branch": "codex/item6-closeout",
-    "commit": "6840fc90c5d2c42e3cd664dc9f47327b1335c4e7",
-    "dirty_paths": [
-      " M .github/workflows/ci.yml",
-      " M docs/README.md",
-      "?? docs/claude-closeout-proof-backlog.md",
-      "?? docs/closeout.md",
-      "?? scripts/audit-closeout.py",
-      "?? scripts/closeout-baseline.sh",
-      "?? scripts/test-audit-closeout.py"
-    ]
+    "commit": "22372ff1daad8e6cfc0fd2a0e1b99c560c651d24",
+    "dirty_paths": []
   },
   "final_audit": {
     "path": "evidence/final-checklist-audit-pending/report.json",
@@ -29,8 +21,11 @@
       "docs/status.md",
       "docs/verification.md",
       "examples/gpu_window.rs",
+      "scripts/audit-closeout.py",
       "scripts/capture-window-xvfb.sh",
       "scripts/check-blitz-proof-mapping.py",
+      "scripts/closeout-baseline.sh",
+      "scripts/test-audit-closeout.py",
       "scripts/verify-in-vm.sh",
       "scripts/verify-ui.py",
       "scripts/verify-version.py",
@@ -164,9 +159,9 @@
     ]
   },
   "audit_inputs": {
-    "scripts/audit-closeout.py": "3cf0fd12f30fd8307c4b4c9843a5662e956a8670a4636a45d402c6bbadc1561d",
+    "scripts/audit-closeout.py": "e9a4e85b61c747dd2e2b6aa61848dd75cb891fb92939eff997d4c9cf6ba15d37",
     "scripts/closeout-baseline.sh": "ac5c9bb8a61c4b25dcb6994bc2559234b75c85e34687ff1de87a9537af8b44f3",
-    "scripts/test-audit-closeout.py": "a7613f9d7ec13dde9e97c50cad85fff4c7b2a93edf88a5c663c6bcde98635bfd",
+    "scripts/test-audit-closeout.py": "52ab3568de9a2184d7c0eb2cecc3cfd313dbecd02a309fb742da2db26e850bde",
     "docs/claude-closeout-proof-backlog.md": "e2af5e5f97fdad0cb2c127967d7c146b4f83c3d4944915c933388171211a5b75",
     "docs/closeout.md": "865d9cfba58c093e79c8bce71e4212dfeda828ea2a7b8775c003ade9dc3bc18b",
     "scripts/verify-ui.py": "dbfacc3f0d894ddc2d1f173a69212b8f3e3fc3f8ed3fe0b1348985e5292f1995",
@@ -210,7 +205,7 @@
     },
     {
       "path": "evidence/final-closeout-audit/report.json",
-      "sha256": "e5424aa407435f5ea7f17246e5db342a48bc35ea3757284af0e53eecc3816375",
+      "sha256": "10a76a41fde68128e81fb53097a72a2c015177a16a464609d08f2a7aa02cf8af",
       "status": "unspecified",
       "recorded_sources": 0,
       "stale_or_missing_sources": [],
@@ -1707,12 +1702,7 @@
       }
     ],
     "status": "included",
-    "same_tip_branches": [
-      "codex/item2-engine",
-      "codex/item3-render",
-      "codex/item4-interaction",
-      "codex/item5-migration"
-    ],
+    "same_tip_branches": [],
     "interpretation": "Ancestry only verifies that the branch refs are included; item completion must still be established by explicit checklist evidence."
   },
   "complex_proof_backlog": {
@@ -1862,7 +1852,7 @@
     "static_audit_complete": true,
     "final_report_covers_head": false,
     "final_report_basis": "3a52933",
-    "material_paths_changed_since_final_report_basis": 19,
+    "material_paths_changed_since_final_report_basis": 22,
     "missing_required_sources": 0,
     "missing_required_evidence": 0,
     "missing_final_report_references": 17,
@@ -1871,8 +1861,8 @@
   },
   "baseline_regression": {
     "status": "unavailable",
-    "started_at": "2026-11-02T17:23:04.152268+00:00",
-    "finished_at": "2026-11-02T17:23:04.162417+00:00",
+    "started_at": "2026-11-02T17:23:55.113396+00:00",
+    "finished_at": "2026-11-02T17:23:55.117989+00:00",
     "command": [
       "<repo>/scripts/verify-in-vm.sh",
       "bash",
@@ -1890,8 +1880,7 @@
       "items 1-5 still record blocking gaps",
       "evidence source hashes are stale or missing",
       "final audit does not cover HEAD",
-      "VM baseline regression did not pass",
-      "worktree is dirty"
+      "VM baseline regression did not pass"
     ],
     "note": "Default audits may be incomplete; --require-ready enforces this exact list."
   }
