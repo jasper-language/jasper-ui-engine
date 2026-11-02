@@ -104,4 +104,3 @@ impl<B: RenderBackend> Engine<B> {
         self.layout.layout(scene, self.size, self.text.as_ref())
     }
 }
-

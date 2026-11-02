@@ -15,7 +15,7 @@ pub(crate) struct InjectedFonts {
 /// One injected file keeps the earlier lexical family policy; invalid bytes yield no families.
 /// 单文件注入沿用字典序族策略；无效字节得到空族表（与旧行为一致）。
 pub(crate) fn injected_font_context(bytes: &[u8]) -> InjectedFonts {
-    let (fonts,_)=ordered_font_context(&[bytes]);
+    let (fonts, _) = ordered_font_context(&[bytes]);
     fonts
 }
 
@@ -25,37 +25,63 @@ pub(crate) fn injected_font_context(bytes: &[u8]) -> InjectedFonts {
 /// 宿主顺序回退栈：文件间按给定顺序回退，同一文件内（如地区字体集）按族名字典序；
 /// 空栈、超限或任一文件未注册出字体族时明确拒绝，不静默跳过。
 pub(crate) fn injected_font_stack(fonts: &[&[u8]]) -> Option<InjectedFonts> {
-    if !font_stack_count_admits(fonts.len()) {return None;}
-    let (fonts,complete)=ordered_font_context(fonts);
+    if !font_stack_count_admits(fonts.len()) {
+        return None;
+    }
+    let (fonts, complete) = ordered_font_context(fonts);
     complete.then_some(fonts)
 }
 
-fn ordered_font_context(fonts: &[&[u8]]) -> (InjectedFonts,bool) {
-    let mut context=blitz_dom::FontContext {
-        source_cache:fontique::SourceCache::new_shared(),
-        collection:fontique::Collection::new(fontique::CollectionOptions {shared:false,system_fonts:false}),
+fn ordered_font_context(fonts: &[&[u8]]) -> (InjectedFonts, bool) {
+    let mut context = blitz_dom::FontContext {
+        source_cache: fontique::SourceCache::new_shared(),
+        collection: fontique::Collection::new(fontique::CollectionOptions {
+            shared: false,
+            system_fonts: false,
+        }),
     };
-    let mut complete=true;
-    let (mut order,mut seen)=(Vec::new(),Vec::new());
+    let mut complete = true;
+    let (mut order, mut seen) = (Vec::new(), Vec::new());
     for bytes in fonts {
-        let decoded=blitz_dom::decode_font_bytes(bytes).into_owned();
+        let decoded = blitz_dom::decode_font_bytes(bytes).into_owned();
         // Upstream returns families from a HashMap; its iteration order must not become policy.
         // 上游按 HashMap 返回族，迭代顺序不得成为回退策略。
-        let registered=context.collection.register_fonts(fontique::Blob::new(Arc::new(decoded) as _),None);
-        let mut named:Vec<(String,fontique::FamilyId)>=registered.iter()
-            .filter_map(|(id,_)|Some((context.collection.family_name(*id)?.to_owned(),*id))).collect();
-        if named.is_empty() {complete=false;}
-        named.sort_by(|a,b|a.0.cmp(&b.0));
-        for (_,id) in named {
-            if font_order_admits(&seen,id.to_u64()) {seen.push(id.to_u64());order.push(id);}
+        let registered = context
+            .collection
+            .register_fonts(fontique::Blob::new(Arc::new(decoded) as _), None);
+        let mut named: Vec<(String, fontique::FamilyId)> = registered
+            .iter()
+            .filter_map(|(id, _)| Some((context.collection.family_name(*id)?.to_owned(), *id)))
+            .collect();
+        if named.is_empty() {
+            complete = false;
+        }
+        named.sort_by(|a, b| a.0.cmp(&b.0));
+        for (_, id) in named {
+            if font_order_admits(&seen, id.to_u64()) {
+                seen.push(id.to_u64());
+                order.push(id);
+            }
         }
     }
-    let bold_aliases=register_bold_aliases(&mut context.collection,&order);
-    for generic in [fontique::GenericFamily::SansSerif,fontique::GenericFamily::Serif,
-        fontique::GenericFamily::Monospace,fontique::GenericFamily::SystemUi] {
-        context.collection.set_generic_families(generic,order.iter().copied());
+    let bold_aliases = register_bold_aliases(&mut context.collection, &order);
+    for generic in [
+        fontique::GenericFamily::SansSerif,
+        fontique::GenericFamily::Serif,
+        fontique::GenericFamily::Monospace,
+        fontique::GenericFamily::SystemUi,
+    ] {
+        context
+            .collection
+            .set_generic_families(generic, order.iter().copied());
     }
-    (InjectedFonts {context,bold_aliases},complete)
+    (
+        InjectedFonts {
+            context,
+            bold_aliases,
+        },
+        complete,
+    )
 }
 
 /// CSS weight given to a synthetic bold stand-in face.
@@ -63,7 +89,7 @@ fn ordered_font_context(fonts: &[&[u8]]) -> (InjectedFonts,bool) {
 const BOLD_ALIAS_WEIGHT: f32 = 700.0;
 
 fn css_weight(info: &fontique::FontInfo) -> u16 {
-    info.weight().value().round().clamp(1.0,1000.0) as u16
+    info.weight().value().round().clamp(1.0, 1000.0) as u16
 }
 
 /// Synthetic bold: the pinned painter never consumes Parley's embolden synthesis, so for every
@@ -78,38 +104,62 @@ fn css_weight(info: &fontique::FontInfo) -> u16 {
 /// CSS 字体匹配随之恰在真实粗体会被选中处（请求字重 > 500）选中替身，塑形与步进仍为源字面，
 /// 绘制器加粗其轮廓。可变字重字面不做替身（由 Parley 驱动 `wght` 轴）。覆盖作用于 Blob
 /// 中全部字面，故仅当其中每个字面都合格时才为该 Blob 做替身。
-fn register_bold_aliases(collection: &mut fontique::Collection, families: &[fontique::FamilyId]) -> BTreeSet<u64> {
-    let mut faces=Vec::new();
+fn register_bold_aliases(
+    collection: &mut fontique::Collection,
+    families: &[fontique::FamilyId],
+) -> BTreeSet<u64> {
+    let mut faces = Vec::new();
     for id in families {
-        if let Some(family)=collection.family(*id) {
-            faces.extend(family.fonts().iter().cloned().map(|face|(*id,face)));
+        if let Some(family) = collection.family(*id) {
+            faces.extend(family.fonts().iter().cloned().map(|face| (*id, face)));
         }
     }
-    let group_max=|family:fontique::FamilyId,face:&fontique::FontInfo|faces.iter()
-        .filter(|(other_family,other)|*other_family==family
-            && other.style()==face.style() && other.width()==face.width())
-        .map(|(_,other)|css_weight(other)).max().unwrap_or(0);
-    let mut blobs:Vec<(fontique::Blob<u8>,Vec<u16>,Vec<u16>,bool)>=Vec::new();
-    for (family,face) in &faces {
-        let fontique::SourceKind::Memory(blob)=face.source().kind() else {continue;};
-        let slot=match blobs.iter().position(|(known,..)|known.id()==blob.id()) {
-            Some(slot)=>slot,
-            None=>{blobs.push((blob.clone(),Vec::new(),Vec::new(),false));blobs.len()-1}
+    let group_max = |family: fontique::FamilyId, face: &fontique::FontInfo| {
+        faces
+            .iter()
+            .filter(|(other_family, other)| {
+                *other_family == family
+                    && other.style() == face.style()
+                    && other.width() == face.width()
+            })
+            .map(|(_, other)| css_weight(other))
+            .max()
+            .unwrap_or(0)
+    };
+    let mut blobs: Vec<(fontique::Blob<u8>, Vec<u16>, Vec<u16>, bool)> = Vec::new();
+    for (family, face) in &faces {
+        let fontique::SourceKind::Memory(blob) = face.source().kind() else {
+            continue;
         };
-        let entry=&mut blobs[slot];
+        let slot = match blobs.iter().position(|(known, ..)| known.id() == blob.id()) {
+            Some(slot) => slot,
+            None => {
+                blobs.push((blob.clone(), Vec::new(), Vec::new(), false));
+                blobs.len() - 1
+            }
+        };
+        let entry = &mut blobs[slot];
         entry.1.push(css_weight(face));
-        entry.2.push(group_max(*family,face));
-        entry.3|=face.has_weight_axis();
+        entry.2.push(group_max(*family, face));
+        entry.3 |= face.has_weight_axis();
     }
-    let mut aliases=BTreeSet::new();
-    for (blob,weights,maxima,variable) in blobs {
-        if variable || !bold_alias_admits(&weights,&maxima) {continue;}
-        let alias=fontique::Blob::new(Arc::new(blob) as _);
-        let id=alias.id();
-        let registered=collection.register_fonts(alias,Some(fontique::FontInfoOverride {
-            weight:Some(fontique::FontWeight::new(BOLD_ALIAS_WEIGHT)),..Default::default()
-        }));
-        if !registered.is_empty() {aliases.insert(id);}
+    let mut aliases = BTreeSet::new();
+    for (blob, weights, maxima, variable) in blobs {
+        if variable || !bold_alias_admits(&weights, &maxima) {
+            continue;
+        }
+        let alias = fontique::Blob::new(Arc::new(blob) as _);
+        let id = alias.id();
+        let registered = collection.register_fonts(
+            alias,
+            Some(fontique::FontInfoOverride {
+                weight: Some(fontique::FontWeight::new(BOLD_ALIAS_WEIGHT)),
+                ..Default::default()
+            }),
+        );
+        if !registered.is_empty() {
+            aliases.insert(id);
+        }
     }
     aliases
 }

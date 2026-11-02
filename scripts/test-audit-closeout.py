@@ -71,12 +71,40 @@ class EvidenceAuditTests(unittest.TestCase):
         self.assertEqual(state["completion_reading"], "not_complete")
         self.assertFalse(state["complete"])
 
-    def test_scoped_success_without_item_record_is_not_complete(self):
-        final_item = {"status": "scoped_ordered_acceptance_complete", "blocking_gaps": []}
+    def test_current_scope_supersedes_historical_false_flag(self):
+        final_item = {
+            "status": "complete",
+            "completion_standard": "functional_gaps_closed_and_basic_proofs_passed",
+            "blocking_gaps": [],
+        }
         evidence = [
             {
-                "path": "evidence/example/report.json",
-                "completion_flags": {"whole_checklist_item_3_complete": False},
+                "path": audit.FINAL_AUDIT,
+                "completion_flags": {"checklist_item_2_complete": True},
+            },
+            {
+                "path": "evidence/historical/report.json",
+                "completion_flags": {"checklist_item_2_complete": False},
+            },
+        ]
+        state = audit.item_completion_state(2, final_item, evidence)
+        self.assertEqual(state["completion_reading"], "explicit_complete_current_scope")
+        self.assertTrue(state["complete"])
+        self.assertEqual(
+            state["superseded_historical_completion_flags"],
+            {"evidence/historical/report.json:checklist_item_2_complete": False},
+        )
+
+    def test_scoped_success_without_current_scope_standard_is_not_complete(self):
+        final_item = {
+            "status": "complete",
+            "completion_standard": "old_whole_proof_standard",
+            "blocking_gaps": [],
+        }
+        evidence = [
+            {
+                "path": audit.FINAL_AUDIT,
+                "completion_flags": {"checklist_item_3_complete": True},
             }
         ]
         state = audit.item_completion_state(3, final_item, evidence)

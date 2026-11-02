@@ -12,9 +12,9 @@ use jasper_ui_engine::scene::ScenePatch;
 /// 构造本值不表示已准入，拒绝不会消耗版本。组件/布局/样式/语义通过自有 ScenePatch 表达。
 /// Backend panic/resolve rollback is not guaranteed by this provisional contract.
 /// 候选契约不保证后端 panic/resolve 的事务回滚；不冻结 Jasper 语言或命名空间。
-#[derive(Clone,Copy,Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct SceneUpdate<'a> {
-    pub expected_version:u64,
-    pub next_version:u64,
-    pub patches:&'a [ScenePatch],
+    pub expected_version: u64,
+    pub next_version: u64,
+    pub patches: &'a [ScenePatch],
 }

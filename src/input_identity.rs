@@ -52,7 +52,10 @@ pub struct UiInputBinding {
 
 impl UiInputBinding {
     pub fn new(session: u64, slot: u64) -> Self {
-        Self { gate: ResourceGate::new(session, slot), current: None }
+        Self {
+            gate: ResourceGate::new(session, slot),
+            current: None,
+        }
     }
 
     /// Bind a vacant focus slot. Rejection leaves the previous binding intact.
@@ -61,7 +64,10 @@ impl UiInputBinding {
         match self.gate.issue(caller_session) {
             Some(key) => {
                 self.current = Some(current);
-                Some(UiInputTicket { key, context: current })
+                Some(UiInputTicket {
+                    key,
+                    context: current,
+                })
             }
             None => None,
         }
@@ -127,7 +133,10 @@ impl UiInputBinding {
         payload: &'a T,
     ) -> Option<AdmittedUiInput<'a, T>> {
         if self.accepts(caller_session, ticket) {
-            Some(AdmittedUiInput { payload, target: ticket.context.target })
+            Some(AdmittedUiInput {
+                payload,
+                target: ticket.context.target,
+            })
         } else {
             None
         }
@@ -162,7 +171,10 @@ impl UiInputBinding {
 /// Match a host-bound view instance; caller identity still requires host authentication.
 /// This is a consumer guard, not an input-service protocol or authentication grant.
 pub fn matches_ui_view_owner(
-    session: u64, current: UiInputContext, caller: u64, incoming: UiInputContext,
+    session: u64,
+    current: UiInputContext,
+    caller: u64,
+    incoming: UiInputContext,
 ) -> bool {
     session == caller
         && current.target.0 == incoming.target.0
@@ -175,8 +187,11 @@ pub fn matches_ui_view_owner(
 // BEGIN VERIFIED UI SNAPSHOT ADMISSION KERNEL
 /// Consumer compare-before-update gate; revisions remain opaque host-owned identities.
 pub fn accepts_ui_display_snapshot(
-    session: u64, current: UiInputContext, caller: u64,
-    expected: UiInputContext, next: UiInputContext,
+    session: u64,
+    current: UiInputContext,
+    caller: u64,
+    expected: UiInputContext,
+    next: UiInputContext,
 ) -> bool {
     matches_ui_view_owner(session, current, caller, expected)
         && next.target.0 == expected.target.0
@@ -191,8 +206,11 @@ pub fn accepts_ui_display_snapshot(
 /// 外部权威文本后继快照的准入：显示保持同一目标/文档 lineage，
 /// 其外部修订必须严格推进；相同或更旧修订一律拒绝。
 pub fn accepts_ui_display_successor(
-    session: u64, current: UiInputContext, caller: u64,
-    expected: UiInputContext, next: UiInputContext,
+    session: u64,
+    current: UiInputContext,
+    caller: u64,
+    expected: UiInputContext,
+    next: UiInputContext,
 ) -> bool {
     accepts_ui_display_snapshot(session, current, caller, expected, next)
         && next.revision > expected.revision
@@ -201,7 +219,9 @@ pub fn accepts_ui_display_successor(
 // BEGIN VERIFIED UI UPDATE NEXT KERNEL
 /// Prepare a next UI update version without mutating or reserving backend state.
 pub fn next_ui_update_version(current: u64, expected: u64) -> Option<u64> {
-    if current != expected || current == u64::MAX { return None; }
+    if current != expected || current == u64::MAX {
+        return None;
+    }
     Some(current + 1)
 }
 // END VERIFIED UI UPDATE NEXT KERNEL

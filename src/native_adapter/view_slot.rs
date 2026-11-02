@@ -24,11 +24,15 @@ impl<T> ViewSlot<T> {
 // Standard Option borrow delegation; no native pointer or callback escapes.
 // BEGIN VERIFIED UI VIEW READ BORROW KERNEL
 impl<T> ViewSlot<T> {
-    pub fn as_ref(&self) -> Option<&T> { self.value.as_ref() }
+    pub fn as_ref(&self) -> Option<&T> {
+        self.value.as_ref()
+    }
 }
 // END VERIFIED UI VIEW READ BORROW KERNEL
 // BEGIN VERIFIED UI VIEW WRITE BORROW KERNEL
 impl<T> ViewSlot<T> {
-    pub fn as_mut(&mut self) -> Option<&mut T> { self.value.as_mut() }
+    pub fn as_mut(&mut self) -> Option<&mut T> {
+        self.value.as_mut()
+    }
 }
 // END VERIFIED UI VIEW WRITE BORROW KERNEL

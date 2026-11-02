@@ -13,8 +13,8 @@ use winit::keyboard::{Key, NamedKey};
 
 use crate::geometry::{Point, Size};
 use crate::input::{
-    FocusEvent, InputEvent, KeyEvent, KeyPhase, Modifiers, MouseButton,
-    PointerEvent, PointerId, PointerKind, PointerPhase, ScrollEvent,
+    FocusEvent, InputEvent, KeyEvent, KeyPhase, Modifiers, MouseButton, PointerEvent, PointerId,
+    PointerKind, PointerPhase, ScrollEvent,
 };
 use crate::surface::rgb8_word;
 
@@ -25,7 +25,8 @@ pub fn normalize_ime(event: &Ime) -> Option<InputEvent> {
     match event {
         Ime::Commit(text) => Some(InputEvent::Text(text.clone())),
         Ime::Preedit(text, cursor) => Some(InputEvent::Preedit {
-            text: text.clone(), cursor: *cursor,
+            text: text.clone(),
+            cursor: *cursor,
         }),
         Ime::Enabled => Some(InputEvent::ImeEnabled(true)),
         Ime::Disabled => Some(InputEvent::ImeEnabled(false)),
@@ -317,21 +318,49 @@ mod tests {
         );
         assert_eq!(
             input.ime(&Ime::Preedit("ni".into(), Some((0, 2)))),
-            Some(InputEvent::Preedit { text: "ni".into(), cursor: Some((0,2)) })
+            Some(InputEvent::Preedit {
+                text: "ni".into(),
+                cursor: Some((0, 2))
+            })
         );
     }
 
     #[test]
     fn preedit_preserves_absent_and_local_cursor() {
-        let mut input=DesktopInput::new();
-        for (text,cursor) in [("你好",None),("",None),("你好",Some((0,6))),("ni",Some((0,2)))] {
-            assert_eq!(input.ime(&Ime::Preedit(text.into(),cursor)),Some(InputEvent::Preedit{text:text.into(),cursor}));
+        let mut input = DesktopInput::new();
+        for (text, cursor) in [
+            ("你好", None),
+            ("", None),
+            ("你好", Some((0, 6))),
+            ("ni", Some((0, 2))),
+        ] {
+            assert_eq!(
+                input.ime(&Ime::Preedit(text.into(), cursor)),
+                Some(InputEvent::Preedit {
+                    text: text.into(),
+                    cursor
+                })
+            );
         }
-        assert_eq!(input.ime(&Ime::Enabled),Some(InputEvent::ImeEnabled(true)));assert_eq!(input.ime(&Ime::Disabled),Some(InputEvent::ImeEnabled(false)));
-        assert_eq!(input.translate(&WindowEvent::Ime(Ime::Preedit("你好".into(),None))),
-            vec![InputEvent::Preedit{text:"你好".into(),cursor:None}]);
-        assert_eq!(input.translate(&WindowEvent::Ime(Ime::Preedit("".into(),None))),
-            vec![InputEvent::Preedit{text:"".into(),cursor:None}]);
+        assert_eq!(input.ime(&Ime::Enabled), Some(InputEvent::ImeEnabled(true)));
+        assert_eq!(
+            input.ime(&Ime::Disabled),
+            Some(InputEvent::ImeEnabled(false))
+        );
+        assert_eq!(
+            input.translate(&WindowEvent::Ime(Ime::Preedit("你好".into(), None))),
+            vec![InputEvent::Preedit {
+                text: "你好".into(),
+                cursor: None
+            }]
+        );
+        assert_eq!(
+            input.translate(&WindowEvent::Ime(Ime::Preedit("".into(), None))),
+            vec![InputEvent::Preedit {
+                text: "".into(),
+                cursor: None
+            }]
+        );
     }
 
     #[test]

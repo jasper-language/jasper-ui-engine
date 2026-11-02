@@ -1,7 +1,7 @@
 //! UI preedit/candidate-view ownership; not a general IME engine or document store.
 //! UI 预编辑/候选视图归属；不是通用输入法引擎或文档存储。
+use crate::input::{CompositionEvent, InputEvent, PreeditEvent};
 use crate::input_identity::{UiInputBinding, UiInputTicket};
-use crate::input::{CompositionEvent, PreeditEvent, InputEvent};
 
 // BEGIN VERIFIED UI COMPOSITION IDENTITY KERNEL
 fn same_input_ticket(a: UiInputTicket, b: UiInputTicket) -> bool {
@@ -31,28 +31,46 @@ pub struct UiCompositionSlot {
 
 impl UiCompositionSlot {
     pub fn new() -> Self {
-        Self { generation: 0, active: None }
+        Self {
+            generation: 0,
+            active: None,
+        }
     }
 
     /// Start only for an admitted active focus; overlapping starts and exhaustion reject unchanged.
     /// 仅为已准入活动焦点开始；重叠开始或代数耗尽保持原状态。
-    pub fn begin(&mut self, binding: &UiInputBinding, caller: u64, owner: UiInputTicket) -> Option<UiCompositionToken> {
+    pub fn begin(
+        &mut self,
+        binding: &UiInputBinding,
+        caller: u64,
+        owner: UiInputTicket,
+    ) -> Option<UiCompositionToken> {
         if self.active.is_some() || self.generation == u64::MAX || !binding.accepts(caller, owner) {
             return None;
         }
         self.generation += 1;
-        let token = UiCompositionToken { owner, serial: self.generation };
+        let token = UiCompositionToken {
+            owner,
+            serial: self.generation,
+        };
         self.active = Some(token);
         Some(token)
     }
 
-    pub fn accepts(&self, binding: &UiInputBinding, caller: u64, token: UiCompositionToken) -> bool {
+    pub fn accepts(
+        &self,
+        binding: &UiInputBinding,
+        caller: u64,
+        token: UiCompositionToken,
+    ) -> bool {
         match self.active {
-            Some(active) => token.serial != 0
-                && token.serial == self.generation
-                && token.serial == active.serial
-                && same_input_ticket(token.owner, active.owner)
-                && binding.accepts(caller, token.owner),
+            Some(active) => {
+                token.serial != 0
+                    && token.serial == self.generation
+                    && token.serial == active.serial
+                    && same_input_ticket(token.owner, active.owner)
+                    && binding.accepts(caller, token.owner)
+            }
             None => false,
         }
     }
@@ -64,9 +82,12 @@ impl UiCompositionSlot {
     pub fn cancel(&mut self, caller: u64, token: UiCompositionToken) -> bool {
         match self.active {
             Some(active) => {
-                if caller != token.owner.key.session || token.serial == 0
-                    || token.serial != self.generation || token.serial != active.serial
-                    || !same_input_ticket(token.owner, active.owner) {
+                if caller != token.owner.key.session
+                    || token.serial == 0
+                    || token.serial != self.generation
+                    || token.serial != active.serial
+                    || !same_input_ticket(token.owner, active.owner)
+                {
                     return false;
                 }
                 self.active = None;
@@ -91,8 +112,10 @@ impl UiCompositionSlot {
 /// Validate byte replacement offsets in the trusted current editor snapshot, not in preedit text.
 /// 校验可信当前编辑器快照内的字节替换范围，不把它解释为预编辑文本的光标/选区。
 pub fn valid_composition_range(document: &str, start: usize, end: usize) -> bool {
-    start <= end && end <= document.as_bytes().len()
-        && document.is_char_boundary(start) && document.is_char_boundary(end)
+    start <= end
+        && end <= document.as_bytes().len()
+        && document.is_char_boundary(start)
+        && document.is_char_boundary(end)
 }
 
 impl UiCompositionSlot {
@@ -109,7 +132,8 @@ impl UiCompositionSlot {
         event: &'a CompositionEvent,
     ) -> Option<&'a CompositionEvent> {
         if self.accepts(binding, caller, token)
-            && valid_composition_range(document, event.start, event.end) {
+            && valid_composition_range(document, event.start, event.end)
+        {
             Some(event)
         } else {
             None
@@ -117,7 +141,6 @@ impl UiCompositionSlot {
     }
 }
 // END VERIFIED UI COMPOSITION RANGE KERNEL
-
 
 // BEGIN VERIFIED UI PREEDIT ADMISSION KERNEL
 /// Validate preedit-local coordinates, preserving an absent cursor.
@@ -140,7 +163,8 @@ impl UiCompositionSlot {
         event: &'a PreeditEvent,
     ) -> Option<&'a PreeditEvent> {
         if self.accepts(binding, caller, token)
-            && valid_preedit_cursor(event.text.as_str(), event.cursor) {
+            && valid_preedit_cursor(event.text.as_str(), event.cursor)
+        {
             Some(event)
         } else {
             None
@@ -148,7 +172,6 @@ impl UiCompositionSlot {
     }
 }
 // END VERIFIED UI PREEDIT ADMISSION KERNEL
-
 
 // BEGIN VERIFIED NORMALIZED PREEDIT ADMISSION KERNEL
 impl UiCompositionSlot {
@@ -164,10 +187,13 @@ impl UiCompositionSlot {
         match event {
             InputEvent::Preedit { text, cursor } => {
                 if self.accepts(binding, caller, token)
-                    && valid_preedit_cursor(text.as_str(), *cursor) {
+                    && valid_preedit_cursor(text.as_str(), *cursor)
+                {
                     Some(event)
-                } else { None }
-            },
+                } else {
+                    None
+                }
+            }
             _ => None,
         }
     }
@@ -190,21 +216,38 @@ pub struct UiPreeditView {
 }
 
 impl UiPreeditView {
-    pub fn new() -> Self { Self { frame: None } }
+    pub fn new() -> Self {
+        Self { frame: None }
+    }
 
-    pub fn current(&self) -> Option<&UiPreeditFrame> { self.frame.as_ref() }
+    pub fn current(&self) -> Option<&UiPreeditFrame> {
+        self.frame.as_ref()
+    }
 
     /// Move an admitted normalized preedit into presentation state; rejection keeps old state.
     /// 将准入的规范化预编辑移入呈现状态；拒绝时保留旧状态，不更改编辑器正文。
-    pub fn apply(&mut self, slot: &UiCompositionSlot, binding: &UiInputBinding, caller: u64, token: UiCompositionToken, event: InputEvent) -> bool {
+    pub fn apply(
+        &mut self,
+        slot: &UiCompositionSlot,
+        binding: &UiInputBinding,
+        caller: u64,
+        token: UiCompositionToken,
+        event: InputEvent,
+    ) -> bool {
         match event {
             InputEvent::Preedit { text, cursor } => {
-                if !slot.accepts(binding, caller, token) || !valid_preedit_cursor(text.as_str(), cursor) {
+                if !slot.accepts(binding, caller, token)
+                    || !valid_preedit_cursor(text.as_str(), cursor)
+                {
                     return false;
                 }
-                self.frame = Some(UiPreeditFrame { token, text, cursor });
+                self.frame = Some(UiPreeditFrame {
+                    token,
+                    text,
+                    cursor,
+                });
                 true
-            },
+            }
             _ => false,
         }
     }
@@ -214,13 +257,16 @@ impl UiPreeditView {
     pub fn clear(&mut self, caller: u64, token: UiCompositionToken) -> bool {
         match self.frame.as_ref() {
             Some(frame) => {
-                if caller != token.owner.key.session || token.serial == 0
-                    || frame.token.serial != token.serial || !same_input_ticket(frame.token.owner, token.owner) {
+                if caller != token.owner.key.session
+                    || token.serial == 0
+                    || frame.token.serial != token.serial
+                    || !same_input_ticket(frame.token.owner, token.owner)
+                {
                     return false;
                 }
                 self.frame = None;
                 true
-            },
+            }
             None => false,
         }
     }
@@ -233,7 +279,12 @@ impl UiCompositionSlot {
     /// 先取消精确槽位，再清除其匹配的 UI 自有文本；拒绝时两个对象均保持原样。
     /// Exclusive borrows cover this synchronous pair, not native task delivery or pixels.
     /// 独占借用约束此同步双对象操作，不代表原生任务投递或像素更新已完成。
-    pub fn cancel_preedit(&mut self, view: &mut UiPreeditView, caller: u64, token: UiCompositionToken) -> bool {
+    pub fn cancel_preedit(
+        &mut self,
+        view: &mut UiPreeditView,
+        caller: u64,
+        token: UiCompositionToken,
+    ) -> bool {
         if !self.cancel(caller, token) {
             return false;
         }
@@ -247,6 +298,8 @@ impl UiCompositionSlot {
 impl UiCompositionSlot {
     /// Inspect correlation metadata; it is not independent input authorization.
     /// 检查关联元数据；返回值本身不构成输入授权。
-    pub fn current_token(&self) -> Option<UiCompositionToken> { self.active }
+    pub fn current_token(&self) -> Option<UiCompositionToken> {
+        self.active
+    }
 }
 // END VERIFIED COMPOSITION CURRENT TOKEN KERNEL

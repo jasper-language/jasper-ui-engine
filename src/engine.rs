@@ -7,10 +7,10 @@ pub use crate::legacy_engine::{Engine as LegacyEngine, EngineError, FrameStats};
 
 /// Pinned native engine consuming typed scenes/updates and injected host resources.
 /// 固定原生引擎，消费类型化场景/更新与宿主注入资源；完整验收尚未完成。
-#[cfg(feature="native-blitz-pending")]
+#[cfg(feature = "native-blitz-pending")]
 pub use crate::native::host::SceneHostView as Engine;
 
 /// Compatibility name for callers that used the first native candidate entry.
 /// 兼容首版原生候选调用方的名称，与 Engine 是同一实现。
-#[cfg(feature="native-blitz-pending")]
+#[cfg(feature = "native-blitz-pending")]
 pub use Engine as BlitzEngine;

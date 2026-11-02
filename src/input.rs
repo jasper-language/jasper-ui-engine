@@ -179,7 +179,10 @@ pub enum InputEvent {
     Composition(CompositionEvent),
     /// Preedit-local coordinates; None hides the cursor, empty text clears preedit.
     /// 预编辑局部坐标；None 隐藏光标，空文本表示清除预编辑。
-    Preedit { text: String, cursor: Option<(usize, usize)> },
+    Preedit {
+        text: String,
+        cursor: Option<(usize, usize)>,
+    },
     Scroll(ScrollEvent),
     Focus(FocusEvent),
     /// IME availability lifecycle; disabling composition does not remove keyboard focus.

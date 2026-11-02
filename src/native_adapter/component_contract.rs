@@ -11,7 +11,10 @@ pub struct TextAppearance {
 
 /// Provisional Rust layout update value, not a frozen public subnamespace/API.
 #[derive(Clone, Copy)]
-pub enum ContentFlow { Row, Column }
+pub enum ContentFlow {
+    Row,
+    Column,
+}
 
 /// Provisional synchronously borrowed Rust update contract; no upstream or Signal runtime types.
 #[derive(Clone, Copy)]

@@ -674,7 +674,7 @@ VM 实跑成功，输出 `evidence/full-scene/full_scene.ppm`（P6 320×180，17
 
 ## 2026-11-02：六项总审计（0/6 完整勾选）
 
-统一审计见 `evidence/final-checklist-audit-pending/report.json`。当前 0 项达到清单完成定义：
+历史统一审计见 `evidence/final-checklist-audit-pending/report.json`。该快照记录旧口径下的 0 项完成：
 
 > 此段是第 5 项收口前的历史审计快照；第 5 项后续按用户“功能优先、基础证明与集成测试即可、复杂证明登记给 Claude”的授权完成，本段不覆盖最终状态。
 
@@ -685,7 +685,7 @@ VM 实跑成功，输出 `evidence/full-scene/full_scene.ppm`（P6 320×180，17
 - 第 5 项：`full_scene` 已跑通单个 headless 公共 API 全路径，但窗口输入转发、活服务、真实显示、示例六阶段和性能基线仍缺。
 - 第 6 项：前置 1–5 未完成；真实 Map/浮点缺口仍在，不能做最终完成声明。
 
-当前可复核的工程结果：默认、原生 CPU、原生 GPU 全 targets 编译通过；全量 CPU 测试除“无同族 sans oblique 夹具”外通过；GPU 宿主/CPU 对照/损伤/字体测试通过；bold-alias 六阶段限定验收通过；`test-blitz-proof-mapping.py` 当前映射与负控通过。该审计不提升任何清单项为完成。
+当前可复核的工程结果：默认、原生 CPU、原生 GPU 全 targets 编译通过；全量 CPU 测试除“无同族 sans oblique 夹具”外通过；GPU 宿主/CPU 对照/损伤/字体测试通过；bold-alias 六阶段限定验收通过；`test-blitz-proof-mapping.py` 当前映射与负控通过。该历史审计不提升任何清单项为完成。
 
 ## 2026-11-02：场景更新结构化拒绝契约
 
@@ -778,3 +778,11 @@ GPU 直接绘制到宿主 `TextureView` 后，`needs_frame` 在宿主 `Queue::pr
 受限 VM 的集成回归 3/3 通过，额外覆盖 `HostRenderer` 在活动 Surface 代数上的焦点、无障碍、滚动和呈现准入，以及重配/暂停/恢复/退休后的陈旧代数拒绝。Xvfb 中窗口单帧、真实点击激活和 800×600→640×360 重设均通过，llvmpipe Vulkan 示例完成宿主 present。release 基线的 360×240 强制 CPU 全帧为 6 个样本，中位 153 µs、P95 177 µs；Surface 为 345600 字节，只作同一 VM 后续优化回归参照。证据：`evidence/item5-full-path-baseline/report.json`。
 
 按用户本轮完成口径，第 5 项的功能缺口、基础生命周期准入、真实调用方/X11/GPU 集成证据已完成并勾选。整帧组合证明、真实外部编辑/IME、系统无障碍、硬件 Surface/device-loss 与最终平台阈值仍明确登记在 `docs/claude-item5-proof-backlog.md`，交由 Claude 后续完成。
+
+## 2026-11-02：六项基础交付总收尾
+
+按用户调整后的完成口径，第 1–5 项均为“功能缺口闭合 + 基础准入/集成证据 + 真实验收入口通过”，当前完成记录见 `evidence/final-checklist-audit/report.json`。六项存在明确依赖：第 1 项提供公共契约，第 2 项建立正式 Engine/Blitz 整帧路径，第 3 项绑定宿主 Surface/GPU 生命周期，第 4 项补齐交互和外部文本服务边界，第 5 项把活动调用方迁移到这些正式入口，第 6 项最后执行总审计与回归。
+
+第 6 项总审计使用 `scripts/audit-closeout.py --run-baseline --require-ready`，检查当前源码快照、真实调用方证据、前序分支集成、工具固定版本、默认/原生 CPU/GPU 基础回归和工作树清洁度。旧 evidence 中因完整复杂证明未闭合而记录的 false 标志不改写，由最终审计明确列出其被当前用户口径替代。
+
+复杂或高成本义务继续登记在 `docs/claude-closeout-proof-backlog.md` 与 `docs/claude-item5-proof-backlog.md`：真实双键/子树 `BTreeMap` Kani、整帧与窗口适配器实现级组合、浮点/布局深挖、硬件 GPU/device-loss/vsync、活 IME/平台无障碍服务及跨宿主性能门。它们不阻塞本轮功能 Beta 交付。

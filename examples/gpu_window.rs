@@ -65,8 +65,8 @@ impl GpuApp {
                     ),
                 ),
         );
-        let engine =
-            HostRenderer::new(OWNER, &scene, font, 640, 360).ok_or("native scene import rejected")?;
+        let engine = HostRenderer::new(OWNER, &scene, font, 640, 360)
+            .ok_or("native scene import rejected")?;
         let generation = engine
             .surface_status(OWNER)
             .ok_or("native surface missing")?
@@ -237,14 +237,27 @@ impl ApplicationHandler for GpuApp {
             return;
         };
         let generation = if state.state == SurfaceState::Suspended {
-            self.engine.resume(OWNER, self.generation, size.width.max(1), size.height.max(1), scale)
+            self.engine.resume(
+                OWNER,
+                self.generation,
+                size.width.max(1),
+                size.height.max(1),
+                scale,
+            )
         } else {
-            self.engine.reconfigure(OWNER, self.generation, size.width.max(1), size.height.max(1), scale)
+            self.engine.reconfigure(
+                OWNER,
+                self.generation,
+                size.width.max(1),
+                size.height.max(1),
+                scale,
+            )
         };
         match generation {
             Ok(generation) => self.generation = generation,
             Err(error) => {
-                self.presentation_error = Some(format!("native surface activation rejected: {error:?}"));
+                self.presentation_error =
+                    Some(format!("native surface activation rejected: {error:?}"));
                 event_loop.exit();
                 return;
             }
@@ -283,12 +296,9 @@ impl ApplicationHandler for GpuApp {
         }
         match event {
             WindowEvent::CloseRequested => {
-                let _ = self.engine.retire(
-                    OWNER,
-                    self.scene.version(),
-                    self.generation,
-                    &mut |_| {},
-                );
+                let _ =
+                    self.engine
+                        .retire(OWNER, self.scene.version(), self.generation, &mut |_| {});
                 event_loop.exit();
             }
             WindowEvent::Focused(false) => {}

@@ -28,13 +28,12 @@
 pub mod backend;
 pub mod batch;
 pub mod canvas;
-pub mod composition_identity;
 #[cfg(feature = "canvas-tiny-skia")]
 pub mod canvas_tiny_skia;
+pub mod composition_identity;
 #[cfg(feature = "desktop")]
 pub mod desktop;
 pub mod engine;
-mod legacy_engine;
 pub mod geometry;
 pub mod gesture;
 #[cfg(feature = "gpu")]
@@ -46,6 +45,7 @@ pub mod input;
 pub mod input_identity;
 pub mod keyboard;
 pub mod layout;
+mod legacy_engine;
 pub mod paint;
 pub mod platform;
 pub mod pointer;
@@ -69,9 +69,9 @@ pub use canvas::{Canvas, CanvasHitRegion, CanvasOp};
 pub use canvas_tiny_skia::{render_canvas, CanvasRenderReport};
 #[cfg(feature = "desktop")]
 pub use desktop::{rgba_to_u32, DesktopInput, PixelError};
-pub use engine::{LegacyEngine, EngineError, FrameStats};
-#[cfg(feature="native-blitz-pending")]
+#[cfg(feature = "native-blitz-pending")]
 pub use engine::Engine;
+pub use engine::{EngineError, FrameStats, LegacyEngine};
 pub use geometry::{Edges, Point, Rect, Size};
 pub use gesture::{Gesture, GestureConfig, GestureRecognizer};
 #[cfg(feature = "gpu")]
@@ -102,81 +102,82 @@ pub use text::{SimpleTextEngine, TextEngine, TextMetrics};
 #[cfg(feature = "real-text")]
 pub use text_cosmic::CosmicTextEngine;
 
-
 // Pending third-party text adapter; full ordered verification remains required.
 #[cfg(feature = "text-parley-pending")]
 pub mod text_parley;
 
 // Root-owned native implementation; the diagnostic crate only consumes its facade.
 // 原生实现归根 crate 所有，诊断 crate 仅消费公开封装。
-#[cfg(feature="native-blitz-pending")]
+#[cfg(feature = "native-blitz-pending")]
 extern crate self as jasper_ui_engine;
-#[cfg(feature="native-blitz-pending")]
-#[path="native_adapter/native_view.rs"]
-mod native_view;
-#[cfg(feature="native-blitz-pending")]
-#[path="native_adapter/component_contract.rs"]
-mod component_contract;
-#[cfg(feature="native-blitz-pending")]
-#[path="native_adapter/update_contract.rs"]
-mod update_contract;
-#[cfg(feature="native-blitz-pending")]
-#[path="native_adapter/native_fonts.rs"]
-mod native_fonts;
-#[cfg(feature="native-blitz-pending")]
-#[path="native_adapter/cpu_budget.rs"]
-mod cpu_budget;
-#[cfg(feature="cpu-pending")]
-#[path="native_adapter/frame_schedule.rs"]
-mod frame_schedule;
-#[cfg(feature="gpu-pending")]
-#[path="native_adapter/gpu_render.rs"]
-mod gpu_render;
-#[cfg(feature="native-blitz-pending")]
-#[path="native_adapter/render_host.rs"]
-mod render_host;
-#[cfg(feature="cpu-pending")]
-#[path="native_adapter/glyph_skew.rs"]
-mod glyph_skew;
-#[cfg(feature="native-blitz-pending")]
-#[path="native_adapter/text_geometry.rs"]
-mod text_geometry;
-#[cfg(feature="native-blitz-pending")]
-#[path="native_adapter/access_tree.rs"]
-mod access_tree;
-#[cfg(feature="accesskit-pending")]
-#[path="native_adapter/access_kit.rs"]
+#[cfg(feature = "accesskit-pending")]
+#[path = "native_adapter/access_kit.rs"]
 mod access_kit;
-#[cfg(feature="native-blitz-pending")]
-#[path="native_adapter/capture_policy.rs"]
+#[cfg(feature = "native-blitz-pending")]
+#[path = "native_adapter/access_tree.rs"]
+mod access_tree;
+#[cfg(feature = "native-blitz-pending")]
+#[path = "native_adapter/capture_policy.rs"]
 mod capture_policy;
-#[cfg(feature="native-blitz-pending")]
-#[path="native_adapter/native_scene.rs"]
-mod native_scene;
-#[cfg(feature="native-blitz-pending")]
-#[path="native_adapter/scene_events.rs"]
-mod scene_events;
-#[cfg(feature="native-blitz-pending")]
-#[path="native_adapter/pointer_host.rs"]
-mod pointer_host;
-#[cfg(feature="native-blitz-pending")]
-#[path="native_adapter/native_events.rs"]
+#[cfg(feature = "native-blitz-pending")]
+#[path = "native_adapter/component_contract.rs"]
+mod component_contract;
+#[cfg(feature = "native-blitz-pending")]
+#[path = "native_adapter/cpu_budget.rs"]
+mod cpu_budget;
+#[cfg(feature = "cpu-pending")]
+#[path = "native_adapter/frame_schedule.rs"]
+mod frame_schedule;
+#[cfg(feature = "cpu-pending")]
+#[path = "native_adapter/glyph_skew.rs"]
+mod glyph_skew;
+#[cfg(feature = "gpu-pending")]
+#[path = "native_adapter/gpu_render.rs"]
+mod gpu_render;
+#[cfg(feature = "native-blitz-pending")]
+#[path = "native_adapter/native_events.rs"]
 mod native_events;
-#[cfg(feature="native-blitz-pending")]
-#[path="native_adapter/native_keys.rs"]
+#[cfg(feature = "native-blitz-pending")]
+#[path = "native_adapter/native_fonts.rs"]
+mod native_fonts;
+#[cfg(feature = "native-blitz-pending")]
+#[path = "native_adapter/native_keys.rs"]
 mod native_keys;
-#[cfg(feature="native-blitz-pending")]
-#[path="native_adapter/native_semantics.rs"]
+#[cfg(feature = "native-blitz-pending")]
+#[path = "native_adapter/native_scene.rs"]
+mod native_scene;
+#[cfg(feature = "native-blitz-pending")]
+#[path = "native_adapter/native_semantics.rs"]
 mod native_semantics;
-#[cfg(feature="native-blitz-pending")]
-#[path="native_adapter/view_slot.rs"]
+#[cfg(feature = "native-blitz-pending")]
+#[path = "native_adapter/native_view.rs"]
+mod native_view;
+#[cfg(feature = "native-blitz-pending")]
+#[path = "native_adapter/pointer_host.rs"]
+mod pointer_host;
+#[cfg(feature = "native-blitz-pending")]
+#[path = "native_adapter/render_host.rs"]
+mod render_host;
+#[cfg(feature = "native-blitz-pending")]
+#[path = "native_adapter/scene_events.rs"]
+mod scene_events;
+#[cfg(feature = "native-blitz-pending")]
+#[path = "native_adapter/text_geometry.rs"]
+mod text_geometry;
+#[cfg(feature = "native-blitz-pending")]
+#[path = "native_adapter/update_contract.rs"]
+mod update_contract;
+#[cfg(feature = "native-blitz-pending")]
+#[path = "native_adapter/view_slot.rs"]
 mod view_slot;
-#[cfg(feature="native-blitz-pending")]
+#[cfg(feature = "native-blitz-pending")]
 pub mod native {
-    use crate::{native_view,component_contract,update_contract,
-        native_scene,scene_events,pointer_host,native_events,native_keys,native_semantics};
     /// Per-view limit for `engine::Engine::with_fonts`.
     /// `engine::Engine::with_fonts` 每视图注入字体文件上限。
     pub use crate::native_fonts::MAX_INJECTED_FONTS;
+    use crate::{
+        component_contract, native_events, native_keys, native_scene, native_semantics,
+        native_view, pointer_host, scene_events, update_contract,
+    };
     include!("native_adapter/facade.rs");
 }

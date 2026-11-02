@@ -16,7 +16,12 @@ pub trait RenderBackend {
     fn submit(&mut self, batch: &UiBatch) -> Result<(), BackendError>;
     /// Consume a completed packed RGBA8 native frame; no legacy paint replay.
     /// 接收已绘制的紧密 RGBA8 原生帧，不重放旧绘制算法；不支持时明确拒绝。
-    fn submit_rgba8(&mut self, _width:u32, _height:u32, _pixels:Vec<u8>) -> Result<(),BackendError> {
+    fn submit_rgba8(
+        &mut self,
+        _width: u32,
+        _height: u32,
+        _pixels: Vec<u8>,
+    ) -> Result<(), BackendError> {
         Err(BackendError::Unsupported("native RGBA8 frame submission"))
     }
     fn present(&mut self) -> Result<(), BackendError>;
@@ -130,8 +135,13 @@ impl RenderBackend for HeadlessBackend {
 
     /// Adopt native pixels through the existing checked storage import, with no redraw algorithm.
     /// 经既有已检查的存储导入接管原生像素；不执行旧光栅绘制，拒绝时保留前帧。
-    fn submit_rgba8(&mut self,width:u32,height:u32,pixels:Vec<u8>)->Result<(),BackendError> {
-        self.submit_native_pixels(width,height,pixels)
+    fn submit_rgba8(
+        &mut self,
+        width: u32,
+        height: u32,
+        pixels: Vec<u8>,
+    ) -> Result<(), BackendError> {
+        self.submit_native_pixels(width, height, pixels)
     }
 
     fn present(&mut self) -> Result<(), BackendError> {
@@ -183,10 +193,18 @@ mod tests {
 
 // BEGIN VERIFIED NATIVE BACKEND FRAME IMPORT KERNEL
 impl HeadlessBackend {
-    fn import_native_frame(&mut self,width:u32,height:u32,pixels:Vec<u8>)->Result<(),BackendError> {
-        match Canvas::from_rgba8(width,height,pixels) {
-            Ok(canvas)=>{self.canvas=canvas;Ok(())},
-            Err(_)=>Err(BackendError::Invalid("invalid packed RGBA8 frame".into())),
+    fn import_native_frame(
+        &mut self,
+        width: u32,
+        height: u32,
+        pixels: Vec<u8>,
+    ) -> Result<(), BackendError> {
+        match Canvas::from_rgba8(width, height, pixels) {
+            Ok(canvas) => {
+                self.canvas = canvas;
+                Ok(())
+            }
+            Err(_) => Err(BackendError::Invalid("invalid packed RGBA8 frame".into())),
         }
     }
 }

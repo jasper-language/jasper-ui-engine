@@ -68,7 +68,9 @@ fn resource_extent_dpi_pause_resume_and_retirement_are_one_closed_lifecycle() {
     let mut slot = UiBytesSlot::new(OWNER, 1);
     let font_bytes = font();
     let expected_font_len = font_bytes.len();
-    let key = slot.install(OWNER, font_bytes).expect("font resource issued");
+    let key = slot
+        .install(OWNER, font_bytes)
+        .expect("font resource issued");
     let source = scene();
     let mut host = {
         let bytes = slot.bytes(OWNER, key).expect("live font bytes");
@@ -80,14 +82,15 @@ fn resource_extent_dpi_pause_resume_and_retirement_are_one_closed_lifecycle() {
     assert!(slot.bytes(OWNER, key).is_none());
     assert!(slot.release(OWNER, key).is_none());
     assert!(HostRenderer::with_fonts(OWNER, &source, &[], 320, 200).is_none());
-    assert!(
-        HostRenderer::with_fonts(OWNER, &source, &[b"not a font"], 320, 200).is_none()
-    );
+    assert!(HostRenderer::with_fonts(OWNER, &source, &[b"not a font"], 320, 200).is_none());
     assert!(HostRenderer::new(OWNER, &source, &font(), 0, 200).is_none());
 
     let initial = host.surface_status(OWNER).expect("owner status");
     assert_eq!(initial.state, SurfaceState::Active);
-    assert_eq!((initial.generation, initial.width, initial.height), (1, 320, 200));
+    assert_eq!(
+        (initial.generation, initial.width, initial.height),
+        (1, 320, 200)
+    );
     assert_eq!(host.surface_status(OWNER + 1), None);
     assert_eq!(
         host.reconfigure(OWNER, initial.generation, 640, 360, f32::NAN),
@@ -197,7 +200,9 @@ fn resource_extent_dpi_pause_resume_and_retirement_are_one_closed_lifecycle() {
     let retired_generation = host.surface_status(OWNER).unwrap().generation;
     assert_eq!(
         host.resume(OWNER, retired_generation, 320, 200, 1.0),
-        Err(HostRenderError::Lifecycle(SurfaceLifecycleError::WrongState))
+        Err(HostRenderError::Lifecycle(
+            SurfaceLifecycleError::WrongState
+        ))
     );
 }
 

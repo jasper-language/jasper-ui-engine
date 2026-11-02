@@ -1,13 +1,13 @@
 //! Host-neutral accessibility tree for platform bridges (AccessKit, AT-SPI, UIA, the system
 //! accessibility service); this module does not call any platform accessibility API.
 //! 供平台无障碍桥（AccessKit、AT-SPI、UIA、系统无障碍服务）消费的宿主无关无障碍树；本模块不调用任何平台无障碍 API。
-use std::collections::{HashMap,HashSet};
-use jasper_ui_engine::{geometry::Rect,scene::NodeId,semantics::Role};
+use jasper_ui_engine::{geometry::Rect, scene::NodeId, semantics::Role};
+use std::collections::{HashMap, HashSet};
 
 // BEGIN VERIFIED ACCESS ACTIONS TYPE
 /// Actions an assistive technology may request on a node; a disabled node offers none.
 /// 辅助技术可对节点请求的动作；禁用节点没有任何动作。
-#[derive(Clone,Copy,Debug,Default,PartialEq,Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct AccessActions {
     /// The node accepts Engine::focus.
     /// 节点接受 Engine::focus。
@@ -23,13 +23,16 @@ pub struct AccessActions {
 /// activate for an enabled button; the same rules focus/activate admit.
 /// 已在树中（即可见）节点的动作：启用且可聚焦者可聚焦，启用的按钮可激活；与 focus/activate 的准入规则一致。
 pub fn access_actions(is_button: bool, focusable: bool, disabled: bool) -> AccessActions {
-    AccessActions { focus: focusable && !disabled, activate: is_button && !disabled }
+    AccessActions {
+        focus: focusable && !disabled,
+        activate: is_button && !disabled,
+    }
 }
 // END VERIFIED ACCESS ACTIONS KERNEL
 
 /// One visible source node with Framework semantics, view-local geometry, state and actions.
 /// 一个可见源节点：Framework 语义、视图局部几何、状态与动作。
-#[derive(Clone,Debug,PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct AccessibilityNode {
     pub node: NodeId,
     pub role: Role,
@@ -52,7 +55,7 @@ pub struct AccessibilityNode {
 /// Versioned accessibility tree: visible nodes in depth-first source order, root first.
 /// Hidden nodes and nodes not displayed are left out together with their subtrees.
 /// 带版本的无障碍树：可见节点按源顺序深度优先、根在首位；隐藏或未显示的节点连同其子树一并剔除。
-#[derive(Clone,Debug,PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct AccessibilityTree {
     pub scene_version: u64,
     /// Empty when the root itself is hidden or not displayed.
@@ -66,7 +69,7 @@ pub struct AccessibilityTree {
 // BEGIN VERIFIED ACCESS CHANGE TYPE
 /// How one node differs between two accessibility trees.
 /// 同一节点在两份无障碍树之间的差别。
-#[derive(Clone,Copy,Debug,PartialEq,Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AccessChange {
     /// In neither tree.
     /// 两份树中都没有。
@@ -92,7 +95,11 @@ pub enum AccessChange {
 /// 按节点在旧树与新树中是否存在分类；`equal`（内容相等）只在两树都有该节点时起作用。
 pub fn access_change(in_previous: bool, in_next: bool, equal: bool) -> AccessChange {
     if !in_next {
-        if in_previous { AccessChange::Removed } else { AccessChange::Absent }
+        if in_previous {
+            AccessChange::Removed
+        } else {
+            AccessChange::Absent
+        }
     } else if !in_previous {
         AccessChange::Added
     } else if equal {
@@ -108,7 +115,7 @@ pub fn access_change(in_previous: bool, in_next: bool, equal: bool) -> AccessCha
 /// nodes that left the tree, the root and the focus.
 /// 同一视图从一份无障碍树到较新一份的增量变化，形如维护镜像的桥（AccessKit TreeUpdate 风格）所需：
 /// 新增或变更的节点（完整内容）、离开树的节点、根与焦点。
-#[derive(Clone,Debug,PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct AccessibilityUpdate {
     pub from_version: u64,
     pub scene_version: u64,
@@ -129,7 +136,7 @@ pub struct AccessibilityUpdate {
 impl AccessibilityUpdate {
     /// No node, root or focus difference.
     /// 节点、根与焦点均无差别。
-    pub fn is_empty(&self)->bool {
+    pub fn is_empty(&self) -> bool {
         self.nodes.is_empty() && self.removed.is_empty() && !self.focus_changed
     }
 }
@@ -137,24 +144,54 @@ impl AccessibilityUpdate {
 impl AccessibilityTree {
     /// Root node id; None for an empty tree.
     /// 根节点；空树为 None。
-    pub fn root(&self)->Option<NodeId> {self.nodes.first().map(|node|node.node)}
+    pub fn root(&self) -> Option<NodeId> {
+        self.nodes.first().map(|node| node.node)
+    }
 
     /// Difference from `previous`, an older or equal-version tree of the same view. None when
     /// `previous` is newer. Trees of different views are not detected.
     /// 相对 `previous`（同一视图较旧或同版本的树）的差。`previous` 更新时为 None；不检测跨视图混用。
-    pub fn update_since(&self,previous:&AccessibilityTree)->Option<AccessibilityUpdate> {
-        if previous.scene_version>self.scene_version {return None;}
-        let old:HashMap<NodeId,&AccessibilityNode>=previous.nodes.iter().map(|node|(node.node,node)).collect();
-        let new:HashSet<NodeId>=self.nodes.iter().map(|node|node.node).collect();
-        let nodes=self.nodes.iter().filter(|node|{
-            let before=old.get(&node.node);
-            matches!(access_change(before.is_some(),true,before.is_some_and(|before|*before==*node)),
-                AccessChange::Added|AccessChange::Changed)
-        }).cloned().collect();
-        let removed=previous.nodes.iter().map(|node|node.node)
-            .filter(|id|access_change(true,new.contains(id),false)==AccessChange::Removed).collect();
-        Some(AccessibilityUpdate {from_version:previous.scene_version,scene_version:self.scene_version,nodes,removed,
-            root:self.root(),focused:self.focused,focus_changed:self.focused!=previous.focused})
+    pub fn update_since(&self, previous: &AccessibilityTree) -> Option<AccessibilityUpdate> {
+        if previous.scene_version > self.scene_version {
+            return None;
+        }
+        let old: HashMap<NodeId, &AccessibilityNode> = previous
+            .nodes
+            .iter()
+            .map(|node| (node.node, node))
+            .collect();
+        let new: HashSet<NodeId> = self.nodes.iter().map(|node| node.node).collect();
+        let nodes = self
+            .nodes
+            .iter()
+            .filter(|node| {
+                let before = old.get(&node.node);
+                matches!(
+                    access_change(
+                        before.is_some(),
+                        true,
+                        before.is_some_and(|before| *before == *node)
+                    ),
+                    AccessChange::Added | AccessChange::Changed
+                )
+            })
+            .cloned()
+            .collect();
+        let removed = previous
+            .nodes
+            .iter()
+            .map(|node| node.node)
+            .filter(|id| access_change(true, new.contains(id), false) == AccessChange::Removed)
+            .collect();
+        Some(AccessibilityUpdate {
+            from_version: previous.scene_version,
+            scene_version: self.scene_version,
+            nodes,
+            removed,
+            root: self.root(),
+            focused: self.focused,
+            focus_changed: self.focused != previous.focused,
+        })
     }
 
     /// Applies an update produced against this tree and rebuilds depth-first source order from
@@ -162,23 +199,45 @@ impl AccessibilityTree {
     /// node, or leaves a missing, duplicated or unreachable child or a focus outside the tree.
     /// 应用基于本树产生的更新，并从根重建深度优先源顺序。更新基于其他版本、移除不存在的节点，
     /// 或导致子节点缺失、重复、不可达，或焦点不在树中时为 None。
-    pub fn apply(&self,update:&AccessibilityUpdate)->Option<AccessibilityTree> {
-        if update.from_version!=self.scene_version || update.scene_version<self.scene_version {return None;}
-        let mut nodes:HashMap<NodeId,AccessibilityNode>=self.nodes.iter().map(|node|(node.node,node.clone())).collect();
-        for id in &update.removed {nodes.remove(id)?;}
-        for node in &update.nodes {nodes.insert(node.node,node.clone());}
-        let mut ordered=Vec::with_capacity(nodes.len());
-        let mut seen=HashSet::with_capacity(nodes.len());
-        let mut pending:Vec<NodeId>=update.root.into_iter().collect();
-        while let Some(id)=pending.pop() {
-            if !seen.insert(id) {return None;}
-            let node=nodes.get(&id)?;
+    pub fn apply(&self, update: &AccessibilityUpdate) -> Option<AccessibilityTree> {
+        if update.from_version != self.scene_version || update.scene_version < self.scene_version {
+            return None;
+        }
+        let mut nodes: HashMap<NodeId, AccessibilityNode> = self
+            .nodes
+            .iter()
+            .map(|node| (node.node, node.clone()))
+            .collect();
+        for id in &update.removed {
+            nodes.remove(id)?;
+        }
+        for node in &update.nodes {
+            nodes.insert(node.node, node.clone());
+        }
+        let mut ordered = Vec::with_capacity(nodes.len());
+        let mut seen = HashSet::with_capacity(nodes.len());
+        let mut pending: Vec<NodeId> = update.root.into_iter().collect();
+        while let Some(id) = pending.pop() {
+            if !seen.insert(id) {
+                return None;
+            }
+            let node = nodes.get(&id)?;
             pending.extend(node.children.iter().rev());
             ordered.push(node.clone());
         }
-        if ordered.len()!=nodes.len() {return None;}
-        if update.focused.is_some_and(|id|!seen.contains(&id)) {return None;}
-        for node in &mut ordered {node.focused=update.focused==Some(node.node);}
-        Some(AccessibilityTree {scene_version:update.scene_version,nodes:ordered,focused:update.focused})
+        if ordered.len() != nodes.len() {
+            return None;
+        }
+        if update.focused.is_some_and(|id| !seen.contains(&id)) {
+            return None;
+        }
+        for node in &mut ordered {
+            node.focused = update.focused == Some(node.node);
+        }
+        Some(AccessibilityTree {
+            scene_version: update.scene_version,
+            nodes: ordered,
+            focused: update.focused,
+        })
     }
 }

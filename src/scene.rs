@@ -200,9 +200,9 @@ impl Scene {
                 parent_node.children.insert(index, node);
                 Ok(())
             }
-            ScenePatch::UpdateSemantics {id,semantics} => {
-                let node=find_node_mut(&mut self.root,id).ok_or(SceneError::NodeNotFound(id))?;
-                node.semantics=semantics;
+            ScenePatch::UpdateSemantics { id, semantics } => {
+                let node = find_node_mut(&mut self.root, id).ok_or(SceneError::NodeNotFound(id))?;
+                node.semantics = semantics;
                 Ok(())
             }
             ScenePatch::UpdateStyle { id, style } => {
@@ -653,13 +653,32 @@ mod semantic_patch_tests {
     use super::*;
     #[test]
     fn semantic_frame_is_versioned_and_rejected_batch_preserves_previous_state() {
-        let mut scene=Scene::new(Node::text(NodeId(1),"Caption"));let before=scene.version();
-        let semantics=Semantics::default().label("Accessible label").disabled(true);
-        scene.apply_batch_at(before,&[ScenePatch::UpdateSemantics {id:NodeId(1),semantics:semantics.clone()}]).unwrap();
-        assert_eq!(scene.find(NodeId(1)).unwrap().semantics,semantics);assert_eq!(scene.version(),before+1);
-        let version=scene.version();
-        let rejected=[ScenePatch::UpdateSemantics {id:NodeId(1),semantics:Semantics::default()},ScenePatch::Remove {id:NodeId(99)}];
-        assert!(scene.apply_batch_at(version,&rejected).is_err());assert_eq!(scene.version(),version);
-        assert_eq!(scene.find(NodeId(1)).unwrap().semantics,semantics);
+        let mut scene = Scene::new(Node::text(NodeId(1), "Caption"));
+        let before = scene.version();
+        let semantics = Semantics::default()
+            .label("Accessible label")
+            .disabled(true);
+        scene
+            .apply_batch_at(
+                before,
+                &[ScenePatch::UpdateSemantics {
+                    id: NodeId(1),
+                    semantics: semantics.clone(),
+                }],
+            )
+            .unwrap();
+        assert_eq!(scene.find(NodeId(1)).unwrap().semantics, semantics);
+        assert_eq!(scene.version(), before + 1);
+        let version = scene.version();
+        let rejected = [
+            ScenePatch::UpdateSemantics {
+                id: NodeId(1),
+                semantics: Semantics::default(),
+            },
+            ScenePatch::Remove { id: NodeId(99) },
+        ];
+        assert!(scene.apply_batch_at(version, &rejected).is_err());
+        assert_eq!(scene.version(), version);
+        assert_eq!(scene.find(NodeId(1)).unwrap().semantics, semantics);
     }
 }

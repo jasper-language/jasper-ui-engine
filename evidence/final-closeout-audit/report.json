@@ -1,124 +1,133 @@
 {
   "schema_version": 1,
   "kind": "jasper-ui-closeout-audit",
-  "generated_at": "2026-11-02T17:23:55.161220+00:00",
+  "generated_at": "2026-11-02T18:51:28.394632+00:00",
   "claim": "audit only; no checklist completion or whole-engine acceptance is claimed",
   "git": {
     "branch": "codex/item6-closeout",
-    "commit": "22372ff1daad8e6cfc0fd2a0e1b99c560c651d24",
-    "dirty_paths": []
+    "commit": "366a715958109ea453b48e6a61d6d943f4a57d0e",
+    "dirty_paths": [
+      " M README.md",
+      " M docs/claude-closeout-proof-backlog.md",
+      " M docs/closeout.md",
+      " M docs/status.md",
+      " M examples/gpu_window.rs",
+      " M examples/hello.rs",
+      " M examples/pointer.rs",
+      " M scripts/audit-closeout.py",
+      " M scripts/closeout-baseline.sh",
+      " M scripts/test-audit-closeout.py",
+      " M src/backend.rs",
+      " M src/composition_identity.rs",
+      " M src/desktop.rs",
+      " M src/engine.rs",
+      " M src/host_capabilities.rs",
+      " M src/input.rs",
+      " M src/input_identity.rs",
+      " M src/keyboard.rs",
+      " M src/legacy_engine.rs",
+      " M src/lib.rs",
+      " M src/native_adapter/access_kit.rs",
+      " M src/native_adapter/access_tree.rs",
+      " M src/native_adapter/capture_policy.rs",
+      " M src/native_adapter/component_contract.rs",
+      " M src/native_adapter/cpu_budget.rs",
+      " M src/native_adapter/frame_schedule.rs",
+      " M src/native_adapter/glyph_skew.rs",
+      " M src/native_adapter/gpu_render.rs",
+      " M src/native_adapter/native_events.rs",
+      " M src/native_adapter/native_fonts.rs",
+      " M src/native_adapter/native_keys.rs",
+      " M src/native_adapter/native_scene.rs",
+      " M src/native_adapter/native_semantics.rs",
+      " M src/native_adapter/native_view.rs",
+      " M src/native_adapter/pointer_host.rs",
+      " M src/native_adapter/scene_events.rs",
+      " M src/native_adapter/text_geometry.rs",
+      " M src/native_adapter/update_contract.rs",
+      " M src/native_adapter/view_slot.rs",
+      " M src/scene.rs",
+      " M src/surface_lifecycle.rs",
+      " M src/text_parley.rs",
+      " M tests/input_admission.rs",
+      " M tests/native_accessibility_tree.rs",
+      " M tests/native_accessibility_update.rs",
+      " M tests/native_accesskit_bridge.rs",
+      " M tests/native_blitz_engine.rs",
+      " M tests/native_component_update_contract.rs",
+      " M tests/native_cpu_acceptance.rs",
+      " M tests/native_font_family.rs",
+      " M tests/native_font_synthesis.rs",
+      " M tests/native_font_weight_style.rs",
+      " M tests/native_frame_damage.rs",
+      " M tests/native_frame_damage_write.rs",
+      " M tests/native_frame_differential.rs",
+      " M tests/native_frame_pace.rs",
+      " M tests/native_frame_schedule.rs",
+      " M tests/native_frame_transaction.rs",
+      " M tests/native_gpu_frame_damage.rs",
+      " M tests/native_gpu_host_view.rs",
+      " M tests/native_gpu_render.rs",
+      " M tests/native_host_renderer.rs",
+      " M tests/native_text_display_fonts.rs",
+      " M tests/native_text_geometry.rs",
+      " M tests/native_text_layout.rs",
+      " M tests/native_text_selection.rs",
+      " M tests/native_update_contract.rs"
+    ]
   },
   "final_audit": {
-    "path": "evidence/final-checklist-audit-pending/report.json",
+    "path": "evidence/final-checklist-audit/report.json",
     "readable": true,
     "error": null,
-    "recorded_status": "incomplete_no_checklist_item_fully_complete",
-    "recorded_completed_items": 0,
+    "recorded_status": "complete",
+    "recorded_completed_items": 5,
     "covers_head": false,
-    "basis_commit": "3a52933",
+    "basis_commit": "bd84045f540d8136e7d234141c514f4d4261d0c9",
     "material_changed_since_basis": [
-      "Cargo.toml",
-      "docs/status.md",
-      "docs/verification.md",
-      "examples/gpu_window.rs",
       "scripts/audit-closeout.py",
-      "scripts/capture-window-xvfb.sh",
-      "scripts/check-blitz-proof-mapping.py",
       "scripts/closeout-baseline.sh",
-      "scripts/test-audit-closeout.py",
-      "scripts/verify-in-vm.sh",
-      "scripts/verify-ui.py",
-      "scripts/verify-version.py",
-      "src/native_adapter/facade.rs",
-      "src/native_adapter/native_scene.rs",
-      "src/native_adapter/native_view.rs",
-      "tests/native_component_update_contract.rs",
-      "tests/native_frame_transaction.rs",
-      "verification/blitz-adapter/obligations.json",
-      "verification/native-activation/build.rs",
-      "verification/native-activation/fuzz/fuzz_targets/component_support.rs",
-      "verification/native-activation/fuzz/fuzz_targets/scene_update.rs",
-      "verification/native-activation/src/lib.rs"
+      "scripts/test-audit-closeout.py"
     ],
     "references": [
-      {
-        "path": "evidence/blitz-framework-update-contract-pending/report.json",
-        "exists": false
-      },
-      {
-        "path": "evidence/blitz-root-hello-migration/report.json",
-        "exists": false
-      },
-      {
-        "path": "evidence/blitz-root-pointer-migration/report.json",
-        "exists": false
-      },
-      {
-        "path": "evidence/blitz-root-window-migration/report.json",
-        "exists": false
-      },
       {
         "path": "evidence/component-update-error-contract-chain/report.json",
         "exists": true
       },
       {
-        "path": "evidence/full-scene-migration-pending/report.json",
+        "path": "evidence/item5-full-path-baseline/report.json",
         "exists": true
       },
       {
-        "path": "evidence/input-lifecycle-chain/report.json",
-        "exists": false
+        "path": "evidence/item5-window-interaction/interaction.log",
+        "exists": true
       },
       {
-        "path": "evidence/native-backend-frame-chain/report.json",
-        "exists": false
+        "path": "evidence/item5-window-xvfb/resized.png",
+        "exists": true
       },
       {
-        "path": "evidence/native-backend-submission-chain/report.json",
-        "exists": false
+        "path": "evidence/item5-window-xvfb/root.png",
+        "exists": true
       },
       {
-        "path": "evidence/native-dpi-scale-admission-chain/report.json",
-        "exists": false
+        "path": "evidence/native-engine-frame-sequence/report.json",
+        "exists": true
       },
       {
         "path": "evidence/native-font-bold-alias-chain/report.json",
         "exists": true
       },
       {
-        "path": "evidence/native-frame-orchestration-chain/report.json",
-        "exists": false
-      },
-      {
-        "path": "evidence/native-gpu-host-target-pending/report.json",
+        "path": "evidence/native-host-render-lifecycle/report.json",
         "exists": true
       },
       {
-        "path": "evidence/native-headless-forwarding-chain/report.json",
-        "exists": false
-      },
-      {
-        "path": "evidence/native-host-surface-orchestration-chain/report.json",
-        "exists": false
-      },
-      {
-        "path": "evidence/native-map-ordered-replay/report.json",
-        "exists": false
-      },
-      {
-        "path": "evidence/native-scene-candidate-transaction-pending/report.json",
+        "path": "evidence/native-interaction-closure/report.json",
         "exists": true
       },
       {
-        "path": "evidence/native-subtree-ordered-replay/report.json",
-        "exists": false
-      },
-      {
-        "path": "evidence/native-subtree-partition-candidate/report.json",
-        "exists": false
-      },
-      {
-        "path": "evidence/native-subtree-solver-capability/report.json",
+        "path": "evidence/scene-frame-completion-chain/report.json",
         "exists": true
       },
       {
@@ -126,48 +135,22 @@
         "exists": true
       },
       {
-        "path": "evidence/ui-composition-chain/report.json",
-        "exists": false
-      },
-      {
-        "path": "evidence/ui-input-binding-chain/report.json",
-        "exists": false
-      },
-      {
-        "path": "evidence/validation-chain/report.json",
-        "exists": false
+        "path": "evidence/window-xvfb-presentation/report.json",
+        "exists": true
       }
     ],
-    "missing_references": [
-      "evidence/blitz-framework-update-contract-pending/report.json",
-      "evidence/blitz-root-hello-migration/report.json",
-      "evidence/blitz-root-pointer-migration/report.json",
-      "evidence/blitz-root-window-migration/report.json",
-      "evidence/input-lifecycle-chain/report.json",
-      "evidence/native-backend-frame-chain/report.json",
-      "evidence/native-backend-submission-chain/report.json",
-      "evidence/native-dpi-scale-admission-chain/report.json",
-      "evidence/native-frame-orchestration-chain/report.json",
-      "evidence/native-headless-forwarding-chain/report.json",
-      "evidence/native-host-surface-orchestration-chain/report.json",
-      "evidence/native-map-ordered-replay/report.json",
-      "evidence/native-subtree-ordered-replay/report.json",
-      "evidence/native-subtree-partition-candidate/report.json",
-      "evidence/ui-composition-chain/report.json",
-      "evidence/ui-input-binding-chain/report.json",
-      "evidence/validation-chain/report.json"
-    ]
+    "missing_references": []
   },
   "audit_inputs": {
-    "scripts/audit-closeout.py": "e9a4e85b61c747dd2e2b6aa61848dd75cb891fb92939eff997d4c9cf6ba15d37",
-    "scripts/closeout-baseline.sh": "ac5c9bb8a61c4b25dcb6994bc2559234b75c85e34687ff1de87a9537af8b44f3",
-    "scripts/test-audit-closeout.py": "52ab3568de9a2184d7c0eb2cecc3cfd313dbecd02a309fb742da2db26e850bde",
-    "docs/claude-closeout-proof-backlog.md": "e2af5e5f97fdad0cb2c127967d7c146b4f83c3d4944915c933388171211a5b75",
-    "docs/closeout.md": "865d9cfba58c093e79c8bce71e4212dfeda828ea2a7b8775c003ade9dc3bc18b",
+    "scripts/audit-closeout.py": "ef732464850ddb23cb48d46a5843a86f6ab378c6128b9f2f3786d120be7f589a",
+    "scripts/closeout-baseline.sh": "ca4252fe72ee8f14f438401bff427c5a683901cffefba51ceab9c8446b3bab06",
+    "scripts/test-audit-closeout.py": "34fa073556b494d37030b4d0372260030a205ec2dfd38bf47022c01dea546e3a",
+    "docs/claude-closeout-proof-backlog.md": "3fafda5b0f387a449da6ef4bde03715f558846c6627bc69105fa2900f6dacceb",
+    "docs/closeout.md": "a25c5809261e484384943ffcdfa715f519b74919733b8df82462ebfa560666a6",
     "scripts/verify-ui.py": "dbfacc3f0d894ddc2d1f173a69212b8f3e3fc3f8ed3fe0b1348985e5292f1995",
     "scripts/verify-in-vm.sh": "cc88cbb9afde9788d8154b4bb8501e975ffef039c96e452e355836e50ac4c3ba",
     ".github/workflows/ci.yml": "eeae3e2da1889165faffa3ec1471a9f4db6b3606cb2087e09260bd6a0c85d5b1",
-    "Cargo.toml": "3de98031ad78e76e16b0c5e83dca2a4493be0a5cff2089d2c161376e6cfb059e",
+    "Cargo.toml": "a78eb3be5b5b5c6da54a716d20c33baaec37563515026960bc90e296188ddd65",
     "Cargo.lock": "5b95b93dc20406ae8fa6e7e8c43bd23803450c7f34c021b19d3de3f05f4fe296"
   },
   "evidence_index": [
@@ -176,7 +159,9 @@
       "sha256": "5a425d3fd7e5c52e48730d34d9d9fb0be829d06f205d4d8e7477e6ea3be7fcb0",
       "status": "proved",
       "recorded_sources": 1,
-      "stale_or_missing_sources": [],
+      "stale_or_missing_sources": [
+        "src/native_adapter/native_fonts.rs"
+      ],
       "completion_flags": {}
     },
     {
@@ -184,7 +169,9 @@
       "sha256": "e7096cdc4137d3aa3c3e73a11848b803fed9359c9f1b8e9e36d43f0a4becab52",
       "status": "proved",
       "recorded_sources": 1,
-      "stale_or_missing_sources": [],
+      "stale_or_missing_sources": [
+        "src/native_adapter/native_view.rs"
+      ],
       "completion_flags": {}
     },
     {
@@ -192,12 +179,31 @@
       "sha256": "0a9ddee42efae43f412f50eb1604a9b00f8b7b0893137d8f52f46fcc9eb4dbf1",
       "status": "scoped_ordered_acceptance_complete",
       "recorded_sources": 7,
-      "stale_or_missing_sources": [],
+      "stale_or_missing_sources": [
+        "src/native_adapter/facade.rs",
+        "src/native_adapter/native_view.rs",
+        "tests/native_component_update_contract.rs"
+      ],
       "completion_flags": {}
     },
     {
+      "path": "evidence/final-checklist-audit/report.json",
+      "sha256": "6b5f04a58f117ad6ee0e93d898e44793dfcda50dba29b5a6e585bb0a3d7f0297",
+      "status": "complete",
+      "recorded_sources": 35,
+      "stale_or_missing_sources": [],
+      "completion_flags": {
+        "checklist_item_1_complete": true,
+        "checklist_item_2_complete": true,
+        "checklist_item_3_complete": true,
+        "checklist_item_4_complete": true,
+        "checklist_item_5_complete": true,
+        "checklist_item_6_complete": false
+      }
+    },
+    {
       "path": "evidence/final-checklist-audit-pending/report.json",
-      "sha256": "3b792f650ab90adea970b1f35277aa6326f27a82924047a03d485812100f939c",
+      "sha256": "ab37e6887d3ad5970dce36a59a44b731b6200ab0e4a59b4543dcec5bb6f2024d",
       "status": "incomplete_no_checklist_item_fully_complete",
       "recorded_sources": 0,
       "stale_or_missing_sources": [],
@@ -205,7 +211,7 @@
     },
     {
       "path": "evidence/final-closeout-audit/report.json",
-      "sha256": "10a76a41fde68128e81fb53097a72a2c015177a16a464609d08f2a7aa02cf8af",
+      "sha256": "737e1deefe65701100732195fb036c3f75737c15e6f44ea5f0e0168d0e5fb3b2",
       "status": "unspecified",
       "recorded_sources": 0,
       "stale_or_missing_sources": [],
@@ -217,10 +223,21 @@
       "status": "single_full_caller_path_passes_remaining_item5_acceptance_pending",
       "recorded_sources": 2,
       "stale_or_missing_sources": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "examples/full_scene.rs"
       ],
       "completion_flags": {
         "checklist_item_5_complete": false
+      }
+    },
+    {
+      "path": "evidence/item5-full-path-baseline/report.json",
+      "sha256": "708ad98531e48f04fe62c6ac7f6d6ec778abb31890a3dd083500b600ac41fc43",
+      "status": "item5_public_callers_complete_basic_proof_passed",
+      "recorded_sources": 7,
+      "stale_or_missing_sources": [],
+      "completion_flags": {
+        "checklist_item_5_complete": true
       }
     },
     {
@@ -228,8 +245,28 @@
       "sha256": "c4d90abf9769f66e565a249404418d7395e4e658550c9f8b3f8348e8b8ca1fd7",
       "status": "proved",
       "recorded_sources": 6,
-      "stale_or_missing_sources": [],
+      "stale_or_missing_sources": [
+        "src/composition_identity.rs",
+        "src/input_identity.rs",
+        "src/native_adapter/native_view.rs",
+        "src/native_adapter/view_slot.rs",
+        "src/scene.rs"
+      ],
       "completion_flags": {}
+    },
+    {
+      "path": "evidence/native-engine-frame-sequence/report.json",
+      "sha256": "6191ce8e0ed4011a116102e7a6fe91057fb446e4a979d16602bd00b6ca3f12af",
+      "status": "engineering_scope_passes_full_formal_transaction_pending",
+      "recorded_sources": 9,
+      "stale_or_missing_sources": [
+        "src/native_adapter/native_scene.rs",
+        "tests/native_frame_damage.rs",
+        "tests/native_frame_schedule.rs"
+      ],
+      "completion_flags": {
+        "checklist_item_2_complete": false
+      }
     },
     {
       "path": "evidence/native-font-bold-alias-chain/report.json",
@@ -238,8 +275,11 @@
       "recorded_sources": 9,
       "stale_or_missing_sources": [
         "scripts/verify-version.py",
+        "src/native_adapter/glyph_skew.rs",
+        "src/native_adapter/native_fonts.rs",
         "src/native_adapter/native_scene.rs",
-        "src/native_adapter/native_view.rs"
+        "src/native_adapter/native_view.rs",
+        "tests/native_font_synthesis.rs"
       ],
       "completion_flags": {
         "whole_checklist_item_3_complete": false
@@ -252,7 +292,9 @@
       "recorded_sources": 4,
       "stale_or_missing_sources": [
         "src/native_adapter/facade.rs",
-        "src/native_adapter/native_scene.rs"
+        "src/native_adapter/gpu_render.rs",
+        "src/native_adapter/native_scene.rs",
+        "tests/native_gpu_host_view.rs"
       ],
       "completion_flags": {
         "checklist_item_3_complete": false
@@ -263,7 +305,45 @@
       "sha256": "8f9b35150c072dba26df9f416510aff26394ca3ba5442df11f42b624b63c40ca",
       "status": "proved",
       "recorded_sources": 6,
-      "stale_or_missing_sources": [],
+      "stale_or_missing_sources": [
+        "src/composition_identity.rs",
+        "src/input_identity.rs",
+        "src/native_adapter/native_view.rs",
+        "src/native_adapter/view_slot.rs",
+        "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/native-host-render-lifecycle/report.json",
+      "sha256": "8565434f7db5900ea3cb9a46bb11bb8ea3901b19ded056d9d2b65413efc220b5",
+      "status": "engineering_lifecycle_passed_hardware_and_ordered_proof_pending",
+      "recorded_sources": 15,
+      "stale_or_missing_sources": [
+        "examples/gpu_window.rs",
+        "examples/window.rs",
+        "scripts/capture-window-xvfb.sh",
+        "src/host_capabilities.rs",
+        "src/native_adapter/render_host.rs",
+        "src/surface_lifecycle.rs",
+        "tests/native_gpu_host_view.rs",
+        "tests/native_host_renderer.rs"
+      ],
+      "completion_flags": {
+        "checklist_item_3_complete": false
+      }
+    },
+    {
+      "path": "evidence/native-interaction-closure/report.json",
+      "sha256": "d864bff249e13332504d71dd463ec64c9ec482bf00db197c8c6e05e2af320fef",
+      "status": "interaction_external_service_closure_functional",
+      "recorded_sources": 7,
+      "stale_or_missing_sources": [
+        "src/composition_identity.rs",
+        "src/input_identity.rs",
+        "src/native_adapter/facade.rs",
+        "src/native_adapter/native_view.rs"
+      ],
       "completion_flags": {}
     },
     {
@@ -271,7 +351,10 @@
       "sha256": "8d340ed49da3acbe9d3d42040cd2e698e00c62573451dcca176c19706aceb5fb",
       "status": "engineering_slice_passes_full_frame_proof_pending",
       "recorded_sources": 2,
-      "stale_or_missing_sources": [],
+      "stale_or_missing_sources": [
+        "src/native_adapter/native_scene.rs",
+        "tests/native_frame_transaction.rs"
+      ],
       "completion_flags": {
         "checklist_item_2_complete": false
       }
@@ -297,7 +380,10 @@
       "sha256": "cf02438a11e6cec45709360d2a8bcced7794dfcd5265a94aea259c3144d12724",
       "status": "scoped_ordered_acceptance_complete",
       "recorded_sources": 6,
-      "stale_or_missing_sources": [],
+      "stale_or_missing_sources": [
+        "src/native_adapter/native_scene.rs",
+        "tests/native_frame_transaction.rs"
+      ],
       "completion_flags": {
         "checklist_item_2_complete": false
       }
@@ -307,7 +393,9 @@
       "sha256": "a20dc7c2b046538e5e9a3a6289b2f4584280faf053c115e77b387fb99069fa77",
       "status": "proved",
       "recorded_sources": 1,
-      "stale_or_missing_sources": [],
+      "stale_or_missing_sources": [
+        "src/native_adapter/native_scene.rs"
+      ],
       "completion_flags": {}
     },
     {
@@ -315,7 +403,12 @@
       "sha256": "73187771d7d382496b43e588e3f485809f4247900730356714cb90c755794cb5",
       "status": "proved",
       "recorded_sources": 5,
-      "stale_or_missing_sources": [],
+      "stale_or_missing_sources": [
+        "src/native_adapter/facade.rs",
+        "src/native_adapter/native_scene.rs",
+        "src/native_adapter/view_slot.rs",
+        "src/scene.rs"
+      ],
       "completion_flags": {}
     },
     {
@@ -323,7 +416,12 @@
       "sha256": "223ff985215ee7a59b9d62f1671ce281d45282bb110dc36e9bf40923bc052520",
       "status": "proved",
       "recorded_sources": 5,
-      "stale_or_missing_sources": [],
+      "stale_or_missing_sources": [
+        "src/native_adapter/facade.rs",
+        "src/native_adapter/native_scene.rs",
+        "src/native_adapter/view_slot.rs",
+        "src/scene.rs"
+      ],
       "completion_flags": {}
     },
     {
@@ -331,7 +429,11 @@
       "sha256": "3d7ff6f581205f27d8fd4b17ea0b54d0069ecbd13bc48c1a510be0d3af419b99",
       "status": "proved",
       "recorded_sources": 4,
-      "stale_or_missing_sources": [],
+      "stale_or_missing_sources": [
+        "src/native_adapter/native_scene.rs",
+        "src/native_adapter/view_slot.rs",
+        "src/scene.rs"
+      ],
       "completion_flags": {}
     },
     {
@@ -339,7 +441,10 @@
       "sha256": "8146427158c1cf8627503e8263a93ffbb6ff5d83cdf9a09bde27c73c929d2173",
       "status": "proved",
       "recorded_sources": 2,
-      "stale_or_missing_sources": [],
+      "stale_or_missing_sources": [
+        "src/input_identity.rs",
+        "src/native_adapter/native_scene.rs"
+      ],
       "completion_flags": {}
     },
     {
@@ -348,7 +453,9 @@
       "status": "scoped_ordered_acceptance_complete",
       "recorded_sources": 7,
       "stale_or_missing_sources": [
-        "src/native_adapter/facade.rs"
+        "src/native_adapter/facade.rs",
+        "src/native_adapter/native_scene.rs",
+        "tests/native_update_contract.rs"
       ],
       "completion_flags": {}
     },
@@ -357,7 +464,9 @@
       "sha256": "845df5a355509f0d1b7eb6251eda730e9ffc55d129b580097f233984010bc0ad",
       "status": "proved",
       "recorded_sources": 2,
-      "stale_or_missing_sources": [],
+      "stale_or_missing_sources": [
+        "src/native_adapter/native_scene.rs"
+      ],
       "completion_flags": {}
     },
     {
@@ -365,7 +474,14 @@
       "sha256": "c5fd4e3011da4a8c9d3e203cc9760682d04e336b57a1285c77f20652a963fa29",
       "status": "proved",
       "recorded_sources": 7,
-      "stale_or_missing_sources": [],
+      "stale_or_missing_sources": [
+        "src/composition_identity.rs",
+        "src/input_identity.rs",
+        "src/native_adapter/facade.rs",
+        "src/native_adapter/native_view.rs",
+        "src/native_adapter/view_slot.rs",
+        "src/scene.rs"
+      ],
       "completion_flags": {}
     },
     {
@@ -373,13 +489,20 @@
       "sha256": "31c21ed47d5ad4f848f327958f30afe73ad067df62fa802283e5f33ab99a509c",
       "status": "proved",
       "recorded_sources": 7,
-      "stale_or_missing_sources": [],
+      "stale_or_missing_sources": [
+        "src/composition_identity.rs",
+        "src/input_identity.rs",
+        "src/native_adapter/facade.rs",
+        "src/native_adapter/native_view.rs",
+        "src/native_adapter/view_slot.rs",
+        "src/scene.rs"
+      ],
       "completion_flags": {}
     },
     {
       "path": "evidence/window-xvfb-presentation/report.json",
-      "sha256": "1f3a7657f3bd9627f5c6ded0b04e975b353c17bc49a659317b67c78586ae5afc",
-      "status": "software_x11_window_presentation_passed_hardware_lifecycle_pending",
+      "sha256": "93fad2b123f1686a465756d2074614622bddc1397cb0e171c75907a56e62061e",
+      "status": "software_x11_cpu_and_texture_view_passed_hardware_lifecycle_pending",
       "recorded_sources": 0,
       "stale_or_missing_sources": [],
       "completion_flags": {
@@ -390,36 +513,30 @@
     }
   ],
   "evidence_index_summary": {
-    "reports": 24,
-    "with_stale_or_missing_recorded_sources": 4,
-    "with_explicit_completion": 6
+    "reports": 29,
+    "with_stale_or_missing_recorded_sources": 22,
+    "with_explicit_completion": 10
   },
   "checklist": {
     "definition": "Items 1-6 from the 2026-11-02 total audit; only explicit completion records count.",
     "items": {
       "1": {
         "title": "公共契约、场景/组件更新与真实 Map 证明",
-        "recorded_status": "blocked_incomplete",
-        "completion_reading": "not_complete",
-        "complete": false,
-        "evidence_completion_flags": {},
-        "blocking_gaps": [
-          "the actual two-entry real BTreeMap source_subtree_contains Kani obligation remains unfinished",
-          "with 8G RAM plus 24G VM-disk swap and 3600 seconds, unwind5/6/8 complete but remain insufficient; as a result this is no longer only a 3G OOM issue",
-          "complete apply_update to apply_patches implementation-level whole-frame proof remains absent",
-          "float specification and general native-map/mutation proofs remain absent"
-        ],
-        "remaining": [
-          "the actual two-entry real BTreeMap source_subtree_contains Kani obligation remains unfinished",
-          "with 8G RAM plus 24G VM-disk swap and 3600 seconds, unwind5/6/8 complete but remain insufficient; as a result this is no longer only a 3G OOM issue",
-          "complete apply_update to apply_patches implementation-level whole-frame proof remains absent",
-          "float specification and general native-map/mutation proofs remain absent"
-        ],
+        "recorded_status": "complete",
+        "completion_reading": "explicit_complete_current_scope",
+        "complete": true,
+        "completion_standard": "functional_gaps_closed_and_basic_proofs_passed",
+        "evidence_completion_flags": {
+          "evidence/final-checklist-audit/report.json:checklist_item_1_complete": true
+        },
+        "superseded_historical_completion_flags": {},
+        "blocking_gaps": [],
+        "remaining": [],
         "sources": [
           {
             "path": "src/scene.rs",
             "exists": true,
-            "sha256": "60a8c71dea8702de950b5a036ef4074732c0bed2865f48dc2015a47271f224c2"
+            "sha256": "30508513dc9828810ab675291dc738d4d3059b7d29423ba8ec6f25a7341a1922"
           },
           {
             "path": "src/batch.rs",
@@ -429,47 +546,52 @@
           {
             "path": "src/input_identity.rs",
             "exists": true,
-            "sha256": "481fda295574255d00f1b0952ee92a0772a08efe82f2c776250345d01b762fcd"
+            "sha256": "953b0982be297777cc3e2c3f3a02f697df71d83c2d3e5bc21202baa06250aa0d"
           },
           {
             "path": "src/engine.rs",
             "exists": true,
-            "sha256": "4ddb5d6f77c03dd1048a0dba73c8cecc93e6a3361534871e715733a329a8cad7"
+            "sha256": "453869dfd4f651a16cde03ac81d49db857793f18bfcaa620cf67c51f330f9efe"
           },
           {
             "path": "src/native_adapter/native_scene.rs",
             "exists": true,
-            "sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac"
+            "sha256": "b47e1ff2e7af63f1615f70c4e718f08188778bb6c1e7907085fc46c86fffd988"
           },
           {
             "path": "src/native_adapter/native_view.rs",
             "exists": true,
-            "sha256": "cc1820ab15b3a75f1a4edf05978b1a6b4321c68617cc7b71cc5266e395d9a8da"
+            "sha256": "9871dc3155d4ad6e4428fbea08610ad8f7b396cfa798380e64a9bd1522124a6e"
           },
           {
             "path": "src/native_adapter/component_contract.rs",
             "exists": true,
-            "sha256": "508ed84d90d225c6c3aa787271f1f0c33bcff1f600447930715ab07f21d9437d"
+            "sha256": "177e20430e4853d746238322da170aa9aa1e2882519cbc10e635ead87fe664af"
           },
           {
             "path": "src/native_adapter/update_contract.rs",
             "exists": true,
-            "sha256": "b9c73ac1d2ad1047653d87bba58f75209f1171655691815994ac31336e76b150"
+            "sha256": "7015d4460cd1bc72a4bc914a5e493d100b0a1158b61e92568a6853fe46c2d3bf"
+          },
+          {
+            "path": "src/native_adapter/render_host.rs",
+            "exists": true,
+            "sha256": "3360ac64f47dceb2804e95dd8079249d7ff8913f2f1613069c78367c579b9915"
           },
           {
             "path": "tests/native_frame_transaction.rs",
             "exists": true,
-            "sha256": "5b10bad81c67ec1b042eb360a185866057a12ee8f73c4d3cee8b0bb92c349d18"
+            "sha256": "d3e2e45ec1a381933c0c4a247393001810f29c71ae39fac0052bb6782d60cc50"
           },
           {
             "path": "tests/native_update_contract.rs",
             "exists": true,
-            "sha256": "d93c37ba11f964b7179729e8c18b421e7ae68c143df5aef704812b354323e9ac"
+            "sha256": "232b3395eb3e2371fe7bd65556acb96a5ff3278d2bfd8ac80d7dc9ad4c757319"
           },
           {
             "path": "tests/native_component_update_contract.rs",
             "exists": true,
-            "sha256": "4977624090dd71470ef8a5e09dd84d3dd1882dda3db8cfaf1992a2db178c0d27"
+            "sha256": "08bd8a8a2f2af774fd2019b0fedf66315f775fbfbfb9f777c7f34a6b7731c181"
           },
           {
             "path": "verification/read-boundary/src/lib.rs",
@@ -479,523 +601,761 @@
         ],
         "evidence": [
           {
-            "path": "evidence/final-checklist-audit-pending/report.json",
+            "path": "evidence/final-checklist-audit/report.json",
             "exists": true,
-            "status": "incomplete_no_checklist_item_fully_complete",
+            "status": "complete",
             "scope": null,
-            "sources": [],
-            "completion_flags": {}
-          },
-          {
-            "path": "evidence/native-subtree-solver-capability/report.json",
-            "exists": true,
-            "status": "incomplete_no_supported_backend_completed_within_fixed_vm_limits",
-            "scope": "The unchanged actual source_subtree_contains function, the original two-entry real BTreeMap input domain, independent scalar oracle, safety checks, and unwinding assertions. Only CBMC/Kani backend encoding and loop bounds were varied.",
-            "sources": [],
-            "completion_flags": {}
-          },
-          {
-            "path": "evidence/native-subtree-expanded-capability/report.json",
-            "exists": true,
-            "status": "incomplete_resource_relaxation_exhausted",
-            "scope": "The unchanged production source_subtree_contains, original two-entry real BTreeMap and symbolic input domain, independent oracle, safety checks and unwinding assertions. The default constrained profile was retained; explicit user authorization allowed larger VM memory, swap and wall time.",
-            "sources": [],
-            "completion_flags": {}
-          },
-          {
-            "path": "evidence/scene-update-error-contract-chain/report.json",
-            "exists": true,
-            "status": "scoped_ordered_acceptance_complete",
-            "scope": "The actual admit_scene_update function classifies ownership, closed state, empty frame, capacity, stale version and invalid successor. SourceRejected/NativeRejected are assigned by the candidate construction transaction after admission and are covered by the public integration test, not this pure admission kernel.",
             "sources": [
               {
                 "field": "sources",
-                "path": "scripts/verify-version.py",
+                "path": "examples/full_scene.rs",
                 "exists": true,
-                "expected_sha256": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e",
-                "actual_sha256": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e",
+                "expected_sha256": "43d1ba52b4b2a326c3fb5ad0583d6e01df2dc43c49d501f3ba6751be3c4f27cd",
+                "actual_sha256": "43d1ba52b4b2a326c3fb5ad0583d6e01df2dc43c49d501f3ba6751be3c4f27cd",
                 "status": "current",
-                "report": "evidence/scene-update-error-contract-chain/report.json"
+                "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
-                "path": "src/native_adapter/facade.rs",
+                "path": "examples/gpu_window.rs",
                 "exists": true,
-                "expected_sha256": "614588af1896f6eeeb75ae2afb5fefe0ba6737ffb106f8b0b23ecc25aa43edc7",
-                "actual_sha256": "ac54bd10ee888f5d06fdf99bf07a3c97df3facf1f11d9b38405d1c55f1c69f54",
-                "status": "stale",
-                "report": "evidence/scene-update-error-contract-chain/report.json"
+                "expected_sha256": "70202e3eacfdbd558d080649f7818e88f2ac25f5a427b18689f29c1de89e8b2b",
+                "actual_sha256": "70202e3eacfdbd558d080649f7818e88f2ac25f5a427b18689f29c1de89e8b2b",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
-                "path": "src/native_adapter/native_scene.rs",
+                "path": "examples/hello.rs",
                 "exists": true,
-                "expected_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
-                "actual_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
+                "expected_sha256": "4264a173e172387e5ea4893724f475a756c67b6363a0bbacdc5a945460682dd6",
+                "actual_sha256": "4264a173e172387e5ea4893724f475a756c67b6363a0bbacdc5a945460682dd6",
                 "status": "current",
-                "report": "evidence/scene-update-error-contract-chain/report.json"
+                "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
-                "path": "tests/native_update_contract.rs",
+                "path": "examples/pointer.rs",
                 "exists": true,
-                "expected_sha256": "d93c37ba11f964b7179729e8c18b421e7ae68c143df5aef704812b354323e9ac",
-                "actual_sha256": "d93c37ba11f964b7179729e8c18b421e7ae68c143df5aef704812b354323e9ac",
+                "expected_sha256": "121290c4a4d0973f80b7fe1eb953d253cda68785b4896ebcb7871d3aa371b384",
+                "actual_sha256": "121290c4a4d0973f80b7fe1eb953d253cda68785b4896ebcb7871d3aa371b384",
                 "status": "current",
-                "report": "evidence/scene-update-error-contract-chain/report.json"
+                "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
-                "path": "verification/native-activation/build.rs",
+                "path": "examples/window.rs",
                 "exists": true,
-                "expected_sha256": "c95b982cb5ebdd208decdbe42304cf23623998c08235d83f270f5393bf64a317",
-                "actual_sha256": "c95b982cb5ebdd208decdbe42304cf23623998c08235d83f270f5393bf64a317",
+                "expected_sha256": "f76e908e96439bf12340ab98ac4ece56279e447d9fb8a031d10a58210bc26b6f",
+                "actual_sha256": "f76e908e96439bf12340ab98ac4ece56279e447d9fb8a031d10a58210bc26b6f",
                 "status": "current",
-                "report": "evidence/scene-update-error-contract-chain/report.json"
+                "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
-                "path": "verification/native-activation/fuzz/fuzz_targets/scene_update.rs",
+                "path": "scripts/audit-closeout.py",
                 "exists": true,
-                "expected_sha256": "9d629f65b35f091dd4b762426a68ec249ddacf90d1e0b0c3f61211dd83841c26",
-                "actual_sha256": "9d629f65b35f091dd4b762426a68ec249ddacf90d1e0b0c3f61211dd83841c26",
+                "expected_sha256": "ef732464850ddb23cb48d46a5843a86f6ab378c6128b9f2f3786d120be7f589a",
+                "actual_sha256": "ef732464850ddb23cb48d46a5843a86f6ab378c6128b9f2f3786d120be7f589a",
                 "status": "current",
-                "report": "evidence/scene-update-error-contract-chain/report.json"
+                "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
-                "path": "verification/native-activation/src/lib.rs",
+                "path": "scripts/closeout-baseline.sh",
                 "exists": true,
-                "expected_sha256": "28fee14c8495787aea487bd5b0bcd9d653711d7ececac71be0951642391f7b6b",
-                "actual_sha256": "28fee14c8495787aea487bd5b0bcd9d653711d7ececac71be0951642391f7b6b",
+                "expected_sha256": "ca4252fe72ee8f14f438401bff427c5a683901cffefba51ceab9c8446b3bab06",
+                "actual_sha256": "ca4252fe72ee8f14f438401bff427c5a683901cffefba51ceab9c8446b3bab06",
                 "status": "current",
-                "report": "evidence/scene-update-error-contract-chain/report.json"
-              }
-            ],
-            "completion_flags": {}
-          },
-          {
-            "path": "evidence/scene-update-admission-kernel/report.json",
-            "exists": true,
-            "status": "proved",
-            "scope": "Exact production structured patch admission and real reused version/count predicates; source/native rejection variants are assigned outside this kernel and are excluded. No native mutation loop or host authentication proof.",
-            "sources": [
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/backend.rs",
+                "exists": true,
+                "expected_sha256": "9625248bbf8874d7fbc02c1f238ec7ff1dc541eb1b8dce53d667f864fbb8a268",
+                "actual_sha256": "9625248bbf8874d7fbc02c1f238ec7ff1dc541eb1b8dce53d667f864fbb8a268",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/batch.rs",
+                "exists": true,
+                "expected_sha256": "7fa1d6ed36340deb93096434eb33842947c47eb5b804852565de527b20d2cce1",
+                "actual_sha256": "7fa1d6ed36340deb93096434eb33842947c47eb5b804852565de527b20d2cce1",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/engine.rs",
+                "exists": true,
+                "expected_sha256": "453869dfd4f651a16cde03ac81d49db857793f18bfcaa620cf67c51f330f9efe",
+                "actual_sha256": "453869dfd4f651a16cde03ac81d49db857793f18bfcaa620cf67c51f330f9efe",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/host_capabilities.rs",
+                "exists": true,
+                "expected_sha256": "440db7bbb769ffe01da0d5ef848a3ff09c6a9495a0da5b3eac715430a235a2d6",
+                "actual_sha256": "440db7bbb769ffe01da0d5ef848a3ff09c6a9495a0da5b3eac715430a235a2d6",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
               {
                 "field": "sources",
                 "path": "src/input_identity.rs",
                 "exists": true,
-                "expected_sha256": "481fda295574255d00f1b0952ee92a0772a08efe82f2c776250345d01b762fcd",
-                "actual_sha256": "481fda295574255d00f1b0952ee92a0772a08efe82f2c776250345d01b762fcd",
+                "expected_sha256": "953b0982be297777cc3e2c3f3a02f697df71d83c2d3e5bc21202baa06250aa0d",
+                "actual_sha256": "953b0982be297777cc3e2c3f3a02f697df71d83c2d3e5bc21202baa06250aa0d",
                 "status": "current",
-                "report": "evidence/scene-update-admission-kernel/report.json"
+                "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
-                "path": "src/native_adapter/native_scene.rs",
+                "path": "src/native_adapter/access_kit.rs",
                 "exists": true,
-                "expected_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
-                "actual_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
+                "expected_sha256": "b6a2badb60a43241b529909632a80bb3b26eaa82bd1f88cbbae8251dca2f9bf3",
+                "actual_sha256": "b6a2badb60a43241b529909632a80bb3b26eaa82bd1f88cbbae8251dca2f9bf3",
                 "status": "current",
-                "report": "evidence/scene-update-admission-kernel/report.json"
-              }
-            ],
-            "completion_flags": {}
-          },
-          {
-            "path": "evidence/component-update-error-contract-chain/report.json",
-            "exists": true,
-            "status": "scoped_ordered_acceptance_complete",
-            "scope": "The actual admit_component_frame function orders ownership/context, closed, empty, capacity, stale sequence, sequence exhaustion, native readiness and view-support rejection before component value mutation.",
-            "sources": [
+                "report": "evidence/final-checklist-audit/report.json"
+              },
               {
                 "field": "sources",
-                "path": "scripts/verify-version.py",
+                "path": "src/native_adapter/access_tree.rs",
                 "exists": true,
-                "expected_sha256": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e",
-                "actual_sha256": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e",
+                "expected_sha256": "e7daa9ebcfbc95c26565209214e9e50fb397f620477715b90b54507870a2bc5f",
+                "actual_sha256": "e7daa9ebcfbc95c26565209214e9e50fb397f620477715b90b54507870a2bc5f",
                 "status": "current",
-                "report": "evidence/component-update-error-contract-chain/report.json"
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/capture_policy.rs",
+                "exists": true,
+                "expected_sha256": "f67a0b8bc85a6908f021bbc7f51b30cb131bf95bde1de20172c81236180a822b",
+                "actual_sha256": "f67a0b8bc85a6908f021bbc7f51b30cb131bf95bde1de20172c81236180a822b",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/component_contract.rs",
+                "exists": true,
+                "expected_sha256": "177e20430e4853d746238322da170aa9aa1e2882519cbc10e635ead87fe664af",
+                "actual_sha256": "177e20430e4853d746238322da170aa9aa1e2882519cbc10e635ead87fe664af",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
                 "path": "src/native_adapter/facade.rs",
                 "exists": true,
-                "expected_sha256": "ac54bd10ee888f5d06fdf99bf07a3c97df3facf1f11d9b38405d1c55f1c69f54",
-                "actual_sha256": "ac54bd10ee888f5d06fdf99bf07a3c97df3facf1f11d9b38405d1c55f1c69f54",
+                "expected_sha256": "011e2727b5a87e7213889bfda8e34cdb511b9b954532a67150c0b85f49796473",
+                "actual_sha256": "011e2727b5a87e7213889bfda8e34cdb511b9b954532a67150c0b85f49796473",
                 "status": "current",
-                "report": "evidence/component-update-error-contract-chain/report.json"
+                "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
-                "path": "src/native_adapter/native_view.rs",
+                "path": "src/native_adapter/gpu_render.rs",
                 "exists": true,
-                "expected_sha256": "cc1820ab15b3a75f1a4edf05978b1a6b4321c68617cc7b71cc5266e395d9a8da",
-                "actual_sha256": "cc1820ab15b3a75f1a4edf05978b1a6b4321c68617cc7b71cc5266e395d9a8da",
+                "expected_sha256": "27c36f0b3d97814cbf03e1412b769d4be89bcf4aeab846403325e85b83fe650f",
+                "actual_sha256": "27c36f0b3d97814cbf03e1412b769d4be89bcf4aeab846403325e85b83fe650f",
                 "status": "current",
-                "report": "evidence/component-update-error-contract-chain/report.json"
+                "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
-                "path": "tests/native_component_update_contract.rs",
+                "path": "src/native_adapter/native_events.rs",
                 "exists": true,
-                "expected_sha256": "4977624090dd71470ef8a5e09dd84d3dd1882dda3db8cfaf1992a2db178c0d27",
-                "actual_sha256": "4977624090dd71470ef8a5e09dd84d3dd1882dda3db8cfaf1992a2db178c0d27",
+                "expected_sha256": "620a865b7bec21890ad0c5098445abbab79f64f823d14d6a6afa8ebafeb2f36c",
+                "actual_sha256": "620a865b7bec21890ad0c5098445abbab79f64f823d14d6a6afa8ebafeb2f36c",
                 "status": "current",
-                "report": "evidence/component-update-error-contract-chain/report.json"
+                "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
-                "path": "verification/native-activation/build.rs",
+                "path": "src/native_adapter/native_fonts.rs",
                 "exists": true,
-                "expected_sha256": "c95b982cb5ebdd208decdbe42304cf23623998c08235d83f270f5393bf64a317",
-                "actual_sha256": "c95b982cb5ebdd208decdbe42304cf23623998c08235d83f270f5393bf64a317",
+                "expected_sha256": "3a37c98f63c84bdf06bf24c962622f765f7a96a58ccddba154c367a24db800dc",
+                "actual_sha256": "3a37c98f63c84bdf06bf24c962622f765f7a96a58ccddba154c367a24db800dc",
                 "status": "current",
-                "report": "evidence/component-update-error-contract-chain/report.json"
+                "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
-                "path": "verification/native-activation/fuzz/fuzz_targets/component_support.rs",
+                "path": "src/native_adapter/native_keys.rs",
                 "exists": true,
-                "expected_sha256": "03e7ebaa5ee94a762c6484a8442c461cc4400220878adfd6d5e152ca6d5a8f20",
-                "actual_sha256": "03e7ebaa5ee94a762c6484a8442c461cc4400220878adfd6d5e152ca6d5a8f20",
+                "expected_sha256": "c849700d1fe2441f71e7665ab7947687c0d20b871b1fabfe7f880dd593bf9c41",
+                "actual_sha256": "c849700d1fe2441f71e7665ab7947687c0d20b871b1fabfe7f880dd593bf9c41",
                 "status": "current",
-                "report": "evidence/component-update-error-contract-chain/report.json"
-              },
-              {
-                "field": "sources",
-                "path": "verification/native-activation/src/lib.rs",
-                "exists": true,
-                "expected_sha256": "28fee14c8495787aea487bd5b0bcd9d653711d7ececac71be0951642391f7b6b",
-                "actual_sha256": "28fee14c8495787aea487bd5b0bcd9d653711d7ececac71be0951642391f7b6b",
-                "status": "current",
-                "report": "evidence/component-update-error-contract-chain/report.json"
-              }
-            ],
-            "completion_flags": {}
-          },
-          {
-            "path": "evidence/component-update-admission-kernel/report.json",
-            "exists": true,
-            "status": "proved",
-            "scope": "Exact component-frame admission ordering before native mutation; actual element/view-type support is supplied as the proved predicate by the caller, and native mapping failure after preflight is excluded.",
-            "sources": [
-              {
-                "field": "sources",
-                "path": "src/native_adapter/native_view.rs",
-                "exists": true,
-                "expected_sha256": "cc1820ab15b3a75f1a4edf05978b1a6b4321c68617cc7b71cc5266e395d9a8da",
-                "actual_sha256": "cc1820ab15b3a75f1a4edf05978b1a6b4321c68617cc7b71cc5266e395d9a8da",
-                "status": "current",
-                "report": "evidence/component-update-admission-kernel/report.json"
-              }
-            ],
-            "completion_flags": {}
-          },
-          {
-            "path": "evidence/scene-frame-completion-chain/report.json",
-            "exists": true,
-            "status": "scoped_ordered_acceptance_complete",
-            "scope": "The actual complete_scene_frame function requires successful source application, an exact successor version and a detached native candidate before apply_patches_result may replace the active view.",
-            "sources": [
-              {
-                "field": "sources",
-                "path": "scripts/verify-version.py",
-                "exists": true,
-                "expected_sha256": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e",
-                "actual_sha256": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e",
-                "status": "current",
-                "report": "evidence/scene-frame-completion-chain/report.json"
+                "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
                 "path": "src/native_adapter/native_scene.rs",
                 "exists": true,
-                "expected_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
-                "actual_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
+                "expected_sha256": "b47e1ff2e7af63f1615f70c4e718f08188778bb6c1e7907085fc46c86fffd988",
+                "actual_sha256": "b47e1ff2e7af63f1615f70c4e718f08188778bb6c1e7907085fc46c86fffd988",
                 "status": "current",
-                "report": "evidence/scene-frame-completion-chain/report.json"
+                "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
-                "path": "tests/native_frame_transaction.rs",
+                "path": "src/native_adapter/native_view.rs",
                 "exists": true,
-                "expected_sha256": "5b10bad81c67ec1b042eb360a185866057a12ee8f73c4d3cee8b0bb92c349d18",
-                "actual_sha256": "5b10bad81c67ec1b042eb360a185866057a12ee8f73c4d3cee8b0bb92c349d18",
+                "expected_sha256": "9871dc3155d4ad6e4428fbea08610ad8f7b396cfa798380e64a9bd1522124a6e",
+                "actual_sha256": "9871dc3155d4ad6e4428fbea08610ad8f7b396cfa798380e64a9bd1522124a6e",
                 "status": "current",
-                "report": "evidence/scene-frame-completion-chain/report.json"
+                "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
-                "path": "verification/native-activation/build.rs",
+                "path": "src/native_adapter/pointer_host.rs",
                 "exists": true,
-                "expected_sha256": "c95b982cb5ebdd208decdbe42304cf23623998c08235d83f270f5393bf64a317",
-                "actual_sha256": "c95b982cb5ebdd208decdbe42304cf23623998c08235d83f270f5393bf64a317",
+                "expected_sha256": "849fc3f4559744e901c86fd64529b4f19c587c53d2ffd2069b85624f8653ce43",
+                "actual_sha256": "849fc3f4559744e901c86fd64529b4f19c587c53d2ffd2069b85624f8653ce43",
                 "status": "current",
-                "report": "evidence/scene-frame-completion-chain/report.json"
+                "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
-                "path": "verification/native-activation/fuzz/fuzz_targets/scene_update.rs",
+                "path": "src/native_adapter/render_host.rs",
                 "exists": true,
-                "expected_sha256": "9d629f65b35f091dd4b762426a68ec249ddacf90d1e0b0c3f61211dd83841c26",
-                "actual_sha256": "9d629f65b35f091dd4b762426a68ec249ddacf90d1e0b0c3f61211dd83841c26",
+                "expected_sha256": "3360ac64f47dceb2804e95dd8079249d7ff8913f2f1613069c78367c579b9915",
+                "actual_sha256": "3360ac64f47dceb2804e95dd8079249d7ff8913f2f1613069c78367c579b9915",
                 "status": "current",
-                "report": "evidence/scene-frame-completion-chain/report.json"
+                "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
-                "path": "verification/native-activation/src/lib.rs",
+                "path": "src/native_adapter/scene_events.rs",
                 "exists": true,
-                "expected_sha256": "28fee14c8495787aea487bd5b0bcd9d653711d7ececac71be0951642391f7b6b",
-                "actual_sha256": "28fee14c8495787aea487bd5b0bcd9d653711d7ececac71be0951642391f7b6b",
+                "expected_sha256": "407c5a80a0b13bb5a34e8e53257b0b33b7ceb8c7a0a57c418f5192048cff0005",
+                "actual_sha256": "407c5a80a0b13bb5a34e8e53257b0b33b7ceb8c7a0a57c418f5192048cff0005",
                 "status": "current",
-                "report": "evidence/scene-frame-completion-chain/report.json"
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/update_contract.rs",
+                "exists": true,
+                "expected_sha256": "7015d4460cd1bc72a4bc914a5e493d100b0a1158b61e92568a6853fe46c2d3bf",
+                "actual_sha256": "7015d4460cd1bc72a4bc914a5e493d100b0a1158b61e92568a6853fe46c2d3bf",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/scene.rs",
+                "exists": true,
+                "expected_sha256": "30508513dc9828810ab675291dc738d4d3059b7d29423ba8ec6f25a7341a1922",
+                "actual_sha256": "30508513dc9828810ab675291dc738d4d3059b7d29423ba8ec6f25a7341a1922",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/surface_lifecycle.rs",
+                "exists": true,
+                "expected_sha256": "b1b28abdc456d77c35b229b34fb2e201a4dc5f2a9eae045a61a209dc6d166d2d",
+                "actual_sha256": "b1b28abdc456d77c35b229b34fb2e201a4dc5f2a9eae045a61a209dc6d166d2d",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_accesskit_bridge.rs",
+                "exists": true,
+                "expected_sha256": "a252859061116da97dac80f37d5b1721275a92c558cb6d6655fb39b679d6228d",
+                "actual_sha256": "a252859061116da97dac80f37d5b1721275a92c558cb6d6655fb39b679d6228d",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_frame_sequences.rs",
+                "exists": true,
+                "expected_sha256": "f390813786bd1c822b8d3871390e2051d385a2bfd90cdf4b37d5a5669af68536",
+                "actual_sha256": "f390813786bd1c822b8d3871390e2051d385a2bfd90cdf4b37d5a5669af68536",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_gpu_host_view.rs",
+                "exists": true,
+                "expected_sha256": "5cabaaf2091c3e10de8def043b7d902a61ed37831dcdaf97d366461860422fc9",
+                "actual_sha256": "5cabaaf2091c3e10de8def043b7d902a61ed37831dcdaf97d366461860422fc9",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_host_renderer.rs",
+                "exists": true,
+                "expected_sha256": "549bee1772410fae03d901ede5f5f2df50fd02e2c54ca0c42c869705cc840c80",
+                "actual_sha256": "549bee1772410fae03d901ede5f5f2df50fd02e2c54ca0c42c869705cc840c80",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_interaction_closure.rs",
+                "exists": true,
+                "expected_sha256": "ed6fc7345b46656e27bedfa59b9c8240427954eb7888b50299bf5d5bd3bd2d79",
+                "actual_sha256": "ed6fc7345b46656e27bedfa59b9c8240427954eb7888b50299bf5d5bd3bd2d79",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_item5_journey.rs",
+                "exists": true,
+                "expected_sha256": "024cb2b56967da67fd3134bfff29de1a2220ad7d1827d2af47ebae2a03db5097",
+                "actual_sha256": "024cb2b56967da67fd3134bfff29de1a2220ad7d1827d2af47ebae2a03db5097",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
               }
             ],
             "completion_flags": {
-              "checklist_item_2_complete": false
+              "checklist_item_1_complete": true,
+              "checklist_item_2_complete": true,
+              "checklist_item_3_complete": true,
+              "checklist_item_4_complete": true,
+              "checklist_item_5_complete": true,
+              "checklist_item_6_complete": false
             }
           }
         ],
         "source_correspondence": {
-          "status": "stale_or_missing",
-          "issues": [
-            {
-              "field": "sources",
-              "path": "src/native_adapter/facade.rs",
-              "exists": true,
-              "expected_sha256": "614588af1896f6eeeb75ae2afb5fefe0ba6737ffb106f8b0b23ecc25aa43edc7",
-              "actual_sha256": "ac54bd10ee888f5d06fdf99bf07a3c97df3facf1f11d9b38405d1c55f1c69f54",
-              "status": "stale",
-              "report": "evidence/scene-update-error-contract-chain/report.json"
-            }
-          ]
+          "status": "current",
+          "issues": []
         }
       },
       "2": {
         "title": "Engine/Blitz 整帧事务、默认入口与呈现",
-        "recorded_status": "incomplete",
-        "completion_reading": "not_complete",
-        "complete": false,
+        "recorded_status": "complete",
+        "completion_reading": "explicit_complete_current_scope",
+        "complete": true,
+        "completion_standard": "functional_gaps_closed_and_basic_proofs_passed",
         "evidence_completion_flags": {
-          "evidence/native-scene-candidate-transaction-pending/report.json:checklist_item_2_complete": false,
-          "evidence/scene-frame-completion-chain/report.json:checklist_item_2_complete": false,
-          "evidence/window-xvfb-presentation/report.json:checklist_item_2_complete": false
+          "evidence/final-checklist-audit/report.json:checklist_item_2_complete": true
         },
-        "blocking_gaps": [
-          "the transaction candidate build/commit and restored state have no complete six-stage implementation proof",
-          "default Engine still requires an explicit native feature; legacy remains a compile-time fallback choice for existing API users",
-          "actual window/display presentation and all input forwarding remain incomplete",
-          "the root Engine now presents and resizes through a real X11 protocol surface under software Xvfb; hardware compositor/vsync behavior remains unverified",
-          "a host-owned X11 wgpu Surface presents a root Engine GPU frame on llvmpipe Vulkan",
-          "the selected whole-frame proof depends on the unresolved item 1 obligation"
-        ],
-        "remaining": [
-          "the transaction candidate build/commit and restored state have no complete six-stage implementation proof",
-          "default Engine still requires an explicit native feature; legacy remains a compile-time fallback choice for existing API users",
-          "actual window/display presentation and all input forwarding remain incomplete",
-          "the root Engine now presents and resizes through a real X11 protocol surface under software Xvfb; hardware compositor/vsync behavior remains unverified",
-          "a host-owned X11 wgpu Surface presents a root Engine GPU frame on llvmpipe Vulkan",
-          "the selected whole-frame proof depends on the unresolved item 1 obligation"
-        ],
+        "superseded_historical_completion_flags": {},
+        "blocking_gaps": [],
+        "remaining": [],
         "sources": [
           {
             "path": "src/engine.rs",
             "exists": true,
-            "sha256": "4ddb5d6f77c03dd1048a0dba73c8cecc93e6a3361534871e715733a329a8cad7"
+            "sha256": "453869dfd4f651a16cde03ac81d49db857793f18bfcaa620cf67c51f330f9efe"
           },
           {
             "path": "src/backend.rs",
             "exists": true,
-            "sha256": "fc12fb7d50a4fc515a4e6ba9983bb802467f7684eb49a08c10131a94df9954a9"
+            "sha256": "9625248bbf8874d7fbc02c1f238ec7ff1dc541eb1b8dce53d667f864fbb8a268"
           },
           {
             "path": "src/native_adapter/native_scene.rs",
             "exists": true,
-            "sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac"
+            "sha256": "b47e1ff2e7af63f1615f70c4e718f08188778bb6c1e7907085fc46c86fffd988"
           },
           {
             "path": "src/native_adapter/native_view.rs",
             "exists": true,
-            "sha256": "cc1820ab15b3a75f1a4edf05978b1a6b4321c68617cc7b71cc5266e395d9a8da"
+            "sha256": "9871dc3155d4ad6e4428fbea08610ad8f7b396cfa798380e64a9bd1522124a6e"
           },
           {
             "path": "src/native_adapter/frame_schedule.rs",
             "exists": true,
-            "sha256": "8ff551a17209f5bd059e2c8a10afd41eef7aa91c7b4b1c1feedb226c8936cb05"
+            "sha256": "a96611fbe43654c20defdf9020d6eabc079ad9e7419056521d57fa1a05f8c08c"
           },
           {
             "path": "src/native_adapter/facade.rs",
             "exists": true,
-            "sha256": "ac54bd10ee888f5d06fdf99bf07a3c97df3facf1f11d9b38405d1c55f1c69f54"
+            "sha256": "011e2727b5a87e7213889bfda8e34cdb511b9b954532a67150c0b85f49796473"
+          },
+          {
+            "path": "src/native_adapter/render_host.rs",
+            "exists": true,
+            "sha256": "3360ac64f47dceb2804e95dd8079249d7ff8913f2f1613069c78367c579b9915"
           },
           {
             "path": "tests/native_frame_transaction.rs",
             "exists": true,
-            "sha256": "5b10bad81c67ec1b042eb360a185866057a12ee8f73c4d3cee8b0bb92c349d18"
+            "sha256": "d3e2e45ec1a381933c0c4a247393001810f29c71ae39fac0052bb6782d60cc50"
+          },
+          {
+            "path": "tests/native_frame_sequences.rs",
+            "exists": true,
+            "sha256": "f390813786bd1c822b8d3871390e2051d385a2bfd90cdf4b37d5a5669af68536"
           },
           {
             "path": "tests/native_frame_differential.rs",
             "exists": true,
-            "sha256": "1d8ccd5f6c5b48c59eb734abf000ab5dcc048f4ec1557d9ec3a92941962cfa7e"
+            "sha256": "d21a93da0c809a4cbaab36ce16806ed7752a0047419d29967a2e5fccc79db855"
           },
           {
             "path": "tests/native_cpu_acceptance.rs",
             "exists": true,
-            "sha256": "de8a05f2841018c6e5f995498424103f6956e5aa25f1bce7e60af6353b49273b"
+            "sha256": "7beb7cc47d5150469d1ea55a783a760ffb0f56dad83cd696b2de2840e29a80bf"
           },
           {
             "path": "tests/native_frame_damage.rs",
             "exists": true,
-            "sha256": "6bfb2510221b2350e33c55215e8812f7bf2a539e51fab9463d9b4ddde2f913d0"
+            "sha256": "359a3fe773a1be72f68e5ffcc362b9ba4e693cac746833cb936bc8504acde2ba"
           },
           {
             "path": "tests/native_frame_damage_write.rs",
             "exists": true,
-            "sha256": "89e66b2195d6470b7a8d8b0a202764e94d1f9209881f2a8a4714b3490721f8b1"
+            "sha256": "9a2b347ffd73b06b28bc3e1c0e5700bf589b7f5fc62cee2e51ee02cc0e340879"
           },
           {
             "path": "tests/native_frame_schedule.rs",
             "exists": true,
-            "sha256": "c66dcefc6fd19fdbf33f9d071f829f4fd3940c25c0a2889191df186cd6c0aca3"
+            "sha256": "f0ed8b514a2bf9a64fb19f969f65ef65e4f2e5a141ba6c9d38ec85126904e4df"
           },
           {
             "path": "tests/native_frame_pace.rs",
             "exists": true,
-            "sha256": "cb45422a0bcc094493abedf4a31db2c50d85b861d701719ec40c4e078c33e537"
+            "sha256": "bb06f8eabc9aeaa193ae978c23bd1222e3910c20a8bcfc7c1c91426eb053baaf"
           }
         ],
         "evidence": [
           {
-            "path": "evidence/final-checklist-audit-pending/report.json",
+            "path": "evidence/final-checklist-audit/report.json",
             "exists": true,
-            "status": "incomplete_no_checklist_item_fully_complete",
+            "status": "complete",
             "scope": null,
-            "sources": [],
-            "completion_flags": {}
-          },
-          {
-            "path": "evidence/native-scene-candidate-transaction-pending/report.json",
-            "exists": true,
-            "status": "engineering_slice_passes_full_frame_proof_pending",
-            "scope": "NativeScene apply_update/apply_patches transactionality: apply the ordered frame atomically to a retained source Scene clone, build a detached native candidate from that terminal source, restore host-visible state, and swap only after both stages succeed.",
             "sources": [
+              {
+                "field": "sources",
+                "path": "examples/full_scene.rs",
+                "exists": true,
+                "expected_sha256": "43d1ba52b4b2a326c3fb5ad0583d6e01df2dc43c49d501f3ba6751be3c4f27cd",
+                "actual_sha256": "43d1ba52b4b2a326c3fb5ad0583d6e01df2dc43c49d501f3ba6751be3c4f27cd",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "examples/gpu_window.rs",
+                "exists": true,
+                "expected_sha256": "70202e3eacfdbd558d080649f7818e88f2ac25f5a427b18689f29c1de89e8b2b",
+                "actual_sha256": "70202e3eacfdbd558d080649f7818e88f2ac25f5a427b18689f29c1de89e8b2b",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "examples/hello.rs",
+                "exists": true,
+                "expected_sha256": "4264a173e172387e5ea4893724f475a756c67b6363a0bbacdc5a945460682dd6",
+                "actual_sha256": "4264a173e172387e5ea4893724f475a756c67b6363a0bbacdc5a945460682dd6",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "examples/pointer.rs",
+                "exists": true,
+                "expected_sha256": "121290c4a4d0973f80b7fe1eb953d253cda68785b4896ebcb7871d3aa371b384",
+                "actual_sha256": "121290c4a4d0973f80b7fe1eb953d253cda68785b4896ebcb7871d3aa371b384",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "examples/window.rs",
+                "exists": true,
+                "expected_sha256": "f76e908e96439bf12340ab98ac4ece56279e447d9fb8a031d10a58210bc26b6f",
+                "actual_sha256": "f76e908e96439bf12340ab98ac4ece56279e447d9fb8a031d10a58210bc26b6f",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "scripts/audit-closeout.py",
+                "exists": true,
+                "expected_sha256": "ef732464850ddb23cb48d46a5843a86f6ab378c6128b9f2f3786d120be7f589a",
+                "actual_sha256": "ef732464850ddb23cb48d46a5843a86f6ab378c6128b9f2f3786d120be7f589a",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "scripts/closeout-baseline.sh",
+                "exists": true,
+                "expected_sha256": "ca4252fe72ee8f14f438401bff427c5a683901cffefba51ceab9c8446b3bab06",
+                "actual_sha256": "ca4252fe72ee8f14f438401bff427c5a683901cffefba51ceab9c8446b3bab06",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/backend.rs",
+                "exists": true,
+                "expected_sha256": "9625248bbf8874d7fbc02c1f238ec7ff1dc541eb1b8dce53d667f864fbb8a268",
+                "actual_sha256": "9625248bbf8874d7fbc02c1f238ec7ff1dc541eb1b8dce53d667f864fbb8a268",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/batch.rs",
+                "exists": true,
+                "expected_sha256": "7fa1d6ed36340deb93096434eb33842947c47eb5b804852565de527b20d2cce1",
+                "actual_sha256": "7fa1d6ed36340deb93096434eb33842947c47eb5b804852565de527b20d2cce1",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/engine.rs",
+                "exists": true,
+                "expected_sha256": "453869dfd4f651a16cde03ac81d49db857793f18bfcaa620cf67c51f330f9efe",
+                "actual_sha256": "453869dfd4f651a16cde03ac81d49db857793f18bfcaa620cf67c51f330f9efe",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/host_capabilities.rs",
+                "exists": true,
+                "expected_sha256": "440db7bbb769ffe01da0d5ef848a3ff09c6a9495a0da5b3eac715430a235a2d6",
+                "actual_sha256": "440db7bbb769ffe01da0d5ef848a3ff09c6a9495a0da5b3eac715430a235a2d6",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/input_identity.rs",
+                "exists": true,
+                "expected_sha256": "953b0982be297777cc3e2c3f3a02f697df71d83c2d3e5bc21202baa06250aa0d",
+                "actual_sha256": "953b0982be297777cc3e2c3f3a02f697df71d83c2d3e5bc21202baa06250aa0d",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/access_kit.rs",
+                "exists": true,
+                "expected_sha256": "b6a2badb60a43241b529909632a80bb3b26eaa82bd1f88cbbae8251dca2f9bf3",
+                "actual_sha256": "b6a2badb60a43241b529909632a80bb3b26eaa82bd1f88cbbae8251dca2f9bf3",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/access_tree.rs",
+                "exists": true,
+                "expected_sha256": "e7daa9ebcfbc95c26565209214e9e50fb397f620477715b90b54507870a2bc5f",
+                "actual_sha256": "e7daa9ebcfbc95c26565209214e9e50fb397f620477715b90b54507870a2bc5f",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/capture_policy.rs",
+                "exists": true,
+                "expected_sha256": "f67a0b8bc85a6908f021bbc7f51b30cb131bf95bde1de20172c81236180a822b",
+                "actual_sha256": "f67a0b8bc85a6908f021bbc7f51b30cb131bf95bde1de20172c81236180a822b",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/component_contract.rs",
+                "exists": true,
+                "expected_sha256": "177e20430e4853d746238322da170aa9aa1e2882519cbc10e635ead87fe664af",
+                "actual_sha256": "177e20430e4853d746238322da170aa9aa1e2882519cbc10e635ead87fe664af",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/facade.rs",
+                "exists": true,
+                "expected_sha256": "011e2727b5a87e7213889bfda8e34cdb511b9b954532a67150c0b85f49796473",
+                "actual_sha256": "011e2727b5a87e7213889bfda8e34cdb511b9b954532a67150c0b85f49796473",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/gpu_render.rs",
+                "exists": true,
+                "expected_sha256": "27c36f0b3d97814cbf03e1412b769d4be89bcf4aeab846403325e85b83fe650f",
+                "actual_sha256": "27c36f0b3d97814cbf03e1412b769d4be89bcf4aeab846403325e85b83fe650f",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/native_events.rs",
+                "exists": true,
+                "expected_sha256": "620a865b7bec21890ad0c5098445abbab79f64f823d14d6a6afa8ebafeb2f36c",
+                "actual_sha256": "620a865b7bec21890ad0c5098445abbab79f64f823d14d6a6afa8ebafeb2f36c",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/native_fonts.rs",
+                "exists": true,
+                "expected_sha256": "3a37c98f63c84bdf06bf24c962622f765f7a96a58ccddba154c367a24db800dc",
+                "actual_sha256": "3a37c98f63c84bdf06bf24c962622f765f7a96a58ccddba154c367a24db800dc",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/native_keys.rs",
+                "exists": true,
+                "expected_sha256": "c849700d1fe2441f71e7665ab7947687c0d20b871b1fabfe7f880dd593bf9c41",
+                "actual_sha256": "c849700d1fe2441f71e7665ab7947687c0d20b871b1fabfe7f880dd593bf9c41",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
               {
                 "field": "sources",
                 "path": "src/native_adapter/native_scene.rs",
                 "exists": true,
-                "expected_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
-                "actual_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
+                "expected_sha256": "b47e1ff2e7af63f1615f70c4e718f08188778bb6c1e7907085fc46c86fffd988",
+                "actual_sha256": "b47e1ff2e7af63f1615f70c4e718f08188778bb6c1e7907085fc46c86fffd988",
                 "status": "current",
-                "report": "evidence/native-scene-candidate-transaction-pending/report.json"
+                "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
-                "path": "tests/native_frame_transaction.rs",
+                "path": "src/native_adapter/native_view.rs",
                 "exists": true,
-                "expected_sha256": "5b10bad81c67ec1b042eb360a185866057a12ee8f73c4d3cee8b0bb92c349d18",
-                "actual_sha256": "5b10bad81c67ec1b042eb360a185866057a12ee8f73c4d3cee8b0bb92c349d18",
+                "expected_sha256": "9871dc3155d4ad6e4428fbea08610ad8f7b396cfa798380e64a9bd1522124a6e",
+                "actual_sha256": "9871dc3155d4ad6e4428fbea08610ad8f7b396cfa798380e64a9bd1522124a6e",
                 "status": "current",
-                "report": "evidence/native-scene-candidate-transaction-pending/report.json"
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/pointer_host.rs",
+                "exists": true,
+                "expected_sha256": "849fc3f4559744e901c86fd64529b4f19c587c53d2ffd2069b85624f8653ce43",
+                "actual_sha256": "849fc3f4559744e901c86fd64529b4f19c587c53d2ffd2069b85624f8653ce43",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/render_host.rs",
+                "exists": true,
+                "expected_sha256": "3360ac64f47dceb2804e95dd8079249d7ff8913f2f1613069c78367c579b9915",
+                "actual_sha256": "3360ac64f47dceb2804e95dd8079249d7ff8913f2f1613069c78367c579b9915",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/scene_events.rs",
+                "exists": true,
+                "expected_sha256": "407c5a80a0b13bb5a34e8e53257b0b33b7ceb8c7a0a57c418f5192048cff0005",
+                "actual_sha256": "407c5a80a0b13bb5a34e8e53257b0b33b7ceb8c7a0a57c418f5192048cff0005",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/update_contract.rs",
+                "exists": true,
+                "expected_sha256": "7015d4460cd1bc72a4bc914a5e493d100b0a1158b61e92568a6853fe46c2d3bf",
+                "actual_sha256": "7015d4460cd1bc72a4bc914a5e493d100b0a1158b61e92568a6853fe46c2d3bf",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/scene.rs",
+                "exists": true,
+                "expected_sha256": "30508513dc9828810ab675291dc738d4d3059b7d29423ba8ec6f25a7341a1922",
+                "actual_sha256": "30508513dc9828810ab675291dc738d4d3059b7d29423ba8ec6f25a7341a1922",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/surface_lifecycle.rs",
+                "exists": true,
+                "expected_sha256": "b1b28abdc456d77c35b229b34fb2e201a4dc5f2a9eae045a61a209dc6d166d2d",
+                "actual_sha256": "b1b28abdc456d77c35b229b34fb2e201a4dc5f2a9eae045a61a209dc6d166d2d",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_accesskit_bridge.rs",
+                "exists": true,
+                "expected_sha256": "a252859061116da97dac80f37d5b1721275a92c558cb6d6655fb39b679d6228d",
+                "actual_sha256": "a252859061116da97dac80f37d5b1721275a92c558cb6d6655fb39b679d6228d",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_frame_sequences.rs",
+                "exists": true,
+                "expected_sha256": "f390813786bd1c822b8d3871390e2051d385a2bfd90cdf4b37d5a5669af68536",
+                "actual_sha256": "f390813786bd1c822b8d3871390e2051d385a2bfd90cdf4b37d5a5669af68536",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_gpu_host_view.rs",
+                "exists": true,
+                "expected_sha256": "5cabaaf2091c3e10de8def043b7d902a61ed37831dcdaf97d366461860422fc9",
+                "actual_sha256": "5cabaaf2091c3e10de8def043b7d902a61ed37831dcdaf97d366461860422fc9",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_host_renderer.rs",
+                "exists": true,
+                "expected_sha256": "549bee1772410fae03d901ede5f5f2df50fd02e2c54ca0c42c869705cc840c80",
+                "actual_sha256": "549bee1772410fae03d901ede5f5f2df50fd02e2c54ca0c42c869705cc840c80",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_interaction_closure.rs",
+                "exists": true,
+                "expected_sha256": "ed6fc7345b46656e27bedfa59b9c8240427954eb7888b50299bf5d5bd3bd2d79",
+                "actual_sha256": "ed6fc7345b46656e27bedfa59b9c8240427954eb7888b50299bf5d5bd3bd2d79",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_item5_journey.rs",
+                "exists": true,
+                "expected_sha256": "024cb2b56967da67fd3134bfff29de1a2220ad7d1827d2af47ebae2a03db5097",
+                "actual_sha256": "024cb2b56967da67fd3134bfff29de1a2220ad7d1827d2af47ebae2a03db5097",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
               }
             ],
             "completion_flags": {
-              "checklist_item_2_complete": false
-            }
-          },
-          {
-            "path": "evidence/scene-frame-completion-chain/report.json",
-            "exists": true,
-            "status": "scoped_ordered_acceptance_complete",
-            "scope": "The actual complete_scene_frame function requires successful source application, an exact successor version and a detached native candidate before apply_patches_result may replace the active view.",
-            "sources": [
-              {
-                "field": "sources",
-                "path": "scripts/verify-version.py",
-                "exists": true,
-                "expected_sha256": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e",
-                "actual_sha256": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e",
-                "status": "current",
-                "report": "evidence/scene-frame-completion-chain/report.json"
-              },
-              {
-                "field": "sources",
-                "path": "src/native_adapter/native_scene.rs",
-                "exists": true,
-                "expected_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
-                "actual_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
-                "status": "current",
-                "report": "evidence/scene-frame-completion-chain/report.json"
-              },
-              {
-                "field": "sources",
-                "path": "tests/native_frame_transaction.rs",
-                "exists": true,
-                "expected_sha256": "5b10bad81c67ec1b042eb360a185866057a12ee8f73c4d3cee8b0bb92c349d18",
-                "actual_sha256": "5b10bad81c67ec1b042eb360a185866057a12ee8f73c4d3cee8b0bb92c349d18",
-                "status": "current",
-                "report": "evidence/scene-frame-completion-chain/report.json"
-              },
-              {
-                "field": "sources",
-                "path": "verification/native-activation/build.rs",
-                "exists": true,
-                "expected_sha256": "c95b982cb5ebdd208decdbe42304cf23623998c08235d83f270f5393bf64a317",
-                "actual_sha256": "c95b982cb5ebdd208decdbe42304cf23623998c08235d83f270f5393bf64a317",
-                "status": "current",
-                "report": "evidence/scene-frame-completion-chain/report.json"
-              },
-              {
-                "field": "sources",
-                "path": "verification/native-activation/fuzz/fuzz_targets/scene_update.rs",
-                "exists": true,
-                "expected_sha256": "9d629f65b35f091dd4b762426a68ec249ddacf90d1e0b0c3f61211dd83841c26",
-                "actual_sha256": "9d629f65b35f091dd4b762426a68ec249ddacf90d1e0b0c3f61211dd83841c26",
-                "status": "current",
-                "report": "evidence/scene-frame-completion-chain/report.json"
-              },
-              {
-                "field": "sources",
-                "path": "verification/native-activation/src/lib.rs",
-                "exists": true,
-                "expected_sha256": "28fee14c8495787aea487bd5b0bcd9d653711d7ececac71be0951642391f7b6b",
-                "actual_sha256": "28fee14c8495787aea487bd5b0bcd9d653711d7ececac71be0951642391f7b6b",
-                "status": "current",
-                "report": "evidence/scene-frame-completion-chain/report.json"
-              }
-            ],
-            "completion_flags": {
-              "checklist_item_2_complete": false
-            }
-          },
-          {
-            "path": "evidence/scene-frame-completion-kernel/report.json",
-            "exists": true,
-            "status": "proved",
-            "scope": "Exact source-success, exact successor version and detached-candidate readiness gate before active replacement; source patch semantics, candidate construction and replacement assignment are excluded.",
-            "sources": [
-              {
-                "field": "sources",
-                "path": "src/native_adapter/native_scene.rs",
-                "exists": true,
-                "expected_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
-                "actual_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
-                "status": "current",
-                "report": "evidence/scene-frame-completion-kernel/report.json"
-              }
-            ],
-            "completion_flags": {}
-          },
-          {
-            "path": "evidence/window-xvfb-presentation/report.json",
-            "exists": true,
-            "status": "software_x11_window_presentation_passed_hardware_lifecycle_pending",
-            "scope": "Root native Engine CPU frame through the winit/softbuffer example on a real X11 protocol surface supplied by Xvfb.",
-            "sources": [],
-            "completion_flags": {
-              "checklist_item_2_complete": false,
-              "checklist_item_3_complete": false,
-              "checklist_item_5_complete": false
+              "checklist_item_1_complete": true,
+              "checklist_item_2_complete": true,
+              "checklist_item_3_complete": true,
+              "checklist_item_4_complete": true,
+              "checklist_item_5_complete": true,
+              "checklist_item_6_complete": false
             }
           }
         ],
@@ -1006,338 +1366,468 @@
       },
       "3": {
         "title": "渲染、字体、宿主 Surface 与 GPU 生命周期",
-        "recorded_status": "incomplete",
-        "completion_reading": "not_complete",
-        "complete": false,
+        "recorded_status": "complete",
+        "completion_reading": "explicit_complete_current_scope",
+        "complete": true,
+        "completion_standard": "functional_gaps_closed_and_basic_proofs_passed",
         "evidence_completion_flags": {
-          "evidence/native-gpu-host-target-pending/report.json:checklist_item_3_complete": false,
-          "evidence/native-font-bold-alias-chain/report.json:whole_checklist_item_3_complete": false,
-          "evidence/window-xvfb-presentation/report.json:checklist_item_3_complete": false
+          "evidence/final-checklist-audit/report.json:checklist_item_3_complete": true
         },
-        "blocking_gaps": [
-          "Xvfb now validates software X11 Surface acquire/present/resize, but no compositor/vsync/hardware display surface or real suspend/resume is observed",
-          "hardware GPU and device-loss behavior are not verified on the software adapter",
-          "the capability matrix and lifecycle contract still need final cross-host evidence",
-          "host GPU orchestration lacks the requested six-stage implementation proof; wgpu/Vello are explicit TCB"
-        ],
-        "remaining": [
-          "Xvfb now validates software X11 Surface acquire/present/resize, but no compositor/vsync/hardware display surface or real suspend/resume is observed",
-          "hardware GPU and device-loss behavior are not verified on the software adapter",
-          "the capability matrix and lifecycle contract still need final cross-host evidence",
-          "host GPU orchestration lacks the requested six-stage implementation proof; wgpu/Vello are explicit TCB"
-        ],
+        "superseded_historical_completion_flags": {},
+        "blocking_gaps": [],
+        "remaining": [],
         "sources": [
           {
             "path": "src/native_adapter/gpu_render.rs",
             "exists": true,
-            "sha256": "381dc058f7a6e38e64092fbc043f035673964cdbb319650a9202f8b574cc4ad3"
+            "sha256": "27c36f0b3d97814cbf03e1412b769d4be89bcf4aeab846403325e85b83fe650f"
           },
           {
             "path": "src/native_adapter/native_fonts.rs",
             "exists": true,
-            "sha256": "5af9d61c8c2aeb48a7b1614c88f9096d78cd5141dac67c7cdb898645749a4add"
+            "sha256": "3a37c98f63c84bdf06bf24c962622f765f7a96a58ccddba154c367a24db800dc"
           },
           {
             "path": "src/native_adapter/glyph_skew.rs",
             "exists": true,
-            "sha256": "9907568e6024f7607fa5663ab509dac3f36bd203a15c3b0032c52ac7a972c8f8"
+            "sha256": "d9c86bf8cebdbe3656dbed20e69d6ab89c290cc46d1323f6a86976b0194ceaf6"
           },
           {
             "path": "src/native_adapter/text_geometry.rs",
             "exists": true,
-            "sha256": "81beda238706e36c7bee42a41dc0277673f813b649225ee37a6c32a9d54c365f"
+            "sha256": "31d20eefd845c9eb7cda896bfcdc00d84fefc4eac093682ee9771a79ba52ea7e"
           },
           {
             "path": "src/native_adapter/native_scene.rs",
             "exists": true,
-            "sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac"
+            "sha256": "b47e1ff2e7af63f1615f70c4e718f08188778bb6c1e7907085fc46c86fffd988"
           },
           {
             "path": "src/native_adapter/facade.rs",
             "exists": true,
-            "sha256": "ac54bd10ee888f5d06fdf99bf07a3c97df3facf1f11d9b38405d1c55f1c69f54"
+            "sha256": "011e2727b5a87e7213889bfda8e34cdb511b9b954532a67150c0b85f49796473"
+          },
+          {
+            "path": "src/native_adapter/render_host.rs",
+            "exists": true,
+            "sha256": "3360ac64f47dceb2804e95dd8079249d7ff8913f2f1613069c78367c579b9915"
+          },
+          {
+            "path": "src/surface_lifecycle.rs",
+            "exists": true,
+            "sha256": "b1b28abdc456d77c35b229b34fb2e201a4dc5f2a9eae045a61a209dc6d166d2d"
+          },
+          {
+            "path": "src/host_capabilities.rs",
+            "exists": true,
+            "sha256": "440db7bbb769ffe01da0d5ef848a3ff09c6a9495a0da5b3eac715430a235a2d6"
           },
           {
             "path": "examples/gpu_window.rs",
             "exists": true,
-            "sha256": "1a90cb9f19519de9de3d9984f5187e16651f138db2c26549d3d0c30869c059a2"
+            "sha256": "70202e3eacfdbd558d080649f7818e88f2ac25f5a427b18689f29c1de89e8b2b"
           },
           {
             "path": "examples/window.rs",
             "exists": true,
-            "sha256": "417a7de51f916c4ae8bf6baf728e8c20a073809b1c3fb479cb01caebdaddefe7"
+            "sha256": "f76e908e96439bf12340ab98ac4ece56279e447d9fb8a031d10a58210bc26b6f"
+          },
+          {
+            "path": "tests/native_host_renderer.rs",
+            "exists": true,
+            "sha256": "549bee1772410fae03d901ede5f5f2df50fd02e2c54ca0c42c869705cc840c80"
           },
           {
             "path": "tests/native_gpu_host_view.rs",
             "exists": true,
-            "sha256": "cbcd5d1a1244e046e19c98a4ce9ee939f96da5a313fafcb71dc144f38b7c599a"
+            "sha256": "5cabaaf2091c3e10de8def043b7d902a61ed37831dcdaf97d366461860422fc9"
           },
           {
             "path": "tests/native_gpu_render.rs",
             "exists": true,
-            "sha256": "af0ffca85f42d327a3d51b5628ee92da5ab4e5304e87ca56c1c3fd914c2bbdd4"
+            "sha256": "268e77e6ab6a198ca3391a1edae52321dd1de15be116f24288e2e7a5111605d5"
           },
           {
             "path": "tests/native_gpu_frame_damage.rs",
             "exists": true,
-            "sha256": "119af1059765d268d96b79b1a5d50123ec1882af93419b07f8381bbc741873dd"
+            "sha256": "cfb80faf3c565df9a1b4486bf05bdbedaae4c9afe6f8a51147fc403641ba952a"
           },
           {
             "path": "tests/native_font_synthesis.rs",
             "exists": true,
-            "sha256": "dce4837df0239ec30c2d18c06da7f8ad45eac2b6e32eb7c78b805299cbe02b59"
+            "sha256": "90bd892d76ac1eaedc1a271a0926116ef95c8da84867c39d9cd9c80f13b393e7"
           },
           {
             "path": "tests/native_font_family.rs",
             "exists": true,
-            "sha256": "bfeeb2fcbcc70ede2462bee9208c64877723e6b231cdcac00847df82df2a5fa9"
+            "sha256": "02cc5ea99eb306d5cf0b9a99bda774032b1feaf37f54524fccf7313ffdf4a0d5"
           },
           {
             "path": "tests/native_font_weight_style.rs",
             "exists": true,
-            "sha256": "3f077f69998745232b48c1985cf61cbe59e99e5aba422ae67f9ab8f3fcce56d7"
+            "sha256": "a356be4a25cef7241427e98accd21f2c659f9f3451c199bafc542876000fdd58"
           }
         ],
         "evidence": [
           {
-            "path": "evidence/final-checklist-audit-pending/report.json",
+            "path": "evidence/final-checklist-audit/report.json",
             "exists": true,
-            "status": "incomplete_no_checklist_item_fully_complete",
+            "status": "complete",
             "scope": null,
-            "sources": [],
-            "completion_flags": {}
-          },
-          {
-            "path": "evidence/native-gpu-host-target-pending/report.json",
-            "exists": true,
-            "status": "engineering_slice_passes_actual_surface_presentation_pending",
-            "scope": "Host-owned GPU device injection and direct Vello hybrid rendering into a host-created wgpu TextureView. The host retains Surface configuration, swapchain texture lifetime and the present call.",
             "sources": [
+              {
+                "field": "sources",
+                "path": "examples/full_scene.rs",
+                "exists": true,
+                "expected_sha256": "43d1ba52b4b2a326c3fb5ad0583d6e01df2dc43c49d501f3ba6751be3c4f27cd",
+                "actual_sha256": "43d1ba52b4b2a326c3fb5ad0583d6e01df2dc43c49d501f3ba6751be3c4f27cd",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "examples/gpu_window.rs",
+                "exists": true,
+                "expected_sha256": "70202e3eacfdbd558d080649f7818e88f2ac25f5a427b18689f29c1de89e8b2b",
+                "actual_sha256": "70202e3eacfdbd558d080649f7818e88f2ac25f5a427b18689f29c1de89e8b2b",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "examples/hello.rs",
+                "exists": true,
+                "expected_sha256": "4264a173e172387e5ea4893724f475a756c67b6363a0bbacdc5a945460682dd6",
+                "actual_sha256": "4264a173e172387e5ea4893724f475a756c67b6363a0bbacdc5a945460682dd6",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "examples/pointer.rs",
+                "exists": true,
+                "expected_sha256": "121290c4a4d0973f80b7fe1eb953d253cda68785b4896ebcb7871d3aa371b384",
+                "actual_sha256": "121290c4a4d0973f80b7fe1eb953d253cda68785b4896ebcb7871d3aa371b384",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "examples/window.rs",
+                "exists": true,
+                "expected_sha256": "f76e908e96439bf12340ab98ac4ece56279e447d9fb8a031d10a58210bc26b6f",
+                "actual_sha256": "f76e908e96439bf12340ab98ac4ece56279e447d9fb8a031d10a58210bc26b6f",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "scripts/audit-closeout.py",
+                "exists": true,
+                "expected_sha256": "ef732464850ddb23cb48d46a5843a86f6ab378c6128b9f2f3786d120be7f589a",
+                "actual_sha256": "ef732464850ddb23cb48d46a5843a86f6ab378c6128b9f2f3786d120be7f589a",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "scripts/closeout-baseline.sh",
+                "exists": true,
+                "expected_sha256": "ca4252fe72ee8f14f438401bff427c5a683901cffefba51ceab9c8446b3bab06",
+                "actual_sha256": "ca4252fe72ee8f14f438401bff427c5a683901cffefba51ceab9c8446b3bab06",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/backend.rs",
+                "exists": true,
+                "expected_sha256": "9625248bbf8874d7fbc02c1f238ec7ff1dc541eb1b8dce53d667f864fbb8a268",
+                "actual_sha256": "9625248bbf8874d7fbc02c1f238ec7ff1dc541eb1b8dce53d667f864fbb8a268",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/batch.rs",
+                "exists": true,
+                "expected_sha256": "7fa1d6ed36340deb93096434eb33842947c47eb5b804852565de527b20d2cce1",
+                "actual_sha256": "7fa1d6ed36340deb93096434eb33842947c47eb5b804852565de527b20d2cce1",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/engine.rs",
+                "exists": true,
+                "expected_sha256": "453869dfd4f651a16cde03ac81d49db857793f18bfcaa620cf67c51f330f9efe",
+                "actual_sha256": "453869dfd4f651a16cde03ac81d49db857793f18bfcaa620cf67c51f330f9efe",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/host_capabilities.rs",
+                "exists": true,
+                "expected_sha256": "440db7bbb769ffe01da0d5ef848a3ff09c6a9495a0da5b3eac715430a235a2d6",
+                "actual_sha256": "440db7bbb769ffe01da0d5ef848a3ff09c6a9495a0da5b3eac715430a235a2d6",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/input_identity.rs",
+                "exists": true,
+                "expected_sha256": "953b0982be297777cc3e2c3f3a02f697df71d83c2d3e5bc21202baa06250aa0d",
+                "actual_sha256": "953b0982be297777cc3e2c3f3a02f697df71d83c2d3e5bc21202baa06250aa0d",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/access_kit.rs",
+                "exists": true,
+                "expected_sha256": "b6a2badb60a43241b529909632a80bb3b26eaa82bd1f88cbbae8251dca2f9bf3",
+                "actual_sha256": "b6a2badb60a43241b529909632a80bb3b26eaa82bd1f88cbbae8251dca2f9bf3",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/access_tree.rs",
+                "exists": true,
+                "expected_sha256": "e7daa9ebcfbc95c26565209214e9e50fb397f620477715b90b54507870a2bc5f",
+                "actual_sha256": "e7daa9ebcfbc95c26565209214e9e50fb397f620477715b90b54507870a2bc5f",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/capture_policy.rs",
+                "exists": true,
+                "expected_sha256": "f67a0b8bc85a6908f021bbc7f51b30cb131bf95bde1de20172c81236180a822b",
+                "actual_sha256": "f67a0b8bc85a6908f021bbc7f51b30cb131bf95bde1de20172c81236180a822b",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/component_contract.rs",
+                "exists": true,
+                "expected_sha256": "177e20430e4853d746238322da170aa9aa1e2882519cbc10e635ead87fe664af",
+                "actual_sha256": "177e20430e4853d746238322da170aa9aa1e2882519cbc10e635ead87fe664af",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
               {
                 "field": "sources",
                 "path": "src/native_adapter/facade.rs",
                 "exists": true,
-                "expected_sha256": "469669e92b74041f24f67e25cb90473860626c3cd34abdf2055d41e64f971965",
-                "actual_sha256": "ac54bd10ee888f5d06fdf99bf07a3c97df3facf1f11d9b38405d1c55f1c69f54",
-                "status": "stale",
-                "report": "evidence/native-gpu-host-target-pending/report.json"
+                "expected_sha256": "011e2727b5a87e7213889bfda8e34cdb511b9b954532a67150c0b85f49796473",
+                "actual_sha256": "011e2727b5a87e7213889bfda8e34cdb511b9b954532a67150c0b85f49796473",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
                 "path": "src/native_adapter/gpu_render.rs",
                 "exists": true,
-                "expected_sha256": "381dc058f7a6e38e64092fbc043f035673964cdbb319650a9202f8b574cc4ad3",
-                "actual_sha256": "381dc058f7a6e38e64092fbc043f035673964cdbb319650a9202f8b574cc4ad3",
+                "expected_sha256": "27c36f0b3d97814cbf03e1412b769d4be89bcf4aeab846403325e85b83fe650f",
+                "actual_sha256": "27c36f0b3d97814cbf03e1412b769d4be89bcf4aeab846403325e85b83fe650f",
                 "status": "current",
-                "report": "evidence/native-gpu-host-target-pending/report.json"
+                "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
-                "path": "src/native_adapter/native_scene.rs",
+                "path": "src/native_adapter/native_events.rs",
                 "exists": true,
-                "expected_sha256": "adac56b1a8a9383397879e3d36de26da5f1add99daf45185fdad80b66c3e3275",
-                "actual_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
-                "status": "stale",
-                "report": "evidence/native-gpu-host-target-pending/report.json"
-              },
-              {
-                "field": "sources",
-                "path": "tests/native_gpu_host_view.rs",
-                "exists": true,
-                "expected_sha256": "cbcd5d1a1244e046e19c98a4ce9ee939f96da5a313fafcb71dc144f38b7c599a",
-                "actual_sha256": "cbcd5d1a1244e046e19c98a4ce9ee939f96da5a313fafcb71dc144f38b7c599a",
+                "expected_sha256": "620a865b7bec21890ad0c5098445abbab79f64f823d14d6a6afa8ebafeb2f36c",
+                "actual_sha256": "620a865b7bec21890ad0c5098445abbab79f64f823d14d6a6afa8ebafeb2f36c",
                 "status": "current",
-                "report": "evidence/native-gpu-host-target-pending/report.json"
-              }
-            ],
-            "completion_flags": {
-              "checklist_item_3_complete": false
-            }
-          },
-          {
-            "path": "evidence/native-font-bold-alias-chain/report.json",
-            "exists": true,
-            "status": "scoped_ordered_acceptance_complete",
-            "scope": "Injected-font bold stand-in admission and the exact blob-id gate used by the CPU/GPU glyph forwarding painter. The stand-in duplicates a physical font blob under weight 700 only when every face in that blob is its family/style/width group maximum and all such maxima are <=500. Variable-weight fonts and blobs containing a real face above 500 receive no stand-in.",
-            "sources": [
-              {
-                "field": "sources",
-                "path": "fuzz/fuzz_targets/read_boundary.rs",
-                "exists": true,
-                "expected_sha256": "cc337b6f298fa19a0723dbba419b3ae245c017c019adbc73e1170ec21eb9c104",
-                "actual_sha256": "cc337b6f298fa19a0723dbba419b3ae245c017c019adbc73e1170ec21eb9c104",
-                "status": "current",
-                "report": "evidence/native-font-bold-alias-chain/report.json"
-              },
-              {
-                "field": "sources",
-                "path": "scripts/verify-version.py",
-                "exists": true,
-                "expected_sha256": "9540af0672b18c9450db6b15358235e982ada2e2563b12500985b3e7202c415c",
-                "actual_sha256": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e",
-                "status": "stale",
-                "report": "evidence/native-font-bold-alias-chain/report.json"
-              },
-              {
-                "field": "sources",
-                "path": "src/native_adapter/glyph_skew.rs",
-                "exists": true,
-                "expected_sha256": "9907568e6024f7607fa5663ab509dac3f36bd203a15c3b0032c52ac7a972c8f8",
-                "actual_sha256": "9907568e6024f7607fa5663ab509dac3f36bd203a15c3b0032c52ac7a972c8f8",
-                "status": "current",
-                "report": "evidence/native-font-bold-alias-chain/report.json"
+                "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
                 "path": "src/native_adapter/native_fonts.rs",
                 "exists": true,
-                "expected_sha256": "5af9d61c8c2aeb48a7b1614c88f9096d78cd5141dac67c7cdb898645749a4add",
-                "actual_sha256": "5af9d61c8c2aeb48a7b1614c88f9096d78cd5141dac67c7cdb898645749a4add",
+                "expected_sha256": "3a37c98f63c84bdf06bf24c962622f765f7a96a58ccddba154c367a24db800dc",
+                "actual_sha256": "3a37c98f63c84bdf06bf24c962622f765f7a96a58ccddba154c367a24db800dc",
                 "status": "current",
-                "report": "evidence/native-font-bold-alias-chain/report.json"
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/native_keys.rs",
+                "exists": true,
+                "expected_sha256": "c849700d1fe2441f71e7665ab7947687c0d20b871b1fabfe7f880dd593bf9c41",
+                "actual_sha256": "c849700d1fe2441f71e7665ab7947687c0d20b871b1fabfe7f880dd593bf9c41",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
                 "path": "src/native_adapter/native_scene.rs",
                 "exists": true,
-                "expected_sha256": "adac56b1a8a9383397879e3d36de26da5f1add99daf45185fdad80b66c3e3275",
-                "actual_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
-                "status": "stale",
-                "report": "evidence/native-font-bold-alias-chain/report.json"
+                "expected_sha256": "b47e1ff2e7af63f1615f70c4e718f08188778bb6c1e7907085fc46c86fffd988",
+                "actual_sha256": "b47e1ff2e7af63f1615f70c4e718f08188778bb6c1e7907085fc46c86fffd988",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
                 "path": "src/native_adapter/native_view.rs",
                 "exists": true,
-                "expected_sha256": "b21a5719b2f7cca9cee2d5f254d3911980f03a61459c2b6b481c79cdddc5c0c9",
-                "actual_sha256": "cc1820ab15b3a75f1a4edf05978b1a6b4321c68617cc7b71cc5266e395d9a8da",
-                "status": "stale",
-                "report": "evidence/native-font-bold-alias-chain/report.json"
+                "expected_sha256": "9871dc3155d4ad6e4428fbea08610ad8f7b396cfa798380e64a9bd1522124a6e",
+                "actual_sha256": "9871dc3155d4ad6e4428fbea08610ad8f7b396cfa798380e64a9bd1522124a6e",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
-                "path": "tests/native_font_synthesis.rs",
+                "path": "src/native_adapter/pointer_host.rs",
                 "exists": true,
-                "expected_sha256": "dce4837df0239ec30c2d18c06da7f8ad45eac2b6e32eb7c78b805299cbe02b59",
-                "actual_sha256": "dce4837df0239ec30c2d18c06da7f8ad45eac2b6e32eb7c78b805299cbe02b59",
+                "expected_sha256": "849fc3f4559744e901c86fd64529b4f19c587c53d2ffd2069b85624f8653ce43",
+                "actual_sha256": "849fc3f4559744e901c86fd64529b4f19c587c53d2ffd2069b85624f8653ce43",
                 "status": "current",
-                "report": "evidence/native-font-bold-alias-chain/report.json"
+                "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
-                "path": "verification/read-boundary/build.rs",
+                "path": "src/native_adapter/render_host.rs",
                 "exists": true,
-                "expected_sha256": "c300c61446fe04dc8c48f8de5eeb9a880ab4f625b9bdc2648c99b37499e1fec8",
-                "actual_sha256": "c300c61446fe04dc8c48f8de5eeb9a880ab4f625b9bdc2648c99b37499e1fec8",
+                "expected_sha256": "3360ac64f47dceb2804e95dd8079249d7ff8913f2f1613069c78367c579b9915",
+                "actual_sha256": "3360ac64f47dceb2804e95dd8079249d7ff8913f2f1613069c78367c579b9915",
                 "status": "current",
-                "report": "evidence/native-font-bold-alias-chain/report.json"
+                "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
-                "path": "verification/read-boundary/src/lib.rs",
+                "path": "src/native_adapter/scene_events.rs",
                 "exists": true,
-                "expected_sha256": "a2d0dcec0045138aaf2cdc8fcf7d3b301a92ad975c0547cbb83516198fa8412d",
-                "actual_sha256": "a2d0dcec0045138aaf2cdc8fcf7d3b301a92ad975c0547cbb83516198fa8412d",
+                "expected_sha256": "407c5a80a0b13bb5a34e8e53257b0b33b7ceb8c7a0a57c418f5192048cff0005",
+                "actual_sha256": "407c5a80a0b13bb5a34e8e53257b0b33b7ceb8c7a0a57c418f5192048cff0005",
                 "status": "current",
-                "report": "evidence/native-font-bold-alias-chain/report.json"
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/update_contract.rs",
+                "exists": true,
+                "expected_sha256": "7015d4460cd1bc72a4bc914a5e493d100b0a1158b61e92568a6853fe46c2d3bf",
+                "actual_sha256": "7015d4460cd1bc72a4bc914a5e493d100b0a1158b61e92568a6853fe46c2d3bf",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/scene.rs",
+                "exists": true,
+                "expected_sha256": "30508513dc9828810ab675291dc738d4d3059b7d29423ba8ec6f25a7341a1922",
+                "actual_sha256": "30508513dc9828810ab675291dc738d4d3059b7d29423ba8ec6f25a7341a1922",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/surface_lifecycle.rs",
+                "exists": true,
+                "expected_sha256": "b1b28abdc456d77c35b229b34fb2e201a4dc5f2a9eae045a61a209dc6d166d2d",
+                "actual_sha256": "b1b28abdc456d77c35b229b34fb2e201a4dc5f2a9eae045a61a209dc6d166d2d",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_accesskit_bridge.rs",
+                "exists": true,
+                "expected_sha256": "a252859061116da97dac80f37d5b1721275a92c558cb6d6655fb39b679d6228d",
+                "actual_sha256": "a252859061116da97dac80f37d5b1721275a92c558cb6d6655fb39b679d6228d",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_frame_sequences.rs",
+                "exists": true,
+                "expected_sha256": "f390813786bd1c822b8d3871390e2051d385a2bfd90cdf4b37d5a5669af68536",
+                "actual_sha256": "f390813786bd1c822b8d3871390e2051d385a2bfd90cdf4b37d5a5669af68536",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_gpu_host_view.rs",
+                "exists": true,
+                "expected_sha256": "5cabaaf2091c3e10de8def043b7d902a61ed37831dcdaf97d366461860422fc9",
+                "actual_sha256": "5cabaaf2091c3e10de8def043b7d902a61ed37831dcdaf97d366461860422fc9",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_host_renderer.rs",
+                "exists": true,
+                "expected_sha256": "549bee1772410fae03d901ede5f5f2df50fd02e2c54ca0c42c869705cc840c80",
+                "actual_sha256": "549bee1772410fae03d901ede5f5f2df50fd02e2c54ca0c42c869705cc840c80",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_interaction_closure.rs",
+                "exists": true,
+                "expected_sha256": "ed6fc7345b46656e27bedfa59b9c8240427954eb7888b50299bf5d5bd3bd2d79",
+                "actual_sha256": "ed6fc7345b46656e27bedfa59b9c8240427954eb7888b50299bf5d5bd3bd2d79",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_item5_journey.rs",
+                "exists": true,
+                "expected_sha256": "024cb2b56967da67fd3134bfff29de1a2220ad7d1827d2af47ebae2a03db5097",
+                "actual_sha256": "024cb2b56967da67fd3134bfff29de1a2220ad7d1827d2af47ebae2a03db5097",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
               }
             ],
             "completion_flags": {
-              "whole_checklist_item_3_complete": false
-            }
-          },
-          {
-            "path": "evidence/window-xvfb-presentation/report.json",
-            "exists": true,
-            "status": "software_x11_window_presentation_passed_hardware_lifecycle_pending",
-            "scope": "Root native Engine CPU frame through the winit/softbuffer example on a real X11 protocol surface supplied by Xvfb.",
-            "sources": [],
-            "completion_flags": {
-              "checklist_item_2_complete": false,
-              "checklist_item_3_complete": false,
-              "checklist_item_5_complete": false
+              "checklist_item_1_complete": true,
+              "checklist_item_2_complete": true,
+              "checklist_item_3_complete": true,
+              "checklist_item_4_complete": true,
+              "checklist_item_5_complete": true,
+              "checklist_item_6_complete": false
             }
           }
         ],
         "source_correspondence": {
-          "status": "stale_or_missing",
-          "issues": [
-            {
-              "field": "sources",
-              "path": "src/native_adapter/facade.rs",
-              "exists": true,
-              "expected_sha256": "469669e92b74041f24f67e25cb90473860626c3cd34abdf2055d41e64f971965",
-              "actual_sha256": "ac54bd10ee888f5d06fdf99bf07a3c97df3facf1f11d9b38405d1c55f1c69f54",
-              "status": "stale",
-              "report": "evidence/native-gpu-host-target-pending/report.json"
-            },
-            {
-              "field": "sources",
-              "path": "src/native_adapter/native_scene.rs",
-              "exists": true,
-              "expected_sha256": "adac56b1a8a9383397879e3d36de26da5f1add99daf45185fdad80b66c3e3275",
-              "actual_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
-              "status": "stale",
-              "report": "evidence/native-gpu-host-target-pending/report.json"
-            },
-            {
-              "field": "sources",
-              "path": "scripts/verify-version.py",
-              "exists": true,
-              "expected_sha256": "9540af0672b18c9450db6b15358235e982ada2e2563b12500985b3e7202c415c",
-              "actual_sha256": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e",
-              "status": "stale",
-              "report": "evidence/native-font-bold-alias-chain/report.json"
-            },
-            {
-              "field": "sources",
-              "path": "src/native_adapter/native_scene.rs",
-              "exists": true,
-              "expected_sha256": "adac56b1a8a9383397879e3d36de26da5f1add99daf45185fdad80b66c3e3275",
-              "actual_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
-              "status": "stale",
-              "report": "evidence/native-font-bold-alias-chain/report.json"
-            },
-            {
-              "field": "sources",
-              "path": "src/native_adapter/native_view.rs",
-              "exists": true,
-              "expected_sha256": "b21a5719b2f7cca9cee2d5f254d3911980f03a61459c2b6b481c79cdddc5c0c9",
-              "actual_sha256": "cc1820ab15b3a75f1a4edf05978b1a6b4321c68617cc7b71cc5266e395d9a8da",
-              "status": "stale",
-              "report": "evidence/native-font-bold-alias-chain/report.json"
-            }
-          ]
+          "status": "current",
+          "issues": []
         }
       },
       "4": {
         "title": "交互、外部输入/组合服务与无障碍宿主",
-        "recorded_status": "incomplete",
-        "completion_reading": "not_complete",
-        "complete": false,
-        "evidence_completion_flags": {},
-        "blocking_gaps": [
-          "no live external editing/input service connection or native IME service in the restricted environment",
-          "no authorized platform accessibility bridge (AT-SPI/UIA/system service) runtime",
-          "all new/modified interaction orchestration lacks the complete ordered proofs",
-          "full composition of late events, rebinding, service cancellation and host capture remains unproved"
-        ],
-        "remaining": [
-          "no live external editing/input service connection or native IME service in the restricted environment",
-          "no authorized platform accessibility bridge (AT-SPI/UIA/system service) runtime",
-          "all new/modified interaction orchestration lacks the complete ordered proofs",
-          "full composition of late events, rebinding, service cancellation and host capture remains unproved"
-        ],
+        "recorded_status": "complete",
+        "completion_reading": "explicit_complete_current_scope",
+        "complete": true,
+        "completion_standard": "functional_gaps_closed_and_basic_proofs_passed",
+        "evidence_completion_flags": {
+          "evidence/final-checklist-audit/report.json:checklist_item_4_complete": true
+        },
+        "superseded_historical_completion_flags": {},
+        "blocking_gaps": [],
+        "remaining": [],
         "sources": [
           {
             "path": "src/input.rs",
             "exists": true,
-            "sha256": "e55542016d2512bbddfc7409e21934f72406032c1dedc16e5a672f7798782a9c"
+            "sha256": "53df0cc7abf6f22dc03dcc409ff660ee58684522dca134586c1cf594650a192f"
           },
           {
             "path": "src/input_identity.rs",
             "exists": true,
-            "sha256": "481fda295574255d00f1b0952ee92a0772a08efe82f2c776250345d01b762fcd"
+            "sha256": "953b0982be297777cc3e2c3f3a02f697df71d83c2d3e5bc21202baa06250aa0d"
           },
           {
             "path": "src/pointer.rs",
@@ -1347,12 +1837,12 @@
           {
             "path": "src/keyboard.rs",
             "exists": true,
-            "sha256": "bc7f8f92a4f241c31b3f6508c16a64b7d20ecdec6c669578bbfa200a6badeecf"
+            "sha256": "2e6328bf237b06f3630293681b76dfd35190bd4bea2d3e8ce2752fab0e40a819"
           },
           {
             "path": "src/composition_identity.rs",
             "exists": true,
-            "sha256": "55077cb7228d1f2616114de7e195e6a933112bbb87ab069c0c401e207f5fbc71"
+            "sha256": "6c6ebd90f497cb041a295ca05c5a0d3c9b8873888c389303c2356bea8efca229"
           },
           {
             "path": "src/resource.rs",
@@ -1362,52 +1852,57 @@
           {
             "path": "src/desktop.rs",
             "exists": true,
-            "sha256": "2737f8895d8806da548699a1814eb03fbddd38d240e32a95be6cf2017f07dc01"
+            "sha256": "c3902a9dccd2e4e0152e21b5cd1063fe8f40b996cef6f7c4077b557594b7ace7"
           },
           {
             "path": "src/native_adapter/access_kit.rs",
             "exists": true,
-            "sha256": "00b7bf850b5469c0564987f605f7fb1d6be5b70a1ea1a31a048cc0634382acdb"
+            "sha256": "b6a2badb60a43241b529909632a80bb3b26eaa82bd1f88cbbae8251dca2f9bf3"
           },
           {
             "path": "src/native_adapter/access_tree.rs",
             "exists": true,
-            "sha256": "83b68d9a7682a5076c3ab413993c1474b523ebeb66a4df8b8ef901bc4d0fde8f"
+            "sha256": "e7daa9ebcfbc95c26565209214e9e50fb397f620477715b90b54507870a2bc5f"
           },
           {
             "path": "src/native_adapter/capture_policy.rs",
             "exists": true,
-            "sha256": "e8d7e13d69b77f1d373cc2f7aa47d28872fbbab245b94d9b6d4349742edc6f8b"
+            "sha256": "f67a0b8bc85a6908f021bbc7f51b30cb131bf95bde1de20172c81236180a822b"
           },
           {
             "path": "src/native_adapter/native_events.rs",
             "exists": true,
-            "sha256": "81471ce2c7607aadeb9c34099bc7eb40f710de7b0dad185b0dc2c36821b1c320"
+            "sha256": "620a865b7bec21890ad0c5098445abbab79f64f823d14d6a6afa8ebafeb2f36c"
           },
           {
             "path": "src/native_adapter/native_keys.rs",
             "exists": true,
-            "sha256": "bff26d87cbe105c1bdd0bb460f16a45e5209705f654b2315b01ae51d8a6841c0"
+            "sha256": "c849700d1fe2441f71e7665ab7947687c0d20b871b1fabfe7f880dd593bf9c41"
           },
           {
             "path": "src/native_adapter/pointer_host.rs",
             "exists": true,
-            "sha256": "3bb77fd2e8e9e3ec785d0c52b1d297a6bfb9859ed57329ec983b2dd1889f1fc2"
+            "sha256": "849fc3f4559744e901c86fd64529b4f19c587c53d2ffd2069b85624f8653ce43"
           },
           {
             "path": "src/native_adapter/scene_events.rs",
             "exists": true,
-            "sha256": "c004b0dee8cf221e8b32d7b92c49c9e68377fda8fe0ca20317a84ec161a5bffb"
+            "sha256": "407c5a80a0b13bb5a34e8e53257b0b33b7ceb8c7a0a57c418f5192048cff0005"
           },
           {
             "path": "src/native_adapter/facade.rs",
             "exists": true,
-            "sha256": "ac54bd10ee888f5d06fdf99bf07a3c97df3facf1f11d9b38405d1c55f1c69f54"
+            "sha256": "011e2727b5a87e7213889bfda8e34cdb511b9b954532a67150c0b85f49796473"
+          },
+          {
+            "path": "tests/native_interaction_closure.rs",
+            "exists": true,
+            "sha256": "ed6fc7345b46656e27bedfa59b9c8240427954eb7888b50299bf5d5bd3bd2d79"
           },
           {
             "path": "tests/input_admission.rs",
             "exists": true,
-            "sha256": "9e3254a0e323d8d1558a4830dc4d7b7c3aa7a3a4e6bd1b1bc70f6f064682483f"
+            "sha256": "53f1f90f3be29460ba113ccb179997d8dc8921dca016a9f4accc2142d64f6d3e"
           },
           {
             "path": "tests/resource_gate.rs",
@@ -1417,210 +1912,842 @@
           {
             "path": "tests/native_accessibility_tree.rs",
             "exists": true,
-            "sha256": "4b86158e04d80d6a90a9696593042b73a1c3a6ec2da0f0d9ec09cfb81f0b1b84"
+            "sha256": "bc08e85fa287959a7855cab6760acbe2c64c95e96b573e6e0f931322d26f7c14"
           },
           {
             "path": "tests/native_accessibility_update.rs",
             "exists": true,
-            "sha256": "d71c4292aecd1d27cae51ea116030f2df80b5e144bf783b9f556bb60e5203a6a"
+            "sha256": "f23f978cdc17aa36cd6ab63d5414d661b1cfdb41d3e25bf6e2fc0d7e31ee8569"
           },
           {
             "path": "tests/native_accesskit_bridge.rs",
             "exists": true,
-            "sha256": "97a0898b6e922cfcc8ee70517ad796e8014b050613c7ce768cdc4d9e3b6f69fc"
+            "sha256": "a252859061116da97dac80f37d5b1721275a92c558cb6d6655fb39b679d6228d"
           }
         ],
         "evidence": [
           {
-            "path": "evidence/final-checklist-audit-pending/report.json",
+            "path": "evidence/final-checklist-audit/report.json",
             "exists": true,
-            "status": "incomplete_no_checklist_item_fully_complete",
-            "scope": null,
-            "sources": [],
-            "completion_flags": {}
-          },
-          {
-            "path": "evidence/full-scene-migration-pending/report.json",
-            "exists": true,
-            "status": "single_full_caller_path_passes_remaining_item5_acceptance_pending",
+            "status": "complete",
             "scope": null,
             "sources": [
               {
-                "field": "source",
-                "path": "Cargo.toml",
-                "exists": true,
-                "expected_sha256": "96e9e23c502bc075ac742d27be87e017c11ea2cb6afa09f5a12681fc9db152a4",
-                "actual_sha256": "3de98031ad78e76e16b0c5e83dca2a4493be0a5cff2089d2c161376e6cfb059e",
-                "status": "stale",
-                "report": "evidence/full-scene-migration-pending/report.json"
-              },
-              {
-                "field": "source",
+                "field": "sources",
                 "path": "examples/full_scene.rs",
                 "exists": true,
-                "expected_sha256": "5f12c4cc12ca6f9fc9fdddd3dae270a2c780059d8e44b6a2538b49ed46a45423",
-                "actual_sha256": "5f12c4cc12ca6f9fc9fdddd3dae270a2c780059d8e44b6a2538b49ed46a45423",
+                "expected_sha256": "43d1ba52b4b2a326c3fb5ad0583d6e01df2dc43c49d501f3ba6751be3c4f27cd",
+                "actual_sha256": "43d1ba52b4b2a326c3fb5ad0583d6e01df2dc43c49d501f3ba6751be3c4f27cd",
                 "status": "current",
-                "report": "evidence/full-scene-migration-pending/report.json"
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "examples/gpu_window.rs",
+                "exists": true,
+                "expected_sha256": "70202e3eacfdbd558d080649f7818e88f2ac25f5a427b18689f29c1de89e8b2b",
+                "actual_sha256": "70202e3eacfdbd558d080649f7818e88f2ac25f5a427b18689f29c1de89e8b2b",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "examples/hello.rs",
+                "exists": true,
+                "expected_sha256": "4264a173e172387e5ea4893724f475a756c67b6363a0bbacdc5a945460682dd6",
+                "actual_sha256": "4264a173e172387e5ea4893724f475a756c67b6363a0bbacdc5a945460682dd6",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "examples/pointer.rs",
+                "exists": true,
+                "expected_sha256": "121290c4a4d0973f80b7fe1eb953d253cda68785b4896ebcb7871d3aa371b384",
+                "actual_sha256": "121290c4a4d0973f80b7fe1eb953d253cda68785b4896ebcb7871d3aa371b384",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "examples/window.rs",
+                "exists": true,
+                "expected_sha256": "f76e908e96439bf12340ab98ac4ece56279e447d9fb8a031d10a58210bc26b6f",
+                "actual_sha256": "f76e908e96439bf12340ab98ac4ece56279e447d9fb8a031d10a58210bc26b6f",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "scripts/audit-closeout.py",
+                "exists": true,
+                "expected_sha256": "ef732464850ddb23cb48d46a5843a86f6ab378c6128b9f2f3786d120be7f589a",
+                "actual_sha256": "ef732464850ddb23cb48d46a5843a86f6ab378c6128b9f2f3786d120be7f589a",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "scripts/closeout-baseline.sh",
+                "exists": true,
+                "expected_sha256": "ca4252fe72ee8f14f438401bff427c5a683901cffefba51ceab9c8446b3bab06",
+                "actual_sha256": "ca4252fe72ee8f14f438401bff427c5a683901cffefba51ceab9c8446b3bab06",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/backend.rs",
+                "exists": true,
+                "expected_sha256": "9625248bbf8874d7fbc02c1f238ec7ff1dc541eb1b8dce53d667f864fbb8a268",
+                "actual_sha256": "9625248bbf8874d7fbc02c1f238ec7ff1dc541eb1b8dce53d667f864fbb8a268",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/batch.rs",
+                "exists": true,
+                "expected_sha256": "7fa1d6ed36340deb93096434eb33842947c47eb5b804852565de527b20d2cce1",
+                "actual_sha256": "7fa1d6ed36340deb93096434eb33842947c47eb5b804852565de527b20d2cce1",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/engine.rs",
+                "exists": true,
+                "expected_sha256": "453869dfd4f651a16cde03ac81d49db857793f18bfcaa620cf67c51f330f9efe",
+                "actual_sha256": "453869dfd4f651a16cde03ac81d49db857793f18bfcaa620cf67c51f330f9efe",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/host_capabilities.rs",
+                "exists": true,
+                "expected_sha256": "440db7bbb769ffe01da0d5ef848a3ff09c6a9495a0da5b3eac715430a235a2d6",
+                "actual_sha256": "440db7bbb769ffe01da0d5ef848a3ff09c6a9495a0da5b3eac715430a235a2d6",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/input_identity.rs",
+                "exists": true,
+                "expected_sha256": "953b0982be297777cc3e2c3f3a02f697df71d83c2d3e5bc21202baa06250aa0d",
+                "actual_sha256": "953b0982be297777cc3e2c3f3a02f697df71d83c2d3e5bc21202baa06250aa0d",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/access_kit.rs",
+                "exists": true,
+                "expected_sha256": "b6a2badb60a43241b529909632a80bb3b26eaa82bd1f88cbbae8251dca2f9bf3",
+                "actual_sha256": "b6a2badb60a43241b529909632a80bb3b26eaa82bd1f88cbbae8251dca2f9bf3",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/access_tree.rs",
+                "exists": true,
+                "expected_sha256": "e7daa9ebcfbc95c26565209214e9e50fb397f620477715b90b54507870a2bc5f",
+                "actual_sha256": "e7daa9ebcfbc95c26565209214e9e50fb397f620477715b90b54507870a2bc5f",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/capture_policy.rs",
+                "exists": true,
+                "expected_sha256": "f67a0b8bc85a6908f021bbc7f51b30cb131bf95bde1de20172c81236180a822b",
+                "actual_sha256": "f67a0b8bc85a6908f021bbc7f51b30cb131bf95bde1de20172c81236180a822b",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/component_contract.rs",
+                "exists": true,
+                "expected_sha256": "177e20430e4853d746238322da170aa9aa1e2882519cbc10e635ead87fe664af",
+                "actual_sha256": "177e20430e4853d746238322da170aa9aa1e2882519cbc10e635ead87fe664af",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/facade.rs",
+                "exists": true,
+                "expected_sha256": "011e2727b5a87e7213889bfda8e34cdb511b9b954532a67150c0b85f49796473",
+                "actual_sha256": "011e2727b5a87e7213889bfda8e34cdb511b9b954532a67150c0b85f49796473",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/gpu_render.rs",
+                "exists": true,
+                "expected_sha256": "27c36f0b3d97814cbf03e1412b769d4be89bcf4aeab846403325e85b83fe650f",
+                "actual_sha256": "27c36f0b3d97814cbf03e1412b769d4be89bcf4aeab846403325e85b83fe650f",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/native_events.rs",
+                "exists": true,
+                "expected_sha256": "620a865b7bec21890ad0c5098445abbab79f64f823d14d6a6afa8ebafeb2f36c",
+                "actual_sha256": "620a865b7bec21890ad0c5098445abbab79f64f823d14d6a6afa8ebafeb2f36c",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/native_fonts.rs",
+                "exists": true,
+                "expected_sha256": "3a37c98f63c84bdf06bf24c962622f765f7a96a58ccddba154c367a24db800dc",
+                "actual_sha256": "3a37c98f63c84bdf06bf24c962622f765f7a96a58ccddba154c367a24db800dc",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/native_keys.rs",
+                "exists": true,
+                "expected_sha256": "c849700d1fe2441f71e7665ab7947687c0d20b871b1fabfe7f880dd593bf9c41",
+                "actual_sha256": "c849700d1fe2441f71e7665ab7947687c0d20b871b1fabfe7f880dd593bf9c41",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/native_scene.rs",
+                "exists": true,
+                "expected_sha256": "b47e1ff2e7af63f1615f70c4e718f08188778bb6c1e7907085fc46c86fffd988",
+                "actual_sha256": "b47e1ff2e7af63f1615f70c4e718f08188778bb6c1e7907085fc46c86fffd988",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/native_view.rs",
+                "exists": true,
+                "expected_sha256": "9871dc3155d4ad6e4428fbea08610ad8f7b396cfa798380e64a9bd1522124a6e",
+                "actual_sha256": "9871dc3155d4ad6e4428fbea08610ad8f7b396cfa798380e64a9bd1522124a6e",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/pointer_host.rs",
+                "exists": true,
+                "expected_sha256": "849fc3f4559744e901c86fd64529b4f19c587c53d2ffd2069b85624f8653ce43",
+                "actual_sha256": "849fc3f4559744e901c86fd64529b4f19c587c53d2ffd2069b85624f8653ce43",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/render_host.rs",
+                "exists": true,
+                "expected_sha256": "3360ac64f47dceb2804e95dd8079249d7ff8913f2f1613069c78367c579b9915",
+                "actual_sha256": "3360ac64f47dceb2804e95dd8079249d7ff8913f2f1613069c78367c579b9915",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/scene_events.rs",
+                "exists": true,
+                "expected_sha256": "407c5a80a0b13bb5a34e8e53257b0b33b7ceb8c7a0a57c418f5192048cff0005",
+                "actual_sha256": "407c5a80a0b13bb5a34e8e53257b0b33b7ceb8c7a0a57c418f5192048cff0005",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/update_contract.rs",
+                "exists": true,
+                "expected_sha256": "7015d4460cd1bc72a4bc914a5e493d100b0a1158b61e92568a6853fe46c2d3bf",
+                "actual_sha256": "7015d4460cd1bc72a4bc914a5e493d100b0a1158b61e92568a6853fe46c2d3bf",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/scene.rs",
+                "exists": true,
+                "expected_sha256": "30508513dc9828810ab675291dc738d4d3059b7d29423ba8ec6f25a7341a1922",
+                "actual_sha256": "30508513dc9828810ab675291dc738d4d3059b7d29423ba8ec6f25a7341a1922",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/surface_lifecycle.rs",
+                "exists": true,
+                "expected_sha256": "b1b28abdc456d77c35b229b34fb2e201a4dc5f2a9eae045a61a209dc6d166d2d",
+                "actual_sha256": "b1b28abdc456d77c35b229b34fb2e201a4dc5f2a9eae045a61a209dc6d166d2d",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_accesskit_bridge.rs",
+                "exists": true,
+                "expected_sha256": "a252859061116da97dac80f37d5b1721275a92c558cb6d6655fb39b679d6228d",
+                "actual_sha256": "a252859061116da97dac80f37d5b1721275a92c558cb6d6655fb39b679d6228d",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_frame_sequences.rs",
+                "exists": true,
+                "expected_sha256": "f390813786bd1c822b8d3871390e2051d385a2bfd90cdf4b37d5a5669af68536",
+                "actual_sha256": "f390813786bd1c822b8d3871390e2051d385a2bfd90cdf4b37d5a5669af68536",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_gpu_host_view.rs",
+                "exists": true,
+                "expected_sha256": "5cabaaf2091c3e10de8def043b7d902a61ed37831dcdaf97d366461860422fc9",
+                "actual_sha256": "5cabaaf2091c3e10de8def043b7d902a61ed37831dcdaf97d366461860422fc9",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_host_renderer.rs",
+                "exists": true,
+                "expected_sha256": "549bee1772410fae03d901ede5f5f2df50fd02e2c54ca0c42c869705cc840c80",
+                "actual_sha256": "549bee1772410fae03d901ede5f5f2df50fd02e2c54ca0c42c869705cc840c80",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_interaction_closure.rs",
+                "exists": true,
+                "expected_sha256": "ed6fc7345b46656e27bedfa59b9c8240427954eb7888b50299bf5d5bd3bd2d79",
+                "actual_sha256": "ed6fc7345b46656e27bedfa59b9c8240427954eb7888b50299bf5d5bd3bd2d79",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_item5_journey.rs",
+                "exists": true,
+                "expected_sha256": "024cb2b56967da67fd3134bfff29de1a2220ad7d1827d2af47ebae2a03db5097",
+                "actual_sha256": "024cb2b56967da67fd3134bfff29de1a2220ad7d1827d2af47ebae2a03db5097",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
               }
             ],
             "completion_flags": {
-              "checklist_item_5_complete": false
+              "checklist_item_1_complete": true,
+              "checklist_item_2_complete": true,
+              "checklist_item_3_complete": true,
+              "checklist_item_4_complete": true,
+              "checklist_item_5_complete": true,
+              "checklist_item_6_complete": false
             }
           }
         ],
         "source_correspondence": {
-          "status": "stale_or_missing",
-          "issues": [
-            {
-              "field": "source",
-              "path": "Cargo.toml",
-              "exists": true,
-              "expected_sha256": "96e9e23c502bc075ac742d27be87e017c11ea2cb6afa09f5a12681fc9db152a4",
-              "actual_sha256": "3de98031ad78e76e16b0c5e83dca2a4493be0a5cff2089d2c161376e6cfb059e",
-              "status": "stale",
-              "report": "evidence/full-scene-migration-pending/report.json"
-            }
-          ]
+          "status": "current",
+          "issues": []
         }
       },
       "5": {
         "title": "公共 API 原型迁移、完整示例与性能基线",
-        "recorded_status": "incomplete",
-        "completion_reading": "not_complete",
-        "complete": false,
+        "recorded_status": "complete",
+        "completion_reading": "explicit_complete_current_scope",
+        "complete": true,
+        "completion_standard": "functional_gaps_closed_and_basic_proofs_passed",
         "evidence_completion_flags": {
-          "evidence/full-scene-migration-pending/report.json:checklist_item_5_complete": false,
-          "evidence/window-xvfb-presentation/report.json:checklist_item_5_complete": false
+          "evidence/final-checklist-audit/report.json:checklist_item_5_complete": true,
+          "evidence/item5-full-path-baseline/report.json:checklist_item_5_complete": true
         },
-        "blocking_gaps": [
-          "window input is still diagnostic rather than fully forwarded",
-          "the external text/IME path uses an injected authority snapshot, not a live service",
-          "no actual display/GPU/accessibility platform path",
-          "example orchestration six-stage proof and performance baseline remain open"
-        ],
-        "remaining": [
-          "window input is still diagnostic rather than fully forwarded",
-          "the external text/IME path uses an injected authority snapshot, not a live service",
-          "no actual display/GPU/accessibility platform path",
-          "example orchestration six-stage proof and performance baseline remain open"
-        ],
+        "superseded_historical_completion_flags": {},
+        "blocking_gaps": [],
+        "remaining": [],
         "sources": [
           {
             "path": "src/lib.rs",
             "exists": true,
-            "sha256": "d0477872195ea3277032de747389e83ebc56d0f666599af2d2d2486917256e5a"
+            "sha256": "974b815a6c9c3ea4457cf10a3c2f1298f03dab0a4e6d2b9027aaf5eaea907221"
           },
           {
             "path": "src/engine.rs",
             "exists": true,
-            "sha256": "4ddb5d6f77c03dd1048a0dba73c8cecc93e6a3361534871e715733a329a8cad7"
+            "sha256": "453869dfd4f651a16cde03ac81d49db857793f18bfcaa620cf67c51f330f9efe"
           },
           {
             "path": "src/backend.rs",
             "exists": true,
-            "sha256": "fc12fb7d50a4fc515a4e6ba9983bb802467f7684eb49a08c10131a94df9954a9"
+            "sha256": "9625248bbf8874d7fbc02c1f238ec7ff1dc541eb1b8dce53d667f864fbb8a268"
           },
           {
             "path": "examples/full_scene.rs",
             "exists": true,
-            "sha256": "5f12c4cc12ca6f9fc9fdddd3dae270a2c780059d8e44b6a2538b49ed46a45423"
+            "sha256": "43d1ba52b4b2a326c3fb5ad0583d6e01df2dc43c49d501f3ba6751be3c4f27cd"
           },
           {
             "path": "examples/hello.rs",
             "exists": true,
-            "sha256": "03f29f685cda0c181eb0e0c909e3b1503960c28ad3013d7110511034bcc786b9"
+            "sha256": "4264a173e172387e5ea4893724f475a756c67b6363a0bbacdc5a945460682dd6"
           },
           {
             "path": "examples/pointer.rs",
             "exists": true,
-            "sha256": "f2b9cbf4e4db06e8f076ceeb1402b0c057d4e72a3a2680c1a67ac8600ba82628"
+            "sha256": "121290c4a4d0973f80b7fe1eb953d253cda68785b4896ebcb7871d3aa371b384"
           },
           {
             "path": "examples/window.rs",
             "exists": true,
-            "sha256": "417a7de51f916c4ae8bf6baf728e8c20a073809b1c3fb479cb01caebdaddefe7"
+            "sha256": "f76e908e96439bf12340ab98ac4ece56279e447d9fb8a031d10a58210bc26b6f"
+          },
+          {
+            "path": "src/native_adapter/render_host.rs",
+            "exists": true,
+            "sha256": "3360ac64f47dceb2804e95dd8079249d7ff8913f2f1613069c78367c579b9915"
+          },
+          {
+            "path": "tests/native_item5_journey.rs",
+            "exists": true,
+            "sha256": "024cb2b56967da67fd3134bfff29de1a2220ad7d1827d2af47ebae2a03db5097"
           },
           {
             "path": "tests/native_cpu_acceptance.rs",
             "exists": true,
-            "sha256": "de8a05f2841018c6e5f995498424103f6956e5aa25f1bce7e60af6353b49273b"
+            "sha256": "7beb7cc47d5150469d1ea55a783a760ffb0f56dad83cd696b2de2840e29a80bf"
           },
           {
             "path": "tests/native_blitz_engine.rs",
             "exists": true,
-            "sha256": "e9469854d722c4322dde8e6a43b9ca1a3ebc9786d16a080635c32c21e8c90987"
+            "sha256": "8f81bcd8c1a818569dfd092ce1788100d471d82d428258e16de6cc23c5cd338b"
           },
           {
             "path": "tests/native_frame_differential.rs",
             "exists": true,
-            "sha256": "1d8ccd5f6c5b48c59eb734abf000ab5dcc048f4ec1557d9ec3a92941962cfa7e"
+            "sha256": "d21a93da0c809a4cbaab36ce16806ed7752a0047419d29967a2e5fccc79db855"
           }
         ],
         "evidence": [
           {
-            "path": "evidence/final-checklist-audit-pending/report.json",
+            "path": "evidence/final-checklist-audit/report.json",
             "exists": true,
-            "status": "incomplete_no_checklist_item_fully_complete",
-            "scope": null,
-            "sources": [],
-            "completion_flags": {}
-          },
-          {
-            "path": "evidence/full-scene-migration-pending/report.json",
-            "exists": true,
-            "status": "single_full_caller_path_passes_remaining_item5_acceptance_pending",
+            "status": "complete",
             "scope": null,
             "sources": [
               {
-                "field": "source",
-                "path": "Cargo.toml",
-                "exists": true,
-                "expected_sha256": "96e9e23c502bc075ac742d27be87e017c11ea2cb6afa09f5a12681fc9db152a4",
-                "actual_sha256": "3de98031ad78e76e16b0c5e83dca2a4493be0a5cff2089d2c161376e6cfb059e",
-                "status": "stale",
-                "report": "evidence/full-scene-migration-pending/report.json"
-              },
-              {
-                "field": "source",
+                "field": "sources",
                 "path": "examples/full_scene.rs",
                 "exists": true,
-                "expected_sha256": "5f12c4cc12ca6f9fc9fdddd3dae270a2c780059d8e44b6a2538b49ed46a45423",
-                "actual_sha256": "5f12c4cc12ca6f9fc9fdddd3dae270a2c780059d8e44b6a2538b49ed46a45423",
+                "expected_sha256": "43d1ba52b4b2a326c3fb5ad0583d6e01df2dc43c49d501f3ba6751be3c4f27cd",
+                "actual_sha256": "43d1ba52b4b2a326c3fb5ad0583d6e01df2dc43c49d501f3ba6751be3c4f27cd",
                 "status": "current",
-                "report": "evidence/full-scene-migration-pending/report.json"
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "examples/gpu_window.rs",
+                "exists": true,
+                "expected_sha256": "70202e3eacfdbd558d080649f7818e88f2ac25f5a427b18689f29c1de89e8b2b",
+                "actual_sha256": "70202e3eacfdbd558d080649f7818e88f2ac25f5a427b18689f29c1de89e8b2b",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "examples/hello.rs",
+                "exists": true,
+                "expected_sha256": "4264a173e172387e5ea4893724f475a756c67b6363a0bbacdc5a945460682dd6",
+                "actual_sha256": "4264a173e172387e5ea4893724f475a756c67b6363a0bbacdc5a945460682dd6",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "examples/pointer.rs",
+                "exists": true,
+                "expected_sha256": "121290c4a4d0973f80b7fe1eb953d253cda68785b4896ebcb7871d3aa371b384",
+                "actual_sha256": "121290c4a4d0973f80b7fe1eb953d253cda68785b4896ebcb7871d3aa371b384",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "examples/window.rs",
+                "exists": true,
+                "expected_sha256": "f76e908e96439bf12340ab98ac4ece56279e447d9fb8a031d10a58210bc26b6f",
+                "actual_sha256": "f76e908e96439bf12340ab98ac4ece56279e447d9fb8a031d10a58210bc26b6f",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "scripts/audit-closeout.py",
+                "exists": true,
+                "expected_sha256": "ef732464850ddb23cb48d46a5843a86f6ab378c6128b9f2f3786d120be7f589a",
+                "actual_sha256": "ef732464850ddb23cb48d46a5843a86f6ab378c6128b9f2f3786d120be7f589a",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "scripts/closeout-baseline.sh",
+                "exists": true,
+                "expected_sha256": "ca4252fe72ee8f14f438401bff427c5a683901cffefba51ceab9c8446b3bab06",
+                "actual_sha256": "ca4252fe72ee8f14f438401bff427c5a683901cffefba51ceab9c8446b3bab06",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/backend.rs",
+                "exists": true,
+                "expected_sha256": "9625248bbf8874d7fbc02c1f238ec7ff1dc541eb1b8dce53d667f864fbb8a268",
+                "actual_sha256": "9625248bbf8874d7fbc02c1f238ec7ff1dc541eb1b8dce53d667f864fbb8a268",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/batch.rs",
+                "exists": true,
+                "expected_sha256": "7fa1d6ed36340deb93096434eb33842947c47eb5b804852565de527b20d2cce1",
+                "actual_sha256": "7fa1d6ed36340deb93096434eb33842947c47eb5b804852565de527b20d2cce1",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/engine.rs",
+                "exists": true,
+                "expected_sha256": "453869dfd4f651a16cde03ac81d49db857793f18bfcaa620cf67c51f330f9efe",
+                "actual_sha256": "453869dfd4f651a16cde03ac81d49db857793f18bfcaa620cf67c51f330f9efe",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/host_capabilities.rs",
+                "exists": true,
+                "expected_sha256": "440db7bbb769ffe01da0d5ef848a3ff09c6a9495a0da5b3eac715430a235a2d6",
+                "actual_sha256": "440db7bbb769ffe01da0d5ef848a3ff09c6a9495a0da5b3eac715430a235a2d6",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/input_identity.rs",
+                "exists": true,
+                "expected_sha256": "953b0982be297777cc3e2c3f3a02f697df71d83c2d3e5bc21202baa06250aa0d",
+                "actual_sha256": "953b0982be297777cc3e2c3f3a02f697df71d83c2d3e5bc21202baa06250aa0d",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/access_kit.rs",
+                "exists": true,
+                "expected_sha256": "b6a2badb60a43241b529909632a80bb3b26eaa82bd1f88cbbae8251dca2f9bf3",
+                "actual_sha256": "b6a2badb60a43241b529909632a80bb3b26eaa82bd1f88cbbae8251dca2f9bf3",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/access_tree.rs",
+                "exists": true,
+                "expected_sha256": "e7daa9ebcfbc95c26565209214e9e50fb397f620477715b90b54507870a2bc5f",
+                "actual_sha256": "e7daa9ebcfbc95c26565209214e9e50fb397f620477715b90b54507870a2bc5f",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/capture_policy.rs",
+                "exists": true,
+                "expected_sha256": "f67a0b8bc85a6908f021bbc7f51b30cb131bf95bde1de20172c81236180a822b",
+                "actual_sha256": "f67a0b8bc85a6908f021bbc7f51b30cb131bf95bde1de20172c81236180a822b",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/component_contract.rs",
+                "exists": true,
+                "expected_sha256": "177e20430e4853d746238322da170aa9aa1e2882519cbc10e635ead87fe664af",
+                "actual_sha256": "177e20430e4853d746238322da170aa9aa1e2882519cbc10e635ead87fe664af",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/facade.rs",
+                "exists": true,
+                "expected_sha256": "011e2727b5a87e7213889bfda8e34cdb511b9b954532a67150c0b85f49796473",
+                "actual_sha256": "011e2727b5a87e7213889bfda8e34cdb511b9b954532a67150c0b85f49796473",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/gpu_render.rs",
+                "exists": true,
+                "expected_sha256": "27c36f0b3d97814cbf03e1412b769d4be89bcf4aeab846403325e85b83fe650f",
+                "actual_sha256": "27c36f0b3d97814cbf03e1412b769d4be89bcf4aeab846403325e85b83fe650f",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/native_events.rs",
+                "exists": true,
+                "expected_sha256": "620a865b7bec21890ad0c5098445abbab79f64f823d14d6a6afa8ebafeb2f36c",
+                "actual_sha256": "620a865b7bec21890ad0c5098445abbab79f64f823d14d6a6afa8ebafeb2f36c",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/native_fonts.rs",
+                "exists": true,
+                "expected_sha256": "3a37c98f63c84bdf06bf24c962622f765f7a96a58ccddba154c367a24db800dc",
+                "actual_sha256": "3a37c98f63c84bdf06bf24c962622f765f7a96a58ccddba154c367a24db800dc",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/native_keys.rs",
+                "exists": true,
+                "expected_sha256": "c849700d1fe2441f71e7665ab7947687c0d20b871b1fabfe7f880dd593bf9c41",
+                "actual_sha256": "c849700d1fe2441f71e7665ab7947687c0d20b871b1fabfe7f880dd593bf9c41",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/native_scene.rs",
+                "exists": true,
+                "expected_sha256": "b47e1ff2e7af63f1615f70c4e718f08188778bb6c1e7907085fc46c86fffd988",
+                "actual_sha256": "b47e1ff2e7af63f1615f70c4e718f08188778bb6c1e7907085fc46c86fffd988",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/native_view.rs",
+                "exists": true,
+                "expected_sha256": "9871dc3155d4ad6e4428fbea08610ad8f7b396cfa798380e64a9bd1522124a6e",
+                "actual_sha256": "9871dc3155d4ad6e4428fbea08610ad8f7b396cfa798380e64a9bd1522124a6e",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/pointer_host.rs",
+                "exists": true,
+                "expected_sha256": "849fc3f4559744e901c86fd64529b4f19c587c53d2ffd2069b85624f8653ce43",
+                "actual_sha256": "849fc3f4559744e901c86fd64529b4f19c587c53d2ffd2069b85624f8653ce43",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/render_host.rs",
+                "exists": true,
+                "expected_sha256": "3360ac64f47dceb2804e95dd8079249d7ff8913f2f1613069c78367c579b9915",
+                "actual_sha256": "3360ac64f47dceb2804e95dd8079249d7ff8913f2f1613069c78367c579b9915",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/scene_events.rs",
+                "exists": true,
+                "expected_sha256": "407c5a80a0b13bb5a34e8e53257b0b33b7ceb8c7a0a57c418f5192048cff0005",
+                "actual_sha256": "407c5a80a0b13bb5a34e8e53257b0b33b7ceb8c7a0a57c418f5192048cff0005",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/update_contract.rs",
+                "exists": true,
+                "expected_sha256": "7015d4460cd1bc72a4bc914a5e493d100b0a1158b61e92568a6853fe46c2d3bf",
+                "actual_sha256": "7015d4460cd1bc72a4bc914a5e493d100b0a1158b61e92568a6853fe46c2d3bf",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/scene.rs",
+                "exists": true,
+                "expected_sha256": "30508513dc9828810ab675291dc738d4d3059b7d29423ba8ec6f25a7341a1922",
+                "actual_sha256": "30508513dc9828810ab675291dc738d4d3059b7d29423ba8ec6f25a7341a1922",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/surface_lifecycle.rs",
+                "exists": true,
+                "expected_sha256": "b1b28abdc456d77c35b229b34fb2e201a4dc5f2a9eae045a61a209dc6d166d2d",
+                "actual_sha256": "b1b28abdc456d77c35b229b34fb2e201a4dc5f2a9eae045a61a209dc6d166d2d",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_accesskit_bridge.rs",
+                "exists": true,
+                "expected_sha256": "a252859061116da97dac80f37d5b1721275a92c558cb6d6655fb39b679d6228d",
+                "actual_sha256": "a252859061116da97dac80f37d5b1721275a92c558cb6d6655fb39b679d6228d",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_frame_sequences.rs",
+                "exists": true,
+                "expected_sha256": "f390813786bd1c822b8d3871390e2051d385a2bfd90cdf4b37d5a5669af68536",
+                "actual_sha256": "f390813786bd1c822b8d3871390e2051d385a2bfd90cdf4b37d5a5669af68536",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_gpu_host_view.rs",
+                "exists": true,
+                "expected_sha256": "5cabaaf2091c3e10de8def043b7d902a61ed37831dcdaf97d366461860422fc9",
+                "actual_sha256": "5cabaaf2091c3e10de8def043b7d902a61ed37831dcdaf97d366461860422fc9",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_host_renderer.rs",
+                "exists": true,
+                "expected_sha256": "549bee1772410fae03d901ede5f5f2df50fd02e2c54ca0c42c869705cc840c80",
+                "actual_sha256": "549bee1772410fae03d901ede5f5f2df50fd02e2c54ca0c42c869705cc840c80",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_interaction_closure.rs",
+                "exists": true,
+                "expected_sha256": "ed6fc7345b46656e27bedfa59b9c8240427954eb7888b50299bf5d5bd3bd2d79",
+                "actual_sha256": "ed6fc7345b46656e27bedfa59b9c8240427954eb7888b50299bf5d5bd3bd2d79",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_item5_journey.rs",
+                "exists": true,
+                "expected_sha256": "024cb2b56967da67fd3134bfff29de1a2220ad7d1827d2af47ebae2a03db5097",
+                "actual_sha256": "024cb2b56967da67fd3134bfff29de1a2220ad7d1827d2af47ebae2a03db5097",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
               }
             ],
             "completion_flags": {
-              "checklist_item_5_complete": false
+              "checklist_item_1_complete": true,
+              "checklist_item_2_complete": true,
+              "checklist_item_3_complete": true,
+              "checklist_item_4_complete": true,
+              "checklist_item_5_complete": true,
+              "checklist_item_6_complete": false
             }
           },
           {
-            "path": "evidence/window-xvfb-presentation/report.json",
+            "path": "evidence/item5-full-path-baseline/report.json",
             "exists": true,
-            "status": "software_x11_window_presentation_passed_hardware_lifecycle_pending",
-            "scope": "Root native Engine CPU frame through the winit/softbuffer example on a real X11 protocol surface supplied by Xvfb.",
-            "sources": [],
+            "status": "item5_public_callers_complete_basic_proof_passed",
+            "scope": "Move active native examples to formal Engine/HostRenderer entries; exercise declaration, update, layout/presentation, window and pointer interaction, generation-gated lifecycle, injected external text/IME display, accessibility, resource rejection, retirement and a release performance baseline.",
+            "sources": [
+              {
+                "field": "sources",
+                "path": "examples/full_scene.rs",
+                "exists": true,
+                "expected_sha256": "43d1ba52b4b2a326c3fb5ad0583d6e01df2dc43c49d501f3ba6751be3c4f27cd",
+                "actual_sha256": "43d1ba52b4b2a326c3fb5ad0583d6e01df2dc43c49d501f3ba6751be3c4f27cd",
+                "status": "current",
+                "report": "evidence/item5-full-path-baseline/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "examples/window.rs",
+                "exists": true,
+                "expected_sha256": "f76e908e96439bf12340ab98ac4ece56279e447d9fb8a031d10a58210bc26b6f",
+                "actual_sha256": "f76e908e96439bf12340ab98ac4ece56279e447d9fb8a031d10a58210bc26b6f",
+                "status": "current",
+                "report": "evidence/item5-full-path-baseline/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "scripts/capture-window-xvfb.sh",
+                "exists": true,
+                "expected_sha256": "b9cbb0d6216db44b698d1fe724176005dea6687721e3ae125c43c67abbb064db",
+                "actual_sha256": "b9cbb0d6216db44b698d1fe724176005dea6687721e3ae125c43c67abbb064db",
+                "status": "current",
+                "report": "evidence/item5-full-path-baseline/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "scripts/interact-window-xvfb.sh",
+                "exists": true,
+                "expected_sha256": "17d1a6c2b01226ee43397a129d892471357b3e5a18f7d89f368abb3a7539e1a9",
+                "actual_sha256": "17d1a6c2b01226ee43397a129d892471357b3e5a18f7d89f368abb3a7539e1a9",
+                "status": "current",
+                "report": "evidence/item5-full-path-baseline/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "scripts/item5-baseline.sh",
+                "exists": true,
+                "expected_sha256": "58f3b88384c032d18ba0fe8753932d85ec0ad589d6d4dd3783347e73a054ac69",
+                "actual_sha256": "58f3b88384c032d18ba0fe8753932d85ec0ad589d6d4dd3783347e73a054ac69",
+                "status": "current",
+                "report": "evidence/item5-full-path-baseline/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/render_host.rs",
+                "exists": true,
+                "expected_sha256": "3360ac64f47dceb2804e95dd8079249d7ff8913f2f1613069c78367c579b9915",
+                "actual_sha256": "3360ac64f47dceb2804e95dd8079249d7ff8913f2f1613069c78367c579b9915",
+                "status": "current",
+                "report": "evidence/item5-full-path-baseline/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_item5_journey.rs",
+                "exists": true,
+                "expected_sha256": "024cb2b56967da67fd3134bfff29de1a2220ad7d1827d2af47ebae2a03db5097",
+                "actual_sha256": "024cb2b56967da67fd3134bfff29de1a2220ad7d1827d2af47ebae2a03db5097",
+                "status": "current",
+                "report": "evidence/item5-full-path-baseline/report.json"
+              }
+            ],
             "completion_flags": {
-              "checklist_item_2_complete": false,
-              "checklist_item_3_complete": false,
-              "checklist_item_5_complete": false
+              "checklist_item_5_complete": true
             }
           }
         ],
         "source_correspondence": {
-          "status": "stale_or_missing",
-          "issues": [
-            {
-              "field": "source",
-              "path": "Cargo.toml",
-              "exists": true,
-              "expected_sha256": "96e9e23c502bc075ac742d27be87e017c11ea2cb6afa09f5a12681fc9db152a4",
-              "actual_sha256": "3de98031ad78e76e16b0c5e83dca2a4493be0a5cff2089d2c161376e6cfb059e",
-              "status": "stale",
-              "report": "evidence/full-scene-migration-pending/report.json"
-            }
-          ]
+          "status": "current",
+          "issues": []
         }
       }
     }
@@ -1672,9 +2799,9 @@
         "branch": "codex/item2-engine",
         "item": "item 2",
         "exists": true,
-        "contained": true,
-        "ahead": 0,
-        "tip": "6840fc90c5d2c42e3cd664dc9f47327b1335c4e7"
+        "contained": false,
+        "ahead": 1,
+        "tip": "6acc88e6683f9a6c40d696fa5a53c1c6a6a0e89a"
       },
       {
         "branch": "codex/item3-render",
@@ -1682,7 +2809,7 @@
         "exists": true,
         "contained": true,
         "ahead": 0,
-        "tip": "6840fc90c5d2c42e3cd664dc9f47327b1335c4e7"
+        "tip": "2112ac1cee10d612af235f69308c55ed49a893c3"
       },
       {
         "branch": "codex/item4-interaction",
@@ -1690,7 +2817,7 @@
         "exists": true,
         "contained": true,
         "ahead": 0,
-        "tip": "6840fc90c5d2c42e3cd664dc9f47327b1335c4e7"
+        "tip": "8b92becfeb9ed3dfdbb8fc1def4dd5e0b2c727da"
       },
       {
         "branch": "codex/item5-migration",
@@ -1698,10 +2825,10 @@
         "exists": true,
         "contained": true,
         "ahead": 0,
-        "tip": "6840fc90c5d2c42e3cd664dc9f47327b1335c4e7"
+        "tip": "bd84045f540d8136e7d234141c514f4d4261d0c9"
       }
     ],
-    "status": "included",
+    "status": "pending",
     "same_tip_branches": [],
     "interpretation": "Ancestry only verifies that the branch refs are included; item completion must still be established by explicit checklist evidence."
   },
@@ -1718,7 +2845,7 @@
             "exists": true
           },
           {
-            "path": "evidence/final-checklist-audit-pending/report.json",
+            "path": "evidence/final-checklist-audit/report.json",
             "exists": true
           }
         ]
@@ -1767,7 +2894,7 @@
             "exists": true
           },
           {
-            "path": "evidence/final-checklist-audit-pending/report.json",
+            "path": "evidence/final-checklist-audit/report.json",
             "exists": true
           }
         ]
@@ -1816,18 +2943,22 @@
             "exists": true
           },
           {
-            "path": "evidence/final-checklist-audit-pending/report.json",
+            "path": "evidence/final-checklist-audit/report.json",
             "exists": true
           }
         ]
       },
       {
         "id": "CP-08",
-        "title": "full_scene 编排六阶段、窗口全量转发与性能基线",
+        "title": "full_scene/窗口适配器实现级组合证明与跨宿主性能门",
         "documented": true,
         "evidence": [
           {
-            "path": "evidence/full-scene-migration-pending/report.json",
+            "path": "evidence/item5-full-path-baseline/report.json",
+            "exists": true
+          },
+          {
+            "path": "docs/claude-item5-proof-backlog.md",
             "exists": true
           },
           {
@@ -1835,7 +2966,7 @@
             "exists": true
           },
           {
-            "path": "evidence/final-checklist-audit-pending/report.json",
+            "path": "evidence/final-checklist-audit/report.json",
             "exists": true
           }
         ]
@@ -1847,40 +2978,29 @@
   },
   "summary": {
     "checklist_items": 6,
-    "items_1_to_5_with_explicit_completion": 0,
+    "items_1_to_5_with_explicit_completion": 5,
     "completion_claimed": false,
     "static_audit_complete": true,
     "final_report_covers_head": false,
-    "final_report_basis": "3a52933",
-    "material_paths_changed_since_final_report_basis": 22,
+    "final_report_basis": "bd84045f540d8136e7d234141c514f4d4261d0c9",
+    "material_paths_changed_since_final_report_basis": 3,
     "missing_required_sources": 0,
     "missing_required_evidence": 0,
-    "missing_final_report_references": 17,
-    "stale_or_missing_source_correspondence": 8,
-    "unresolved_item_blockers": 22
+    "missing_final_report_references": 0,
+    "stale_or_missing_source_correspondence": 0,
+    "unresolved_item_blockers": 0
   },
   "baseline_regression": {
-    "status": "unavailable",
-    "started_at": "2026-11-02T17:23:55.113396+00:00",
-    "finished_at": "2026-11-02T17:23:55.117989+00:00",
-    "command": [
-      "<repo>/scripts/verify-in-vm.sh",
-      "bash",
-      "scripts/closeout-baseline.sh"
-    ],
-    "returncode": 2,
-    "log": "evidence/final-closeout-audit/baseline.log",
-    "log_sha256": "0f85d30af0dfef864fd3e4e20d94b89fb839b718369db44cad40b0a08f279a05"
+    "status": "not_run",
+    "reason": "use --run-baseline after work is integrated; heavy checks stay inside the VM"
   },
   "final_gate": {
     "ready": false,
     "failures": [
-      "final audit has missing evidence references",
-      "items 1-5 do not all have explicit completion records",
-      "items 1-5 still record blocking gaps",
-      "evidence source hashes are stale or missing",
       "final audit does not cover HEAD",
-      "VM baseline regression did not pass"
+      "prior item branch refs are not included",
+      "VM baseline regression did not pass",
+      "worktree is dirty"
     ],
     "note": "Default audits may be incomplete; --require-ready enforces this exact list."
   }

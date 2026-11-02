@@ -22,7 +22,7 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
-FINAL_AUDIT = "evidence/final-checklist-audit-pending/report.json"
+FINAL_AUDIT = "evidence/final-checklist-audit/report.json"
 PROOF_BACKLOG_DOC = "docs/claude-closeout-proof-backlog.md"
 DEFAULT_OUTPUT = "evidence/final-closeout-audit"
 
@@ -50,6 +50,7 @@ CHECKLIST = {
             "src/native_adapter/native_view.rs",
             "src/native_adapter/component_contract.rs",
             "src/native_adapter/update_contract.rs",
+            "src/native_adapter/render_host.rs",
             "tests/native_frame_transaction.rs",
             "tests/native_update_contract.rs",
             "tests/native_component_update_contract.rs",
@@ -57,13 +58,6 @@ CHECKLIST = {
         ],
         "evidence_paths": [
             FINAL_AUDIT,
-            "evidence/native-subtree-solver-capability/report.json",
-            "evidence/native-subtree-expanded-capability/report.json",
-            "evidence/scene-update-error-contract-chain/report.json",
-            "evidence/scene-update-admission-kernel/report.json",
-            "evidence/component-update-error-contract-chain/report.json",
-            "evidence/component-update-admission-kernel/report.json",
-            "evidence/scene-frame-completion-chain/report.json",
         ],
     },
     2: {
@@ -75,7 +69,9 @@ CHECKLIST = {
             "src/native_adapter/native_view.rs",
             "src/native_adapter/frame_schedule.rs",
             "src/native_adapter/facade.rs",
+            "src/native_adapter/render_host.rs",
             "tests/native_frame_transaction.rs",
+            "tests/native_frame_sequences.rs",
             "tests/native_frame_differential.rs",
             "tests/native_cpu_acceptance.rs",
             "tests/native_frame_damage.rs",
@@ -85,10 +81,6 @@ CHECKLIST = {
         ],
         "evidence_paths": [
             FINAL_AUDIT,
-            "evidence/native-scene-candidate-transaction-pending/report.json",
-            "evidence/scene-frame-completion-chain/report.json",
-            "evidence/scene-frame-completion-kernel/report.json",
-            "evidence/window-xvfb-presentation/report.json",
         ],
     },
     3: {
@@ -100,8 +92,12 @@ CHECKLIST = {
             "src/native_adapter/text_geometry.rs",
             "src/native_adapter/native_scene.rs",
             "src/native_adapter/facade.rs",
+            "src/native_adapter/render_host.rs",
+            "src/surface_lifecycle.rs",
+            "src/host_capabilities.rs",
             "examples/gpu_window.rs",
             "examples/window.rs",
+            "tests/native_host_renderer.rs",
             "tests/native_gpu_host_view.rs",
             "tests/native_gpu_render.rs",
             "tests/native_gpu_frame_damage.rs",
@@ -111,9 +107,6 @@ CHECKLIST = {
         ],
         "evidence_paths": [
             FINAL_AUDIT,
-            "evidence/native-gpu-host-target-pending/report.json",
-            "evidence/native-font-bold-alias-chain/report.json",
-            "evidence/window-xvfb-presentation/report.json",
         ],
     },
     4: {
@@ -134,6 +127,7 @@ CHECKLIST = {
             "src/native_adapter/pointer_host.rs",
             "src/native_adapter/scene_events.rs",
             "src/native_adapter/facade.rs",
+            "tests/native_interaction_closure.rs",
             "tests/input_admission.rs",
             "tests/resource_gate.rs",
             "tests/native_accessibility_tree.rs",
@@ -142,7 +136,6 @@ CHECKLIST = {
         ],
         "evidence_paths": [
             FINAL_AUDIT,
-            "evidence/full-scene-migration-pending/report.json",
         ],
     },
     5: {
@@ -155,14 +148,15 @@ CHECKLIST = {
             "examples/hello.rs",
             "examples/pointer.rs",
             "examples/window.rs",
+            "src/native_adapter/render_host.rs",
+            "tests/native_item5_journey.rs",
             "tests/native_cpu_acceptance.rs",
             "tests/native_blitz_engine.rs",
             "tests/native_frame_differential.rs",
         ],
         "evidence_paths": [
             FINAL_AUDIT,
-            "evidence/full-scene-migration-pending/report.json",
-            "evidence/window-xvfb-presentation/report.json",
+            "evidence/item5-full-path-baseline/report.json",
         ],
     },
 }
@@ -227,9 +221,10 @@ PROOF_BACKLOG = {
         ],
     },
     "CP-08": {
-        "title": "full_scene 编排六阶段、窗口全量转发与性能基线",
+        "title": "full_scene/窗口适配器实现级组合证明与跨宿主性能门",
         "evidence": [
-            "evidence/full-scene-migration-pending/report.json",
+            "evidence/item5-full-path-baseline/report.json",
+            "docs/claude-item5-proof-backlog.md",
             "examples/full_scene.rs",
             FINAL_AUDIT,
         ],
@@ -386,12 +381,34 @@ def item_completion_state(
                     remaining.extend(final["items"][key].get("blocking_gaps", []))
             except (OSError, ValueError, json.JSONDecodeError):
                 pass
-    explicit_false = any(value is False for value in flags.values())
-    explicit_true = bool(flags) and all(value is True for value in flags.values())
-    complete = final_status == "complete" and explicit_true and not blockers and not remaining
+    current_prefix = FINAL_AUDIT + ":"
+    current_flags = {
+        key: value for key, value in flags.items() if key.startswith(current_prefix)
+    }
+    historical_flags = {
+        key: value for key, value in flags.items() if not key.startswith(current_prefix)
+    }
+    explicit_current_true = bool(current_flags) and all(
+        value is True for value in current_flags.values()
+    )
+    completion_scope = final_item.get("completion_standard")
+    scope_is_current = completion_scope == "functional_gaps_closed_and_basic_proofs_passed"
+    complete = (
+        final_status == "complete"
+        and explicit_current_true
+        and scope_is_current
+        and not blockers
+        and not remaining
+    )
     if complete:
-        reading = "explicit_complete_record"
-    elif explicit_false or final_status != "complete" or blockers or remaining:
+        reading = "explicit_complete_current_scope"
+    elif (
+        any(value is False for value in current_flags.values())
+        or final_status != "complete"
+        or not scope_is_current
+        or blockers
+        or remaining
+    ):
         reading = "not_complete"
     else:
         reading = "not_claimed"
@@ -399,7 +416,11 @@ def item_completion_state(
         "recorded_status": final_status,
         "completion_reading": reading,
         "complete": complete,
+        "completion_standard": completion_scope,
         "evidence_completion_flags": flags,
+        "superseded_historical_completion_flags": {
+            key: value for key, value in historical_flags.items() if value is False
+        },
         "blocking_gaps": blockers,
         "remaining": remaining,
     }

@@ -5,10 +5,12 @@
 > comparison; they are not the target architecture. The root crate now offers
 > `engine::Engine` behind the application-facing `native-engine` feature (CPU
 > painting: `native-engine-cpu`). Those names forward to the unchanged
-> `native-blitz-pending` implementation gate while acceptance is still pending.
+> `native-blitz-pending` implementation gate. Functional hardening and basic
+> admission/integration evidence are delivered; the remaining capacity-limited
+> and live-platform proofs are tracked for follow-up.
 > `experiments/blitz-host` consumes that root runtime instead of compiling a
 > second adapter.
-> This entry is not yet accepted. Native execution requires an explicit feature; old execution is available as LegacyEngine only. Canvas remains deferred.
+> Native execution requires an explicit feature; old execution is available as LegacyEngine only. Canvas remains deferred.
 
 Jasper UI 的 **宿主无关 Native 引擎底座**（Rust）。它只负责底层布局、文字测量、场景/绘制、UiBatch、软件光栅和后端接口；不包含 Jasper UI 组件、状态、主题、路由或 Web 运行时。
 
@@ -77,11 +79,11 @@ JASPER_UI_VM_RUN=/path/to/vm-entry.sh scripts/verify-in-vm.sh env CARGO_PROFILE_
 原生鼠标/视觉更新/停用/退休示例为 `--features native-engine --example pointer -- FONT`，字体同样由 VM 宿主注入。通用按钮的焦点由 Framework 显式请求；该示例不声称触摸或 OS capture。旧触摸/capture 演示仅以 `--example legacy_pointer` 保留迁移对照。
 
 完整公共调用路径可通过
-`cargo run --locked --features native-blitz-cpu-pending --example full_scene -- FONT OUTPUT`
+`cargo run --locked --features native-engine-cpu --example full_scene -- FONT OUTPUT`
 重复运行。它覆盖声明、版本化视觉更新、布局/CPU 呈现、焦点与指针交互、外部显示快照及预编辑、无障碍树、资源失败和退休，并输出强制重绘的 CPU 中位/P95 耗时。该数据只用于同机回归，不是硬件显示或 GPU 基准。
 
 窗口调用方
-`cargo run --locked --features desktop,native-blitz-cpu-pending --example window -- FONT [--once|--once-after-activation]`
+`cargo run --locked --features desktop,native-engine-cpu --example window -- FONT [--once|--once-after-activation]`
 现将指针、滚轮、命令键、IME 预编辑/提交和失焦恢复送入同一公共入口；点击触发的视觉补丁保留焦点，窗口缩放和 Surface 失败在宿主层报告。外部文本仍是同步注入的服务夹具，不宣称连接了真实编辑器/IME 服务。
 `scripts/interact-window-xvfb.sh FONT OUT_DIR` 用 Xvfb+xdotool 执行真实 X11 点击，并要求窗口进程以 `activated=1` 和已完成退休退出。
 

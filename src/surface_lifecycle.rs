@@ -88,9 +88,7 @@ impl SurfaceLifecycle {
     /// True only for the exact live generation of the owning host.
     /// 仅当宿主身份与当前活动代数精确匹配时为真。
     pub fn render_allowed(&self, caller: u64, generation: u64) -> bool {
-        caller == self.owner
-            && self.state == SurfaceState::Active
-            && self.generation == generation
+        caller == self.owner && self.state == SurfaceState::Active && self.generation == generation
     }
 
     /// True while the owning host may submit work without carrying an epoch. Public rendering
@@ -195,11 +193,7 @@ impl SurfaceLifecycle {
         Ok(())
     }
 
-    fn require(
-        &self,
-        caller: u64,
-        expected_generation: u64,
-    ) -> Result<(), SurfaceLifecycleError> {
+    fn require(&self, caller: u64, expected_generation: u64) -> Result<(), SurfaceLifecycleError> {
         if caller != self.owner {
             return Err(SurfaceLifecycleError::WrongOwner);
         }

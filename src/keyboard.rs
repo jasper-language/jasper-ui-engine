@@ -1,10 +1,10 @@
 //! Keyboard routing on top of the host-neutral focus/semantics model.
 //! 键盘事件先交给焦点节点；这里只产出意图（聚焦、激活、关闭），不绑定组件实现。
 
-use crate::input::{CompositionEvent, InputEvent, KeyEvent, KeyPhase};
-use crate::resource::ResourceGate;
 use crate::composition_identity::{UiCompositionSlot, UiCompositionToken, UiPreeditView};
+use crate::input::{CompositionEvent, InputEvent, KeyEvent, KeyPhase};
 use crate::input_identity::{AdmittedUiInput, UiInputBinding, UiInputContext, UiInputTicket};
+use crate::resource::ResourceGate;
 use crate::scene::NodeId;
 use crate::semantics::{FocusManager, Role, SemanticsTree};
 
@@ -411,10 +411,7 @@ impl KeyboardRouter {
     /// 仅当准入目标仍持有键盘焦点时消费负载；返回借用同时锁定路由器和绑定。
     /// This filters ownership, not payload semantics or editable-role policy.
     /// 此入口过滤归属，不替代内容校验或可编辑角色策略；旧底层路由须由可信宿主调用。
-    pub fn route_admitted<'a, T>(
-        &'a self,
-        admitted: &'a AdmittedUiInput<'a, T>,
-    ) -> Option<&'a T> {
+    pub fn route_admitted<'a, T>(&'a self, admitted: &'a AdmittedUiInput<'a, T>) -> Option<&'a T> {
         match self.focused() {
             Some(target) if target.0 == admitted.target().0 => Some(admitted.payload()),
             _ => None,
@@ -509,14 +506,20 @@ impl KeyboardRouter {
 }
 // END VERIFIED KEYBOARD INPUT OPEN CLOSE KERNEL
 
-
 // BEGIN VERIFIED KEYBOARD PREEDIT CLOSE KERNEL
 impl KeyboardRouter {
     /// Close the exact active preedit owner, focus and binding, then clear matching UI text.
     /// 关闭精确的活动预编辑归属、焦点和绑定，再清除匹配UI文本；失败保持四对象。
     /// Returns old native cancellation correlation only; host delivery/ack remains external.
     /// 只返回旧原生取消关联；宿主投递及回执仍在此同步操作之外。
-    pub fn close_input_preedit(&mut self, binding: &mut UiInputBinding, slot: &mut UiCompositionSlot, view: &mut UiPreeditView, caller: u64, token: UiCompositionToken) -> Option<UiCompositionToken> {
+    pub fn close_input_preedit(
+        &mut self,
+        binding: &mut UiInputBinding,
+        slot: &mut UiCompositionSlot,
+        view: &mut UiPreeditView,
+        caller: u64,
+        token: UiCompositionToken,
+    ) -> Option<UiCompositionToken> {
         if !slot.accepts(binding, caller, token) {
             return None;
         }
@@ -524,26 +527,37 @@ impl KeyboardRouter {
             Some(_) => {
                 let _ = slot.cancel_preedit(view, caller, token);
                 Some(token)
-            },
+            }
             None => None,
         }
     }
 }
 // END VERIFIED KEYBOARD PREEDIT CLOSE KERNEL
 
-
 // BEGIN VERIFIED PREEDIT LIFECYCLE DISPATCH KERNEL
 impl KeyboardRouter {
     /// Handle qualified lifecycle events for an active composition.
     /// 处理具备完整归属的活动组合生命周期事件：失焦关闭输入，IME禁用只取消组合。
-    pub fn handle_preedit_lifecycle(&mut self, binding: &mut UiInputBinding, slot: &mut UiCompositionSlot, view: &mut UiPreeditView, caller: u64, token: UiCompositionToken, event: &InputEvent) -> Option<UiCompositionToken> {
+    pub fn handle_preedit_lifecycle(
+        &mut self,
+        binding: &mut UiInputBinding,
+        slot: &mut UiCompositionSlot,
+        view: &mut UiPreeditView,
+        caller: u64,
+        token: UiCompositionToken,
+        event: &InputEvent,
+    ) -> Option<UiCompositionToken> {
         match event {
-            InputEvent::Focus(focus) if !focus.focused => self.close_input_preedit(binding, slot, view, caller, token),
+            InputEvent::Focus(focus) if !focus.focused => {
+                self.close_input_preedit(binding, slot, view, caller, token)
+            }
             InputEvent::ImeEnabled(false) => {
-                if !slot.accepts(binding, caller, token) { return None; }
+                if !slot.accepts(binding, caller, token) {
+                    return None;
+                }
                 let _ = slot.cancel_preedit(view, caller, token);
                 Some(token)
-            },
+            }
             _ => None,
         }
     }
@@ -556,23 +570,39 @@ impl KeyboardRouter {
     /// 为无组合和活动组合输入统一分发生命周期；不为宿主创建或认证归属。
     /// An orphaned view with no composition rejects unchanged and requires explicit cleanup.
     /// 无组合却仍有呈现的异常状态保持原样拒绝，须由宿主显式清理。
-    pub fn handle_input_lifecycle(&mut self, binding: &mut UiInputBinding, slot: &mut UiCompositionSlot, view: &mut UiPreeditView, caller: u64, owner: UiInputTicket, event: &InputEvent) -> Option<(UiInputTicket, Option<UiCompositionToken>)> {
-        if !binding.accepts(caller, owner) { return None; }
+    pub fn handle_input_lifecycle(
+        &mut self,
+        binding: &mut UiInputBinding,
+        slot: &mut UiCompositionSlot,
+        view: &mut UiPreeditView,
+        caller: u64,
+        owner: UiInputTicket,
+        event: &InputEvent,
+    ) -> Option<(UiInputTicket, Option<UiCompositionToken>)> {
+        if !binding.accepts(caller, owner) {
+            return None;
+        }
         match slot.current_token() {
-            Some(token) => match self.handle_preedit_lifecycle(binding, slot, view, caller, token, event) {
-                Some(cancelled) => Some((owner, Some(cancelled))),
-                None => None,
-            },
+            Some(token) => {
+                match self.handle_preedit_lifecycle(binding, slot, view, caller, token, event) {
+                    Some(cancelled) => Some((owner, Some(cancelled))),
+                    None => None,
+                }
+            }
             None => {
-                if view.current().is_some() { return None; }
+                if view.current().is_some() {
+                    return None;
+                }
                 match event {
-                    InputEvent::Focus(focus) if !focus.focused => match self.close_input_focus(binding, caller, owner) {
-                        Some(closed) => Some((closed, None)),
-                        None => None,
-                    },
+                    InputEvent::Focus(focus) if !focus.focused => {
+                        match self.close_input_focus(binding, caller, owner) {
+                            Some(closed) => Some((closed, None)),
+                            None => None,
+                        }
+                    }
                     _ => None,
                 }
-            },
+            }
         }
     }
 }

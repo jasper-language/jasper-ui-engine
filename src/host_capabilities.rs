@@ -112,10 +112,7 @@ mod tests {
             CapabilityStatus::HostOwned
         );
         assert_eq!(matrix.gpu_present, CapabilityStatus::HostOwned);
-        assert_eq!(
-            matrix.gpu_hardware_present,
-            CapabilityStatus::Unverified
-        );
+        assert_eq!(matrix.gpu_hardware_present, CapabilityStatus::Unverified);
         assert_eq!(matrix.host_vsync, CapabilityStatus::HostOwned);
         assert_eq!(
             matrix.cpu_rgba8_surface,

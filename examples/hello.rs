@@ -13,7 +13,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut arguments = std::env::args().skip(1);
     let font_path = arguments.next().ok_or("supply an injected font file")?;
     let output = arguments.next().unwrap_or_else(|| "hello.ppm".into());
-    if arguments.next().is_some() { return Err("expected FONT [OUTPUT]".into()); }
+    if arguments.next().is_some() {
+        return Err("expected FONT [OUTPUT]".into());
+    }
     let font = std::fs::read(font_path)?;
     let width = 360.0;
     let height = 220.0;
@@ -59,10 +61,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut backend = HeadlessBackend::new(1, 1);
     let mut engine = Engine::new(10, &scene, &font, width as u32, height as u32)
         .ok_or("native scene import rejected")?;
-    engine.render_to_backend(10, scene.version(), &mut backend, 4 * 1024 * 1024)
+    engine
+        .render_to_backend(10, scene.version(), &mut backend, 4 * 1024 * 1024)
         .map_err(|error| format!("native frame submission failed: {error:?}"))?;
     backend.save_ppm(&output)?;
-    if !engine.close(10) { return Err("native view retirement rejected".into()); }
-    println!("native CPU frame {}x{} -> {}; acceptance pending", width, height, output);
+    if !engine.close(10) {
+        return Err("native view retirement rejected".into());
+    }
+    println!(
+        "native CPU frame {}x{} -> {}; acceptance pending",
+        width, height, output
+    );
     Ok(())
 }
