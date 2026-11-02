@@ -718,3 +718,5 @@ VM 实跑成功，输出 `evidence/full-scene/full_scene.ppm`（P6 320×180，17
 在构建 VM 内安装并运行 Xvfb 后，根 `Engine` 的 winit/softbuffer CPU 链在真实 X11 协议窗口上完成一帧呈现并正常退出。初始 800×600 窗口截图包含精确的 432000 个背景像素及红/蓝各 24000 个 200×120 矩形像素；随后将窗口调整为 640×360，完整重绘后的背景为 182400 像素，两个矩形仍各为 24000 像素。
 
 捕获脚本 `scripts/capture-window-xvfb.sh` 使用宿主持有的 X11 window、softbuffer Surface 和 present，不绕过根 Engine。此结果解除“VM 完全没有显示端点”的阻塞，但仍是软件 Xvfb：不含窗口管理器、合成器、垂直同步、硬件 Surface/device-loss、真实休眠恢复或系统无障碍/IME 服务。证据与截图：`evidence/window-xvfb-presentation/report.json`。
+
+同一 X11 端点下新增 `examples/gpu_window.rs`：宿主取得 X11 Surface、wgpu 设备与 exchange texture，根 Engine 直接绘制到宿主持有的 `TextureView`，宿主调用 `Queue::present`。llvmpipe Vulkan 软件适配器上完成一帧并以 0 退出；硬件 GPU、真实 device-loss 与 vsync 仍未覆盖。

@@ -902,3 +902,5 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 该项是第三方窗口/Surface/renderer 编排的集成证据，不新增自有 Rust 数值内核，因此不标记六阶段完成。VM 内以 `Xvfb :99 -screen 0 1280x720x24` 提供真实 X11 协议端点，运行根 winit/softbuffer 示例；`--once` 在完成一帧 present 后退出码 0。
 
 截图像素检查：800×600 窗口背景 `(24,26,32)` 432000 像素，红矩形 `(220,50,47)` 与蓝矩形 `(30,110,220)` 各 24000 像素；把窗口调整为 640×360 后背景变为 182400，两个矩形仍各 24000。PPM/PNG 哈希与实际事件日志见 `evidence/window-xvfb-presentation/report.json`。该证据不覆盖窗口管理器、vsync、硬件 GPU swapchain、device-loss、休眠恢复、平台无障碍或真实外部 IME。
+
+`examples/gpu_window.rs` 在同一 Xvfb 端点使用 llvmpipe Vulkan：宿主创建 Surface、取得适配器/device/queue 和当前交换纹理，根 Engine 绘制到宿主 `TextureView` 后由宿主 present。一帧运行退出码 0；这是软件 Vulkan 集成证据，硬件驱动、vsync 和 device-loss 仍属于未覆盖能力。

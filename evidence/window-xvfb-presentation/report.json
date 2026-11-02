@@ -16,6 +16,13 @@
       "exit_code": 0,
       "observed": "winit created the X11 window, softbuffer acquired its surface and presented one Blitz/Vello CPU frame; the translated event stream contained ImeEnabled(false) and pointer Hover."
     },
+    "gpu_one_frame_clean_exit": {
+      "log": "gpu-window-once.log",
+      "exit_code": 0,
+      "adapter": "llvmpipe (LLVM 21.1.8, 256 bits)",
+      "backend": "Vulkan",
+      "observed": "The host won the X11 Surface and wgpu device; Engine rendered through Vello hybrid directly into the acquired Surface texture and the host queue presented it."
+    },
     "initial_capture": {
       "window_physical_size": "800x600",
       "root_ppm": "root.ppm",
@@ -46,14 +53,15 @@
     "runner": {
       "script": "scripts/capture-window-xvfb.sh",
       "window_log": "window.log",
-      "window_log_sha256": "6ce16df0228ba653700243a8b1de251b8c43a3fd90d0ec2b13beb45f8141ad85"
+      "window_log_sha256": "6ce16df0228ba653700243a8b1de251b8c43a3fd90d0ec2b13beb45f8141ad85",
+      "gpu_window_log_sha256": "1e270791d13fa7bd75b59f5e7077ae2b3d81d714883b92dfce683560866cb2af"
     }
   },
   "limitations": [
     "Xvfb provides a real X11 protocol surface but not a compositor, window manager, hardware display controller or vsync.",
     "The resize capture validates repaint and surface reconfiguration, not suspend/resume delivery by a platform session manager.",
     "The capture script terminates the long-running diagnostic after taking both screenshots; the separate --once run validates clean application exit after present.",
-    "No hardware GPU swapchain, device-loss recovery, real system accessibility bridge or live external IME service is claimed.",
+    "The GPU window uses the llvmpipe software Vulkan adapter; no hardware GPU swapchain, device-loss recovery, real system accessibility bridge or live external IME service is claimed.",
     "The scene/update orchestration proof remains separate; this report is presentation integration evidence."
   ],
   "checklist_item_2_complete": false,

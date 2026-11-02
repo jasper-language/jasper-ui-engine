@@ -51,6 +51,7 @@
         "default Engine still requires an explicit native feature; legacy remains a compile-time fallback choice for existing API users",
         "actual window/display presentation and all input forwarding remain incomplete",
         "the root Engine now presents and resizes through a real X11 protocol surface under software Xvfb; hardware compositor/vsync behavior remains unverified",
+        "a host-owned X11 wgpu Surface presents a root Engine GPU frame on llvmpipe Vulkan",
         "the selected whole-frame proof depends on the unresolved item 1 obligation"
       ],
       "evidence": [
@@ -154,6 +155,7 @@
     "scene_frame_completion_chain": "Verus 2/0 + Proptest 256 + Miri + fuzz 200000 + Kani 112 checks, Loom N/A; rejection now preserves frame dirty/cache state",
     "full_scene": "VM run passed and emitted PPM 320x180, 172815 bytes",
     "window_xvfb": "800x600 and resized 640x360 X11 window present completed; exact background/red/blue pixel counts retained",
+    "gpu_window_xvfb": "host-owned X11 wgpu Surface, llvmpipe Vulkan, root Engine TextureView render and host present completed in one frame",
     "proof_mapping": "scripts/test-blitz-proof-mapping.py current=true with all negative controls rejected",
     "expanded_kani_resources": "8G guest RAM + 24G VM-disk swap, 3600s, host CPUs 12-19 only, host available memory above 8G; no accepted real-Map result"
   },

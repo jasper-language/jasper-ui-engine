@@ -78,6 +78,10 @@ codegen-units = 1
 name = "window"
 required-features = ["desktop", "native-blitz-cpu-pending"]
 
+[[example]]
+name = "gpu_window"
+required-features = ["desktop", "gpu-pending"]
+
 [dev-dependencies]
 proptest = { version = "=1.12.0", default-features = false, features = ["std"] }
 # Reference AccessKit consumer: validates emitted TreeUpdate sequences in tests.
