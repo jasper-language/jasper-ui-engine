@@ -91,6 +91,19 @@
       "configuration": "-Z unstable-options --unwind 4 --solver bitwuzla --cbmc-args --full-slice",
       "result": "not_passed_memory_failure",
       "observed": "Full slicing increased the expression to 429705 steps and 6944 remaining VCCs; CBMC then reported apparent memory exhaustion."
+    },
+    {
+      "configuration": "-Z unstable-options --unwind 4 --solver minisat --cbmc-args --object-bits 11",
+      "result": "not_passed",
+      "exit_code": 124,
+      "observed": "Symex completed in 32.1636s with 395525 program-expression steps, 18347 generated VCCs and 6388 remaining after simplification. The Minisat backend produced no property or unwinding verdict before the fixed workload timeout."
+    },
+    {
+      "configuration": "BTreeMap::from sorted bulk construction, unchanged production/oracle/domain/checks, --unwind 4 --object-bits 11 with CaDiCaL",
+      "result": "not_passed",
+      "exit_code": 124,
+      "observed": "The construction change expanded symex to 161.908s, 818929 program-expression steps, 61142 generated VCCs and 15514 remaining after simplification. No property or unwinding verdict completed within the fixed workload timeout.",
+      "snapshot": "sorted-from-harness.rs"
     }
   ],
   "negative_controls_retained": [
@@ -102,7 +115,7 @@
   "input_domain_reduced": false,
   "checks_disabled": false,
   "substituted_map": false,
-  "conclusion": "Neither the default SAT path nor the available Kani 0.68.0 SMT/SAT backends that preserve this real Map harness and complete assertion set can finish within 3G. A working object encoding exposed that unwind=4 is insufficient; unwind=5 and unwind=8 then exceeded the fixed time limit. No backend attempt is recorded as passed.",
+  "conclusion": "Neither the default SAT path, Minisat, nor the other available Kani 0.68.0 SMT/SAT backends that preserve this real Map harness and complete assertion set finish within 3G. A working object encoding exposed that unwind=4 is insufficient; unwind=5 and unwind=8 then exceeded the fixed time limit. Replacing two inserts with BTreeMap::from bulk construction also expanded symex and timed out. No backend or construction attempt is recorded as passed.",
   "required_next_step": "A future verifier/backend that can encode this real BTreeMap harness within the fixed limits, or a non-shrinking verifier-supported implementation-level decomposition preserving the production map, full property, original symbolic domain, safety checks, and unwinding assertions.",
   "whole_adapter_accepted": false
 }
