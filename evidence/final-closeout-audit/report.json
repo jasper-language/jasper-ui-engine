@@ -1,0 +1,1898 @@
+{
+  "schema_version": 1,
+  "kind": "jasper-ui-closeout-audit",
+  "generated_at": "2026-11-02T17:23:04.242727+00:00",
+  "claim": "audit only; no checklist completion or whole-engine acceptance is claimed",
+  "git": {
+    "branch": "codex/item6-closeout",
+    "commit": "6840fc90c5d2c42e3cd664dc9f47327b1335c4e7",
+    "dirty_paths": [
+      " M .github/workflows/ci.yml",
+      " M docs/README.md",
+      "?? docs/claude-closeout-proof-backlog.md",
+      "?? docs/closeout.md",
+      "?? scripts/audit-closeout.py",
+      "?? scripts/closeout-baseline.sh",
+      "?? scripts/test-audit-closeout.py"
+    ]
+  },
+  "final_audit": {
+    "path": "evidence/final-checklist-audit-pending/report.json",
+    "readable": true,
+    "error": null,
+    "recorded_status": "incomplete_no_checklist_item_fully_complete",
+    "recorded_completed_items": 0,
+    "covers_head": false,
+    "basis_commit": "3a52933",
+    "material_changed_since_basis": [
+      "Cargo.toml",
+      "docs/status.md",
+      "docs/verification.md",
+      "examples/gpu_window.rs",
+      "scripts/capture-window-xvfb.sh",
+      "scripts/check-blitz-proof-mapping.py",
+      "scripts/verify-in-vm.sh",
+      "scripts/verify-ui.py",
+      "scripts/verify-version.py",
+      "src/native_adapter/facade.rs",
+      "src/native_adapter/native_scene.rs",
+      "src/native_adapter/native_view.rs",
+      "tests/native_component_update_contract.rs",
+      "tests/native_frame_transaction.rs",
+      "verification/blitz-adapter/obligations.json",
+      "verification/native-activation/build.rs",
+      "verification/native-activation/fuzz/fuzz_targets/component_support.rs",
+      "verification/native-activation/fuzz/fuzz_targets/scene_update.rs",
+      "verification/native-activation/src/lib.rs"
+    ],
+    "references": [
+      {
+        "path": "evidence/blitz-framework-update-contract-pending/report.json",
+        "exists": false
+      },
+      {
+        "path": "evidence/blitz-root-hello-migration/report.json",
+        "exists": false
+      },
+      {
+        "path": "evidence/blitz-root-pointer-migration/report.json",
+        "exists": false
+      },
+      {
+        "path": "evidence/blitz-root-window-migration/report.json",
+        "exists": false
+      },
+      {
+        "path": "evidence/component-update-error-contract-chain/report.json",
+        "exists": true
+      },
+      {
+        "path": "evidence/full-scene-migration-pending/report.json",
+        "exists": true
+      },
+      {
+        "path": "evidence/input-lifecycle-chain/report.json",
+        "exists": false
+      },
+      {
+        "path": "evidence/native-backend-frame-chain/report.json",
+        "exists": false
+      },
+      {
+        "path": "evidence/native-backend-submission-chain/report.json",
+        "exists": false
+      },
+      {
+        "path": "evidence/native-dpi-scale-admission-chain/report.json",
+        "exists": false
+      },
+      {
+        "path": "evidence/native-font-bold-alias-chain/report.json",
+        "exists": true
+      },
+      {
+        "path": "evidence/native-frame-orchestration-chain/report.json",
+        "exists": false
+      },
+      {
+        "path": "evidence/native-gpu-host-target-pending/report.json",
+        "exists": true
+      },
+      {
+        "path": "evidence/native-headless-forwarding-chain/report.json",
+        "exists": false
+      },
+      {
+        "path": "evidence/native-host-surface-orchestration-chain/report.json",
+        "exists": false
+      },
+      {
+        "path": "evidence/native-map-ordered-replay/report.json",
+        "exists": false
+      },
+      {
+        "path": "evidence/native-scene-candidate-transaction-pending/report.json",
+        "exists": true
+      },
+      {
+        "path": "evidence/native-subtree-ordered-replay/report.json",
+        "exists": false
+      },
+      {
+        "path": "evidence/native-subtree-partition-candidate/report.json",
+        "exists": false
+      },
+      {
+        "path": "evidence/native-subtree-solver-capability/report.json",
+        "exists": true
+      },
+      {
+        "path": "evidence/scene-update-error-contract-chain/report.json",
+        "exists": true
+      },
+      {
+        "path": "evidence/ui-composition-chain/report.json",
+        "exists": false
+      },
+      {
+        "path": "evidence/ui-input-binding-chain/report.json",
+        "exists": false
+      },
+      {
+        "path": "evidence/validation-chain/report.json",
+        "exists": false
+      }
+    ],
+    "missing_references": [
+      "evidence/blitz-framework-update-contract-pending/report.json",
+      "evidence/blitz-root-hello-migration/report.json",
+      "evidence/blitz-root-pointer-migration/report.json",
+      "evidence/blitz-root-window-migration/report.json",
+      "evidence/input-lifecycle-chain/report.json",
+      "evidence/native-backend-frame-chain/report.json",
+      "evidence/native-backend-submission-chain/report.json",
+      "evidence/native-dpi-scale-admission-chain/report.json",
+      "evidence/native-frame-orchestration-chain/report.json",
+      "evidence/native-headless-forwarding-chain/report.json",
+      "evidence/native-host-surface-orchestration-chain/report.json",
+      "evidence/native-map-ordered-replay/report.json",
+      "evidence/native-subtree-ordered-replay/report.json",
+      "evidence/native-subtree-partition-candidate/report.json",
+      "evidence/ui-composition-chain/report.json",
+      "evidence/ui-input-binding-chain/report.json",
+      "evidence/validation-chain/report.json"
+    ]
+  },
+  "audit_inputs": {
+    "scripts/audit-closeout.py": "3cf0fd12f30fd8307c4b4c9843a5662e956a8670a4636a45d402c6bbadc1561d",
+    "scripts/closeout-baseline.sh": "ac5c9bb8a61c4b25dcb6994bc2559234b75c85e34687ff1de87a9537af8b44f3",
+    "scripts/test-audit-closeout.py": "a7613f9d7ec13dde9e97c50cad85fff4c7b2a93edf88a5c663c6bcde98635bfd",
+    "docs/claude-closeout-proof-backlog.md": "e2af5e5f97fdad0cb2c127967d7c146b4f83c3d4944915c933388171211a5b75",
+    "docs/closeout.md": "865d9cfba58c093e79c8bce71e4212dfeda828ea2a7b8775c003ade9dc3bc18b",
+    "scripts/verify-ui.py": "dbfacc3f0d894ddc2d1f173a69212b8f3e3fc3f8ed3fe0b1348985e5292f1995",
+    "scripts/verify-in-vm.sh": "cc88cbb9afde9788d8154b4bb8501e975ffef039c96e452e355836e50ac4c3ba",
+    ".github/workflows/ci.yml": "eeae3e2da1889165faffa3ec1471a9f4db6b3606cb2087e09260bd6a0c85d5b1",
+    "Cargo.toml": "3de98031ad78e76e16b0c5e83dca2a4493be0a5cff2089d2c161376e6cfb059e",
+    "Cargo.lock": "5b95b93dc20406ae8fa6e7e8c43bd23803450c7f34c021b19d3de3f05f4fe296"
+  },
+  "evidence_index": [
+    {
+      "path": "evidence/bold-alias-kernel/report.json",
+      "sha256": "5a425d3fd7e5c52e48730d34d9d9fb0be829d06f205d4d8e7477e6ea3be7fcb0",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/component-update-admission-kernel/report.json",
+      "sha256": "e7096cdc4137d3aa3c3e73a11848b803fed9359c9f1b8e9e36d43f0a4becab52",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/component-update-error-contract-chain/report.json",
+      "sha256": "0a9ddee42efae43f412f50eb1604a9b00f8b7b0893137d8f52f46fcc9eb4dbf1",
+      "status": "scoped_ordered_acceptance_complete",
+      "recorded_sources": 7,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/final-checklist-audit-pending/report.json",
+      "sha256": "3b792f650ab90adea970b1f35277aa6326f27a82924047a03d485812100f939c",
+      "status": "incomplete_no_checklist_item_fully_complete",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/final-closeout-audit/report.json",
+      "sha256": "e5424aa407435f5ea7f17246e5db342a48bc35ea3757284af0e53eecc3816375",
+      "status": "unspecified",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/full-scene-migration-pending/report.json",
+      "sha256": "536dad4a29d81309d95708cec26a2c9e7f3b8bed4f6d2acc32d3d5f0f8c1e56c",
+      "status": "single_full_caller_path_passes_remaining_item5_acceptance_pending",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "Cargo.toml"
+      ],
+      "completion_flags": {
+        "checklist_item_5_complete": false
+      }
+    },
+    {
+      "path": "evidence/native-component-version-kernel/report.json",
+      "sha256": "c4d90abf9769f66e565a249404418d7395e4e658550c9f8b3f8348e8b8ca1fd7",
+      "status": "proved",
+      "recorded_sources": 6,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/native-font-bold-alias-chain/report.json",
+      "sha256": "df81bb8702425b0c49add9e124dada3a4d268232656c49fc850a972c6b42ab62",
+      "status": "scoped_ordered_acceptance_complete",
+      "recorded_sources": 9,
+      "stale_or_missing_sources": [
+        "scripts/verify-version.py",
+        "src/native_adapter/native_scene.rs",
+        "src/native_adapter/native_view.rs"
+      ],
+      "completion_flags": {
+        "whole_checklist_item_3_complete": false
+      }
+    },
+    {
+      "path": "evidence/native-gpu-host-target-pending/report.json",
+      "sha256": "5e2fa528ebfb894639dcea6db5503832dffb1b2210311a9bc15dbdca05d077bf",
+      "status": "engineering_slice_passes_actual_surface_presentation_pending",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "src/native_adapter/facade.rs",
+        "src/native_adapter/native_scene.rs"
+      ],
+      "completion_flags": {
+        "checklist_item_3_complete": false
+      }
+    },
+    {
+      "path": "evidence/native-host-context-kernel/report.json",
+      "sha256": "8f9b35150c072dba26df9f416510aff26394ca3ba5442df11f42b624b63c40ca",
+      "status": "proved",
+      "recorded_sources": 6,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/native-scene-candidate-transaction-pending/report.json",
+      "sha256": "8d340ed49da3acbe9d3d42040cd2e698e00c62573451dcca176c19706aceb5fb",
+      "status": "engineering_slice_passes_full_frame_proof_pending",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [],
+      "completion_flags": {
+        "checklist_item_2_complete": false
+      }
+    },
+    {
+      "path": "evidence/native-subtree-expanded-capability/report.json",
+      "sha256": "a00f4abf6da39afb27dce33b1c28e393a0a2bcd0784d943439945c4445e26d98",
+      "status": "incomplete_resource_relaxation_exhausted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/native-subtree-solver-capability/report.json",
+      "sha256": "b7879d18a1388deabdd9e6715e0c1ebe0b7993f8b34b4609f8bed720f37670bb",
+      "status": "incomplete_no_supported_backend_completed_within_fixed_vm_limits",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/scene-frame-completion-chain/report.json",
+      "sha256": "cf02438a11e6cec45709360d2a8bcced7794dfcd5265a94aea259c3144d12724",
+      "status": "scoped_ordered_acceptance_complete",
+      "recorded_sources": 6,
+      "stale_or_missing_sources": [],
+      "completion_flags": {
+        "checklist_item_2_complete": false
+      }
+    },
+    {
+      "path": "evidence/scene-frame-completion-kernel/report.json",
+      "sha256": "a20dc7c2b046538e5e9a3a6289b2f4584280faf053c115e77b387fb99069fa77",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/scene-host-close-kernel/report.json",
+      "sha256": "73187771d7d382496b43e588e3f485809f4247900730356714cb90c755794cb5",
+      "status": "proved",
+      "recorded_sources": 5,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/scene-host-identity-kernel/report.json",
+      "sha256": "223ff985215ee7a59b9d62f1671ce281d45282bb110dc36e9bf40923bc052520",
+      "status": "proved",
+      "recorded_sources": 5,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/scene-snapshot-identity-kernel/report.json",
+      "sha256": "3d7ff6f581205f27d8fd4b17ea0b54d0069ecbd13bc48c1a510be0d3af419b99",
+      "status": "proved",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/scene-update-admission-kernel/report.json",
+      "sha256": "8146427158c1cf8627503e8263a93ffbb6ff5d83cdf9a09bde27c73c929d2173",
+      "status": "proved",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/scene-update-error-contract-chain/report.json",
+      "sha256": "73fb4bf6ee84f0e1979cbd69af465197c3a1b227391e4caf9053f93a253b0f2f",
+      "status": "scoped_ordered_acceptance_complete",
+      "recorded_sources": 7,
+      "stale_or_missing_sources": [
+        "src/native_adapter/facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/semantic-role-tag-kernel/report.json",
+      "sha256": "845df5a355509f0d1b7eb6251eda730e9ffc55d129b580097f233984010bc0ad",
+      "status": "proved",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/text-display-close-kernel/report.json",
+      "sha256": "c5fd4e3011da4a8c9d3e203cc9760682d04e336b57a1285c77f20652a963fa29",
+      "status": "proved",
+      "recorded_sources": 7,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/text-display-version-kernel/report.json",
+      "sha256": "31c21ed47d5ad4f848f327958f30afe73ad067df62fa802283e5f33ab99a509c",
+      "status": "proved",
+      "recorded_sources": 7,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/window-xvfb-presentation/report.json",
+      "sha256": "1f3a7657f3bd9627f5c6ded0b04e975b353c17bc49a659317b67c78586ae5afc",
+      "status": "software_x11_window_presentation_passed_hardware_lifecycle_pending",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {
+        "checklist_item_2_complete": false,
+        "checklist_item_3_complete": false,
+        "checklist_item_5_complete": false
+      }
+    }
+  ],
+  "evidence_index_summary": {
+    "reports": 24,
+    "with_stale_or_missing_recorded_sources": 4,
+    "with_explicit_completion": 6
+  },
+  "checklist": {
+    "definition": "Items 1-6 from the 2026-11-02 total audit; only explicit completion records count.",
+    "items": {
+      "1": {
+        "title": "公共契约、场景/组件更新与真实 Map 证明",
+        "recorded_status": "blocked_incomplete",
+        "completion_reading": "not_complete",
+        "complete": false,
+        "evidence_completion_flags": {},
+        "blocking_gaps": [
+          "the actual two-entry real BTreeMap source_subtree_contains Kani obligation remains unfinished",
+          "with 8G RAM plus 24G VM-disk swap and 3600 seconds, unwind5/6/8 complete but remain insufficient; as a result this is no longer only a 3G OOM issue",
+          "complete apply_update to apply_patches implementation-level whole-frame proof remains absent",
+          "float specification and general native-map/mutation proofs remain absent"
+        ],
+        "remaining": [
+          "the actual two-entry real BTreeMap source_subtree_contains Kani obligation remains unfinished",
+          "with 8G RAM plus 24G VM-disk swap and 3600 seconds, unwind5/6/8 complete but remain insufficient; as a result this is no longer only a 3G OOM issue",
+          "complete apply_update to apply_patches implementation-level whole-frame proof remains absent",
+          "float specification and general native-map/mutation proofs remain absent"
+        ],
+        "sources": [
+          {
+            "path": "src/scene.rs",
+            "exists": true,
+            "sha256": "60a8c71dea8702de950b5a036ef4074732c0bed2865f48dc2015a47271f224c2"
+          },
+          {
+            "path": "src/batch.rs",
+            "exists": true,
+            "sha256": "7fa1d6ed36340deb93096434eb33842947c47eb5b804852565de527b20d2cce1"
+          },
+          {
+            "path": "src/input_identity.rs",
+            "exists": true,
+            "sha256": "481fda295574255d00f1b0952ee92a0772a08efe82f2c776250345d01b762fcd"
+          },
+          {
+            "path": "src/engine.rs",
+            "exists": true,
+            "sha256": "4ddb5d6f77c03dd1048a0dba73c8cecc93e6a3361534871e715733a329a8cad7"
+          },
+          {
+            "path": "src/native_adapter/native_scene.rs",
+            "exists": true,
+            "sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac"
+          },
+          {
+            "path": "src/native_adapter/native_view.rs",
+            "exists": true,
+            "sha256": "cc1820ab15b3a75f1a4edf05978b1a6b4321c68617cc7b71cc5266e395d9a8da"
+          },
+          {
+            "path": "src/native_adapter/component_contract.rs",
+            "exists": true,
+            "sha256": "508ed84d90d225c6c3aa787271f1f0c33bcff1f600447930715ab07f21d9437d"
+          },
+          {
+            "path": "src/native_adapter/update_contract.rs",
+            "exists": true,
+            "sha256": "b9c73ac1d2ad1047653d87bba58f75209f1171655691815994ac31336e76b150"
+          },
+          {
+            "path": "tests/native_frame_transaction.rs",
+            "exists": true,
+            "sha256": "5b10bad81c67ec1b042eb360a185866057a12ee8f73c4d3cee8b0bb92c349d18"
+          },
+          {
+            "path": "tests/native_update_contract.rs",
+            "exists": true,
+            "sha256": "d93c37ba11f964b7179729e8c18b421e7ae68c143df5aef704812b354323e9ac"
+          },
+          {
+            "path": "tests/native_component_update_contract.rs",
+            "exists": true,
+            "sha256": "4977624090dd71470ef8a5e09dd84d3dd1882dda3db8cfaf1992a2db178c0d27"
+          },
+          {
+            "path": "verification/read-boundary/src/lib.rs",
+            "exists": true,
+            "sha256": "a2d0dcec0045138aaf2cdc8fcf7d3b301a92ad975c0547cbb83516198fa8412d"
+          }
+        ],
+        "evidence": [
+          {
+            "path": "evidence/final-checklist-audit-pending/report.json",
+            "exists": true,
+            "status": "incomplete_no_checklist_item_fully_complete",
+            "scope": null,
+            "sources": [],
+            "completion_flags": {}
+          },
+          {
+            "path": "evidence/native-subtree-solver-capability/report.json",
+            "exists": true,
+            "status": "incomplete_no_supported_backend_completed_within_fixed_vm_limits",
+            "scope": "The unchanged actual source_subtree_contains function, the original two-entry real BTreeMap input domain, independent scalar oracle, safety checks, and unwinding assertions. Only CBMC/Kani backend encoding and loop bounds were varied.",
+            "sources": [],
+            "completion_flags": {}
+          },
+          {
+            "path": "evidence/native-subtree-expanded-capability/report.json",
+            "exists": true,
+            "status": "incomplete_resource_relaxation_exhausted",
+            "scope": "The unchanged production source_subtree_contains, original two-entry real BTreeMap and symbolic input domain, independent oracle, safety checks and unwinding assertions. The default constrained profile was retained; explicit user authorization allowed larger VM memory, swap and wall time.",
+            "sources": [],
+            "completion_flags": {}
+          },
+          {
+            "path": "evidence/scene-update-error-contract-chain/report.json",
+            "exists": true,
+            "status": "scoped_ordered_acceptance_complete",
+            "scope": "The actual admit_scene_update function classifies ownership, closed state, empty frame, capacity, stale version and invalid successor. SourceRejected/NativeRejected are assigned by the candidate construction transaction after admission and are covered by the public integration test, not this pure admission kernel.",
+            "sources": [
+              {
+                "field": "sources",
+                "path": "scripts/verify-version.py",
+                "exists": true,
+                "expected_sha256": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e",
+                "actual_sha256": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e",
+                "status": "current",
+                "report": "evidence/scene-update-error-contract-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/facade.rs",
+                "exists": true,
+                "expected_sha256": "614588af1896f6eeeb75ae2afb5fefe0ba6737ffb106f8b0b23ecc25aa43edc7",
+                "actual_sha256": "ac54bd10ee888f5d06fdf99bf07a3c97df3facf1f11d9b38405d1c55f1c69f54",
+                "status": "stale",
+                "report": "evidence/scene-update-error-contract-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/native_scene.rs",
+                "exists": true,
+                "expected_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
+                "actual_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
+                "status": "current",
+                "report": "evidence/scene-update-error-contract-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_update_contract.rs",
+                "exists": true,
+                "expected_sha256": "d93c37ba11f964b7179729e8c18b421e7ae68c143df5aef704812b354323e9ac",
+                "actual_sha256": "d93c37ba11f964b7179729e8c18b421e7ae68c143df5aef704812b354323e9ac",
+                "status": "current",
+                "report": "evidence/scene-update-error-contract-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "verification/native-activation/build.rs",
+                "exists": true,
+                "expected_sha256": "c95b982cb5ebdd208decdbe42304cf23623998c08235d83f270f5393bf64a317",
+                "actual_sha256": "c95b982cb5ebdd208decdbe42304cf23623998c08235d83f270f5393bf64a317",
+                "status": "current",
+                "report": "evidence/scene-update-error-contract-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "verification/native-activation/fuzz/fuzz_targets/scene_update.rs",
+                "exists": true,
+                "expected_sha256": "9d629f65b35f091dd4b762426a68ec249ddacf90d1e0b0c3f61211dd83841c26",
+                "actual_sha256": "9d629f65b35f091dd4b762426a68ec249ddacf90d1e0b0c3f61211dd83841c26",
+                "status": "current",
+                "report": "evidence/scene-update-error-contract-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "verification/native-activation/src/lib.rs",
+                "exists": true,
+                "expected_sha256": "28fee14c8495787aea487bd5b0bcd9d653711d7ececac71be0951642391f7b6b",
+                "actual_sha256": "28fee14c8495787aea487bd5b0bcd9d653711d7ececac71be0951642391f7b6b",
+                "status": "current",
+                "report": "evidence/scene-update-error-contract-chain/report.json"
+              }
+            ],
+            "completion_flags": {}
+          },
+          {
+            "path": "evidence/scene-update-admission-kernel/report.json",
+            "exists": true,
+            "status": "proved",
+            "scope": "Exact production structured patch admission and real reused version/count predicates; source/native rejection variants are assigned outside this kernel and are excluded. No native mutation loop or host authentication proof.",
+            "sources": [
+              {
+                "field": "sources",
+                "path": "src/input_identity.rs",
+                "exists": true,
+                "expected_sha256": "481fda295574255d00f1b0952ee92a0772a08efe82f2c776250345d01b762fcd",
+                "actual_sha256": "481fda295574255d00f1b0952ee92a0772a08efe82f2c776250345d01b762fcd",
+                "status": "current",
+                "report": "evidence/scene-update-admission-kernel/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/native_scene.rs",
+                "exists": true,
+                "expected_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
+                "actual_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
+                "status": "current",
+                "report": "evidence/scene-update-admission-kernel/report.json"
+              }
+            ],
+            "completion_flags": {}
+          },
+          {
+            "path": "evidence/component-update-error-contract-chain/report.json",
+            "exists": true,
+            "status": "scoped_ordered_acceptance_complete",
+            "scope": "The actual admit_component_frame function orders ownership/context, closed, empty, capacity, stale sequence, sequence exhaustion, native readiness and view-support rejection before component value mutation.",
+            "sources": [
+              {
+                "field": "sources",
+                "path": "scripts/verify-version.py",
+                "exists": true,
+                "expected_sha256": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e",
+                "actual_sha256": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e",
+                "status": "current",
+                "report": "evidence/component-update-error-contract-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/facade.rs",
+                "exists": true,
+                "expected_sha256": "ac54bd10ee888f5d06fdf99bf07a3c97df3facf1f11d9b38405d1c55f1c69f54",
+                "actual_sha256": "ac54bd10ee888f5d06fdf99bf07a3c97df3facf1f11d9b38405d1c55f1c69f54",
+                "status": "current",
+                "report": "evidence/component-update-error-contract-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/native_view.rs",
+                "exists": true,
+                "expected_sha256": "cc1820ab15b3a75f1a4edf05978b1a6b4321c68617cc7b71cc5266e395d9a8da",
+                "actual_sha256": "cc1820ab15b3a75f1a4edf05978b1a6b4321c68617cc7b71cc5266e395d9a8da",
+                "status": "current",
+                "report": "evidence/component-update-error-contract-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_component_update_contract.rs",
+                "exists": true,
+                "expected_sha256": "4977624090dd71470ef8a5e09dd84d3dd1882dda3db8cfaf1992a2db178c0d27",
+                "actual_sha256": "4977624090dd71470ef8a5e09dd84d3dd1882dda3db8cfaf1992a2db178c0d27",
+                "status": "current",
+                "report": "evidence/component-update-error-contract-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "verification/native-activation/build.rs",
+                "exists": true,
+                "expected_sha256": "c95b982cb5ebdd208decdbe42304cf23623998c08235d83f270f5393bf64a317",
+                "actual_sha256": "c95b982cb5ebdd208decdbe42304cf23623998c08235d83f270f5393bf64a317",
+                "status": "current",
+                "report": "evidence/component-update-error-contract-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "verification/native-activation/fuzz/fuzz_targets/component_support.rs",
+                "exists": true,
+                "expected_sha256": "03e7ebaa5ee94a762c6484a8442c461cc4400220878adfd6d5e152ca6d5a8f20",
+                "actual_sha256": "03e7ebaa5ee94a762c6484a8442c461cc4400220878adfd6d5e152ca6d5a8f20",
+                "status": "current",
+                "report": "evidence/component-update-error-contract-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "verification/native-activation/src/lib.rs",
+                "exists": true,
+                "expected_sha256": "28fee14c8495787aea487bd5b0bcd9d653711d7ececac71be0951642391f7b6b",
+                "actual_sha256": "28fee14c8495787aea487bd5b0bcd9d653711d7ececac71be0951642391f7b6b",
+                "status": "current",
+                "report": "evidence/component-update-error-contract-chain/report.json"
+              }
+            ],
+            "completion_flags": {}
+          },
+          {
+            "path": "evidence/component-update-admission-kernel/report.json",
+            "exists": true,
+            "status": "proved",
+            "scope": "Exact component-frame admission ordering before native mutation; actual element/view-type support is supplied as the proved predicate by the caller, and native mapping failure after preflight is excluded.",
+            "sources": [
+              {
+                "field": "sources",
+                "path": "src/native_adapter/native_view.rs",
+                "exists": true,
+                "expected_sha256": "cc1820ab15b3a75f1a4edf05978b1a6b4321c68617cc7b71cc5266e395d9a8da",
+                "actual_sha256": "cc1820ab15b3a75f1a4edf05978b1a6b4321c68617cc7b71cc5266e395d9a8da",
+                "status": "current",
+                "report": "evidence/component-update-admission-kernel/report.json"
+              }
+            ],
+            "completion_flags": {}
+          },
+          {
+            "path": "evidence/scene-frame-completion-chain/report.json",
+            "exists": true,
+            "status": "scoped_ordered_acceptance_complete",
+            "scope": "The actual complete_scene_frame function requires successful source application, an exact successor version and a detached native candidate before apply_patches_result may replace the active view.",
+            "sources": [
+              {
+                "field": "sources",
+                "path": "scripts/verify-version.py",
+                "exists": true,
+                "expected_sha256": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e",
+                "actual_sha256": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e",
+                "status": "current",
+                "report": "evidence/scene-frame-completion-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/native_scene.rs",
+                "exists": true,
+                "expected_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
+                "actual_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
+                "status": "current",
+                "report": "evidence/scene-frame-completion-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_frame_transaction.rs",
+                "exists": true,
+                "expected_sha256": "5b10bad81c67ec1b042eb360a185866057a12ee8f73c4d3cee8b0bb92c349d18",
+                "actual_sha256": "5b10bad81c67ec1b042eb360a185866057a12ee8f73c4d3cee8b0bb92c349d18",
+                "status": "current",
+                "report": "evidence/scene-frame-completion-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "verification/native-activation/build.rs",
+                "exists": true,
+                "expected_sha256": "c95b982cb5ebdd208decdbe42304cf23623998c08235d83f270f5393bf64a317",
+                "actual_sha256": "c95b982cb5ebdd208decdbe42304cf23623998c08235d83f270f5393bf64a317",
+                "status": "current",
+                "report": "evidence/scene-frame-completion-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "verification/native-activation/fuzz/fuzz_targets/scene_update.rs",
+                "exists": true,
+                "expected_sha256": "9d629f65b35f091dd4b762426a68ec249ddacf90d1e0b0c3f61211dd83841c26",
+                "actual_sha256": "9d629f65b35f091dd4b762426a68ec249ddacf90d1e0b0c3f61211dd83841c26",
+                "status": "current",
+                "report": "evidence/scene-frame-completion-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "verification/native-activation/src/lib.rs",
+                "exists": true,
+                "expected_sha256": "28fee14c8495787aea487bd5b0bcd9d653711d7ececac71be0951642391f7b6b",
+                "actual_sha256": "28fee14c8495787aea487bd5b0bcd9d653711d7ececac71be0951642391f7b6b",
+                "status": "current",
+                "report": "evidence/scene-frame-completion-chain/report.json"
+              }
+            ],
+            "completion_flags": {
+              "checklist_item_2_complete": false
+            }
+          }
+        ],
+        "source_correspondence": {
+          "status": "stale_or_missing",
+          "issues": [
+            {
+              "field": "sources",
+              "path": "src/native_adapter/facade.rs",
+              "exists": true,
+              "expected_sha256": "614588af1896f6eeeb75ae2afb5fefe0ba6737ffb106f8b0b23ecc25aa43edc7",
+              "actual_sha256": "ac54bd10ee888f5d06fdf99bf07a3c97df3facf1f11d9b38405d1c55f1c69f54",
+              "status": "stale",
+              "report": "evidence/scene-update-error-contract-chain/report.json"
+            }
+          ]
+        }
+      },
+      "2": {
+        "title": "Engine/Blitz 整帧事务、默认入口与呈现",
+        "recorded_status": "incomplete",
+        "completion_reading": "not_complete",
+        "complete": false,
+        "evidence_completion_flags": {
+          "evidence/native-scene-candidate-transaction-pending/report.json:checklist_item_2_complete": false,
+          "evidence/scene-frame-completion-chain/report.json:checklist_item_2_complete": false,
+          "evidence/window-xvfb-presentation/report.json:checklist_item_2_complete": false
+        },
+        "blocking_gaps": [
+          "the transaction candidate build/commit and restored state have no complete six-stage implementation proof",
+          "default Engine still requires an explicit native feature; legacy remains a compile-time fallback choice for existing API users",
+          "actual window/display presentation and all input forwarding remain incomplete",
+          "the root Engine now presents and resizes through a real X11 protocol surface under software Xvfb; hardware compositor/vsync behavior remains unverified",
+          "a host-owned X11 wgpu Surface presents a root Engine GPU frame on llvmpipe Vulkan",
+          "the selected whole-frame proof depends on the unresolved item 1 obligation"
+        ],
+        "remaining": [
+          "the transaction candidate build/commit and restored state have no complete six-stage implementation proof",
+          "default Engine still requires an explicit native feature; legacy remains a compile-time fallback choice for existing API users",
+          "actual window/display presentation and all input forwarding remain incomplete",
+          "the root Engine now presents and resizes through a real X11 protocol surface under software Xvfb; hardware compositor/vsync behavior remains unverified",
+          "a host-owned X11 wgpu Surface presents a root Engine GPU frame on llvmpipe Vulkan",
+          "the selected whole-frame proof depends on the unresolved item 1 obligation"
+        ],
+        "sources": [
+          {
+            "path": "src/engine.rs",
+            "exists": true,
+            "sha256": "4ddb5d6f77c03dd1048a0dba73c8cecc93e6a3361534871e715733a329a8cad7"
+          },
+          {
+            "path": "src/backend.rs",
+            "exists": true,
+            "sha256": "fc12fb7d50a4fc515a4e6ba9983bb802467f7684eb49a08c10131a94df9954a9"
+          },
+          {
+            "path": "src/native_adapter/native_scene.rs",
+            "exists": true,
+            "sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac"
+          },
+          {
+            "path": "src/native_adapter/native_view.rs",
+            "exists": true,
+            "sha256": "cc1820ab15b3a75f1a4edf05978b1a6b4321c68617cc7b71cc5266e395d9a8da"
+          },
+          {
+            "path": "src/native_adapter/frame_schedule.rs",
+            "exists": true,
+            "sha256": "8ff551a17209f5bd059e2c8a10afd41eef7aa91c7b4b1c1feedb226c8936cb05"
+          },
+          {
+            "path": "src/native_adapter/facade.rs",
+            "exists": true,
+            "sha256": "ac54bd10ee888f5d06fdf99bf07a3c97df3facf1f11d9b38405d1c55f1c69f54"
+          },
+          {
+            "path": "tests/native_frame_transaction.rs",
+            "exists": true,
+            "sha256": "5b10bad81c67ec1b042eb360a185866057a12ee8f73c4d3cee8b0bb92c349d18"
+          },
+          {
+            "path": "tests/native_frame_differential.rs",
+            "exists": true,
+            "sha256": "1d8ccd5f6c5b48c59eb734abf000ab5dcc048f4ec1557d9ec3a92941962cfa7e"
+          },
+          {
+            "path": "tests/native_cpu_acceptance.rs",
+            "exists": true,
+            "sha256": "de8a05f2841018c6e5f995498424103f6956e5aa25f1bce7e60af6353b49273b"
+          },
+          {
+            "path": "tests/native_frame_damage.rs",
+            "exists": true,
+            "sha256": "6bfb2510221b2350e33c55215e8812f7bf2a539e51fab9463d9b4ddde2f913d0"
+          },
+          {
+            "path": "tests/native_frame_damage_write.rs",
+            "exists": true,
+            "sha256": "89e66b2195d6470b7a8d8b0a202764e94d1f9209881f2a8a4714b3490721f8b1"
+          },
+          {
+            "path": "tests/native_frame_schedule.rs",
+            "exists": true,
+            "sha256": "c66dcefc6fd19fdbf33f9d071f829f4fd3940c25c0a2889191df186cd6c0aca3"
+          },
+          {
+            "path": "tests/native_frame_pace.rs",
+            "exists": true,
+            "sha256": "cb45422a0bcc094493abedf4a31db2c50d85b861d701719ec40c4e078c33e537"
+          }
+        ],
+        "evidence": [
+          {
+            "path": "evidence/final-checklist-audit-pending/report.json",
+            "exists": true,
+            "status": "incomplete_no_checklist_item_fully_complete",
+            "scope": null,
+            "sources": [],
+            "completion_flags": {}
+          },
+          {
+            "path": "evidence/native-scene-candidate-transaction-pending/report.json",
+            "exists": true,
+            "status": "engineering_slice_passes_full_frame_proof_pending",
+            "scope": "NativeScene apply_update/apply_patches transactionality: apply the ordered frame atomically to a retained source Scene clone, build a detached native candidate from that terminal source, restore host-visible state, and swap only after both stages succeed.",
+            "sources": [
+              {
+                "field": "sources",
+                "path": "src/native_adapter/native_scene.rs",
+                "exists": true,
+                "expected_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
+                "actual_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
+                "status": "current",
+                "report": "evidence/native-scene-candidate-transaction-pending/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_frame_transaction.rs",
+                "exists": true,
+                "expected_sha256": "5b10bad81c67ec1b042eb360a185866057a12ee8f73c4d3cee8b0bb92c349d18",
+                "actual_sha256": "5b10bad81c67ec1b042eb360a185866057a12ee8f73c4d3cee8b0bb92c349d18",
+                "status": "current",
+                "report": "evidence/native-scene-candidate-transaction-pending/report.json"
+              }
+            ],
+            "completion_flags": {
+              "checklist_item_2_complete": false
+            }
+          },
+          {
+            "path": "evidence/scene-frame-completion-chain/report.json",
+            "exists": true,
+            "status": "scoped_ordered_acceptance_complete",
+            "scope": "The actual complete_scene_frame function requires successful source application, an exact successor version and a detached native candidate before apply_patches_result may replace the active view.",
+            "sources": [
+              {
+                "field": "sources",
+                "path": "scripts/verify-version.py",
+                "exists": true,
+                "expected_sha256": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e",
+                "actual_sha256": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e",
+                "status": "current",
+                "report": "evidence/scene-frame-completion-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/native_scene.rs",
+                "exists": true,
+                "expected_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
+                "actual_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
+                "status": "current",
+                "report": "evidence/scene-frame-completion-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_frame_transaction.rs",
+                "exists": true,
+                "expected_sha256": "5b10bad81c67ec1b042eb360a185866057a12ee8f73c4d3cee8b0bb92c349d18",
+                "actual_sha256": "5b10bad81c67ec1b042eb360a185866057a12ee8f73c4d3cee8b0bb92c349d18",
+                "status": "current",
+                "report": "evidence/scene-frame-completion-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "verification/native-activation/build.rs",
+                "exists": true,
+                "expected_sha256": "c95b982cb5ebdd208decdbe42304cf23623998c08235d83f270f5393bf64a317",
+                "actual_sha256": "c95b982cb5ebdd208decdbe42304cf23623998c08235d83f270f5393bf64a317",
+                "status": "current",
+                "report": "evidence/scene-frame-completion-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "verification/native-activation/fuzz/fuzz_targets/scene_update.rs",
+                "exists": true,
+                "expected_sha256": "9d629f65b35f091dd4b762426a68ec249ddacf90d1e0b0c3f61211dd83841c26",
+                "actual_sha256": "9d629f65b35f091dd4b762426a68ec249ddacf90d1e0b0c3f61211dd83841c26",
+                "status": "current",
+                "report": "evidence/scene-frame-completion-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "verification/native-activation/src/lib.rs",
+                "exists": true,
+                "expected_sha256": "28fee14c8495787aea487bd5b0bcd9d653711d7ececac71be0951642391f7b6b",
+                "actual_sha256": "28fee14c8495787aea487bd5b0bcd9d653711d7ececac71be0951642391f7b6b",
+                "status": "current",
+                "report": "evidence/scene-frame-completion-chain/report.json"
+              }
+            ],
+            "completion_flags": {
+              "checklist_item_2_complete": false
+            }
+          },
+          {
+            "path": "evidence/scene-frame-completion-kernel/report.json",
+            "exists": true,
+            "status": "proved",
+            "scope": "Exact source-success, exact successor version and detached-candidate readiness gate before active replacement; source patch semantics, candidate construction and replacement assignment are excluded.",
+            "sources": [
+              {
+                "field": "sources",
+                "path": "src/native_adapter/native_scene.rs",
+                "exists": true,
+                "expected_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
+                "actual_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
+                "status": "current",
+                "report": "evidence/scene-frame-completion-kernel/report.json"
+              }
+            ],
+            "completion_flags": {}
+          },
+          {
+            "path": "evidence/window-xvfb-presentation/report.json",
+            "exists": true,
+            "status": "software_x11_window_presentation_passed_hardware_lifecycle_pending",
+            "scope": "Root native Engine CPU frame through the winit/softbuffer example on a real X11 protocol surface supplied by Xvfb.",
+            "sources": [],
+            "completion_flags": {
+              "checklist_item_2_complete": false,
+              "checklist_item_3_complete": false,
+              "checklist_item_5_complete": false
+            }
+          }
+        ],
+        "source_correspondence": {
+          "status": "current",
+          "issues": []
+        }
+      },
+      "3": {
+        "title": "渲染、字体、宿主 Surface 与 GPU 生命周期",
+        "recorded_status": "incomplete",
+        "completion_reading": "not_complete",
+        "complete": false,
+        "evidence_completion_flags": {
+          "evidence/native-gpu-host-target-pending/report.json:checklist_item_3_complete": false,
+          "evidence/native-font-bold-alias-chain/report.json:whole_checklist_item_3_complete": false,
+          "evidence/window-xvfb-presentation/report.json:checklist_item_3_complete": false
+        },
+        "blocking_gaps": [
+          "Xvfb now validates software X11 Surface acquire/present/resize, but no compositor/vsync/hardware display surface or real suspend/resume is observed",
+          "hardware GPU and device-loss behavior are not verified on the software adapter",
+          "the capability matrix and lifecycle contract still need final cross-host evidence",
+          "host GPU orchestration lacks the requested six-stage implementation proof; wgpu/Vello are explicit TCB"
+        ],
+        "remaining": [
+          "Xvfb now validates software X11 Surface acquire/present/resize, but no compositor/vsync/hardware display surface or real suspend/resume is observed",
+          "hardware GPU and device-loss behavior are not verified on the software adapter",
+          "the capability matrix and lifecycle contract still need final cross-host evidence",
+          "host GPU orchestration lacks the requested six-stage implementation proof; wgpu/Vello are explicit TCB"
+        ],
+        "sources": [
+          {
+            "path": "src/native_adapter/gpu_render.rs",
+            "exists": true,
+            "sha256": "381dc058f7a6e38e64092fbc043f035673964cdbb319650a9202f8b574cc4ad3"
+          },
+          {
+            "path": "src/native_adapter/native_fonts.rs",
+            "exists": true,
+            "sha256": "5af9d61c8c2aeb48a7b1614c88f9096d78cd5141dac67c7cdb898645749a4add"
+          },
+          {
+            "path": "src/native_adapter/glyph_skew.rs",
+            "exists": true,
+            "sha256": "9907568e6024f7607fa5663ab509dac3f36bd203a15c3b0032c52ac7a972c8f8"
+          },
+          {
+            "path": "src/native_adapter/text_geometry.rs",
+            "exists": true,
+            "sha256": "81beda238706e36c7bee42a41dc0277673f813b649225ee37a6c32a9d54c365f"
+          },
+          {
+            "path": "src/native_adapter/native_scene.rs",
+            "exists": true,
+            "sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac"
+          },
+          {
+            "path": "src/native_adapter/facade.rs",
+            "exists": true,
+            "sha256": "ac54bd10ee888f5d06fdf99bf07a3c97df3facf1f11d9b38405d1c55f1c69f54"
+          },
+          {
+            "path": "examples/gpu_window.rs",
+            "exists": true,
+            "sha256": "1a90cb9f19519de9de3d9984f5187e16651f138db2c26549d3d0c30869c059a2"
+          },
+          {
+            "path": "examples/window.rs",
+            "exists": true,
+            "sha256": "417a7de51f916c4ae8bf6baf728e8c20a073809b1c3fb479cb01caebdaddefe7"
+          },
+          {
+            "path": "tests/native_gpu_host_view.rs",
+            "exists": true,
+            "sha256": "cbcd5d1a1244e046e19c98a4ce9ee939f96da5a313fafcb71dc144f38b7c599a"
+          },
+          {
+            "path": "tests/native_gpu_render.rs",
+            "exists": true,
+            "sha256": "af0ffca85f42d327a3d51b5628ee92da5ab4e5304e87ca56c1c3fd914c2bbdd4"
+          },
+          {
+            "path": "tests/native_gpu_frame_damage.rs",
+            "exists": true,
+            "sha256": "119af1059765d268d96b79b1a5d50123ec1882af93419b07f8381bbc741873dd"
+          },
+          {
+            "path": "tests/native_font_synthesis.rs",
+            "exists": true,
+            "sha256": "dce4837df0239ec30c2d18c06da7f8ad45eac2b6e32eb7c78b805299cbe02b59"
+          },
+          {
+            "path": "tests/native_font_family.rs",
+            "exists": true,
+            "sha256": "bfeeb2fcbcc70ede2462bee9208c64877723e6b231cdcac00847df82df2a5fa9"
+          },
+          {
+            "path": "tests/native_font_weight_style.rs",
+            "exists": true,
+            "sha256": "3f077f69998745232b48c1985cf61cbe59e99e5aba422ae67f9ab8f3fcce56d7"
+          }
+        ],
+        "evidence": [
+          {
+            "path": "evidence/final-checklist-audit-pending/report.json",
+            "exists": true,
+            "status": "incomplete_no_checklist_item_fully_complete",
+            "scope": null,
+            "sources": [],
+            "completion_flags": {}
+          },
+          {
+            "path": "evidence/native-gpu-host-target-pending/report.json",
+            "exists": true,
+            "status": "engineering_slice_passes_actual_surface_presentation_pending",
+            "scope": "Host-owned GPU device injection and direct Vello hybrid rendering into a host-created wgpu TextureView. The host retains Surface configuration, swapchain texture lifetime and the present call.",
+            "sources": [
+              {
+                "field": "sources",
+                "path": "src/native_adapter/facade.rs",
+                "exists": true,
+                "expected_sha256": "469669e92b74041f24f67e25cb90473860626c3cd34abdf2055d41e64f971965",
+                "actual_sha256": "ac54bd10ee888f5d06fdf99bf07a3c97df3facf1f11d9b38405d1c55f1c69f54",
+                "status": "stale",
+                "report": "evidence/native-gpu-host-target-pending/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/gpu_render.rs",
+                "exists": true,
+                "expected_sha256": "381dc058f7a6e38e64092fbc043f035673964cdbb319650a9202f8b574cc4ad3",
+                "actual_sha256": "381dc058f7a6e38e64092fbc043f035673964cdbb319650a9202f8b574cc4ad3",
+                "status": "current",
+                "report": "evidence/native-gpu-host-target-pending/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/native_scene.rs",
+                "exists": true,
+                "expected_sha256": "adac56b1a8a9383397879e3d36de26da5f1add99daf45185fdad80b66c3e3275",
+                "actual_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
+                "status": "stale",
+                "report": "evidence/native-gpu-host-target-pending/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_gpu_host_view.rs",
+                "exists": true,
+                "expected_sha256": "cbcd5d1a1244e046e19c98a4ce9ee939f96da5a313fafcb71dc144f38b7c599a",
+                "actual_sha256": "cbcd5d1a1244e046e19c98a4ce9ee939f96da5a313fafcb71dc144f38b7c599a",
+                "status": "current",
+                "report": "evidence/native-gpu-host-target-pending/report.json"
+              }
+            ],
+            "completion_flags": {
+              "checklist_item_3_complete": false
+            }
+          },
+          {
+            "path": "evidence/native-font-bold-alias-chain/report.json",
+            "exists": true,
+            "status": "scoped_ordered_acceptance_complete",
+            "scope": "Injected-font bold stand-in admission and the exact blob-id gate used by the CPU/GPU glyph forwarding painter. The stand-in duplicates a physical font blob under weight 700 only when every face in that blob is its family/style/width group maximum and all such maxima are <=500. Variable-weight fonts and blobs containing a real face above 500 receive no stand-in.",
+            "sources": [
+              {
+                "field": "sources",
+                "path": "fuzz/fuzz_targets/read_boundary.rs",
+                "exists": true,
+                "expected_sha256": "cc337b6f298fa19a0723dbba419b3ae245c017c019adbc73e1170ec21eb9c104",
+                "actual_sha256": "cc337b6f298fa19a0723dbba419b3ae245c017c019adbc73e1170ec21eb9c104",
+                "status": "current",
+                "report": "evidence/native-font-bold-alias-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "scripts/verify-version.py",
+                "exists": true,
+                "expected_sha256": "9540af0672b18c9450db6b15358235e982ada2e2563b12500985b3e7202c415c",
+                "actual_sha256": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e",
+                "status": "stale",
+                "report": "evidence/native-font-bold-alias-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/glyph_skew.rs",
+                "exists": true,
+                "expected_sha256": "9907568e6024f7607fa5663ab509dac3f36bd203a15c3b0032c52ac7a972c8f8",
+                "actual_sha256": "9907568e6024f7607fa5663ab509dac3f36bd203a15c3b0032c52ac7a972c8f8",
+                "status": "current",
+                "report": "evidence/native-font-bold-alias-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/native_fonts.rs",
+                "exists": true,
+                "expected_sha256": "5af9d61c8c2aeb48a7b1614c88f9096d78cd5141dac67c7cdb898645749a4add",
+                "actual_sha256": "5af9d61c8c2aeb48a7b1614c88f9096d78cd5141dac67c7cdb898645749a4add",
+                "status": "current",
+                "report": "evidence/native-font-bold-alias-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/native_scene.rs",
+                "exists": true,
+                "expected_sha256": "adac56b1a8a9383397879e3d36de26da5f1add99daf45185fdad80b66c3e3275",
+                "actual_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
+                "status": "stale",
+                "report": "evidence/native-font-bold-alias-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/native_adapter/native_view.rs",
+                "exists": true,
+                "expected_sha256": "b21a5719b2f7cca9cee2d5f254d3911980f03a61459c2b6b481c79cdddc5c0c9",
+                "actual_sha256": "cc1820ab15b3a75f1a4edf05978b1a6b4321c68617cc7b71cc5266e395d9a8da",
+                "status": "stale",
+                "report": "evidence/native-font-bold-alias-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "tests/native_font_synthesis.rs",
+                "exists": true,
+                "expected_sha256": "dce4837df0239ec30c2d18c06da7f8ad45eac2b6e32eb7c78b805299cbe02b59",
+                "actual_sha256": "dce4837df0239ec30c2d18c06da7f8ad45eac2b6e32eb7c78b805299cbe02b59",
+                "status": "current",
+                "report": "evidence/native-font-bold-alias-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "verification/read-boundary/build.rs",
+                "exists": true,
+                "expected_sha256": "c300c61446fe04dc8c48f8de5eeb9a880ab4f625b9bdc2648c99b37499e1fec8",
+                "actual_sha256": "c300c61446fe04dc8c48f8de5eeb9a880ab4f625b9bdc2648c99b37499e1fec8",
+                "status": "current",
+                "report": "evidence/native-font-bold-alias-chain/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "verification/read-boundary/src/lib.rs",
+                "exists": true,
+                "expected_sha256": "a2d0dcec0045138aaf2cdc8fcf7d3b301a92ad975c0547cbb83516198fa8412d",
+                "actual_sha256": "a2d0dcec0045138aaf2cdc8fcf7d3b301a92ad975c0547cbb83516198fa8412d",
+                "status": "current",
+                "report": "evidence/native-font-bold-alias-chain/report.json"
+              }
+            ],
+            "completion_flags": {
+              "whole_checklist_item_3_complete": false
+            }
+          },
+          {
+            "path": "evidence/window-xvfb-presentation/report.json",
+            "exists": true,
+            "status": "software_x11_window_presentation_passed_hardware_lifecycle_pending",
+            "scope": "Root native Engine CPU frame through the winit/softbuffer example on a real X11 protocol surface supplied by Xvfb.",
+            "sources": [],
+            "completion_flags": {
+              "checklist_item_2_complete": false,
+              "checklist_item_3_complete": false,
+              "checklist_item_5_complete": false
+            }
+          }
+        ],
+        "source_correspondence": {
+          "status": "stale_or_missing",
+          "issues": [
+            {
+              "field": "sources",
+              "path": "src/native_adapter/facade.rs",
+              "exists": true,
+              "expected_sha256": "469669e92b74041f24f67e25cb90473860626c3cd34abdf2055d41e64f971965",
+              "actual_sha256": "ac54bd10ee888f5d06fdf99bf07a3c97df3facf1f11d9b38405d1c55f1c69f54",
+              "status": "stale",
+              "report": "evidence/native-gpu-host-target-pending/report.json"
+            },
+            {
+              "field": "sources",
+              "path": "src/native_adapter/native_scene.rs",
+              "exists": true,
+              "expected_sha256": "adac56b1a8a9383397879e3d36de26da5f1add99daf45185fdad80b66c3e3275",
+              "actual_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
+              "status": "stale",
+              "report": "evidence/native-gpu-host-target-pending/report.json"
+            },
+            {
+              "field": "sources",
+              "path": "scripts/verify-version.py",
+              "exists": true,
+              "expected_sha256": "9540af0672b18c9450db6b15358235e982ada2e2563b12500985b3e7202c415c",
+              "actual_sha256": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e",
+              "status": "stale",
+              "report": "evidence/native-font-bold-alias-chain/report.json"
+            },
+            {
+              "field": "sources",
+              "path": "src/native_adapter/native_scene.rs",
+              "exists": true,
+              "expected_sha256": "adac56b1a8a9383397879e3d36de26da5f1add99daf45185fdad80b66c3e3275",
+              "actual_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
+              "status": "stale",
+              "report": "evidence/native-font-bold-alias-chain/report.json"
+            },
+            {
+              "field": "sources",
+              "path": "src/native_adapter/native_view.rs",
+              "exists": true,
+              "expected_sha256": "b21a5719b2f7cca9cee2d5f254d3911980f03a61459c2b6b481c79cdddc5c0c9",
+              "actual_sha256": "cc1820ab15b3a75f1a4edf05978b1a6b4321c68617cc7b71cc5266e395d9a8da",
+              "status": "stale",
+              "report": "evidence/native-font-bold-alias-chain/report.json"
+            }
+          ]
+        }
+      },
+      "4": {
+        "title": "交互、外部输入/组合服务与无障碍宿主",
+        "recorded_status": "incomplete",
+        "completion_reading": "not_complete",
+        "complete": false,
+        "evidence_completion_flags": {},
+        "blocking_gaps": [
+          "no live external editing/input service connection or native IME service in the restricted environment",
+          "no authorized platform accessibility bridge (AT-SPI/UIA/system service) runtime",
+          "all new/modified interaction orchestration lacks the complete ordered proofs",
+          "full composition of late events, rebinding, service cancellation and host capture remains unproved"
+        ],
+        "remaining": [
+          "no live external editing/input service connection or native IME service in the restricted environment",
+          "no authorized platform accessibility bridge (AT-SPI/UIA/system service) runtime",
+          "all new/modified interaction orchestration lacks the complete ordered proofs",
+          "full composition of late events, rebinding, service cancellation and host capture remains unproved"
+        ],
+        "sources": [
+          {
+            "path": "src/input.rs",
+            "exists": true,
+            "sha256": "e55542016d2512bbddfc7409e21934f72406032c1dedc16e5a672f7798782a9c"
+          },
+          {
+            "path": "src/input_identity.rs",
+            "exists": true,
+            "sha256": "481fda295574255d00f1b0952ee92a0772a08efe82f2c776250345d01b762fcd"
+          },
+          {
+            "path": "src/pointer.rs",
+            "exists": true,
+            "sha256": "902bd1a2afa8092e94687918faea2569c5bce0cea5bae904e55b7b8c0f6ec426"
+          },
+          {
+            "path": "src/keyboard.rs",
+            "exists": true,
+            "sha256": "bc7f8f92a4f241c31b3f6508c16a64b7d20ecdec6c669578bbfa200a6badeecf"
+          },
+          {
+            "path": "src/composition_identity.rs",
+            "exists": true,
+            "sha256": "55077cb7228d1f2616114de7e195e6a933112bbb87ab069c0c401e207f5fbc71"
+          },
+          {
+            "path": "src/resource.rs",
+            "exists": true,
+            "sha256": "fea8dda71b75d72155c99a984dd30a69d30a9873084770f04186e4d5afe55782"
+          },
+          {
+            "path": "src/desktop.rs",
+            "exists": true,
+            "sha256": "2737f8895d8806da548699a1814eb03fbddd38d240e32a95be6cf2017f07dc01"
+          },
+          {
+            "path": "src/native_adapter/access_kit.rs",
+            "exists": true,
+            "sha256": "00b7bf850b5469c0564987f605f7fb1d6be5b70a1ea1a31a048cc0634382acdb"
+          },
+          {
+            "path": "src/native_adapter/access_tree.rs",
+            "exists": true,
+            "sha256": "83b68d9a7682a5076c3ab413993c1474b523ebeb66a4df8b8ef901bc4d0fde8f"
+          },
+          {
+            "path": "src/native_adapter/capture_policy.rs",
+            "exists": true,
+            "sha256": "e8d7e13d69b77f1d373cc2f7aa47d28872fbbab245b94d9b6d4349742edc6f8b"
+          },
+          {
+            "path": "src/native_adapter/native_events.rs",
+            "exists": true,
+            "sha256": "81471ce2c7607aadeb9c34099bc7eb40f710de7b0dad185b0dc2c36821b1c320"
+          },
+          {
+            "path": "src/native_adapter/native_keys.rs",
+            "exists": true,
+            "sha256": "bff26d87cbe105c1bdd0bb460f16a45e5209705f654b2315b01ae51d8a6841c0"
+          },
+          {
+            "path": "src/native_adapter/pointer_host.rs",
+            "exists": true,
+            "sha256": "3bb77fd2e8e9e3ec785d0c52b1d297a6bfb9859ed57329ec983b2dd1889f1fc2"
+          },
+          {
+            "path": "src/native_adapter/scene_events.rs",
+            "exists": true,
+            "sha256": "c004b0dee8cf221e8b32d7b92c49c9e68377fda8fe0ca20317a84ec161a5bffb"
+          },
+          {
+            "path": "src/native_adapter/facade.rs",
+            "exists": true,
+            "sha256": "ac54bd10ee888f5d06fdf99bf07a3c97df3facf1f11d9b38405d1c55f1c69f54"
+          },
+          {
+            "path": "tests/input_admission.rs",
+            "exists": true,
+            "sha256": "9e3254a0e323d8d1558a4830dc4d7b7c3aa7a3a4e6bd1b1bc70f6f064682483f"
+          },
+          {
+            "path": "tests/resource_gate.rs",
+            "exists": true,
+            "sha256": "a79da71f867bed40bdab17903641b921ff701e6ab23cac9c3ec1b7991e75b315"
+          },
+          {
+            "path": "tests/native_accessibility_tree.rs",
+            "exists": true,
+            "sha256": "4b86158e04d80d6a90a9696593042b73a1c3a6ec2da0f0d9ec09cfb81f0b1b84"
+          },
+          {
+            "path": "tests/native_accessibility_update.rs",
+            "exists": true,
+            "sha256": "d71c4292aecd1d27cae51ea116030f2df80b5e144bf783b9f556bb60e5203a6a"
+          },
+          {
+            "path": "tests/native_accesskit_bridge.rs",
+            "exists": true,
+            "sha256": "97a0898b6e922cfcc8ee70517ad796e8014b050613c7ce768cdc4d9e3b6f69fc"
+          }
+        ],
+        "evidence": [
+          {
+            "path": "evidence/final-checklist-audit-pending/report.json",
+            "exists": true,
+            "status": "incomplete_no_checklist_item_fully_complete",
+            "scope": null,
+            "sources": [],
+            "completion_flags": {}
+          },
+          {
+            "path": "evidence/full-scene-migration-pending/report.json",
+            "exists": true,
+            "status": "single_full_caller_path_passes_remaining_item5_acceptance_pending",
+            "scope": null,
+            "sources": [
+              {
+                "field": "source",
+                "path": "Cargo.toml",
+                "exists": true,
+                "expected_sha256": "96e9e23c502bc075ac742d27be87e017c11ea2cb6afa09f5a12681fc9db152a4",
+                "actual_sha256": "3de98031ad78e76e16b0c5e83dca2a4493be0a5cff2089d2c161376e6cfb059e",
+                "status": "stale",
+                "report": "evidence/full-scene-migration-pending/report.json"
+              },
+              {
+                "field": "source",
+                "path": "examples/full_scene.rs",
+                "exists": true,
+                "expected_sha256": "5f12c4cc12ca6f9fc9fdddd3dae270a2c780059d8e44b6a2538b49ed46a45423",
+                "actual_sha256": "5f12c4cc12ca6f9fc9fdddd3dae270a2c780059d8e44b6a2538b49ed46a45423",
+                "status": "current",
+                "report": "evidence/full-scene-migration-pending/report.json"
+              }
+            ],
+            "completion_flags": {
+              "checklist_item_5_complete": false
+            }
+          }
+        ],
+        "source_correspondence": {
+          "status": "stale_or_missing",
+          "issues": [
+            {
+              "field": "source",
+              "path": "Cargo.toml",
+              "exists": true,
+              "expected_sha256": "96e9e23c502bc075ac742d27be87e017c11ea2cb6afa09f5a12681fc9db152a4",
+              "actual_sha256": "3de98031ad78e76e16b0c5e83dca2a4493be0a5cff2089d2c161376e6cfb059e",
+              "status": "stale",
+              "report": "evidence/full-scene-migration-pending/report.json"
+            }
+          ]
+        }
+      },
+      "5": {
+        "title": "公共 API 原型迁移、完整示例与性能基线",
+        "recorded_status": "incomplete",
+        "completion_reading": "not_complete",
+        "complete": false,
+        "evidence_completion_flags": {
+          "evidence/full-scene-migration-pending/report.json:checklist_item_5_complete": false,
+          "evidence/window-xvfb-presentation/report.json:checklist_item_5_complete": false
+        },
+        "blocking_gaps": [
+          "window input is still diagnostic rather than fully forwarded",
+          "the external text/IME path uses an injected authority snapshot, not a live service",
+          "no actual display/GPU/accessibility platform path",
+          "example orchestration six-stage proof and performance baseline remain open"
+        ],
+        "remaining": [
+          "window input is still diagnostic rather than fully forwarded",
+          "the external text/IME path uses an injected authority snapshot, not a live service",
+          "no actual display/GPU/accessibility platform path",
+          "example orchestration six-stage proof and performance baseline remain open"
+        ],
+        "sources": [
+          {
+            "path": "src/lib.rs",
+            "exists": true,
+            "sha256": "d0477872195ea3277032de747389e83ebc56d0f666599af2d2d2486917256e5a"
+          },
+          {
+            "path": "src/engine.rs",
+            "exists": true,
+            "sha256": "4ddb5d6f77c03dd1048a0dba73c8cecc93e6a3361534871e715733a329a8cad7"
+          },
+          {
+            "path": "src/backend.rs",
+            "exists": true,
+            "sha256": "fc12fb7d50a4fc515a4e6ba9983bb802467f7684eb49a08c10131a94df9954a9"
+          },
+          {
+            "path": "examples/full_scene.rs",
+            "exists": true,
+            "sha256": "5f12c4cc12ca6f9fc9fdddd3dae270a2c780059d8e44b6a2538b49ed46a45423"
+          },
+          {
+            "path": "examples/hello.rs",
+            "exists": true,
+            "sha256": "03f29f685cda0c181eb0e0c909e3b1503960c28ad3013d7110511034bcc786b9"
+          },
+          {
+            "path": "examples/pointer.rs",
+            "exists": true,
+            "sha256": "f2b9cbf4e4db06e8f076ceeb1402b0c057d4e72a3a2680c1a67ac8600ba82628"
+          },
+          {
+            "path": "examples/window.rs",
+            "exists": true,
+            "sha256": "417a7de51f916c4ae8bf6baf728e8c20a073809b1c3fb479cb01caebdaddefe7"
+          },
+          {
+            "path": "tests/native_cpu_acceptance.rs",
+            "exists": true,
+            "sha256": "de8a05f2841018c6e5f995498424103f6956e5aa25f1bce7e60af6353b49273b"
+          },
+          {
+            "path": "tests/native_blitz_engine.rs",
+            "exists": true,
+            "sha256": "e9469854d722c4322dde8e6a43b9ca1a3ebc9786d16a080635c32c21e8c90987"
+          },
+          {
+            "path": "tests/native_frame_differential.rs",
+            "exists": true,
+            "sha256": "1d8ccd5f6c5b48c59eb734abf000ab5dcc048f4ec1557d9ec3a92941962cfa7e"
+          }
+        ],
+        "evidence": [
+          {
+            "path": "evidence/final-checklist-audit-pending/report.json",
+            "exists": true,
+            "status": "incomplete_no_checklist_item_fully_complete",
+            "scope": null,
+            "sources": [],
+            "completion_flags": {}
+          },
+          {
+            "path": "evidence/full-scene-migration-pending/report.json",
+            "exists": true,
+            "status": "single_full_caller_path_passes_remaining_item5_acceptance_pending",
+            "scope": null,
+            "sources": [
+              {
+                "field": "source",
+                "path": "Cargo.toml",
+                "exists": true,
+                "expected_sha256": "96e9e23c502bc075ac742d27be87e017c11ea2cb6afa09f5a12681fc9db152a4",
+                "actual_sha256": "3de98031ad78e76e16b0c5e83dca2a4493be0a5cff2089d2c161376e6cfb059e",
+                "status": "stale",
+                "report": "evidence/full-scene-migration-pending/report.json"
+              },
+              {
+                "field": "source",
+                "path": "examples/full_scene.rs",
+                "exists": true,
+                "expected_sha256": "5f12c4cc12ca6f9fc9fdddd3dae270a2c780059d8e44b6a2538b49ed46a45423",
+                "actual_sha256": "5f12c4cc12ca6f9fc9fdddd3dae270a2c780059d8e44b6a2538b49ed46a45423",
+                "status": "current",
+                "report": "evidence/full-scene-migration-pending/report.json"
+              }
+            ],
+            "completion_flags": {
+              "checklist_item_5_complete": false
+            }
+          },
+          {
+            "path": "evidence/window-xvfb-presentation/report.json",
+            "exists": true,
+            "status": "software_x11_window_presentation_passed_hardware_lifecycle_pending",
+            "scope": "Root native Engine CPU frame through the winit/softbuffer example on a real X11 protocol surface supplied by Xvfb.",
+            "sources": [],
+            "completion_flags": {
+              "checklist_item_2_complete": false,
+              "checklist_item_3_complete": false,
+              "checklist_item_5_complete": false
+            }
+          }
+        ],
+        "source_correspondence": {
+          "status": "stale_or_missing",
+          "issues": [
+            {
+              "field": "source",
+              "path": "Cargo.toml",
+              "exists": true,
+              "expected_sha256": "96e9e23c502bc075ac742d27be87e017c11ea2cb6afa09f5a12681fc9db152a4",
+              "actual_sha256": "3de98031ad78e76e16b0c5e83dca2a4493be0a5cff2089d2c161376e6cfb059e",
+              "status": "stale",
+              "report": "evidence/full-scene-migration-pending/report.json"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "tool_configuration": {
+    "expected": {
+      "rust": "1.99.1",
+      "nightly": "nightly-2026-10-17",
+      "verus": "0.2026.10.18.7d82994",
+      "verus_sha256": "e9af03732d4bdd32b93a8fcf471706739c24c1473fa5086618d96c47237845dd",
+      "z3": "4.16.0",
+      "kani": "0.68.0",
+      "cbmc": "6.11.0",
+      "cargo_fuzz": "0.13.2",
+      "vm_default": {
+        "memory": "3G",
+        "swap": "0G",
+        "seconds": 180,
+        "tasks": 128,
+        "jobs": 1
+      }
+    },
+    "static_checks": [
+      {
+        "id": "ci-tool-pins",
+        "path": ".github/workflows/ci.yml",
+        "status": "passed",
+        "missing": []
+      },
+      {
+        "id": "vm-default-limits",
+        "path": "scripts/verify-in-vm.sh",
+        "status": "passed",
+        "missing": []
+      },
+      {
+        "id": "ordered-chain-pending-gate",
+        "path": "scripts/verify-ui.py",
+        "status": "passed",
+        "missing": []
+      }
+    ],
+    "evidence_version_conflicts": [],
+    "status": "passed"
+  },
+  "branch_integration": {
+    "branches": [
+      {
+        "branch": "codex/item2-engine",
+        "item": "item 2",
+        "exists": true,
+        "contained": true,
+        "ahead": 0,
+        "tip": "6840fc90c5d2c42e3cd664dc9f47327b1335c4e7"
+      },
+      {
+        "branch": "codex/item3-render",
+        "item": "item 3",
+        "exists": true,
+        "contained": true,
+        "ahead": 0,
+        "tip": "6840fc90c5d2c42e3cd664dc9f47327b1335c4e7"
+      },
+      {
+        "branch": "codex/item4-interaction",
+        "item": "item 4",
+        "exists": true,
+        "contained": true,
+        "ahead": 0,
+        "tip": "6840fc90c5d2c42e3cd664dc9f47327b1335c4e7"
+      },
+      {
+        "branch": "codex/item5-migration",
+        "item": "item 5",
+        "exists": true,
+        "contained": true,
+        "ahead": 0,
+        "tip": "6840fc90c5d2c42e3cd664dc9f47327b1335c4e7"
+      }
+    ],
+    "status": "included",
+    "same_tip_branches": [
+      "codex/item2-engine",
+      "codex/item3-render",
+      "codex/item4-interaction",
+      "codex/item5-migration"
+    ],
+    "interpretation": "Ancestry only verifies that the branch refs are included; item completion must still be established by explicit checklist evidence."
+  },
+  "complex_proof_backlog": {
+    "document": "docs/claude-closeout-proof-backlog.md",
+    "items": [
+      {
+        "id": "CP-01",
+        "title": "真实捕获存储任意双键 Kani 义务",
+        "documented": true,
+        "evidence": [
+          {
+            "path": "docs/status.md",
+            "exists": true
+          },
+          {
+            "path": "evidence/final-checklist-audit-pending/report.json",
+            "exists": true
+          }
+        ]
+      },
+      {
+        "id": "CP-02",
+        "title": "真实 BTreeMap source_subtree_contains 与整帧实现级证明",
+        "documented": true,
+        "evidence": [
+          {
+            "path": "evidence/native-subtree-solver-capability/report.json",
+            "exists": true
+          },
+          {
+            "path": "evidence/native-subtree-expanded-capability/report.json",
+            "exists": true
+          },
+          {
+            "path": "evidence/scene-frame-completion-chain/report.json",
+            "exists": true
+          }
+        ]
+      },
+      {
+        "id": "CP-03",
+        "title": "NativeScene 候选构造、状态恢复与整帧有序证明",
+        "documented": true,
+        "evidence": [
+          {
+            "path": "evidence/native-scene-candidate-transaction-pending/report.json",
+            "exists": true
+          },
+          {
+            "path": "evidence/scene-frame-completion-kernel/report.json",
+            "exists": true
+          }
+        ]
+      },
+      {
+        "id": "CP-04",
+        "title": "浮点、布局、颜色混合及一般原生化变更规格",
+        "documented": true,
+        "evidence": [
+          {
+            "path": "docs/verification.md",
+            "exists": true
+          },
+          {
+            "path": "evidence/final-checklist-audit-pending/report.json",
+            "exists": true
+          }
+        ]
+      },
+      {
+        "id": "CP-05",
+        "title": "DesktopInput/Instant 状态的 Kani 时钟边界",
+        "documented": true,
+        "evidence": [
+          {
+            "path": "docs/input-method-boundary.md",
+            "exists": true
+          },
+          {
+            "path": "docs/status.md",
+            "exists": true
+          }
+        ]
+      },
+      {
+        "id": "CP-06",
+        "title": "宿主 GPU Surface/device-loss/vsync 六阶段与能力矩阵",
+        "documented": true,
+        "evidence": [
+          {
+            "path": "evidence/native-gpu-host-target-pending/report.json",
+            "exists": true
+          },
+          {
+            "path": "evidence/window-xvfb-presentation/report.json",
+            "exists": true
+          }
+        ]
+      },
+      {
+        "id": "CP-07",
+        "title": "活外部 IME/无障碍服务与组合生命周期证明",
+        "documented": true,
+        "evidence": [
+          {
+            "path": "docs/input-method-boundary.md",
+            "exists": true
+          },
+          {
+            "path": "docs/api.md",
+            "exists": true
+          },
+          {
+            "path": "evidence/final-checklist-audit-pending/report.json",
+            "exists": true
+          }
+        ]
+      },
+      {
+        "id": "CP-08",
+        "title": "full_scene 编排六阶段、窗口全量转发与性能基线",
+        "documented": true,
+        "evidence": [
+          {
+            "path": "evidence/full-scene-migration-pending/report.json",
+            "exists": true
+          },
+          {
+            "path": "examples/full_scene.rs",
+            "exists": true
+          },
+          {
+            "path": "evidence/final-checklist-audit-pending/report.json",
+            "exists": true
+          }
+        ]
+      }
+    ],
+    "missing_evidence": [],
+    "status": "passed",
+    "completion_claimed": false
+  },
+  "summary": {
+    "checklist_items": 6,
+    "items_1_to_5_with_explicit_completion": 0,
+    "completion_claimed": false,
+    "static_audit_complete": true,
+    "final_report_covers_head": false,
+    "final_report_basis": "3a52933",
+    "material_paths_changed_since_final_report_basis": 19,
+    "missing_required_sources": 0,
+    "missing_required_evidence": 0,
+    "missing_final_report_references": 17,
+    "stale_or_missing_source_correspondence": 8,
+    "unresolved_item_blockers": 22
+  },
+  "baseline_regression": {
+    "status": "unavailable",
+    "started_at": "2026-11-02T17:23:04.152268+00:00",
+    "finished_at": "2026-11-02T17:23:04.162417+00:00",
+    "command": [
+      "<repo>/scripts/verify-in-vm.sh",
+      "bash",
+      "scripts/closeout-baseline.sh"
+    ],
+    "returncode": 2,
+    "log": "evidence/final-closeout-audit/baseline.log",
+    "log_sha256": "0f85d30af0dfef864fd3e4e20d94b89fb839b718369db44cad40b0a08f279a05"
+  },
+  "final_gate": {
+    "ready": false,
+    "failures": [
+      "final audit has missing evidence references",
+      "items 1-5 do not all have explicit completion records",
+      "items 1-5 still record blocking gaps",
+      "evidence source hashes are stale or missing",
+      "final audit does not cover HEAD",
+      "VM baseline regression did not pass",
+      "worktree is dirty"
+    ],
+    "note": "Default audits may be incomplete; --require-ready enforces this exact list."
+  }
+}

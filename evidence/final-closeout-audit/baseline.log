@@ -1,0 +1,2 @@
+$ <repo>/scripts/verify-in-vm.sh bash scripts/closeout-baseline.sh
+Set JASPER_UI_VM_RUN to the build VM entry script.

@@ -12,6 +12,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Test
         run: cargo test --all-targets
+      - name: Test closeout audit tooling
+        run: python3 scripts/test-audit-closeout.py
 
   ui-validation:
     runs-on: ubuntu-24.04
