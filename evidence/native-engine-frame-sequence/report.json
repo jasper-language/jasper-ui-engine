@@ -1,0 +1,88 @@
+{
+  "date": "2026-11-02",
+  "checklist_item": 2,
+  "status": "engineering_scope_passes_full_formal_transaction_pending",
+  "base_commit": "6840fc90c5d2c42e3cd664dc9f47327b1335c4e7",
+  "scope": "Application-facing native Engine feature aliases, canonical whole-frame update/rejection path, Blitz tree/style/layout/event/render integration, consumed-ID lifecycle retirement, active caller migration and VM regressions.",
+  "sources": {
+    "Cargo.toml": "a78eb3be5b5b5c6da54a716d20c33baaec37563515026960bc90e296188ddd65",
+    "src/native_adapter/native_scene.rs": "e9f93eff9446b26f84d252a87d5260d49f17852b77eda47de38f2c189d0dc256",
+    "tests/native_frame_sequences.rs": "f390813786bd1c822b8d3871390e2051d385a2bfd90cdf4b37d5a5669af68536",
+    "tests/native_frame_damage.rs": "e1bb8270999c7447adbd7f4e6286e2b0ae3546e18785f2218166c1dd608b40cb",
+    "tests/native_frame_schedule.rs": "9f1406ef906a072e4c68e895d57fdefe98397cc2947c5f4565aeeccbdbe48db1",
+    "experiments/blitz-host/Cargo.toml": "fdab9cb6a9291c05b2bbfe79702bd82227aa7039b7d08011d61d2d2d05742616",
+    "experiments/blitz-host/Cargo.lock": "96b8bef214bdfd844dd2272221c00fc004958e448db4e2afedf7c13dad3cf26c",
+    "experiments/blitz-host/tests/typed_facade.rs": "a837c372751ed1c6bc8f233ad27e900a5bc6f89022673f24adec282c72f7c0ef",
+    "scripts/check-blitz-native-dependencies.py": "ac54bc74010dc6f6569ac4e80faf949ed805677f85e19dc9c3be06de3b16d474"
+  },
+  "canonical_entry": {
+    "application_features": [
+      "native-engine",
+      "native-engine-cpu"
+    ],
+    "compatibility_implementation_gates": [
+      "native-blitz-pending",
+      "native-blitz-cpu-pending"
+    ],
+    "engine": "engine::Engine",
+    "default_features": [],
+    "legacy_execution": "LegacyEngine only; active examples and diagnostic caller do not import Taffy, PaintOp or UiBatch execution",
+    "diagnostic_dependency": "experiments/blitz-host depends only on jasper-ui-engine through native-engine/native-engine-cpu"
+  },
+  "whole_frame_behavior": {
+    "success": "The ordered patch frame is applied atomically to the retained source snapshot, a detached terminal Blitz candidate is built, and only then replaces the active view with the exact successor version.",
+    "content": "Insert, remove, same-batch remove/reinsert ordering, style, semantics and text changes use the one terminal candidate path.",
+    "rejection": "Owner, lifecycle, empty/capacity, stale/successor, source and native-construction rejection leave tree, version, focus, viewport, scroll, frame cache and needs_frame unchanged.",
+    "consumed_identity": "Removing a node or ancestor retires its native press and focus identity. Reusing the same NodeId inside that frame cannot transfer a press/focus or activate the replacement on a late Up.",
+    "rendering": "Pinned Blitz owns native tree/style/layout/events; Parley/Vello CPU paints the frame; RenderBackend receives exact RGBA8 bytes and presents only after successful adoption."
+  },
+  "validation": {
+    "vm": "3G RAM, zero swap, 128 tasks, cargo jobs=1, host CPU isolation through scripts/verify-in-vm.sh",
+    "native_all_targets": {
+      "command": "cargo test --locked --no-default-features --features native-engine-cpu --all-targets",
+      "result": "passed",
+      "library_tests": "175 passed",
+      "native_frame_sequence_tests": "3 passed",
+      "random_frame_sequences": "32 generated sequences passed",
+      "diagnostic_typed_facade_external_caller": "38 passed",
+      "notes": "All integration suites and example targets compiled and passed; GPU-only tests are cfg-gated off in this CPU run."
+    },
+    "no_cpu_native_check": {
+      "command": "cargo check --locked --no-default-features --features native-engine --all-targets",
+      "result": "passed"
+    },
+    "default_regression": {
+      "command": "cargo test --locked --all-targets",
+      "result": "passed"
+    },
+    "dependency_check": {
+      "command": "python3 scripts/check-blitz-native-dependencies.py",
+      "result": "passed",
+      "blitz_revision": "52739472460824ec7f1624ab135c09a4bbc99219"
+    },
+    "proof_correspondence": {
+      "result": "current for affected scene kernels: scene-update-admission, scene-frame-completion, scene-host-close, scene-snapshot-identity, scene-host-identity and semantic-role-tag",
+      "limitation": "The whole-adapter evidence mapping cannot be declared current in this worktree because unrelated generated evidence directories are absent, not because the affected mappings failed."
+    }
+  },
+  "remaining_verification_for_claude": [
+    "Formalize Scene::apply_batch_at over an arbitrary ordered frame, including node insertion/removal, remove/reinsert identity reuse and exact one-step version advancement.",
+    "Formalize the detached NativeScene candidate construction/refinement to the authoritative terminal Scene, including all Blitz tree/style/layout fields.",
+    "Formalize the final active-view swap and host-visible state restoration: focus, viewport scroll, hover, pressed node, frame cache and dirty state.",
+    "Prove the negative branch preserves exactly the prior view/frame/version, including third-party failure assumptions; third-party panic rollback remains outside the current contract.",
+    "Replace the 32-case Proptest evidence with a complete implementation-level ordered acceptance if the project requires item 2 to be formally checked."
+  ],
+  "explicit_tcb": [
+    "pinned Blitz DOM/style/layout/event implementation",
+    "fontique and Parley font selection, shaping and layout",
+    "AnyRender and Vello CPU rendering",
+    "Rust allocation, BTreeMap/BTreeSet and FP behavior unless covered by a later formal model",
+    "host Surface/device acquisition, composition and presentation"
+  ],
+  "limitations": [
+    "The feature names are stable application call points; they do not imply that the full formal acceptance is complete.",
+    "This run validates CPU Blitz/Vello rendering. Hardware GPU, compositor/vsync, device-loss and real system accessibility/IME services remain outside item 2 engineering evidence.",
+    "Third-party panic rollback is not claimed."
+  ],
+  "checklist_item_2_complete": false
+}

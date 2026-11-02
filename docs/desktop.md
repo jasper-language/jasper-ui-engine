@@ -19,7 +19,7 @@
 
 - `examples/window` 用 `ApplicationHandler` 创建 winit 窗口。
 - `softbuffer` 把 `HeadlessBackend` 的 RGBA 帧转换为 `0x00RRGGBB` 并呈现。
-- 新命令：`cargo run --features desktop,native-blitz-cpu-pending --example window -- FONT [--once]`，仅经受限 VM 编译/运行。
+- 新命令：`cargo run --features desktop,native-engine-cpu --example window -- FONT [--once]`，仅经受限 VM 编译/运行；该应用特性转发迁移期实现门。
 - 原有窗口实跑证据属于旧执行链，不能作为新路径的实际呈现验收。当前 VM 无可用显示服务；不转宿主运行，也不创建或重启共享显示服务。
 - 每次绘制用物理窗口尺寸与 DPI 更新原生 viewport；尺寸/缩放变化请求重绘，零尺寸跳过呈现。
 - 暂停释放宿主窗口/Surface 并停用原生焦点，恢复后重建宿主资源；终止退出后退休原生场景。

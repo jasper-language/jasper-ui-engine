@@ -70,9 +70,9 @@ fn scene_update_invalidates_and_repaints() {
     assert_eq!(px(&before,5,5),[200,40,40,255]);
     assert_eq!(px(&after,5,5),[40,200,40,255],"cached frame must not be reused after an update");
     assert_eq!(engine.needs_frame(OWNER),Some(false));
-    // A stale-version update is rejected; conservative damage only costs one extra paint.
+    // A stale-version update is rejected without dirtying or replacing the current frame.
     assert!(!engine.apply(OWNER,v,v+2,&[]));
-    assert_eq!(engine.needs_frame(OWNER),Some(true));
+    assert_eq!(engine.needs_frame(OWNER),Some(false));
     assert_eq!(render(&mut engine,v+1),after);
 }
 

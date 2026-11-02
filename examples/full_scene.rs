@@ -2,7 +2,7 @@
 //! pointer activation, external display/IME client lifecycle and retirement.
 //! 端到端无头调用方：场景声明、版本化更新、布局、CPU 呈现、指针激活、外部显示/IME 客户端
 //! 生命周期及退休。
-//! Run: cargo run --features native-blitz-cpu-pending --example full_scene -- FONT [OUTPUT].
+//! Run: cargo run --features native-engine-cpu --example full_scene -- FONT [OUTPUT].
 
 use jasper_ui_engine::backend::HeadlessBackend;
 use jasper_ui_engine::engine::Engine;

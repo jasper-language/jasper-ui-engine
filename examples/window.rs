@@ -1,6 +1,6 @@
 //! Host-owned winit/softbuffer presentation of the root native CPU candidate.
 //! 宿主持有窗口与 Surface，根原生候选负责绘制；完整验收尚未完成。
-//! Run: cargo run --features desktop,native-blitz-cpu-pending --example window -- FONT [--once].
+//! Run: cargo run --features desktop,native-engine-cpu --example window -- FONT [--once].
 
 use std::num::NonZeroU32;
 use std::sync::Arc;

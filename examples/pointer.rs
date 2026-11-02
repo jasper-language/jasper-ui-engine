@@ -1,4 +1,4 @@
-//! Root native mouse routing candidate; FONT is injected by the embedding host.
+//! Root native mouse routing candidate (`native-engine`); FONT is injected by the embedding host.
 //! 根原生鼠标路由候选；FONT 由宿主注入。触摸/capture 兼容演示见 legacy_pointer。
 use jasper_ui_engine::{engine::Engine,scene::{Node,NodeId,Scene,ScenePatch},
     style::{Style,Length,Color,FlexDirection},geometry::Edges,semantics::{Semantics,Role}};

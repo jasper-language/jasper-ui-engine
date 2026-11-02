@@ -69,9 +69,10 @@ fn repaint_without_visible_change_is_unchanged() {
     let source=scene();let font=font();let v=source.version();
     let mut engine=Engine::new(OWNER,&source,&font,W,H).expect("native import");
     render(&mut engine,v);
-    // A rejected stale update marks dirty conservatively; the repaint is pixel-identical.
+    // A rejected stale update leaves the clean frame state unchanged; a forced repaint is
+    // pixel-identical and therefore reports no damage.
     assert!(!engine.apply(OWNER,v,v+5,&[]));
-    assert_eq!(engine.needs_frame(OWNER),Some(true));
+    assert_eq!(engine.needs_frame(OWNER),Some(false));
     assert_eq!(render(&mut engine,v).1,FrameDamage::Unchanged);
 }
 

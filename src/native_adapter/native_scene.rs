@@ -7,15 +7,6 @@ use crate::view_slot::ViewSlot;
 use jasper_ui_engine::input_identity::next_ui_update_version;
 use std::collections::{BTreeMap,BTreeSet};
 
-enum PreparedSceneMutation {
-    Text,
-    Semantics(Vec<(&'static str,String)>),
-    Scroll(blitz_dom::Point<f64>),
-    Style(Vec<(&'static str,String)>),
-    Remove(Vec<NodeId>),
-    Insert {styles:Vec<Vec<(&'static str,String)>>,index:usize,anchor:Option<NodeId>},
-}
-
 /// Publicly consumable reason a scene update was not committed. This contains no backend type
 /// and no patch payload; a rejected update leaves the active view at its prior version.
 /// 场景更新未提交的可消费原因；不包含后端类型或补丁载荷，拒绝后活动视图保持原版本。
@@ -223,20 +214,6 @@ impl NativeScene {
         }
         true
     }
-    /// Execute only a fully prepared insertion; outer frame owns admission and versioning.
-    fn insert_prepared(&mut self,parent:NodeId,index:usize,anchor:Option<NodeId>,node:&Node,
-        prepared:Vec<Vec<(&'static str,String)>>)->bool {
-        let Some((native_parent,_))=self.nodes.get(&parent) else {return false;};let native_parent=*native_parent;
-        let anchor=match anchor {Some(id)=>match self.nodes.get(&id) {Some((node,_))=>Some(*node),None=>return false},None=>None};
-        if !self.append_prepared_subtree(node,Some(parent),native_parent,prepared) {return false;}
-        let Some((inserted,_))=self.nodes.get(&node.id) else {return false;};let inserted=*inserted;
-        let Some(document)=self.document.as_mut() else {return false;};
-        if let Some(anchor)=anchor {document.mutate().insert_nodes_before(anchor,&[inserted]);}
-        document.resolve(0.0);
-        if !self.apply_source_scrolls(node) {return false;}
-        let Some(children)=self.children.get_mut(&parent) else {return false;};children.insert(index,node.id);
-        true
-    }
     /// Apply one complete frame to a candidate source/native view, then swap it into place.
     /// No active document or metadata is mutated before both stages succeed.
     pub(crate) fn apply_patches(&mut self,caller:u64,expected:u64,next:u64,patches:&[ScenePatch])->bool {
@@ -247,12 +224,13 @@ impl NativeScene {
         patches:&[ScenePatch])->Result<(),SceneUpdateError> {
         admit_scene_update(self.owner,caller,self.scene_version,expected,next,
             patches.len(),self.document.is_open())?;
-        let focused=self.focused_node(caller,expected);
+        let focused=self.focused_node(caller,expected)
+            .filter(|id|!self.frame_retires_node(*id,patches));
         let mut source=self.source.clone();
         let source_ok=source.apply_batch_at(expected,patches).is_ok();
         let source_version=source.version();
         let candidate=if source_ok && source_version==next {
-            self.rebuild_candidate(source,focused)
+            self.rebuild_candidate(source,focused,patches)
         } else {None};
         complete_scene_frame(source_ok,source_version,next,candidate.is_some())?;
         let Some(candidate)=candidate else {return Err(SceneUpdateError::NativeRejected);};
@@ -260,12 +238,13 @@ impl NativeScene {
         Ok(())
     }
     /// Build and restore host-visible state in a detached candidate document.
-    fn rebuild_candidate(&self,source:Scene,focused:Option<NodeId>)->Option<Self> {
+    fn rebuild_candidate(&self,source:Scene,focused:Option<NodeId>,patches:&[ScenePatch])->Option<Self> {
         let document=self.document.as_ref()?;
         let viewport=document.viewport().clone();
         let viewport_scroll=document.viewport_scroll();
         let pressed=document.get_mousedown_node_id().and_then(|native|
-            self.nodes.iter().find_map(|(id,(element,_))|(*element==native).then_some(*id)));
+            self.nodes.iter().find_map(|(id,(element,_))|(*element==native).then_some(*id)))
+            .filter(|id|!self.frame_retires_node(*id,patches));
         let (width,height)=viewport.window_size;
         let mut candidate=Self::from_scene_with_context(
             self.owner,&source,crate::native_fonts::InjectedFonts {
@@ -295,6 +274,14 @@ impl NativeScene {
         candidate.last_pointer=self.last_pointer;
         candidate.frame_cache=self.frame_cache.clone();
         Some(candidate)
+    }
+    /// A frame that removes a node also retires its native press/focus identity. Reusing
+    /// the same source NodeId later in the frame must not transfer the old interaction state.
+    fn frame_retires_node(&self,id:NodeId,patches:&[ScenePatch])->bool {
+        patches.iter().any(|patch|match patch {
+            ScenePatch::Remove {id:removed}=>source_subtree_contains(&self.parents,id,*removed),
+            _=>false,
+        })
     }
     /// Publish actual final focus after a successful source patch batch.
     pub(crate) fn apply_patches_with_focus_events(&mut self,caller:u64,expected:u64,next:u64,patches:&[ScenePatch],

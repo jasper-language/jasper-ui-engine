@@ -10,7 +10,7 @@ publish = false
 [dependencies]
 # Consumer-only dependency: runtime and private backend dependencies belong to the root engine.
 # 仅依赖根引擎；运行时和私有后端依赖归根引擎维护。
-jasper-ui-engine = { path = "../..", default-features = false, features = ["native-blitz-pending"] }
+jasper-ui-engine = { path = "../..", default-features = false, features = ["native-engine"] }
 
 [lib]
 # Actual native unit tests compile under the root engine, not this re-export shim.
@@ -20,7 +20,7 @@ doctest = false
 
 [features]
 default = []
-cpu-pending = ["jasper-ui-engine/native-blitz-cpu-pending"]
+cpu-pending = ["jasper-ui-engine/native-engine-cpu"]
 
 # Keep first native integration diagnostics within the existing VM memory budget.
 [profile.dev]

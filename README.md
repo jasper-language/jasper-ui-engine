@@ -3,9 +3,11 @@
 > Current direction: migrate the UI execution layer to pinned Blitz. The existing
 > hand-assembled engine and optional Parley adapter are retained for migration
 > comparison; they are not the target architecture. The root crate now offers
-> `engine::Engine` behind `native-blitz-pending` (CPU painting:
-> `native-blitz-cpu-pending`). `experiments/blitz-host` now consumes that root
-> runtime instead of compiling a second adapter.
+> `engine::Engine` behind the application-facing `native-engine` feature (CPU
+> painting: `native-engine-cpu`). Those names forward to the unchanged
+> `native-blitz-pending` implementation gate while acceptance is still pending.
+> `experiments/blitz-host` consumes that root runtime instead of compiling a
+> second adapter.
 > This entry is not yet accepted. Native execution requires an explicit feature; old execution is available as LegacyEngine only. Canvas remains deferred.
 
 Jasper UI 的 **宿主无关 Native 引擎底座**（Rust）。它只负责底层布局、文字测量、场景/绘制、UiBatch、软件光栅和后端接口；不包含 Jasper UI 组件、状态、主题、路由或 Web 运行时。
@@ -48,9 +50,10 @@ Jasper UI 的 **宿主无关 Native 引擎底座**（Rust）。它只负责底�
 - **Canvas 组件**：记录式绘制指令（矩形/线/文字/裁剪），参与布局与内容裁剪；CPU 渲染走 `tiny-skia`
 - **GPU 选择策略**：自动/集成/独立/指定适配器/纯软件，支持软件回退与运行时切换规划
 - **桌面输入**：`--features desktop` 把 winit 鼠标/键盘/滚轮/IME/Focus 规范化为引擎事件
-- **桌面窗口**：`--features desktop,native-blitz-cpu-pending --example window -- FONT [--once]` 使用根原生 CPU 候选，经宿主持有的 winit/softbuffer 呈现；新路径实际窗口验收待完成
+- **桌面窗口**：`--features desktop,native-engine-cpu --example window -- FONT [--once]` 使用根原生 CPU 候选，经宿主持有的 winit/softbuffer 呈现；新路径实际窗口验收待完成
 - **GPU 选择**：`--features gpu` 用 wgpu 枚举真实适配器，套用自动/集成/独立/指定/纯软件策略
-- 引擎流水线：场景 → 布局 → 绘制 → UiBatch → 后端
+- 正式原生流水线：场景更新 → Blitz 树/样式/布局/事件 → Parley/Vello → 宿主后端或 Surface
+- 旧兼容流水线：场景 → Taffy 布局 → PaintOp → UiBatch → 后端，仅由 `LegacyEngine` 显式调用
 - 测试与可运行示例
 
 ## v0.1 明确未实现
@@ -66,33 +69,38 @@ Jasper UI 的 **宿主无关 Native 引擎底座**（Rust）。它只负责底�
 
 ```bash
 cargo test
-JASPER_UI_VM_RUN=/path/to/vm-entry.sh scripts/verify-in-vm.sh env CARGO_PROFILE_DEV_DEBUG=0 CARGO_TARGET_DIR=experiments/blitz-host/target JASPER_UI_TEST_FONT=/path/in/vm/font.ttc cargo +nightly run --locked --features native-blitz-cpu-pending --example hello -- /path/in/vm/font.ttc
+JASPER_UI_VM_RUN=/path/to/vm-entry.sh scripts/verify-in-vm.sh env CARGO_PROFILE_DEV_DEBUG=0 CARGO_TARGET_DIR=experiments/blitz-host/target JASPER_UI_TEST_FONT=/path/in/vm/font.ttc cargo +nightly run --locked --features native-engine-cpu --example hello -- /path/in/vm/font.ttc
 # 字体由验证 VM 宿主注入（示例路径用占位符）；生成 hello.ppm，运行原生候选入口，整体验收仍未完成。
 ```
 
-原生鼠标/视觉更新/停用/退休示例为 `--features native-blitz-pending --example pointer -- FONT`，字体同样由 VM 宿主注入。通用按钮的焦点由 Framework 显式请求；该示例不声称触摸或 OS capture。旧触摸/capture 演示仅以 `--example legacy_pointer` 保留迁移对照。
+原生鼠标/视觉更新/停用/退休示例为 `--features native-engine --example pointer -- FONT`，字体同样由 VM 宿主注入。通用按钮的焦点由 Framework 显式请求；该示例不声称触摸或 OS capture。旧触摸/capture 演示仅以 `--example legacy_pointer` 保留迁移对照。
 
 要求 Rust 1.89+（以 `Cargo.toml` 为准）。
 
 ## 架构
 
 ```text
-Jasper UI Framework / UI IR          （Jasper 侧，后续）
+Jasper UI Framework / UI IR
               |
-        Native ABI                    （稳定边界，后续）
+        typed Scene / SceneUpdate
               |
-  jasper-ui-engine (this repo)
-    scene -> layout(Taffy) -> paint -> UiBatch -> backend
-              |                         |
-        text measure              Headless / Platform backend
-        (cosmic-text measure; raster later)            (winit software example / GPU rendering later)
+  engine::Engine (native-engine feature)
+    ScenePatch -> Blitz DOM/style -> Blitz layout/events
+                              |
+                     Parley text -> Vello CPU/GPU
+                              |
+                RenderBackend / host Surface
+
+LegacyEngine (explicit compatibility only)
+    scene -> Taffy layout -> PaintOp -> UiBatch -> backend
 ```
 
 - `scene`：当前实例树，稳定 `NodeId`；不是 Jasper 声明层。
-- `layout`：把 PSS 子集翻译成 Taffy；Jasper 公共语义不直接暴露 Taffy 类型。
-- `paint`：只产出显示列表，不绑定 Vello/GPU。
-- `batch`：渲染批编码，供 FFI/IPC/网络复用。
-- `backend`：软件/GPU/远程后端的统一入口。
+- `Engine`：正式原生入口；先把完整更新帧应用到来源副本，再从终态构建独立 Blitz 候选，成功后单次替换。
+- `Blitz`：负责原生树、样式、布局、焦点和事件；应用不接触 Blitz/DOM/CSS 类型。
+- `Parley` / `Vello`：共享文字布局和 CPU/GPU 绘制，经宿主注入字体、Surface 与设备。
+- `RenderBackend`：接收完整原生 RGBA8 帧，成功提交后才呈现；不支持的后端明确报错。
+- `LegacyEngine`：仅供显式迁移兼容；活动原生示例和外部调用方不经过 Taffy→PaintOp→UiBatch 执行链。
 - `platform`：窗口/输入/DPI 能力入口；内置宿主和自带宿主分别实现。
 
 ## 触摸、多点触控与触控笔

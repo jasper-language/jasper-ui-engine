@@ -55,6 +55,11 @@ accesskit = { version = "=0.25.2", optional = true }
 
 [features]
 default = []
+# Application-facing native engine names. These forward to the implementation
+# features retained during the migration; the acceptance status is documented
+# separately and is not implied by the shorter feature name.
+native-engine = ["native-blitz-pending"]
+native-engine-cpu = ["native-engine", "native-blitz-cpu-pending"]
 native-blitz-pending = ["dep:blitz-dom", "dep:blitz-traits", "dep:fontique", "dep:keyboard-types", "dep:parley"]
 native-blitz-cpu-pending = ["native-blitz-pending", "cpu-pending"]
 # Shared source uses this internal cfg in both crates.
@@ -76,7 +81,7 @@ codegen-units = 1
 
 [[example]]
 name = "window"
-required-features = ["desktop", "native-blitz-cpu-pending"]
+required-features = ["desktop", "native-engine-cpu"]
 
 [[example]]
 name = "gpu_window"
@@ -89,12 +94,12 @@ accesskit_consumer = "=0.39.2"
 
 [[example]]
 name = "hello"
-required-features = ["native-blitz-cpu-pending"]
+required-features = ["native-engine-cpu"]
 
 [[example]]
 name = "pointer"
-required-features = ["native-blitz-pending"]
+required-features = ["native-engine"]
 
 [[example]]
 name = "full_scene"
-required-features = ["native-blitz-cpu-pending"]
+required-features = ["native-engine-cpu"]

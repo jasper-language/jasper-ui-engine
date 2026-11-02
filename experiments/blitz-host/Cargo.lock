@@ -571,6 +571,7 @@ checksum = "c03d949a14aa089bbb282f7dd76a498a7f684428e4257202efc119ec010376f9"
 dependencies = [
  "bitflags",
  "bytemuck",
+ "core_maths",
  "read-fonts",
  "smallvec",
 ]
@@ -826,6 +827,8 @@ dependencies = [
  "blitz-traits",
  "fontique",
  "keyboard-types",
+ "parley",
+ "peniko",
  "taffy 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -1078,6 +1081,7 @@ version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "61bd0c0c1737f0b3d3726dc06b225083af213b61913e4fbae1670613a106c6ce"
 dependencies = [
+ "core_maths",
  "fontique",
  "hashbrown",
  "linebender_resource_handle",
@@ -1311,6 +1315,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "046a7d674daf459825b32f5062056d6882db0d2f5a479fbd76ccfc870ac18709"
 dependencies = [
  "bytemuck",
+ "core_maths",
  "font-types",
  "once_cell",
 ]
@@ -1458,6 +1463,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "819ab7d62b1d3e72d9d9dea5650bac30424f9111364bb94928dbf5ecad1baa68"
 dependencies = [
  "bytemuck",
+ "core_maths",
  "read-fonts",
 ]
 
