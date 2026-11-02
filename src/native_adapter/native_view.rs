@@ -5,7 +5,7 @@ use crate::view_slot::ViewSlot;
 pub(crate) use crate::component_contract::{ComponentUpdate, ContentFlow, TextAppearance};
 use crate::component_contract::supports_component_update;
 use jasper_ui_engine::composition_identity::{valid_composition_range, UiCompositionSlot, UiCompositionToken};
-use jasper_ui_engine::{input_identity::{next_ui_update_version, accepts_ui_display_snapshot, matches_ui_view_owner, UiInputBinding, UiInputContext, UiInputTicket}};
+use jasper_ui_engine::{input_identity::{next_ui_update_version, accepts_ui_display_successor, matches_ui_view_owner, UiInputBinding, UiInputContext, UiInputTicket}};
 
 /// Crate-local candidate facade; no upstream types escape to its caller.
 /// Text is supplied by the consumer, not owned as an authoritative edit document.
@@ -64,6 +64,15 @@ impl NativeTextView {
     /// 宿主生命周期协调的只读归属检查，不把后端身份当作认证。
     pub(crate) fn host_context_matches(&self, caller: u64, expected: UiInputContext) -> bool {
         matches_ui_view_owner(self.session,self.context,caller,expected)
+    }
+
+    pub(crate) fn current_context_for(&self,caller:u64)->Option<UiInputContext> {
+        (self.session==caller && self.document.is_open()).then_some(self.context)
+    }
+
+    pub(crate) fn accepts_preedit(&self,binding:&UiInputBinding,caller:u64,
+        token:UiCompositionToken)->bool {
+        self.document.is_open() && self.preedit.accepts(binding,caller,token)
     }
 
 }
@@ -137,7 +146,7 @@ impl NativeTextView {
     pub(crate) fn apply_display_snapshot_from_host(
         &mut self, caller: u64, expected: UiInputContext, next: UiInputContext, text: &str,
     ) -> bool {
-        if !accepts_ui_display_snapshot(self.session, self.context, caller, expected, next) { return false; }
+        if !accepts_ui_display_successor(self.session, self.context, caller, expected, next) { return false; }
         let Some(document) = self.document.as_mut() else { return false; };
         {
             let mut tree = document.mutate();

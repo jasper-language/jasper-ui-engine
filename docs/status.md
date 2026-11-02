@@ -757,3 +757,11 @@ GPU 直接绘制到宿主 `TextureView` 后，`needs_frame` 在宿主 `Queue::pr
 背景/红/蓝像素计数，llvmpipe Vulkan 路径完成宿主 present 与代数确认并以 0 退出。
 完整 HostRenderer 有序证明、硬件 GPU、device-loss、vsync、真实平台暂停恢复和 jasper-os
 接入仍未完成，第 3 项保持未勾选。证据：`evidence/native-host-render-lifecycle/report.json`。
+
+## 2026-11-02：交互与外部服务客户端闭环
+
+新增公共 `TextInputSession`，将单一焦点票据、权威文本显示修订、预编辑组合序号、外部取消投递和永久退休收敛到同一客户端。外部显示必须有严格更新的修订；相同/更旧快照、陈旧场景失焦事件和已取消组合均被拒绝且不能触达后继。`ExternalInputService` 仅表示宿主传输接受取消，不冒充原生 IME 已终止；传递失败保留精确票据和组合关联供重试。停用、失焦、目标删除和退休均先关闭本地焦点/预编辑，指针释放失败保留捕获重试。
+
+新增 `PlatformBridgeCapabilities` 明确引擎提供显示投影、场景路由和宿主中立无障碍树；权威文本/IME、窗口捕获、AT-SPI/UIA 适配器属于宿主。AccessKit 转换由可选 feature 提供，不包含平台运行服务。
+
+注入字体、捕获回调和取消传输的 loopback 公共接口测试 7/7 通过，覆盖 IME 停用取消、传输失败重试、迟到/重复预编辑、权威快照重绑、焦点/捕获失败恢复、删除目标与新目标重绑、永久退休、重复抬起及无障碍树更新；`native-blitz-pending` 全量回归通过，AccessKit 3/3 与 CPU 启用的 7 项交互测试通过。无真实编辑/IME/系统无障碍服务，相关外部服务和平台适配器列为 TCB/能力限制；异步细化证明登记给 Claude。证据：`evidence/native-interaction-closure/report.json`。

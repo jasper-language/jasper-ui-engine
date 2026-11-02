@@ -1,0 +1,45 @@
+{
+  "status": "functional_delivery_with_complex_proofs_registered",
+  "source_scope": [
+    "src/input_identity.rs::accepts_ui_display_successor",
+    "src/native_adapter/facade.rs::TextInputSession",
+    "src/native_adapter/facade.rs::PlatformBridgeCapabilities",
+    "src/native_adapter/native_view.rs::apply_display_snapshot_from_host"
+  ],
+  "functional_evidence": {
+    "test": "tests/native_interaction_closure.rs",
+    "feature": "native-blitz-pending",
+    "cases": 7,
+    "report": "evidence/native-interaction-closure/report.json"
+  },
+  "basic_properties": [
+    "equal or older authoritative display revisions are rejected",
+    "a successful successor rotates the focus ticket and invalidates old composition",
+    "failed cancellation transport retains the exact envelope for ordered retry",
+    "duplicate focus-loss does not request a second logical cancellation",
+    "pointer release failure does not reopen focus and remains retryable",
+    "retirement permanently blocks reopening",
+    "deleted target focus loss precedes new-target rebind",
+    "duplicate pointer up cannot repeat activation"
+  ],
+  "registered_for_claude": [
+    "general Verus refinement of TextInputSession focus/composition/cancellation state",
+    "Proptest/Miri/fuzz order for queue and binding rotation",
+    "Kani exhaustive finite owner/revision/cancellation transitions",
+    "Loom mapping if a production concurrent service transport is added",
+    "external service acknowledgement liveness and native IME termination"
+  ],
+  "tcb": [
+    "pinned Blitz event dispatch and native DOM",
+    "host-injected font shaping and painting",
+    "host window/pointer capture implementation",
+    "external authoritative text document, native IME and candidate service",
+    "platform accessibility adapter (AT-SPI/UIA/AccessKit host adapter)",
+    "live IPC/network liveness and authentication outside the injected host"
+  ],
+  "capability_limits": [
+    "no live external editor or system IME service was available",
+    "no authorized platform accessibility service/adapter was available",
+    "loopback and injected hosts are not live-service acceptance"
+  ]
+}

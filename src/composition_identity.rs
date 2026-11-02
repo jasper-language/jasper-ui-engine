@@ -16,7 +16,7 @@ fn same_input_ticket(a: UiInputTicket, b: UiInputTicket) -> bool {
 
 /// Public correlation value, not a secret capability or native engine handle.
 /// 公开的关联值，不是秘密凭证或原生引擎句柄。
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct UiCompositionToken {
     pub owner: UiInputTicket,
     pub serial: u64,

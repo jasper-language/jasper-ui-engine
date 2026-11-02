@@ -34,6 +34,47 @@ pub use ::accesskit;
 pub use crate::access_kit::{AccessRequest,access_request,accesskit_role};
 #[cfg(feature="gpu-pending")]
 pub use crate::gpu_render::{GpuRenderer,GpuFrameError};
+
+/// Who owns a capability at the public host boundary.
+/// 公共宿主边界上的能力归属。
+#[derive(Clone,Copy,Debug,PartialEq,Eq)]
+pub enum PlatformBridgeCapability {
+    EngineProvided,
+    ExternalHostOwned,
+    FeatureGated(&'static str),
+}
+
+/// Explicit capability matrix; no field implies that a platform service is live.
+/// 显式能力矩阵；任何字段都不表示真实平台服务已经接通。
+#[derive(Clone,Copy,Debug,PartialEq,Eq)]
+pub struct PlatformBridgeCapabilities {
+    pub text_display_projection:PlatformBridgeCapability,
+    pub authoritative_text_document:PlatformBridgeCapability,
+    pub native_ime_engine:PlatformBridgeCapability,
+    pub accessibility_tree:PlatformBridgeCapability,
+    pub accesskit_tree_conversion:PlatformBridgeCapability,
+    pub platform_accessibility_adapter:PlatformBridgeCapability,
+    pub window_focus_and_pointer_capture:PlatformBridgeCapability,
+}
+
+/// Current compile-time contract. Window, IME, editor and accessibility services
+/// remain host TCBs; tests use injected loopback implementations.
+/// 当前编译期契约；窗口、IME、编辑器与无障碍服务仍是宿主 TCB，测试使用注入 loopback。
+pub const fn platform_bridge_capabilities()->PlatformBridgeCapabilities {
+    PlatformBridgeCapabilities {
+        text_display_projection:PlatformBridgeCapability::EngineProvided,
+        authoritative_text_document:PlatformBridgeCapability::ExternalHostOwned,
+        native_ime_engine:PlatformBridgeCapability::ExternalHostOwned,
+        accessibility_tree:PlatformBridgeCapability::EngineProvided,
+        #[cfg(feature="accesskit-pending")]
+        accesskit_tree_conversion:PlatformBridgeCapability::EngineProvided,
+        #[cfg(not(feature="accesskit-pending"))]
+        accesskit_tree_conversion:PlatformBridgeCapability::FeatureGated("accesskit-pending"),
+        platform_accessibility_adapter:PlatformBridgeCapability::ExternalHostOwned,
+        window_focus_and_pointer_capture:PlatformBridgeCapability::ExternalHostOwned,
+    }
+}
+
 /// External-service display client; no authoritative editor document or input engine.
 // BEGIN VERIFIED TEXT DISPLAY TYPE
 pub struct TextDisplayView {inner:native_view::NativeTextView}
@@ -76,11 +117,21 @@ impl TextDisplayView {
     pub fn semantics(&self,owner:u64,context:UiInputContext)->Option<TextSemantics> {
         self.inner.semantics_from_host(owner,context)
     }
+    /// Opaque current display context for the embedding host's own view.
+    /// 供嵌入宿主读取自身视图的当前不透明显示上下文。
+    pub fn context_for_owner(&self,owner:u64)->Option<UiInputContext> {
+        self.inner.current_context_for(owner)
+    }
     pub fn snapshot(&mut self,owner:u64,expected:UiInputContext,next:UiInputContext,text:&str)->bool {
         self.inner.apply_display_snapshot_from_host(owner,expected,next,text)
     }
     pub fn begin_preedit(&mut self,binding:&UiInputBinding,owner:u64,ticket:UiInputTicket)->Option<UiCompositionToken> {
         self.inner.begin_preedit_from_host(binding,owner,ticket)
+    }
+    /// Correlation check used by the higher-level session; it grants no payload access.
+    /// 供高层会话使用的组合关联检查；不授予负载访问权限。
+    pub fn preedit_current(&self,binding:&UiInputBinding,owner:u64,token:UiCompositionToken)->bool {
+        self.inner.accepts_preedit(binding,owner,token)
     }
     pub fn preedit(&mut self,binding:&UiInputBinding,owner:u64,token:UiCompositionToken,text:Option<&str>)->bool {
         self.inner.set_preedit_from_host(binding,owner,token,text)
@@ -174,6 +225,349 @@ impl<F:FnMut(TextPointerEvent)->EventReply,G:FnMut(TextActivationEvent)->EventRe
         self.inner.retry_release(host,owner)
     }
 }
+
+/// Why the UI asked the external text/IME service to end its exact session.
+/// 请求外部文本/IME 服务结束精确会话的原因。
+#[derive(Clone,Copy,Debug,PartialEq,Eq)]
+pub enum InputCancellationReason {
+    ImeDisabled,
+    FocusLost,
+    Deactivated,
+    TargetRemoved,
+    Retired,
+}
+
+/// Host-to-service cancellation envelope. This is correlation data, not an
+/// authentication credential or proof that the native input task terminated.
+/// 宿主投递给服务的取消信封；仅是关联数据，不是认证凭证，也不表示原生任务已终止。
+#[derive(Clone,Copy,Debug,PartialEq,Eq)]
+pub struct InputServiceCancellation {
+    pub session:u64,
+    pub owner:UiInputTicket,
+    pub composition:Option<UiCompositionToken>,
+    pub reason:InputCancellationReason,
+}
+
+/// External text/input transport supplied by the host. Returning `true` means
+/// the cancellation entered the host transport; it is deliberately not named
+/// or treated as a service acknowledgement.
+/// 宿主机提供的外部文本/输入传输。返回 `true` 只表示取消进入宿主传输，
+/// 不表示服务确认完成。
+pub trait ExternalInputService {
+    fn deliver_cancel(&mut self, request:InputServiceCancellation)->bool;
+}
+
+/// Delivery state for a cancellation request.
+/// 取消请求的交付状态。
+#[derive(Clone,Copy,Debug,PartialEq,Eq)]
+pub enum CancellationDelivery {
+    Queued,
+    Pending,
+    NoRequest,
+}
+
+/// One local cleanup plus its external-service delivery status.
+/// 一次本地清理及其外部服务交付状态。
+#[derive(Clone,Copy,Debug,PartialEq,Eq)]
+pub struct InputLifecycleOutcome {
+    pub focus_closed:bool,
+    pub preedit_cleared:bool,
+    pub cancellation:CancellationDelivery,
+}
+
+/// A display replacement also returns the old owner for late-event rejection.
+/// 显示替换同时返回旧归属，供迟到事件拒绝。
+#[derive(Clone,Copy,Debug,PartialEq,Eq)]
+pub struct DisplayRebindOutcome {
+    pub previous_owner:UiInputTicket,
+    pub current_owner:UiInputTicket,
+    pub cleared_composition:Option<UiCompositionToken>,
+}
+
+/// Input-session admission failure. No backend identity is exposed.
+/// 输入会话准入失败；不暴露后端身份。
+#[derive(Clone,Copy,Debug,PartialEq,Eq)]
+pub enum TextInputSessionError {
+    Retired,
+    AlreadyFocused,
+    NotFocused,
+    ViewRejected,
+    StaleContext,
+    SequenceExhausted,
+}
+
+/// Public client for one externally owned text-display and native-IME session.
+///
+/// The UI owns focus admission, display projection and composition correlation.
+/// It never owns the authoritative text document, an IME engine, candidates or
+/// an edit transaction. The embedding host must authenticate the owner, pass
+/// the active owner ticket to its external service, and implement
+/// `ExternalInputService` over the actual IPC/native boundary.
+/// 单个外部权威文本与原生 IME 会话的公共客户端。UI 只管理焦点准入、显示投影和
+/// 组合关联，不拥有权威文档、输入法引擎、候选词或编辑事务；真实服务由宿主注入。
+pub struct TextInputSession {
+    owner:u64,
+    binding:UiInputBinding,
+    active:Option<UiInputTicket>,
+    composition:Option<UiCompositionToken>,
+    pending_cancellations:std::collections::VecDeque<InputServiceCancellation>,
+    retired:bool,
+}
+
+impl TextInputSession {
+    /// One persistent focus slot. Reopening after focus loss creates a new generation.
+    /// 一个持久焦点槽；失焦后重新打开会生成新代数。
+    pub fn new(owner:u64,slot:u64)->Self {
+        Self {owner,binding:UiInputBinding::new(owner,slot),active:None,composition:None,
+            pending_cancellations:std::collections::VecDeque::new(),retired:false}
+    }
+
+    pub fn current_owner(&self)->Option<UiInputTicket> {self.active}
+    pub fn current_composition(&self)->Option<UiCompositionToken> {self.composition}
+    pub fn pending_cancellations(&self)->usize {self.pending_cancellations.len()}
+
+    /// Admit one UI focus and project it into the external display. The returned
+    /// ticket is the correlation the host publishes to the text/IME service.
+    /// 准入一次 UI 焦点并投影到外部显示；返回票据供宿主发布给文本/IME 服务。
+    pub fn begin(&mut self,view:&mut TextDisplayView,context:UiInputContext,
+        focus:&mut impl FnMut(TextFocusEvent))->Result<UiInputTicket,TextInputSessionError> {
+        if self.retired {return Err(TextInputSessionError::Retired);}
+        if self.active.is_some() {return Err(TextInputSessionError::AlreadyFocused);}
+        let ticket=self.binding.bind(self.owner,context).ok_or(TextInputSessionError::SequenceExhausted)?;
+        if !view.focus(&self.binding,self.owner,ticket,focus) {
+            let _=self.binding.close(self.owner,ticket);
+            return Err(TextInputSessionError::ViewRejected);
+        }
+        self.active=Some(ticket);
+        Ok(ticket)
+    }
+
+    /// Route command keys only; committed text and preedit remain external payloads.
+    /// 仅路由命令键；已提交文本与预编辑仍是外部负载。
+    pub fn key(&mut self,view:&mut TextDisplayView,input:&HostKeyInput<'_>,
+        sink:&mut impl FnMut(CommandKeyEvent)->EventReply)->bool {
+        let Some(ticket)=self.active.filter(|_|!self.retired) else {return false;};
+        view.key(&self.binding,self.owner,ticket,input,sink)
+    }
+
+    /// Start presentation correlation for the current focus. This is not an IME
+    /// engine/session creation; the native service remains external.
+    /// 为当前焦点开始呈现关联；不创建 IME 引擎或原生服务会话。
+    pub fn begin_preedit(&mut self,view:&mut TextDisplayView)->Option<UiCompositionToken> {
+        if self.retired {return None;}
+        let owner=self.active?;
+        match self.composition {
+            Some(current) if view.preedit_current(&self.binding,self.owner,current)=>Some(current),
+            _=>{
+                let token=view.begin_preedit(&self.binding,self.owner,owner)?;
+                self.composition=Some(token);
+                Some(token)
+            }
+        }
+    }
+
+    /// Apply preedit only for the current owner and newest composition serial.
+    /// 仅向当前归属与最新组合序号应用预编辑。
+    pub fn preedit(&mut self,view:&mut TextDisplayView,token:UiCompositionToken,
+        text:Option<&str>)->bool {
+        if self.retired || !self.owns_composition(token) {return false;}
+        view.preedit(&self.binding,self.owner,token,text)
+    }
+
+    /// Cancel the active composition locally, then deliver its exact cancellation
+    /// to the external service. A transport failure is retained for explicit retry.
+    /// 本地取消活动组合，再向外部服务投递精确取消；传输失败保留待重试。
+    pub fn cancel_preedit(&mut self,view:&mut TextDisplayView,service:&mut impl ExternalInputService,
+        reason:InputCancellationReason)->Option<InputLifecycleOutcome> {
+        let owner=self.active?;
+        let token=self.composition?;
+        if self.retired || !self.owns_composition(token) || !view.cancel_preedit(self.owner,token) {
+            return None;
+        }
+        self.composition=None;
+        Some(InputLifecycleOutcome {focus_closed:false,preedit_cleared:true,
+            cancellation:self.request_cancel(InputServiceCancellation {session:self.owner,owner,
+                composition:Some(token),reason},service)})
+    }
+
+    /// Adopt the next authoritative display revision and rotate the focus ticket.
+    /// Equal/older revisions, stale expected contexts and exhausted generations are
+    /// refused before display mutation. The old ticket and composition become stale.
+    /// 采用下一份权威显示修订并轮换焦点票据；同/旧修订、陈旧预期和代数耗尽在修改前拒绝，
+    /// 旧票据与组合随即失效。
+    pub fn replace_display(&mut self,view:&mut TextDisplayView,expected:UiInputContext,
+        next:UiInputContext,text:&str)->Result<DisplayRebindOutcome,TextInputSessionError> {
+        if self.retired {return Err(TextInputSessionError::Retired);}
+        let previous=self.active.ok_or(TextInputSessionError::NotFocused)?;
+        if previous.context!=expected {return Err(TextInputSessionError::StaleContext);}
+        if previous.key.generation==u64::MAX {return Err(TextInputSessionError::SequenceExhausted);}
+        if next.revision<=expected.revision {return Err(TextInputSessionError::StaleContext);}
+        if !view.snapshot(self.owner,expected,next,text) {
+            return Err(TextInputSessionError::ViewRejected);
+        }
+        let cleared=self.composition.take();
+        if !self.binding.close(self.owner,previous) {
+            self.active=None;
+            return Err(TextInputSessionError::StaleContext);
+        }
+        let Some(current)=self.binding.bind(self.owner,next) else {
+            self.active=None;
+            return Err(TextInputSessionError::SequenceExhausted);
+        };
+        self.active=Some(current);
+        Ok(DisplayRebindOutcome {previous_owner:previous,current_owner:current,
+            cleared_composition:cleared})
+    }
+
+    /// Close focus without a pointer grant. Local focus/preedit closure remains
+    /// ordered before service cancellation delivery.
+    /// 无指针授权的焦点关闭；本地焦点/预编辑清理先于服务取消投递。
+    pub fn focus_lost(&mut self,view:&mut TextDisplayView,service:&mut impl ExternalInputService,
+        reason:InputCancellationReason,focus:&mut impl FnMut(TextFocusEvent))
+        ->Option<InputLifecycleOutcome> {
+        let owner=self.active?;
+        if self.retired || !view.close_focus(&mut self.binding,self.owner,owner,focus) {
+            return None;
+        }
+        Some(self.finish_focus_loss(owner,service,reason))
+    }
+
+    /// Consume the exact scene focus-loss event for this session's current target.
+    /// A stale/foreign event or a focus-gain event has no side effect.
+    /// 消费当前目标对应的精确场景失焦事件；陈旧/外部事件或获焦事件无副作用。
+    pub fn scene_focus_lost(&mut self,view:&mut TextDisplayView,
+        service:&mut impl ExternalInputService,event:&SceneFocusEvent,
+        reason:InputCancellationReason,focus:&mut impl FnMut(TextFocusEvent))
+        ->Option<InputLifecycleOutcome> {
+        let owner=self.active?;
+        if event.focused || event.node.0!=owner.context.target.0 {return None;}
+        self.focus_lost(view,service,reason,focus)
+    }
+
+    /// Close focus and its pointer grant together. Pointer release failure still
+    /// closes local focus and is recovered by `TextPointerCapture::retry_release`;
+    /// the exact service cancellation is requested once.
+    /// 同时关闭焦点与指针授权；释放失败仍关闭本地焦点，并由捕获端重试释放，
+    /// 精确服务取消只请求一次。
+    pub fn focus_lost_with_capture<F,G>(&mut self,view:&mut TextDisplayView,
+        capture:&mut TextPointerCapture<F,G>,host:&mut impl PointerCaptureHost,
+        service:&mut impl ExternalInputService,reason:InputCancellationReason,
+        focus:&mut impl FnMut(TextFocusEvent))->Option<InputLifecycleOutcome>
+    where F:FnMut(TextPointerEvent)->EventReply,G:FnMut(TextActivationEvent)->EventReply {
+        let owner=self.active?;
+        if self.retired || !capture.focus_lost(view,host,&mut self.binding,self.owner,owner,focus) {
+            if self.binding.accepts(self.owner,owner) {return None;}
+        }
+        Some(self.finish_focus_loss(owner,service,reason))
+    }
+
+    pub fn deactivate<F,G>(&mut self,view:&mut TextDisplayView,
+        capture:&mut TextPointerCapture<F,G>,host:&mut impl PointerCaptureHost,
+        service:&mut impl ExternalInputService,focus:&mut impl FnMut(TextFocusEvent))
+        ->Option<InputLifecycleOutcome>
+    where F:FnMut(TextPointerEvent)->EventReply,G:FnMut(TextActivationEvent)->EventReply {
+        self.focus_lost_with_capture(view,capture,host,service,InputCancellationReason::Deactivated,focus)
+    }
+
+    /// Retire display focus and the text input slot permanently. External service
+    /// cancellation is requested, but termination/acknowledgement is not claimed.
+    /// 永久退休显示焦点与文本输入槽；请求外部服务取消，但不宣称任务终止或已确认。
+    pub fn retire(&mut self,view:&mut TextDisplayView,service:&mut impl ExternalInputService,
+        reason:InputCancellationReason,focus:&mut impl FnMut(TextFocusEvent))
+        ->Option<InputLifecycleOutcome> {
+        if self.retired {return None;}
+        let active=self.active;
+        let context=active.and_then(|owner|view.context_for_owner(self.owner).map(|_|owner.context));
+        let outcome=match active {
+            Some(owner)=>{
+                match self.focus_lost(view,service,reason,focus) {
+                    Some(outcome)=>Some(outcome),
+                    None=>{
+                        // The display may already be closed by a previous host
+                        // teardown. Permanent retirement still invalidates the
+                        // exact input owner and asks the service to cancel it.
+                        let composition=self.composition.take();
+                        self.active=None;
+                        let request=InputServiceCancellation {session:self.owner,
+                            owner,composition,reason};
+                        Some(InputLifecycleOutcome {focus_closed:true,preedit_cleared:true,
+                            cancellation:self.request_cancel(request,service)})
+                    }
+                }
+            },
+            None=>None,
+        };
+        if let Some(context)=context {let _=view.close(self.owner,context);}
+        self.binding.retire();
+        self.active=None;
+        self.composition=None;
+        self.retired=true;
+        Some(outcome.unwrap_or(InputLifecycleOutcome {focus_closed:true,preedit_cleared:true,
+            cancellation:CancellationDelivery::NoRequest}))
+    }
+
+    /// Permanent retirement that also cancels an outstanding pointer grant.
+    /// A failed host release remains retryable through the capture client.
+    /// 同时取消未完成指针授权的永久退休；宿主释放失败仍可通过捕获客户端重试。
+    pub fn retire_with_capture<F,G>(&mut self,view:&mut TextDisplayView,
+        capture:&mut TextPointerCapture<F,G>,host:&mut impl PointerCaptureHost,
+        service:&mut impl ExternalInputService,reason:InputCancellationReason,
+        focus:&mut impl FnMut(TextFocusEvent))->Option<InputLifecycleOutcome>
+    where F:FnMut(TextPointerEvent)->EventReply,G:FnMut(TextActivationEvent)->EventReply {
+        if self.retired {return None;}
+        let active=self.active?;
+        let context=view.context_for_owner(self.owner).map(|_|active.context);
+        let outcome=self.focus_lost_with_capture(view,capture,host,service,reason,focus);
+        if outcome.is_none() && self.binding.accepts(self.owner,active) {
+            return None;
+        }
+        if let Some(context)=context {let _=capture.retire(view,host,self.owner,context);}
+        self.binding.retire();
+        self.active=None;
+        self.composition=None;
+        self.retired=true;
+        Some(outcome.unwrap_or(InputLifecycleOutcome {focus_closed:true,preedit_cleared:true,
+            cancellation:CancellationDelivery::NoRequest}))
+    }
+
+    /// Retry one pending cancellation in original order. `Queued` means the host
+    /// transport accepted it, never that the native service has completed it.
+    /// 按原顺序重试一项待交付取消；`Queued` 仅表示宿主传输接受，不是原生服务已完成。
+    pub fn retry_cancel(&mut self,service:&mut impl ExternalInputService)->CancellationDelivery {
+        let Some(request)=self.pending_cancellations.pop_front() else {
+            return CancellationDelivery::NoRequest;
+        };
+        if service.deliver_cancel(request) {CancellationDelivery::Queued}
+        else {
+            self.pending_cancellations.push_front(request);
+            CancellationDelivery::Pending
+        }
+    }
+
+    fn owns_composition(&self,token:UiCompositionToken)->bool {
+        self.composition.is_some_and(|current|current.serial==token.serial
+            && current.owner.key==token.owner.key && current.owner.context==token.owner.context)
+    }
+
+    fn finish_focus_loss(&mut self,owner:UiInputTicket,service:&mut impl ExternalInputService,
+        reason:InputCancellationReason)->InputLifecycleOutcome {
+        let composition=self.composition.take();
+        self.active=None;
+        let request=InputServiceCancellation {session:self.owner,owner,composition,reason};
+        InputLifecycleOutcome {focus_closed:true,preedit_cleared:true,
+            cancellation:self.request_cancel(request,service)}
+    }
+
+    fn request_cancel(&mut self,request:InputServiceCancellation,
+        service:&mut impl ExternalInputService)->CancellationDelivery {
+        if service.deliver_cancel(request) {CancellationDelivery::Queued}
+        else {
+            self.pending_cancellations.push_back(request);
+            CancellationDelivery::Pending
+        }
+    }
+}
+
 /// Host-authenticated owner is supplied by the embedding layer, not an application credential.
 // BEGIN VERIFIED SCENE HOST TYPE
 pub struct SceneHostView {inner:native_scene::NativeScene}

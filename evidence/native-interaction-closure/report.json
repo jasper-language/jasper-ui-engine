@@ -1,0 +1,86 @@
+{
+  "date": "2026-11-02",
+  "status": "interaction_external_service_closure_functional",
+  "scope": "Item 4 public focus/keyboard/pointer/capture/cancellation/focus-loss/deactivation/delete/rebind/retire closure, external authoritative display + native IME client boundary, and public accessibility/platform capability boundary.",
+  "toolchain": {
+    "cargo": "1.99.1 (5f94df478 2026-08-27)",
+    "rustc": "1.99.1 (58cf8f9c3 2026-10-13)"
+  },
+  "sources": {
+    "src/input_identity.rs": "24b641d5f18f5119e0d12f649fcbda1615c447e0cb2ac70bf2d05361f4fa1fbf",
+    "src/composition_identity.rs": "ebd96bb41a4aea371e1333aee52837dc2d064a4e29bd6e4be0e9525bdbd802a7",
+    "src/native_adapter/native_view.rs": "4298d4cdb26c151d2eeccb22836badf8382518160b5a0acac6cd1d326bacabfa",
+    "src/native_adapter/facade.rs": "ff9bb019e5ea7e84c1925570ca5bac397b1b378926682d0b3cae10852d87cc2d",
+    "tests/native_interaction_closure.rs": "ed6fc7345b46656e27bedfa59b9c8240427954eb7888b50299bf5d5bd3bd2d79",
+    "docs/interaction-service-boundary.md": "0e53b7a7ec2804e549ca0209227e5478ba6d1d62818dbe647587929172d88f1e",
+    "verification/native-interaction/obligations.json": "738e6aa37f8cf9f35b4c632298c3f530abffe78ab1d131160147e0c80a7f2c19"
+  },
+  "implemented": [
+    "TextInputSession owns one focus slot and correlates native display focus, preedit serials, cancellation delivery state and permanent retirement",
+    "ExternalInputService exposes exact cancellation envelopes through an injected host transport; success means queued, not acknowledged",
+    "failed cancellation delivery keeps the exact owner/composition envelope for ordered retry",
+    "authoritative display revision must strictly advance; equal, older, stale-expected and wrong-lineage snapshots cause no display mutation",
+    "successful display replacement rotates the input ticket and makes the old ticket/composition unusable",
+    "scene focus-loss event helper rejects stale/foreign nodes before cancelling the matching input session",
+    "focus loss/deactivation/removal/retirement close local focus/preedit before service cancellation and preserve failed pointer/service work for explicit retry",
+    "public PlatformBridgeCapabilities distinguishes engine-provided display/accessibility from host-owned text/IME/window/platform accessibility services"
+  ],
+  "loopback_evidence": {
+    "test": "tests/native_interaction_closure.rs",
+    "feature": "native-blitz-pending",
+    "result": "7 passed; 0 failed",
+    "cases": [
+      "Ime disabled cancels exact composition; unavailable transport is pending; retry repeats the same envelope once and late preedit stays rejected",
+      "authoritative revision successor rotates owner and clears old composition; equal/older/stale snapshots are rejected",
+      "focus loss closes local focus before pointer release recovery and service cancellation retry",
+      "display and capture retirement permanently block reopening while retaining failed release/cancellation for retry",
+      "scene deletion reports focus loss, stale scene events have no effects, new target rebinds and accessibility tree excludes the deleted node",
+      "duplicate pointer up cannot repeat activation; deactivation clears focus and press"
+    ]
+  },
+  "regression_results": [
+    {
+      "command": "cargo test --locked --features native-blitz-pending",
+      "result": "all tests passed; 7/7 new interaction cases executed"
+    },
+    {
+      "command": "cargo test --locked --features accesskit-pending --test native_accesskit_bridge --test native_interaction_closure",
+      "result": "AccessKit 3/3 and interaction 7/7 passed"
+    },
+    {
+      "command": "cargo test --locked --features native-blitz-cpu-pending --test native_interaction_closure",
+      "result": "CPU-enabled public interaction path 7/7 passed"
+    },
+    {
+      "command": "cargo test --locked --features native-blitz-cpu-pending",
+      "result": "not accepted as a full suite because the pre-existing unrelated native_frame_damage::repaint_without_visible_change_is_unchanged expects needs_frame=true after a rejected stale update but observes Some(false); all tests reached before that point passed, including CPU acceptance and font tests"
+    }
+  ],
+  "platform_capabilities": {
+    "engine_provided": [
+      "scene focus/keyboard/pointer routing",
+      "external text display projection",
+      "host-neutral accessibility tree",
+      "AccessKit conversion when accesskit-pending is enabled"
+    ],
+    "host_owned": [
+      "authoritative text document and commits",
+      "native IME/candidate service and cancellation completion",
+      "window focus and pointer capture",
+      "AT-SPI/UIA/system accessibility adapter"
+    ]
+  },
+  "tcb": [
+    "Blitz DOM/event dispatch/hit testing",
+    "Parley/fontique shaping and UTF-8 geometry",
+    "host capture implementation",
+    "external IPC/native text and IME services",
+    "AccessKit and the host platform accessibility adapter"
+  ],
+  "limitations": [
+    "No live editor, native IME or system accessibility adapter was available; loopback and injected hosts are not live-service acceptance.",
+    "External service authentication, IPC liveness and cancellation acknowledgement remain host/TCB obligations.",
+    "Full asynchronous refinement/model-check proof is registered in verification/native-interaction/obligations.json for later Claude proof work; no six-stage claim is made here.",
+    "Focused tests were run in the current development environment rather than claiming a separate restricted-VM run."
+  ]
+}

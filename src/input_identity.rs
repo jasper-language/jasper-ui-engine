@@ -8,7 +8,7 @@ use crate::{
 // BEGIN VERIFIED UI INPUT ADMISSION KERNEL
 /// Trusted current UI binding, independent of third-party editor/IME private types.
 /// 可信的当前 UI 绑定，不暴露第三方编辑器或输入法私有类型。
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct UiInputContext {
     pub target: NodeId,
     pub target_generation: u64,
@@ -18,7 +18,7 @@ pub struct UiInputContext {
 
 /// Identity carried by delayed input; it is not an authentication credential.
 /// 延迟输入携带的身份，不是认证凭证；字段可被客户端伪造，不能代替宿主认证。
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct UiInputTicket {
     pub key: ResourceKey,
     pub context: UiInputContext,
@@ -184,6 +184,19 @@ pub fn accepts_ui_display_snapshot(
         && next.document == expected.document
 }
 // END VERIFIED UI SNAPSHOT ADMISSION KERNEL
+
+/// Successor admission for an authoritative external text snapshot.
+/// The display keeps one target/document lineage, so its opaque revision must
+/// advance exactly through a newer value; equal or older revisions are ignored.
+/// 外部权威文本后继快照的准入：显示保持同一目标/文档 lineage，
+/// 其外部修订必须严格推进；相同或更旧修订一律拒绝。
+pub fn accepts_ui_display_successor(
+    session: u64, current: UiInputContext, caller: u64,
+    expected: UiInputContext, next: UiInputContext,
+) -> bool {
+    accepts_ui_display_snapshot(session, current, caller, expected, next)
+        && next.revision > expected.revision
+}
 
 // BEGIN VERIFIED UI UPDATE NEXT KERNEL
 /// Prepare a next UI update version without mutating or reserving backend state.
