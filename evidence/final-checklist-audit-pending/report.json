@@ -50,6 +50,7 @@
         "the transaction candidate build/commit and restored state have no complete six-stage implementation proof",
         "default Engine still requires an explicit native feature; legacy remains a compile-time fallback choice for existing API users",
         "actual window/display presentation and all input forwarding remain incomplete",
+        "the root Engine now presents and resizes through a real X11 protocol surface under software Xvfb; hardware compositor/vsync behavior remains unverified",
         "the selected whole-frame proof depends on the unresolved item 1 obligation"
       ],
       "evidence": [
@@ -70,7 +71,7 @@
         "CPU/GPU frames, size changes, damage and software write regressions"
       ],
       "blocking_gaps": [
-        "no authorized display endpoint in the restricted VM, so real window Surface acquire/present/vsync/suspend recovery is unobserved",
+        "Xvfb now validates software X11 Surface acquire/present/resize, but no compositor/vsync/hardware display surface or real suspend/resume is observed",
         "hardware GPU and device-loss behavior are not verified on the software adapter",
         "the capability matrix and lifecycle contract still need final cross-host evidence",
         "host GPU orchestration lacks the requested six-stage implementation proof; wgpu/Vello are explicit TCB"
@@ -152,6 +153,7 @@
     "component_update_error_chain": "Verus 2/0 + Proptest 256 + Miri + fuzz 200000 + Kani 112 checks, Loom N/A; public API covers all reachable structured variants",
     "scene_frame_completion_chain": "Verus 2/0 + Proptest 256 + Miri + fuzz 200000 + Kani 112 checks, Loom N/A; rejection now preserves frame dirty/cache state",
     "full_scene": "VM run passed and emitted PPM 320x180, 172815 bytes",
+    "window_xvfb": "800x600 and resized 640x360 X11 window present completed; exact background/red/blue pixel counts retained",
     "proof_mapping": "scripts/test-blitz-proof-mapping.py current=true with all negative controls rejected",
     "expanded_kani_resources": "8G guest RAM + 24G VM-disk swap, 3600s, host CPUs 12-19 only, host available memory above 8G; no accepted real-Map result"
   },

@@ -1,0 +1,62 @@
+{
+  "status": "software_x11_window_presentation_passed_hardware_lifecycle_pending",
+  "scope": "Root native Engine CPU frame through the winit/softbuffer example on a real X11 protocol surface supplied by Xvfb.",
+  "environment": {
+    "display_server": "Xvfb 2:21.1.22-1ubuntu1.3",
+    "virtual_screen": "1280x720x24",
+    "vm_memory": "6G",
+    "vm_swap": "2G",
+    "timeout_seconds": 900,
+    "host_cpu_affinity": "12-19; host CPUs 0-3 unused",
+    "font": "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+  },
+  "results": {
+    "one_frame_clean_exit": {
+      "log": "window-once.log",
+      "exit_code": 0,
+      "observed": "winit created the X11 window, softbuffer acquired its surface and presented one Blitz/Vello CPU frame; the translated event stream contained ImeEnabled(false) and pointer Hover."
+    },
+    "initial_capture": {
+      "window_physical_size": "800x600",
+      "root_ppm": "root.ppm",
+      "root_ppm_sha256": "88e289581d22d5f8db6216fdb91ef9f9ebe3759e28222ec0a5be01b4427e09d9",
+      "root_png": "root.png",
+      "root_png_sha256": "f88489875ca6b86a60d129b11f1358535aba12db1467cf0afd95a00c13b705cb",
+      "pixels": {
+        "(24,26,32) background": 432000,
+        "(220,50,47) red rectangle": 24000,
+        "(30,110,220) blue rectangle": 24000,
+        "black Xvfb root": 441600
+      }
+    },
+    "resize_capture": {
+      "window_physical_size": "640x360",
+      "root_ppm": "resized.ppm",
+      "root_ppm_sha256": "ce8efde75164e322bfe6bff821723afd8e8d4d7e323a5c3a3e71ae0430c7d96d",
+      "root_png": "resized.png",
+      "root_png_sha256": "4d1716a0b5535be35d9ce1cf1f29b6eb2e70b607500e4d28def8995f74ac8b1a",
+      "pixels": {
+        "(24,26,32) background": 182400,
+        "(220,50,47) red rectangle": 24000,
+        "(30,110,220) blue rectangle": 24000,
+        "black Xvfb root": 691200
+      },
+      "observed": "The X11 configure/resize path repainted the complete 640x360 surface; both fixed 200x120 rectangles remained at 24000 pixels each."
+    },
+    "runner": {
+      "script": "scripts/capture-window-xvfb.sh",
+      "window_log": "window.log",
+      "window_log_sha256": "6ce16df0228ba653700243a8b1de251b8c43a3fd90d0ec2b13beb45f8141ad85"
+    }
+  },
+  "limitations": [
+    "Xvfb provides a real X11 protocol surface but not a compositor, window manager, hardware display controller or vsync.",
+    "The resize capture validates repaint and surface reconfiguration, not suspend/resume delivery by a platform session manager.",
+    "The capture script terminates the long-running diagnostic after taking both screenshots; the separate --once run validates clean application exit after present.",
+    "No hardware GPU swapchain, device-loss recovery, real system accessibility bridge or live external IME service is claimed.",
+    "The scene/update orchestration proof remains separate; this report is presentation integration evidence."
+  ],
+  "checklist_item_2_complete": false,
+  "checklist_item_3_complete": false,
+  "checklist_item_5_complete": false
+}

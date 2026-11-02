@@ -895,3 +895,10 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 | `unwind=8`, object-bits13, 8G/24G | 不再 OOM；1898.449 秒完成求解并报告展开断言失败 |
 
 这确认 3G OOM 主要是 Kani/CBMC 对真实 `BTreeMap` 标准库实现和指针对象编码的模型膨胀，不是 UI 应用路径泄漏。扩大资源暴露了真实的最小展开不足，但不能以任何超时、固定样例或替代 Map 宣称通过；后续必须改验证器/后端编码或使用非缩减分解。证据：`evidence/native-subtree-expanded-capability/report.json`。
+
+
+## 2026-11-02：Xvfb 软件窗口呈现证据
+
+该项是第三方窗口/Surface/renderer 编排的集成证据，不新增自有 Rust 数值内核，因此不标记六阶段完成。VM 内以 `Xvfb :99 -screen 0 1280x720x24` 提供真实 X11 协议端点，运行根 winit/softbuffer 示例；`--once` 在完成一帧 present 后退出码 0。
+
+截图像素检查：800×600 窗口背景 `(24,26,32)` 432000 像素，红矩形 `(220,50,47)` 与蓝矩形 `(30,110,220)` 各 24000 像素；把窗口调整为 640×360 后背景变为 182400，两个矩形仍各 24000。PPM/PNG 哈希与实际事件日志见 `evidence/window-xvfb-presentation/report.json`。该证据不覆盖窗口管理器、vsync、硬件 GPU swapchain、device-loss、休眠恢复、平台无障碍或真实外部 IME。

@@ -712,3 +712,9 @@ VM 实跑成功，输出 `evidence/full-scene/full_scene.ppm`（P6 320×180，17
 扩容后确认原 3G 结果是验证器容量问题，不是应用运行时泄漏。`unwind=5/6/8` 在更大资源下均得到确定性未完成结论：5 和 6 明确展开不足；8 在 object-bits 13 下于 8G RAM + 24G swap 中完成 Bitwuzla 转换，但 1898.449 秒后仍报告生产循环和 `BTreeMap` 的展开断言失败。8G RAM + 8G swap 时曾在 28 分钟 OOM，增加 VM 磁盘 swap 后不再 OOM。
 
 该结果仍未通过门槛：需要改变验证器/后端编码，或采用保持真实 Map、原域、全部性质与检查的非缩减分解。证据：`evidence/native-subtree-expanded-capability/report.json`。
+
+## 2026-11-02：VM 软件 X11 窗口呈现
+
+在构建 VM 内安装并运行 Xvfb 后，根 `Engine` 的 winit/softbuffer CPU 链在真实 X11 协议窗口上完成一帧呈现并正常退出。初始 800×600 窗口截图包含精确的 432000 个背景像素及红/蓝各 24000 个 200×120 矩形像素；随后将窗口调整为 640×360，完整重绘后的背景为 182400 像素，两个矩形仍各为 24000 像素。
+
+捕获脚本 `scripts/capture-window-xvfb.sh` 使用宿主持有的 X11 window、softbuffer Surface 和 present，不绕过根 Engine。此结果解除“VM 完全没有显示端点”的阻塞，但仍是软件 Xvfb：不含窗口管理器、合成器、垂直同步、硬件 Surface/device-loss、真实休眠恢复或系统无障碍/IME 服务。证据与截图：`evidence/window-xvfb-presentation/report.json`。
