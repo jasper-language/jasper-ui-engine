@@ -880,3 +880,18 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 | 同上 | Loom | 纯同步标量完成门，无共享并发状态 | 源码适用性审查 | 不适用 |
 
 `native_frame_transaction` 额外验证来源拒绝与原生候选拒绝后，版本、节点数、焦点、几何、全部像素及 `needs_frame` 均保持。ScenePatch 语义、Blitz 构造/恢复和替换赋值本身仍为未证明依赖；第 2 项不勾选。证据：`evidence/scene-frame-completion-chain/report.json`、`evidence/scene-frame-completion-kernel/report.json`。
+
+
+## 2026-11-02：真实子树 Map Kani 资源扩容（仍未通过）
+
+用户授权放宽单次 VM 验证资源，同时禁止宿主 CPU 0–3、要求宿主保留 8G 内存。默认验证档仍保持 3G/零 swap/180 秒；显式扩容档使用 8G guest RAM、24G VM 磁盘临时 swap 和 3600 秒。VM 固定在宿主 CPU 12–19，宿主可用内存始终高于 8G。
+
+| 配置 | 结果 |
+|---|---|
+| `unwind=5`, object-bits11, 6G/2G | 183.6 秒完成并明确失败：展开不足 |
+| `unwind=6`, object-bits12, 8G/8G | 542.6 秒完成并明确失败：展开不足 |
+| `unwind=8`, object-bits12, 8G/8G | object bits 12 的 4096 对象上限不足 |
+| `unwind=8`, object-bits13, 8G/8G | 28 分 16 秒后 OOM |
+| `unwind=8`, object-bits13, 8G/24G | 不再 OOM；1898.449 秒完成求解并报告展开断言失败 |
+
+这确认 3G OOM 主要是 Kani/CBMC 对真实 `BTreeMap` 标准库实现和指针对象编码的模型膨胀，不是 UI 应用路径泄漏。扩大资源暴露了真实的最小展开不足，但不能以任何超时、固定样例或替代 Map 宣称通过；后续必须改验证器/后端编码或使用非缩减分解。证据：`evidence/native-subtree-expanded-capability/report.json`。

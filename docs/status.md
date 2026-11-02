@@ -704,3 +704,11 @@ VM 实跑成功，输出 `evidence/full-scene/full_scene.ppm`（P6 320×180，17
 新增 `complete_scene_frame` 完成门并完成限定有序验收：Verus+Z3 2 verified/0 errors，忽略来源版本、无候选仍提交两个负控被拒；Proptest 256 例、严格 provenance Miri、cargo-fuzz 200000 次、Kani 112 checks（0 失败）通过；Loom 因纯同步标量函数不适用。`native_frame_transaction` 2/2 与 `native_update_contract` 1/1 通过，覆盖来源拒绝和候选拒绝后的完整帧保持。证据：`evidence/scene-frame-completion-chain/report.json`。
 
 第 2 项仍不勾选：本结果只证明提交门，不证明 `ScenePatch` 应用、Blitz 候选构造/状态恢复、第三方 panic 回滚或真实显示呈现。
+
+## 2026-11-02：真实 Map Kani 扩容复验
+
+按用户新授权保留宿主 CPU 0–3、宿主至少 8G 可用内存后，验证脚本仍默认使用原 3G/零 swap/180 秒配置，但允许单次工作显式设置 3–8G 内存、0–24G swap 和最长 3600 秒。VM 进程继续固定在宿主 CPU 12–19，全程未使用宿主 CPU 0–3。
+
+扩容后确认原 3G 结果是验证器容量问题，不是应用运行时泄漏。`unwind=5/6/8` 在更大资源下均得到确定性未完成结论：5 和 6 明确展开不足；8 在 object-bits 13 下于 8G RAM + 24G swap 中完成 Bitwuzla 转换，但 1898.449 秒后仍报告生产循环和 `BTreeMap` 的展开断言失败。8G RAM + 8G swap 时曾在 28 分钟 OOM，增加 VM 磁盘 swap 后不再 OOM。
+
+该结果仍未通过门槛：需要改变验证器/后端编码，或采用保持真实 Map、原域、全部性质与检查的非缩减分解。证据：`evidence/native-subtree-expanded-capability/report.json`。

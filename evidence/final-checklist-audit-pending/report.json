@@ -22,7 +22,7 @@
       ],
       "blocking_gaps": [
         "the actual two-entry real BTreeMap source_subtree_contains Kani obligation remains unfinished",
-        "unwind=2 is insufficient; unwind=4/object11 fails assertions; unwind=5 and 8 time out; other available backends OOM or fail conversion",
+        "with 8G RAM plus 24G VM-disk swap and 3600 seconds, unwind5/6/8 complete but remain insufficient; as a result this is no longer only a 3G OOM issue",
         "complete apply_update to apply_patches implementation-level whole-frame proof remains absent",
         "float specification and general native-map/mutation proofs remain absent"
       ],
@@ -134,7 +134,7 @@
       ],
       "blocking_gaps": [
         "items 1–5 are not all complete",
-        "real BTreeMap Kani timeout/OOM and float specification gaps remain",
+        "real BTreeMap Kani still lacks a sufficient unwind/backend encoding even after the authorized resource expansion; float specification gaps remain",
         "whole native transaction and host GPU orchestration lack ordered acceptance",
         "full verify-ui chain has not been rerun because its previous complete Kani stage exceeds a single default 180-second workload and the unresolved capture-query obligation remains",
         "no authorized display/live service/hardware GPU evidence exists"
@@ -152,7 +152,8 @@
     "component_update_error_chain": "Verus 2/0 + Proptest 256 + Miri + fuzz 200000 + Kani 112 checks, Loom N/A; public API covers all reachable structured variants",
     "scene_frame_completion_chain": "Verus 2/0 + Proptest 256 + Miri + fuzz 200000 + Kani 112 checks, Loom N/A; rejection now preserves frame dirty/cache state",
     "full_scene": "VM run passed and emitted PPM 320x180, 172815 bytes",
-    "proof_mapping": "scripts/test-blitz-proof-mapping.py current=true with all negative controls rejected"
+    "proof_mapping": "scripts/test-blitz-proof-mapping.py current=true with all negative controls rejected",
+    "expanded_kani_resources": "8G guest RAM + 24G VM-disk swap, 3600s, host CPUs 12-19 only, host available memory above 8G; no accepted real-Map result"
   },
   "required_next_steps": [
     "1. Solve the real source_subtree_contains Kani obligation with a changed verifier/backend or a non-shrinking supported decomposition, then rerun the complete item 1 chain.",

@@ -1,0 +1,101 @@
+{
+  "status": "incomplete_resource_relaxation_exhausted",
+  "scope": "The unchanged production source_subtree_contains, original two-entry real BTreeMap and symbolic input domain, independent oracle, safety checks and unwinding assertions. The default constrained profile was retained; explicit user authorization allowed larger VM memory, swap and wall time.",
+  "default_profile": {
+    "memory": "3G",
+    "swap": "0G",
+    "timeout_seconds": 180
+  },
+  "expanded_profile": {
+    "guest_ram": "8G",
+    "swap_total": "32G (8G original plus 24G temporary VM-disk swap)",
+    "scope_memory_max": "8G",
+    "scope_swap_max": "24G",
+    "timeout_seconds": 3600,
+    "host_cpu_affinity": "12-19 only; no host CPU 0-3",
+    "host_memory_policy": "host retained more than 8G available throughout"
+  },
+  "attempts": [
+    {
+      "configuration": "3G/0G swap/180s, unwind5, Bitwuzla, object-bits11",
+      "result": "not_passed",
+      "exit_code": 124
+    },
+    {
+      "configuration": "6G/2G swap/900s, unwind5, Bitwuzla, object-bits11",
+      "result": "failed_unwinding_assertions",
+      "log": "kani-unwind5-6g.log",
+      "verification_seconds": 183.60944,
+      "observed": "Verification completed but all production-loop and BTreeMap unwind assertions failed; the bound is insufficient."
+    },
+    {
+      "configuration": "6G/2G swap/900s, unwind6, Bitwuzla, object-bits11",
+      "result": "failed_object_capacity",
+      "log": "kani-unwind6-6g.log",
+      "observed": "939711 program-expression steps, 13010 remaining VCCs, then more than 2048 addressed objects."
+    },
+    {
+      "configuration": "6G/2G swap/900s, unwind6, Bitwuzla, object-bits12",
+      "result": "failed_oom",
+      "log": "kani-unwind6-object12-6g.log",
+      "observed": "Cgroup OOM at 4.8G memory and 2G swap peak."
+    },
+    {
+      "configuration": "7G/4G swap/900s, unwind6, Bitwuzla, object-bits12",
+      "result": "failed_oom",
+      "log": "kani-unwind6-object12-7g.log",
+      "observed": "Cgroup OOM at 7G memory and 3.9G swap peak."
+    },
+    {
+      "configuration": "8G/8G swap/1800s, unwind6, Bitwuzla, object-bits12",
+      "result": "failed_unwinding_assertions",
+      "log": "kani-unwind6-object12-8g.log",
+      "verification_seconds": 542.5999,
+      "observed": "Verification completed; unwind6 remains insufficient."
+    },
+    {
+      "configuration": "8G/8G swap/1800s, unwind8, Bitwuzla, object-bits12",
+      "result": "failed_object_capacity",
+      "log": "kani-unwind8-object12-8g.log",
+      "observed": "1943281 program-expression steps, 23160 remaining VCCs, then more than 4096 addressed objects."
+    },
+    {
+      "configuration": "8G/8G swap/1800s, unwind8, Bitwuzla, object-bits13",
+      "result": "failed_oom",
+      "log": "kani-unwind8-object13-8g.log",
+      "observed": "Cgroup OOM after 28m16s at 7.4G memory and 7.9G swap peak."
+    },
+    {
+      "configuration": "8G/24G swap/1800s, unwind8, Bitwuzla, object-bits13",
+      "result": "outer_timeout_during_ssa",
+      "log": "kani-unwind8-object13-24gswap.log",
+      "exit_code": 124,
+      "observed": "No OOM. Symex completed in 422.982s; Bitwuzla was still converting SSA at the 30-minute workload limit."
+    },
+    {
+      "configuration": "8G/24G swap/3600s, unwind8, Bitwuzla, object-bits13",
+      "result": "failed_unwinding_assertions",
+      "log": "kani-unwind8-object13-60m.log",
+      "verification_seconds": 1898.449,
+      "observed": "No OOM. The solver completed and showed unwind8 remains insufficient; all production-loop and BTreeMap unwind assertions still failed."
+    },
+    {
+      "configuration": "exploratory fixed-case collect probe, 8G/24G swap/3600s, unwind8, Bitwuzla, object-bits13",
+      "result": "outer_timeout_during_ssa",
+      "log": "concrete-unwind8-object13.log",
+      "snapshot": "concrete-unwind-probe.rs",
+      "observed": "2092619 steps and 39283 remaining VCCs; SSA conversion did not finish in 60 minutes. The probe used BTreeMap collect rather than direct insertion and is not accepted as a bound proof."
+    }
+  ],
+  "conclusion": "The original 3G OOM was a verifier-capacity issue, not production heap exhaustion or a failing application path. Raising guest resources removed the OOM and proved that the former timeout hid deterministic unwinding failures at unwind5, unwind6 and unwind8. However, the next required bound plus object encoding has no completed result within the full guest memory/swap and 3600-second limit.",
+  "next_steps": [
+    "Change the verifier backend or encoding while preserving the real BTreeMap, original symbolic domain, property, safety checks and unwinding assertions.",
+    "Or use a verifier-supported non-shrinking implementation-level decomposition that does not substitute a model map or disable checks.",
+    "Do not treat the fixed-case probe or any timed-out resource-expanded run as proof."
+  ],
+  "production_changed": false,
+  "input_domain_reduced": false,
+  "checks_disabled": false,
+  "substituted_map": false,
+  "whole_adapter_accepted": false
+}
