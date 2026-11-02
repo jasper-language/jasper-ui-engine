@@ -1,4 +1,4 @@
-//! Native CPU example: cargo run --features native-blitz-cpu-pending --example hello -- FONT [OUTPUT].
+//! Native CPU example: cargo run --features native-engine-cpu --example hello -- FONT [OUTPUT].
 //! 原生 CPU 候选示例：显式注入字体，经 Blitz 绘制并由宿主写出 PPM；整体验收仍待完成。
 
 use jasper_ui_engine::backend::HeadlessBackend;

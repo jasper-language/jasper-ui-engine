@@ -1,0 +1,30 @@
+VM profile: 3G RAM, zero swap, 128 tasks, Cargo jobs=1, fixed VM entry
+Blitz revision: 52739472460824ec7f1624ab135c09a4bbc99219
+
+$ cargo test --locked --no-default-features --features native-engine-cpu --all-targets
+result: passed
+library tests: 175 passed
+native_frame_sequences: 3 passed
+random frame sequences: 32 passed
+all integration suites and example targets: passed
+
+$ cargo check --locked --no-default-features --features native-engine --all-targets
+result: passed
+
+$ cargo test --locked --all-targets
+result: passed
+
+$ cargo test --locked --manifest-path experiments/blitz-host/Cargo.toml --features cpu-pending --tests
+result: passed
+typed_facade: 38 passed
+
+$ python3 scripts/check-blitz-native-dependencies.py
+result: passed
+
+Affected evidence correspondence:
+scene-update-admission: current
+scene-frame-completion: current
+scene-host-close: current
+scene-snapshot-identity: current
+scene-host-identity: current
+semantic-role-tag: current

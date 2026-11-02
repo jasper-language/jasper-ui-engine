@@ -720,3 +720,15 @@ VM 实跑成功，输出 `evidence/full-scene/full_scene.ppm`（P6 320×180，17
 捕获脚本 `scripts/capture-window-xvfb.sh` 使用宿主持有的 X11 window、softbuffer Surface 和 present，不绕过根 Engine。此结果解除“VM 完全没有显示端点”的阻塞，但仍是软件 Xvfb：不含窗口管理器、合成器、垂直同步、硬件 Surface/device-loss、真实休眠恢复或系统无障碍/IME 服务。证据与截图：`evidence/window-xvfb-presentation/report.json`。
 
 同一 X11 端点下新增 `examples/gpu_window.rs`：宿主取得 X11 Surface、wgpu 设备与 exchange texture，根 Engine 直接绘制到宿主持有的 `TextureView`，宿主调用 `Queue::present`。llvmpipe Vulkan 软件适配器上完成一帧并以 0 退出；硬件 GPU、真实 device-loss 与 vsync 仍未覆盖。
+
+## 2026-11-02：正式 Engine 应用特性与整帧增删闭环
+
+根 crate 新增面向应用的 `native-engine` / `native-engine-cpu` 特性，分别转发迁移期 `native-blitz-pending` / `native-blitz-cpu-pending` 实现门。活动 hello/pointer/window/full_scene 示例、窗口捕获脚本和独立诊断调用方均改用新名称；诊断 crate 仍只依赖 `jasper-ui-engine`，其 `Cargo.lock` 已在 VM 内离线重生成。`LegacyEngine`、Taffy→PaintOp→UiBatch 仅保留为显式兼容路径。
+
+整帧候选事务现在是唯一更新路径：新增、删除、同批 Remove+Insert 换序、样式/文本/语义变化都先在保留来源副本上应用，再由终态重建独立 Blitz 候选，成功后一次替换。删除节点或祖先会同时退休其焦点与原生按下身份；同一 `NodeId` 在本帧复用不会接收旧 Press/Focus，迟到 Up 也不能激活替代节点。失败的来源/候选帧保持当前树、版本、焦点、帧缓存和 `needs_frame` 不变。
+
+新增 `tests/native_frame_sequences.rs`：确定性覆盖新增、删除、同批换序、仅同 ID 重建的生命周期，以及 32 例任意多帧序列。任意序列对每个成功后继都与终态新导入的像素、节点数、版本和焦点比较；来源拒绝与原生候选拒绝都验证完整帧保持。`native_frame_damage` / `native_frame_schedule` 中过时的“拒绝后仍标脏”断言已同步为现行“拒绝零修改”契约。
+
+受限 VM 结果：`cargo test --locked --no-default-features --features native-engine-cpu --all-targets` 全绿（175 个库测试、新增序列 3/3、全部集成与示例目标）；独立诊断 `typed_facade` 38/38；`cargo check --features native-engine --all-targets` 与默认 `cargo test --all-targets` 通过；Blitz 固定提交依赖检查通过。受影响的既有场景准入/完成门/关闭/快照身份/语义标签证明映射仍当前。证据：`evidence/native-engine-frame-sequence/report.json`。
+
+第 2 项工程范围已收敛，但仍不勾选：任意整帧 `Scene` 应用、Blitz 候选构造、状态恢复与单次替换的完整 Verus/实现级有序证明尚缺；第三方 panic 回滚未承诺。证明项已登记给 Claude，不能用本轮 32 例属性测试替代。

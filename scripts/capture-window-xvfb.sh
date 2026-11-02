@@ -23,7 +23,7 @@ cleanup() {
 trap cleanup EXIT
 export DISPLAY=$display
 sleep 1
-cargo run --locked --features desktop,native-blitz-cpu-pending --example window -- "$font" >"$out/window.log" 2>&1 &
+cargo run --locked --features desktop,native-engine-cpu --example window -- "$font" >"$out/window.log" 2>&1 &
 app_pid=$!
 sleep 4
 kill -0 "$app_pid"

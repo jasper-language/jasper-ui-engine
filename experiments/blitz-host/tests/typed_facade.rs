@@ -518,10 +518,13 @@ fn semantic_source_frames_update_disabled_focus_and_public_metadata() {
     let old=source.version();let patches=[ScenePatch::UpdateSemantics {id:NodeId(1),semantics:Semantics::default()}];
     source.apply_batch_at(old,&patches).unwrap();assert!(view.apply(10,old,source.version(),&patches));
     assert!(view.focus(10,source.version(),NodeId(2),&mut |_|{}));
-    let rejected=[ScenePatch::UpdateSemantics {id:NodeId(2),semantics:button.clone().label("Do not apply")},
+    let role_change=[ScenePatch::UpdateSemantics {id:NodeId(2),semantics:button.clone().label("Updated before role")},
         ScenePatch::UpdateSemantics {id:NodeId(2),semantics:Semantics::default().role(Role::Text)}];
-    assert!(!view.apply(10,source.version(),source.version()+1,&rejected));
-    let snapshot=view.semantics(10,source.version()).unwrap();assert_eq!(snapshot.nodes.iter().find(|node|node.node==NodeId(2)).unwrap().semantics,button);
+    let old=source.version();source.apply_batch_at(old,&role_change).unwrap();
+    assert!(view.apply(10,old,source.version(),&role_change));
+    let snapshot=view.semantics(10,source.version()).unwrap();
+    assert_eq!(snapshot.nodes.iter().find(|node|node.node==NodeId(2)).unwrap().semantics,
+        Semantics::default().role(Role::Text));
 }
 
 #[test]
@@ -574,7 +577,7 @@ fn pointer_activation_respects_hidden_source_ancestor() {
 }
 
 #[test]
-fn semantic_attribute_roles_change_without_replacing_native_tree() {
+fn semantic_attribute_roles_rebuild_native_tag_and_follow_source() {
     let font=std::fs::read(std::env::var("JASPER_UI_TEST_FONT").unwrap()).unwrap();
     let mut source=Scene::new(Node::container(NodeId(1)).child(Node::text(NodeId(2),"Resource")
         .with_semantics(Semantics::default().role(Role::Text))));
@@ -587,8 +590,11 @@ fn semantic_attribute_roles_change_without_replacing_native_tree() {
         assert_eq!(snapshot.nodes.iter().find(|node|node.node==NodeId(2)).unwrap().semantics,semantics);
         assert_eq!(view.focus(10,source.version(),NodeId(2),&mut |_|{}),semantics.focusable);
     }
-    assert!(!view.apply(10,source.version(),source.version()+1,&[ScenePatch::UpdateSemantics {
-        id:NodeId(2),semantics:Semantics::default().role(Role::Button)}]));
+    let button=[ScenePatch::UpdateSemantics {id:NodeId(2),semantics:Semantics::default().role(Role::Button)}];
+    let old=source.version();source.apply_batch_at(old,&button).unwrap();
+    assert!(view.apply(10,old,source.version(),&button));
+    assert_eq!(view.semantics(10,source.version()).unwrap().nodes.iter()
+        .find(|node|node.node==NodeId(2)).unwrap().semantics.role,Role::Button);
 }
 
 #[test]

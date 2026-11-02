@@ -19,8 +19,8 @@ def check(root):
     require(set(dependencies) == {'jasper-ui-engine'}, 'diagnostic must consume only the root engine')
     engine = dependencies['jasper-ui-engine']
     require(engine['path'] == '../..' and engine['default-features'] is False
-            and engine['features'] == ['native-blitz-pending'], 'diagnostic root native entry')
-    require(manifest['features']['cpu-pending'] == ['jasper-ui-engine/native-blitz-cpu-pending'],
+            and engine['features'] == ['native-engine'], 'diagnostic root native entry')
+    require(manifest['features']['cpu-pending'] == ['jasper-ui-engine/native-engine-cpu'],
             'diagnostic CPU feature must forward to the root engine')
     sections = [manifest, *manifest.get('target', {}).values()]
     for section in sections:

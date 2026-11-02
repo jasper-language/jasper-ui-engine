@@ -904,3 +904,10 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 截图像素检查：800×600 窗口背景 `(24,26,32)` 432000 像素，红矩形 `(220,50,47)` 与蓝矩形 `(30,110,220)` 各 24000 像素；把窗口调整为 640×360 后背景变为 182400，两个矩形仍各 24000。PPM/PNG 哈希与实际事件日志见 `evidence/window-xvfb-presentation/report.json`。该证据不覆盖窗口管理器、vsync、硬件 GPU swapchain、device-loss、休眠恢复、平台无障碍或真实外部 IME。
 
 `examples/gpu_window.rs` 在同一 Xvfb 端点使用 llvmpipe Vulkan：宿主创建 Surface、取得适配器/device/queue 和当前交换纹理，根 Engine 绘制到宿主 `TextureView` 后由宿主 present。一帧运行退出码 0；这是软件 Vulkan 集成证据，硬件驱动、vsync 和 device-loss 仍属于未覆盖能力。
+
+
+## 2026-11-02：第 2 项整帧序列与消费身份（集成，非证明）
+
+`tests/native_frame_sequences.rs` 经根 `engine::Engine` 验证：整帧新增、删除、同批 Remove+Insert 换序及样式更新后的版本、节点数、焦点与所有 RGBA 字节等于终态新导入；32 例任意序列覆盖合法/非法混合，所有拒绝分支保持旧帧；Remove 后复用同一 `NodeId` 不迁移焦点/按下身份，迟到 Up 不激活替代节点。独立 `typed_facade` 38 项同时通过。
+
+这些是 Proptest/集成证据，不是整帧实现级 Verus 证明。尚无证明的依赖仍是：任意 `ScenePatch` 序列表执行、终态 Blitz 候选精化、焦点/滚动/悬停/按下/帧缓存恢复、单次活动替换及第三方 panic 回滚。既有 `scene-frame-completion` 的 Verus 结果只覆盖来源成功、精确后继和候选就绪后的提交门。证据：`evidence/native-engine-frame-sequence/report.json`。

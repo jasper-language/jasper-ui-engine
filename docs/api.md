@@ -2,9 +2,9 @@
 
 > 这是当前 crate 的公开 API 说明；**不是稳定 ABI**。原型阶段允许破坏性修改。
 
-## 原生 Blitz 工程入口（候选，未验收）
+## 原生 Blitz 工程入口（应用特性已命名，验收未完成）
 
-根 crate 的 `engine::Engine` 通过 `native-blitz-pending` 启用，CPU 软件呈现使用 `native-blitz-cpu-pending`。原生适配由根 crate 编译，诊断 crate 仅依赖并消费根入口，直接消费 Blitz 树/样式/事件，不调用显式兼容 `LegacyEngine` 的 Taffy→paint→UiBatch 链。不自动创建窗口、设备或 Surface。
+应用通过 `native-engine` 启用根 crate 的 `engine::Engine`，CPU 软件呈现使用 `native-engine-cpu`；这两个名称分别转发到迁移期 `native-blitz-pending` / `native-blitz-cpu-pending` 实现门。简短名称表示稳定调用点，不表示整项验收已经完成。原生适配由根 crate 编译，诊断 crate 仅依赖并消费根入口，直接消费 Blitz 树/样式/事件，不调用显式兼容 `LegacyEngine` 的 Taffy→paint→UiBatch 链。不自动创建窗口、设备或 Surface。
 
 原生适配的唯一生产源码现位于 `src/native_adapter/`；根 crate 不再通过路径引用实验目录。诊断 crate 的 `lib.rs` 仅重导出根公开接口，保留 CLI/外部调用方验收。源码搬迁逐文件保持字节相同，已有规格按实际函数体重核对应；这不补齐原本缺失的实现证明。
 
@@ -16,17 +16,17 @@ Framework 产生 `native::SceneUpdate { expected_version, next_version, patches 
 
 原生 CPU 入口 `Engine::render_to_backend` 在归属/版本/存活/预算准入后，复用原生绘制并调用既有 `RenderBackend::submit_rgba8`、成功后才调用 `present`。默认后端明确返回 Unsupported；HeadlessBackend 接管已经绘制的像素，不重放 PaintOp。字节按上游输出原样保存，不提供宿主 alpha/合成转换或外部呈现回滚；旧 UiBatch 序列化格式不变。此新增编排与包装尚未完成有序证明验收。
 
-场景整帧更新现采用候选事务：`apply_update` 先在引擎保留的 `Scene` 快照副本上原子应用，再从终态构建独立原生候选；仅当来源成功、版本精确成为后继且候选就绪时才一次替换活动视图。拒绝不会修改活动原生树、版本、焦点、视口、滚动、最近帧缓存或脏帧状态。成功后恢复焦点、悬停位置、按下节点身份和上一帧损伤基准；合法 Button↔非 Button 语义变化也通过候选重建完成，不再要求原生标签保持不变。提交条件已有独立限定证明，完整实现级候选构造/替换证明仍待完成。
+场景整帧更新采用唯一候选事务：`apply_update` 先在引擎保留的 `Scene` 快照副本上原子应用，再从终态构建独立原生候选；仅当来源成功、版本精确成为后继且候选就绪时才一次替换活动视图。新增、删除、同批换序和样式/语义变化都由同一终态重建路径处理，不存在逐节点部分提交的活动执行分支。拒绝不会修改活动原生树、版本、焦点、视口、滚动、最近帧缓存或脏帧状态。成功后恢复焦点、悬停位置、按下节点身份和上一帧损伤基准；合法 Button↔非 Button 语义变化也通过候选重建完成，不再要求原生标签保持不变。提交条件已有独立限定证明，完整实现级候选构造/替换证明仍待完成。
 
-文字几何（`native-blitz-pending`）：`text_offset_at(owner, version, node, x, y)` 把视图局部逻辑点投影到文字节点自身的布局，返回源文本中最近的 UTF-8 光标偏移（放置光标用，不考虑遮挡）；`text_caret(owner, version, node, offset, width)` 返回该偏移之前的光标矩形，坐标同 `node_bounds`。两者与绘制共用同一份布局；布局文本与源文本不一致（如空白折叠）、非字符边界、过期版本等情形返回 None。`text_selection(owner, version, node, start, end)` 返回源文本 UTF-8 区间 [start, end)（start ≤ end）的逐行选区矩形，同一坐标系与同一布局；空区间返回空列表，反向、非字符边界或越界区间返回 None；只给几何，不绘制选区高亮。
+文字几何（`native-engine`）：`text_offset_at(owner, version, node, x, y)` 把视图局部逻辑点投影到文字节点自身的布局，返回源文本中最近的 UTF-8 光标偏移（放置光标用，不考虑遮挡）；`text_caret(owner, version, node, offset, width)` 返回该偏移之前的光标矩形，坐标同 `node_bounds`。两者与绘制共用同一份布局；布局文本与源文本不一致（如空白折叠）、非字符边界、过期版本等情形返回 None。`text_selection(owner, version, node, start, end)` 返回源文本 UTF-8 区间 [start, end)（start ≤ end）的逐行选区矩形，同一坐标系与同一布局；空区间返回空列表，反向、非字符边界或越界区间返回 None；只给几何，不绘制选区高亮。
 
-无障碍树（`native-blitz-pending`）：`accessibility_tree(owner, version)` 返回 `AccessibilityTree { scene_version, nodes, focused }`，供平台无障碍桥（AccessKit、AT-SPI、UIA 或系统无障碍服务）构建各自的树。`nodes` 为可见节点，按源顺序深度优先、根在首位；每个 `AccessibilityNode` 含 Framework 原样语义（role、label、description、value、disabled）、与 `node_bounds` 相同的视图局部几何（无几何时为 None）、场景内焦点标记、本引擎准入的动作 `AccessActions { focus, activate }` 与可见子节点列表。隐藏（semantics.hidden）或未显示（display: none）的节点连同其子树剔除；根本身不可见时 `nodes` 为空。非归属方、过期版本或已关闭视图返回 None。本方法不调用任何平台无障碍 API，也不做屏幕坐标换算；AccessKit 转换与动作路由见下文 AccessKit 桥，文本无障碍接口尚未提供。
+无障碍树（`native-engine`）：`accessibility_tree(owner, version)` 返回 `AccessibilityTree { scene_version, nodes, focused }`，供平台无障碍桥（AccessKit、AT-SPI、UIA 或系统无障碍服务）构建各自的树。`nodes` 为可见节点，按源顺序深度优先、根在首位；每个 `AccessibilityNode` 含 Framework 原样语义（role、label、description、value、disabled）、与 `node_bounds` 相同的视图局部几何（无几何时为 None）、场景内焦点标记、本引擎准入的动作 `AccessActions { focus, activate }` 与可见子节点列表。隐藏（semantics.hidden）或未显示（display: none）的节点连同其子树剔除；根本身不可见时 `nodes` 为空。非归属方、过期版本或已关闭视图返回 None。本方法不调用任何平台无障碍 API，也不做屏幕坐标换算；AccessKit 转换与动作路由见下文 AccessKit 桥，文本无障碍接口尚未提供。
 
-无障碍增量更新（`native-blitz-pending`）：`tree.update_since(&previous)` 返回同一视图从较旧（或同版本）快照 `previous` 到 `tree` 的 `AccessibilityUpdate { from_version, scene_version, nodes, removed, root, focused, focus_changed }`，形如维护镜像的桥（如 AccessKit TreeUpdate）所需：`nodes` 为新增或内容有变的节点（完整内容，按新树顺序；可见子节点变化的父节点本身即为变更，焦点移动时焦点标记翻转的节点亦然），`removed` 为离开树的节点（按旧树顺序），`root` 为新树的根（空树为 None）。`previous` 版本更新时为 None；不检测跨视图混用。`mirror.apply(&update)` 回放更新并从根重建深度优先源顺序：更新基于其他版本、移除镜像中不存在的节点、子节点缺失/重复/不可达或焦点不在树中时为 None，镜像本身不变。`update.is_empty()` 表示节点、根与焦点均无差别。
+无障碍增量更新（`native-engine`）：`tree.update_since(&previous)` 返回同一视图从较旧（或同版本）快照 `previous` 到 `tree` 的 `AccessibilityUpdate { from_version, scene_version, nodes, removed, root, focused, focus_changed }`，形如维护镜像的桥（如 AccessKit TreeUpdate）所需：`nodes` 为新增或内容有变的节点（完整内容，按新树顺序；可见子节点变化的父节点本身即为变更，焦点移动时焦点标记翻转的节点亦然），`removed` 为离开树的节点（按旧树顺序），`root` 为新树的根（空树为 None）。`previous` 版本更新时为 None；不检测跨视图混用。`mirror.apply(&update)` 回放更新并从根重建深度优先源顺序：更新基于其他版本、移除镜像中不存在的节点、子节点缺失/重复/不可达或焦点不在树中时为 None，镜像本身不变。`update.is_empty()` 表示节点、根与焦点均无差别。
 
 AccessKit 桥（`accesskit-pending`，`accesskit =0.25.2` 经 `native::host::accesskit` 重导出）：`tree.to_accesskit(transform)` 给出完整 `TreeUpdate`（初始或重新同步；AccessKit 根树 `TreeId::ROOT`，附 TreeInfo，无焦点时焦点回落到根，`transform` 把视图局部逻辑坐标映射到宿主适配器坐标并只设在根上，恒等变换省略），空树为 None。`update.to_accesskit(transform)` 只携带新增或变更节点，移除的节点经其变更的父节点由 AccessKit 丢弃；变换改变时须发完整更新；较新树为空为 None。角色按 `accesskit_role` 映射；无 value 的 Text 把 label 作为 AccessKit value。`accesskit_action(owner, version, &ActionRequest, focus_sink, activation_sink)` 路由宿主平台适配器送来的动作：目标须在当前无障碍树中且提供该动作（Focus → focus，Click → activate），其他动作、其他树、携带动作数据、过期版本与非归属方一律拒绝且无副作用。平台适配器（accesskit_winit、AT-SPI、UIA、系统无障碍服务）、窗口事件循环与文本无障碍接口（TextRun/选区）仍归宿主或尚未提供。
 
-帧调度（`native-blitz-cpu-pending`）：`needs_frame` / `invalidate_frame` 报告与强制待绘状态；`render_to_surface_with_damage` 报告相对上一帧的 `FrameDamage`；`render_to_surface_damaged` 只把损伤像素写入宿主 Surface；`frame_pace(owner, presented, origin, interval, now)` 按宿主刷新时钟返回 `FramePace::{Idle, WaitUntil(t), RenderNow(tick)}`，每周期至多一帧、不追帧，时钟与垂直同步来源归宿主，本方法不绘制也不等待。
+帧调度（`native-engine-cpu`）：`needs_frame` / `invalidate_frame` 报告与强制待绘状态；`render_to_surface_with_damage` 报告相对上一帧的 `FrameDamage`；`render_to_surface_damaged` 只把损伤像素写入宿主 Surface；`frame_pace(owner, presented, origin, interval, now)` 按宿主刷新时钟返回 `FramePace::{Idle, WaitUntil(t), RenderNow(tick)}`，每周期至多一帧、不追帧，时钟与垂直同步来源归宿主，本方法不绘制也不等待。
 
 GPU 渲染（`gpu-pending`）：`GpuRenderer::new_headless()` 不带呈现表面取得 wgpu 适配器（由平台/wgpu 环境变量选择）并创建设备，`adapter_info()` 返回适配器名与后端；`render_gpu(owner, version, &mut gpu, budget)` 经与 CPU 路径相同的 Blitz 绘制、在 Vello hybrid 上离屏渲染并读回紧凑预乘 RGBA8；`render_gpu_to_surface(owner, version, &mut gpu, bytes, stride, budget)` 写入宿主软件 Surface，Surface 准入先于任何 GPU 工作。准入失败为 `GpuFrameError::Rejected`；无适配器、设备、渲染、读回失败分别报告，绝不回退 CPU 帧冒充。GPU 帧与 CPU 帧共用同一帧缓存与损伤基准：未变化视图（`needs_frame` 为 false）不做 GPU 工作而复用最近产出的帧（无论哪条路径绘制），需强制 GPU 重绘时先 `invalidate_frame`。`render_gpu_to_surface_with_damage` 与 `render_gpu_to_surface_damaged` 对应 CPU 路径的同名方法，返回 `Result<FrameDamage, GpuFrameError>`：损伤相对本视图最近产出的帧（跨 CPU/GPU 路径逐像素比较），`_damaged` 只把受损像素写入仍持有上一帧的 Surface，被拒或失败不写任何字节。不提供窗口呈现与 device-lost 恢复。
 
@@ -34,7 +34,7 @@ GPU 渲染（`gpu-pending`）：`GpuRenderer::new_headless()` 不带呈现表面
 
 `native` 及 Rust 类型名仍为候选，不冻结 Jasper 子命名空间。完整整帧/生命周期/浮点证明尚缺；该入口存在不等于默认后端迁移或六阶段验收完成。
 
-`Engine` 仅在原生 feature 启用时存在；未启用时不会静默选用旧执行链。此前原生名称 `BlitzEngine` 保留为同一实现的兼容重导出。旧引擎明确名为 `LegacyEngine`，旧统计与错误只描述兼容路径。
+`Engine` 仅在 `native-engine`（或兼容实现特性）启用时存在；未启用时不会静默选用旧执行链。此前原生名称 `BlitzEngine` 保留为同一实现的兼容重导出。旧引擎明确名为 `LegacyEngine`，旧统计与错误只描述兼容路径。
 
 ## 旧入口快速开始（迁移兼容）
 
@@ -124,7 +124,7 @@ scene.apply(ScenePatch::Remove { id: NodeId(2) })?;
 - 溢出：`overflow(Overflow::Hidden/Scroll)`；`Scroll` 支持 wheel 路由/clamp/fling 与 overlay 滚动条（见“滚动控制”）。
 - 滚动：`Node::scroll(Point)`，或 `ScenePatch::SetScroll { id, offset }`（见“滚动控制”）。
 - 文字：`font_size`、`color`（测量参与布局；光栅未实现）。
-- 字重与倾斜：`font_weight`（CSS 数值，默认 400）、`font_style: FontStyle::{Normal,Italic}`，构造器 `Style::font(weight, style)`。原生路径（`native-blitz-pending`）映射为 CSS `font-weight`/`font-style`，由 Parley 在宿主注入的同族字面（如 Regular/Bold/Oblique 分别注入）中匹配；字重须在 1..=1000，越界时场景导入与 `UpdateStyle` 补丁被拒（不钳制）。LegacyEngine 不实现字重与倾斜，绘制不受这两个字段影响。
+- 字重与倾斜：`font_weight`（CSS 数值，默认 400）、`font_style: FontStyle::{Normal,Italic}`，构造器 `Style::font(weight, style)`。原生路径（`native-engine`）映射为 CSS `font-weight`/`font-style`，由 Parley 在宿主注入的同族字面（如 Regular/Bold/Oblique 分别注入）中匹配；字重须在 1..=1000，越界时场景导入与 `UpdateStyle` 补丁被拒（不钳制）。LegacyEngine 不实现字重与倾斜，绘制不受这两个字段影响。
 - 字体族：`font_family: Option<String>`（默认 None，沿用宿主注入顺序），构造器 `Style::family(name)`。原生路径映射为 CSS `font-family: "<name>", sans-serif`，由 Parley 按名选择；所选族缺少的字形按宿主注入顺序回退。族名须与本视图注入字体栈登记的某个族名完全一致（区分大小写），且为 1..=128 字节、不含控制字节/DEL/双引号/反斜杠；否则场景导入、`Insert` 与 `UpdateStyle` 补丁被拒（不静默替换为其他字体）。LegacyEngine 不实现字体族选择。
 - 当前不支持阴影/滤镜/变换/虚拟化。
 
