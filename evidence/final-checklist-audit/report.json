@@ -63,7 +63,8 @@
     "ab3785fcca87871311b879a528fdc488242dbfe3 rebind final audit to UI36 (handle status; fallible handle storage growth)",
     "dc91c656ff3d15af44e14ad66bf5dc9ac83feb9e rebind final audit to CP-02 record correction (solver ERROR reinterpretation; no source change)",
     "66aca394629ae7d76645e6fae6351f09d231bd51 rebind final audit to UI38 (scene frame stage order; behavior preserved)",
-    "f067fce9a2a471e2d09a00bc8ba955841696f986 rebind final audit to CP-02 Bitwuzla record (no source change)"
+    "f067fce9a2a471e2d09a00bc8ba955841696f986 rebind final audit to CP-02 Bitwuzla record (no source change)",
+    "f97d19b4dc12337b87bc1e1f5bc1d5b74d5fdc71 rebind final audit to CP-02 reachability probe correction (no source change)"
   ],
   "items": {
     "1_public_contracts": {
