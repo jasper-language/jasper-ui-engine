@@ -20,7 +20,7 @@
     "src/backend.rs": "9625248bbf8874d7fbc02c1f238ec7ff1dc541eb1b8dce53d667f864fbb8a268",
     "src/surface_lifecycle.rs": "b1b28abdc456d77c35b229b34fb2e201a4dc5f2a9eae045a61a209dc6d166d2d",
     "src/host_capabilities.rs": "440db7bbb769ffe01da0d5ef848a3ff09c6a9495a0da5b3eac715430a235a2d6",
-    "src/native_adapter/native_scene.rs": "b47e1ff2e7af63f1615f70c4e718f08188778bb6c1e7907085fc46c86fffd988",
+    "src/native_adapter/native_scene.rs": "778852eef7d9c60e867cf680807cb491c061858334953a633f2092a6debe0aa6",
     "src/native_adapter/native_view.rs": "9871dc3155d4ad6e4428fbea08610ad8f7b396cfa798380e64a9bd1522124a6e",
     "src/native_adapter/facade.rs": "011e2727b5a87e7213889bfda8e34cdb511b9b954532a67150c0b85f49796473",
     "src/native_adapter/component_contract.rs": "177e20430e4853d746238322da170aa9aa1e2882519cbc10e635ead87fe664af",
@@ -46,7 +46,7 @@
     "tests/native_interaction_closure.rs": "ed6fc7345b46656e27bedfa59b9c8240427954eb7888b50299bf5d5bd3bd2d79",
     "tests/native_accesskit_bridge.rs": "a252859061116da97dac80f37d5b1721275a92c558cb6d6655fb39b679d6228d",
     "tests/native_gpu_host_view.rs": "5cabaaf2091c3e10de8def043b7d902a61ed37831dcdaf97d366461860422fc9",
-    "scripts/audit-closeout.py": "3b93b12e36c6362619be0df660bf2affdd70d83473ac4efff94b671d1a2b1d7c",
+    "scripts/audit-closeout.py": "4ce7bdf7ce965233c313030ae76d3c1f62e42ea085cdb4c2cb8379f71aaaf232",
     "scripts/closeout-baseline.sh": "324530f8c5033ff29ae0e1f245c756c0d47c3da32d6cf30666ec15ec19d9bc8e",
     "src/desktop.rs": "298bea8e2dc8c62581025782419a948c3e5715bc494f0e174591aa8f1644bb28",
     "src/handle.rs": "f623079e05ca9787f4f2a05359c52ea8784107e8c83ff999e27cfce316cff88e"
@@ -61,7 +61,8 @@
     "f35d09b39e2e31deb01dec104378b1666dba7e9b item 6 completed closeout evidence",
     "bb31de152036f40ab09cbbb8d26430226a40b020 rebind final audit to UI34/UI35 (clock-free desktop pointer state; generation handle table)",
     "ab3785fcca87871311b879a528fdc488242dbfe3 rebind final audit to UI36 (handle status; fallible handle storage growth)",
-    "dc91c656ff3d15af44e14ad66bf5dc9ac83feb9e rebind final audit to CP-02 record correction (solver ERROR reinterpretation; no source change)"
+    "dc91c656ff3d15af44e14ad66bf5dc9ac83feb9e rebind final audit to CP-02 record correction (solver ERROR reinterpretation; no source change)",
+    "66aca394629ae7d76645e6fae6351f09d231bd51 rebind final audit to UI38 (scene frame stage order; behavior preserved)"
   ],
   "items": {
     "1_public_contracts": {
