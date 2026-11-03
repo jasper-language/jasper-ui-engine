@@ -123,7 +123,13 @@ fn main() {
         ),
         (
             "../../src/desktop.rs",
-            &["PIXEL ERROR TYPE", "PIXEL CONVERT KERNEL"][..],
+            &[
+                "PIXEL ERROR TYPE",
+                "PIXEL CONVERT KERNEL",
+                "DESKTOP POINTER KERNEL",
+                "DESKTOP POINTER STATE TYPE",
+                "DESKTOP POINTER STATE KERNEL",
+            ][..],
         ),
         (
             "../../src/scene.rs",

@@ -786,3 +786,35 @@ GPU 直接绘制到宿主 `TextureView` 后，`needs_frame` 在宿主 `Queue::pr
 第 6 项总审计使用 `scripts/audit-closeout.py --run-baseline --require-ready`，检查当前源码快照、真实调用方证据、前序分支集成、工具固定版本、默认/原生 CPU/GPU 基础回归和工作树清洁度。旧 evidence 中因完整复杂证明未闭合而记录的 false 标志不改写，由最终审计明确列出其被当前用户口径替代。
 
 复杂或高成本义务继续登记在 `docs/claude-closeout-proof-backlog.md` 与 `docs/claude-item5-proof-backlog.md`：真实双键/子树 `BTreeMap` Kani、整帧与窗口适配器实现级组合、浮点/布局深挖、硬件 GPU/device-loss/vsync、活 IME/平台无障碍服务及跨宿主性能门。它们不阻塞本轮功能 Beta 交付。
+
+## 2026-11-03：桌面指针时钟边界（CP-05）与验证链修复
+
+`DesktopInput` 的状态路径此前无法进 Kani：结构里带 `Instant`，一构造就碰到 `clock_gettime`。现在指针状态拆成不含时钟的公开类型 `DesktopPointerState`，`moved_at` / `pressed_at` / `released_at` 显式接收时间戳并原样报告；`DesktopInput` 只多一个 `start: Instant`，只在 `new` 与 `now_millis` 读时钟。毫秒换算由截断改为饱和（`desktop_timestamp_millis`）。行为上唯一的变化就是这个饱和，既有桌面测试不改动通过。
+
+按下集合由 `BTreeSet<MouseButton>` 改为按 `desktop_button_key` 严格升序的 `Vec<MouseButton>`：拖动样本仍报告最小的按下按钮，顺序与原派生 `Ord` 一致。改动原因是实测：真实 `BTreeSet` 的 Kani 在符号执行阶段就停不下来（`unwind=13`，570 秒未结束，卡在 drop 的导航循环），与捕获存储的双键问题同类；固定版本 Verus 也没有该容器的规格。一个窗口同时按下的按钮极少，线性查找没有性能问题。
+
+| 阶段 | 结果 |
+|---|---|
+| Verus | `desktop-pointer` 24/0（含依赖），`desktop-pointer-state` 31/0；共 6 个反例全部被拒（回绕时间戳、丢时间戳、拖动当悬停、按下丢按钮、抬起留按钮、移动丢按钮） |
+| Proptest | `desktop_pointer_property`；读边界属性 49 项，`desktop::tests` 8 项 |
+| Miri | `memory::` 增加时间戳边界与 8 步路径（含 NaN 坐标、`u64::MAX` 时间戳） |
+| cargo-fuzz | 两个目标 142710 / 1382813 次 |
+| Kani | `desktop_timestamp_saturation`（任意 u128）、`desktop_pointer_state_path`（真实状态与 Vec，任意按钮/坐标/时间戳，按下→修饰键→按下→移动→抬起→移动→抬起→移动，711 项检查 0 失败）；全部 55 个 harness 通过 |
+| Loom | 同步无关，沿用独立状态的调度场景，1 项通过 |
+
+默认测试 144 项、`--features desktop` 158 项全部通过。全链各阶段 scoped 通过，`complete=false` 仍因捕获查询双键义务（CP-01）。
+
+未覆盖：`Instant` 读取本身（标准库 TCB）、winit 事件到状态转换的映射、`DesktopInput::ime` 的 Kani（其 Verus 不变性证明保留）。详见 `docs/claude-closeout-proof-backlog.md` 的 CP-05。
+
+**验证链修复。** 接手时 `scripts/verify-ui.py` 在当前 main 上跑不通，这次修了三处，都不涉及任何性质或范围：
+
+- 整库 rustfmt 改动了版式，链内 9 个内核的签名和十余个反例的文本匹配失效（Verus 阶段直接报 `signature changed`）。`annotate` 改为先逐字匹配，匹配不到时按词法匹配，只容忍空白和闭合符前的尾逗号；词法变化仍会报错。
+- Miri 期望值过期（UI21 新增 `bold_alias_boundaries` 后，`memory::` 由 1 项变 2 项），Kani 期望数 54 而实际 harness 为 53。均已改为实际值，本轮新增 2 个 harness 后为 55。
+- 单命令上限由 1800 秒提到 3600 秒。构建 VM 与其他任务共用时 Kani 超过 30 分钟；超时仍判失败。
+
+不在 `verify-ui.py` 列表内的独立内核 `preedit-lifecycle-dispatch` 的反例 `ignore-disabled-owner` 在新匹配下有两处命中，仍需要单独修正；其余独立内核的提取与反例匹配已静态核对，但本轮没有逐个重跑 Verus。
+
+**证据脱敏。** UI21 起有 64 个已跟踪的证据文件含构建机主目录路径。新增 `scripts/sanitize-evidence.py`，把这类路径换成 `<repo>` / `<home>`，并同步证据内记录的文件哈希，当前树已为零。今后每次重新生成已跟踪证据后都要运行一次。已推送的历史提交不做改写，仍然包含这些路径。
+
+**交付门状态。** 本轮 `closeout-baseline` 通过，但 `audit-closeout.py --require-ready` 现在返回未就绪：最终审计记录绑定在 UI32 的提交上，不覆盖本次改动的 `src/desktop.rs`（构建 VM 回传证据也会让工作树变脏）。第 1–5 项的完成记录尚未对新提交重新绑定。
+

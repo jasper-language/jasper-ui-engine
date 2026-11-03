@@ -68,7 +68,7 @@ pub use canvas::{Canvas, CanvasHitRegion, CanvasOp};
 #[cfg(feature = "canvas-tiny-skia")]
 pub use canvas_tiny_skia::{render_canvas, CanvasRenderReport};
 #[cfg(feature = "desktop")]
-pub use desktop::{rgba_to_u32, DesktopInput, PixelError};
+pub use desktop::{rgba_to_u32, DesktopInput, DesktopPointerState, PixelError};
 #[cfg(feature = "native-blitz-pending")]
 pub use engine::Engine;
 pub use engine::{EngineError, FrameStats, LegacyEngine};

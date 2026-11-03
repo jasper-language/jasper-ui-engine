@@ -22,7 +22,7 @@
 
 ### CP-05
 
-**DesktopInput/Instant 状态的 Kani 时钟边界。** 现有状态路径遇到标准库 `Instant::now → clock_gettime` 不支持；不能用假时钟替换真实状态后宣称原状态已证明。纯转换与限制状态路径的证据必须保持独立。
+**DesktopInput/Instant 状态的 Kani 时钟边界。** 指针状态路径已闭合（2026-11-03，UI-DESKTOP-POINTER-001 / UI-DESKTOP-POINTER-STATE-001）：`DesktopPointerState` 不含时钟，转换显式接收任意 `u64` 时间戳，按下集合改为严格升序 `Vec`，Verus 状态路径与 Kani 真实状态路径（按下/修饰键/拖动/抬起，任意按钮、坐标、时间戳）均通过。没有假时钟，也没有替换状态。仍未覆盖：`Instant::now`/`elapsed` 本身（标准库 TCB，只在 `DesktopInput::new` 与 `now_millis` 读取）、`now_millis` 组合的单调性、winit 事件到状态转换的映射（`translate`/`cursor_moved`/`mouse_input`），以及 `DesktopInput::ime` 的 Kani（Verus 对全部状态的不变性证明保留）。
 
 ### CP-06
 

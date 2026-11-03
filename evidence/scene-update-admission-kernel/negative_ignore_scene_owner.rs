@@ -4,14 +4,14 @@ verus! {
 
 
 
-#[derive(Clone,Copy,Debug,PartialEq,Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SceneUpdateError {
     OwnerMismatch,
     Closed,
     EmptyFrame,
     CapacityExceeded,
-    StaleVersion {expected:u64,current:u64},
-    InvalidSuccessor {expected:u64,next:u64},
+    StaleVersion { expected: u64, current: u64 },
+    InvalidSuccessor { expected: u64, next: u64 },
     SourceRejected,
     NativeRejected,
 }
@@ -20,8 +20,10 @@ pub enum SceneUpdateError {
 pub(crate) fn scene_work_fits(prepared:usize,pending:usize,incoming:usize)->(result:bool)
         ensures result == (prepared as int + pending as int + incoming as int <= 4096),
     {
-    if prepared>4096 || pending>4096-prepared {return false;}
-    incoming<=4096-prepared-pending
+    if prepared > 4096 || pending > 4096 - prepared {
+        return false;
+    }
+    incoming <= 4096 - prepared - pending
 }
 
 /// Prepare a next UI update version without mutating or reserving backend state.
@@ -31,7 +33,9 @@ pub fn next_ui_update_version(current: u64, expected: u64) -> (result: Option<u6
         None => current != expected || current == u64::MAX,
     },
 {
-    if current != expected || current == u64::MAX { return None; }
+    if current != expected || current == u64::MAX {
+        return None;
+    }
     Some(current + 1)
 }
 
@@ -58,20 +62,36 @@ pub(crate) fn admit_scene_update(owner:u64,caller:u64,current:u64,expected:u64,n
         },
     {
     if false {return Err(SceneUpdateError::OwnerMismatch);}
-    if !open {return Err(SceneUpdateError::Closed);}
-    if count==0 {return Err(SceneUpdateError::EmptyFrame);}
-    if count>4096 {return Err(SceneUpdateError::CapacityExceeded);}
-    if current!=expected {return Err(SceneUpdateError::StaleVersion {expected,current});}
-    match next_ui_update_version(current,expected) {
-        Some(successor) if next==successor=>Ok(()),
-        _=>Err(SceneUpdateError::InvalidSuccessor {expected,next}),
+    if !open {
+        return Err(SceneUpdateError::Closed);
+    }
+    if count == 0 {
+        return Err(SceneUpdateError::EmptyFrame);
+    }
+    if count > 4096 {
+        return Err(SceneUpdateError::CapacityExceeded);
+    }
+    if current != expected {
+        return Err(SceneUpdateError::StaleVersion { expected, current });
+    }
+    match next_ui_update_version(current, expected) {
+        Some(successor) if next == successor => Ok(()),
+        _ => Err(SceneUpdateError::InvalidSuccessor { expected, next }),
     }
 }
 
 /// Compatibility boolean projection of the structured admission decision.
 /// 结构化准入决策的兼容布尔投影。
-pub(crate) fn accepts_scene_update(owner:u64,caller:u64,current:u64,expected:u64,next:u64,count:usize,open:bool)->bool {
-    admit_scene_update(owner,caller,current,expected,next,count,open).is_ok()
+pub(crate) fn accepts_scene_update(
+    owner: u64,
+    caller: u64,
+    current: u64,
+    expected: u64,
+    next: u64,
+    count: usize,
+    open: bool,
+) -> bool {
+    admit_scene_update(owner, caller, current, expected, next, count, open).is_ok()
 }
 
 }

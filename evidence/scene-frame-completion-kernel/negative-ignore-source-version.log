@@ -19,8 +19,8 @@ error: postcondition not satisfied
 31 | |         },
    | |_________^ failed this postcondition
 ...
-34 |       if !candidate_ready {return Err(SceneUpdateError::NativeRejected);}
-   |                            -------------------------------------------- at this exit
+35 |           return Err(SceneUpdateError::NativeRejected);
+   |           -------------------------------------------- at this exit
 
 error: postcondition not satisfied
   --> <repo>/evidence/scene-frame-completion-kernel/negative_ignore_source_version.rs:21:17
@@ -35,7 +35,7 @@ error: postcondition not satisfied
 31 | |         },
    | |_________^ failed this postcondition
 ...
-35 |       Ok(())
+37 |       Ok(())
    |       ------ at the end of the function body
 
 error: aborting due to 2 previous errors

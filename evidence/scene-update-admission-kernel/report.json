@@ -3,29 +3,29 @@
   "status": "proved",
   "scope": "Exact production structured patch admission and real reused version/count predicates; source/native rejection variants are assigned outside this kernel and are excluded. No native mutation loop or host authentication proof.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
+  "source_sha256": "b47e1ff2e7af63f1615f70c4e718f08188778bb6c1e7907085fc46c86fffd988",
   "sources": {
-    "src/input_identity.rs": "481fda295574255d00f1b0952ee92a0772a08efe82f2c776250345d01b762fcd",
-    "src/native_adapter/native_scene.rs": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac"
+    "src/input_identity.rs": "953b0982be297777cc3e2c3f3a02f697df71d83c2d3e5bc21202baa06250aa0d",
+    "src/native_adapter/native_scene.rs": "b47e1ff2e7af63f1615f70c4e718f08188778bb6c1e7907085fc46c86fffd988"
   },
-  "kernel_sha256": "16203b09d373166d690194433b21a25e1277d81190d825ac81f054174741148f",
+  "kernel_sha256": "dfecc4647be48d37ec7e808c109eca42c2ea44ef7f63e2decb349aef9ba8802d",
   "dependencies": {
-    "scene-update-error-type": "e51ba92d111f3c76e2b9b17418f5f44f30451bf604c57c1f9b2ea378403956cb",
-    "scene-work-capacity": "0c975871740e362eaea9dec3f45683b96d02e0ab52a0d03e30c72fb5da58465a",
-    "ui-update-next": "fdde3deeec08570a425ce64d89c186883577b1f16f063ff6740bbc3a39cbb70a"
+    "scene-update-error-type": "256606b123f0efa48b755744e08ea821890120a43d4fcfbb60cb9c74f24a8875",
+    "scene-work-capacity": "f6a5094f728c19753c6e20d91bfb5d40866f3b52aaa01b9710a545e878866c4c",
+    "ui-update-next": "8c815cd78d43311906ab3a2d625ee1f156d2f0247bf31bdb807a2c3ad5c17679"
   },
-  "proof_sha256": "4dc8ecc81760d2a5029ab8103446cc34a1d89c2c4f6fdd85ed509e4721f85846",
-  "runner_sha256": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e",
+  "proof_sha256": "def00edcec11d7ee687603f6e9f25dc585cf6b65bf8f089b9c21d59a4a4d443f",
+  "runner_sha256": "ddbeb4018f62ac6eee850625e4283dff7394a90eb6b910b9b4f3ce61e4cefcc7",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
-    "<home>/.local/share/jasper-ui-verification/verus-x86-linux/verus",
+    "<home>/verus/verus",
     "--crate-type",
     "lib",
     "<repo>/evidence/scene-update-admission-kernel/kernel.rs"
   ],
   "exit_code": 0,
   "solver": {
-    "path": "<home>/.local/share/jasper-ui-verification/verus-x86-linux/z3",
+    "path": "<home>/verus/z3",
     "version": "Z3 version 4.16.0 - 64 bit\n",
     "explicit_override": null
   },

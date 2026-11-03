@@ -88,23 +88,23 @@
       "Proptest": {
         "result": "3/3 passed",
         "log": "proptest.log",
-        "sha256": "4f329441095ec845819964828efcd75498a27dfbae32b0b9a579c098b7fbc186"
+        "sha256": "40959547772a4d98508d6e6bc4b15ffa0e31f91d2e4b4d786e343ceb957ebf08"
       },
       "Miri": {
         "result": "2/2 deterministic same-source tests passed under strict provenance; Proptest runner filtered because its failure persistence uses unsupported isolated statx",
         "log": "miri.log",
-        "sha256": "129f2da7084d4c9a7828d63c6bd5e2b1dc3b0ce6169b2d55bcf0164bda1ecc33"
+        "sha256": "b194257d4e7ec051daae1008c61784a97487e95a8a44c913446360f6638086bd"
       },
       "Kani": {
         "result": "2/2 harnesses, 381 checks (230 + 151), 0 failures",
         "log": "kani.log",
-        "sha256": "e41f10a9478f71a403672021daf6f055ebe1aa332ee1707df687a097d657c6ed"
+        "sha256": "e68f478a9f4c776ac57eef3dd82b3ed3e791ad96fe655cd0a73b68ac15f28237"
       },
       "verus": "pending; control transitions and mutation relations are not represented in the prior scalar extraction registry",
       "cargo-fuzz": {
         "result": "686245 runs passed in 11 seconds; no artifact produced",
         "log": "fuzz.log",
-        "sha256": "9623f7075ff4bead77061eafdbf0a765874b3d27a52f4a9d3010fc57d92fdde0"
+        "sha256": "542e3c2d2f18d41c0beb323a718c9767751624904f615501d8bc81a2a41be9fb"
       },
       "Loom": "not applicable: no shared or concurrent state"
     },

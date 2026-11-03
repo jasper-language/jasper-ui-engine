@@ -929,3 +929,10 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
   为显式 TCB。不得把上述有限验证扩大为硬件 GPU、device-loss、真实平台暂停恢复或整项验收。
 
 日志、锁文件、源码与测试哈希见 `evidence/native-host-render-lifecycle/report.json`。
+
+## UI-DESKTOP-POINTER-001 / UI-DESKTOP-POINTER-STATE-001：无时钟桌面指针状态（2026-11-03）
+
+`desktop_timestamp_millis`（对所有 u128 饱和）、`desktop_button_key`（按钮全序键）、`desktop_button_position`（升序下标）、`desktop_motion_phase`、`desktop_pointer_event`（原样回传时间戳、坐标、按钮、压力、修饰键）与 `DesktopPointerState` 的 `new` / `modifiers` / `set_modifiers` / `moved_at` / `pressed_at` / `released_at` 完成 Verus → Proptest → Miri → cargo-fuzz → Kani → Loom。状态性质：按下列表保持严格升序；按下后集合恰为旧集合并上该按钮，抬起后恰为旧集合去掉该按钮；移动样本报告最小按下按钮；坐标按位回传，不做浮点计算。Proptest/Miri/fuzz/Kani/Loom 用独立数组模型对照，不依赖生产集合。
+
+范围限于无时钟状态。`Instant::now` / `elapsed`、`now_millis` 的组合、winit 映射与 `DesktopInput::ime` 的 Kani 不在其中，也不是用假时钟绕过的：状态路径里已没有时钟。证据：`evidence/desktop-pointer-kernel/`、`evidence/desktop-pointer-state-kernel/`、`evidence/validation-chain/report.json`。
+

@@ -19,8 +19,8 @@ error: postcondition not satisfied
 39 | |         },
    | |_________^ failed this postcondition
 ...
-44 |       if count>4096 {return Err(ComponentUpdateError::CapacityExceeded);}
-   |                      -------------------------------------------------- at this exit
+49 |           return Err(ComponentUpdateError::CapacityExceeded);
+   |           -------------------------------------------------- at this exit
 
 error: postcondition not satisfied
   --> <repo>/evidence/component-update-admission-kernel/negative_ignore_owner.rs:21:17
@@ -35,8 +35,8 @@ error: postcondition not satisfied
 39 | |         },
    | |_________^ failed this postcondition
 ...
-45 |       if current!=expected {return Err(ComponentUpdateError::StaleSequence {expected,current});}
-   |                             ------------------------------------------------------------------ at this exit
+52 |           return Err(ComponentUpdateError::StaleSequence { expected, current });
+   |           --------------------------------------------------------------------- at this exit
 
 error: postcondition not satisfied
   --> <repo>/evidence/component-update-admission-kernel/negative_ignore_owner.rs:21:17
@@ -51,8 +51,8 @@ error: postcondition not satisfied
 39 | |         },
    | |_________^ failed this postcondition
 ...
-43 |       if count==0 {return Err(ComponentUpdateError::EmptyFrame);}
-   |                    -------------------------------------------- at this exit
+46 |           return Err(ComponentUpdateError::EmptyFrame);
+   |           -------------------------------------------- at this exit
 
 error: postcondition not satisfied
   --> <repo>/evidence/component-update-admission-kernel/negative_ignore_owner.rs:21:17
@@ -67,8 +67,8 @@ error: postcondition not satisfied
 39 | |         },
    | |_________^ failed this postcondition
 ...
-42 |       if !open {return Err(ComponentUpdateError::Closed);}
-   |                 ---------------------------------------- at this exit
+43 |           return Err(ComponentUpdateError::Closed);
+   |           ---------------------------------------- at this exit
 
 error: aborting due to 4 previous errors
 

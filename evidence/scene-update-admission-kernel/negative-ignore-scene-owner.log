@@ -1,74 +1,74 @@
 verification results:: 4 verified, 1 errors
 note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
-  --> <repo>/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:40:1
+  --> <repo>/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:44:1
    |
-40 | / pub(crate) fn admit_scene_update(owner:u64,caller:u64,current:u64,expected:u64,next:u64,
-41 | |     count:usize,open:bool)->(result:Result<(),SceneUpdateError>)
+44 | / pub(crate) fn admit_scene_update(owner:u64,caller:u64,current:u64,expected:u64,next:u64,
+45 | |     count:usize,open:bool)->(result:Result<(),SceneUpdateError>)
    | |_______________________________________________________________^
 
 error: postcondition not satisfied
-  --> <repo>/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:42:17
+  --> <repo>/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:46:17
    |
-42 |           ensures match result {
+46 |           ensures match result {
    |  _________________^
-43 | |             Err(SceneUpdateError::OwnerMismatch)=>owner!=caller,
-44 | |             Err(SceneUpdateError::Closed)=>owner==caller && !open,
-45 | |             Err(SceneUpdateError::EmptyFrame)=>owner==caller && open && count==0,
+47 | |             Err(SceneUpdateError::OwnerMismatch)=>owner!=caller,
+48 | |             Err(SceneUpdateError::Closed)=>owner==caller && !open,
+49 | |             Err(SceneUpdateError::EmptyFrame)=>owner==caller && open && count==0,
 ...  |
-57 | |                 && current<u64::MAX && next as int==current as int+1,
-58 | |         },
+61 | |                 && current<u64::MAX && next as int==current as int+1,
+62 | |         },
    | |_________^ failed this postcondition
 ...
-63 |       if count>4096 {return Err(SceneUpdateError::CapacityExceeded);}
-   |                      ---------------------------------------------- at this exit
+72 |           return Err(SceneUpdateError::CapacityExceeded);
+   |           ---------------------------------------------- at this exit
 
 error: postcondition not satisfied
-  --> <repo>/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:42:17
+  --> <repo>/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:46:17
    |
-42 |           ensures match result {
+46 |           ensures match result {
    |  _________________^
-43 | |             Err(SceneUpdateError::OwnerMismatch)=>owner!=caller,
-44 | |             Err(SceneUpdateError::Closed)=>owner==caller && !open,
-45 | |             Err(SceneUpdateError::EmptyFrame)=>owner==caller && open && count==0,
+47 | |             Err(SceneUpdateError::OwnerMismatch)=>owner!=caller,
+48 | |             Err(SceneUpdateError::Closed)=>owner==caller && !open,
+49 | |             Err(SceneUpdateError::EmptyFrame)=>owner==caller && open && count==0,
 ...  |
-57 | |                 && current<u64::MAX && next as int==current as int+1,
-58 | |         },
+61 | |                 && current<u64::MAX && next as int==current as int+1,
+62 | |         },
    | |_________^ failed this postcondition
 ...
-64 |       if current!=expected {return Err(SceneUpdateError::StaleVersion {expected,current});}
-   |                             ------------------------------------------------------------- at this exit
+75 |           return Err(SceneUpdateError::StaleVersion { expected, current });
+   |           ---------------------------------------------------------------- at this exit
 
 error: postcondition not satisfied
-  --> <repo>/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:42:17
+  --> <repo>/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:46:17
    |
-42 |           ensures match result {
+46 |           ensures match result {
    |  _________________^
-43 | |             Err(SceneUpdateError::OwnerMismatch)=>owner!=caller,
-44 | |             Err(SceneUpdateError::Closed)=>owner==caller && !open,
-45 | |             Err(SceneUpdateError::EmptyFrame)=>owner==caller && open && count==0,
+47 | |             Err(SceneUpdateError::OwnerMismatch)=>owner!=caller,
+48 | |             Err(SceneUpdateError::Closed)=>owner==caller && !open,
+49 | |             Err(SceneUpdateError::EmptyFrame)=>owner==caller && open && count==0,
 ...  |
-57 | |                 && current<u64::MAX && next as int==current as int+1,
-58 | |         },
+61 | |                 && current<u64::MAX && next as int==current as int+1,
+62 | |         },
    | |_________^ failed this postcondition
 ...
-62 |       if count==0 {return Err(SceneUpdateError::EmptyFrame);}
-   |                    ---------------------------------------- at this exit
+69 |           return Err(SceneUpdateError::EmptyFrame);
+   |           ---------------------------------------- at this exit
 
 error: postcondition not satisfied
-  --> <repo>/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:42:17
+  --> <repo>/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:46:17
    |
-42 |           ensures match result {
+46 |           ensures match result {
    |  _________________^
-43 | |             Err(SceneUpdateError::OwnerMismatch)=>owner!=caller,
-44 | |             Err(SceneUpdateError::Closed)=>owner==caller && !open,
-45 | |             Err(SceneUpdateError::EmptyFrame)=>owner==caller && open && count==0,
+47 | |             Err(SceneUpdateError::OwnerMismatch)=>owner!=caller,
+48 | |             Err(SceneUpdateError::Closed)=>owner==caller && !open,
+49 | |             Err(SceneUpdateError::EmptyFrame)=>owner==caller && open && count==0,
 ...  |
-57 | |                 && current<u64::MAX && next as int==current as int+1,
-58 | |         },
+61 | |                 && current<u64::MAX && next as int==current as int+1,
+62 | |         },
    | |_________^ failed this postcondition
 ...
-61 |       if !open {return Err(SceneUpdateError::Closed);}
-   |                 ------------------------------------ at this exit
+66 |           return Err(SceneUpdateError::Closed);
+   |           ------------------------------------ at this exit
 
 error: aborting due to 4 previous errors
 

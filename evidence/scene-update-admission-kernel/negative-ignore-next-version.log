@@ -1,21 +1,21 @@
 verification results:: 4 verified, 1 errors
 error: postcondition not satisfied
-  --> <repo>/evidence/scene-update-admission-kernel/negative_ignore_next_version.rs:42:17
+  --> <repo>/evidence/scene-update-admission-kernel/negative_ignore_next_version.rs:46:17
    |
-42 |           ensures match result {
+46 |           ensures match result {
    |  _________________^
-43 | |             Err(SceneUpdateError::OwnerMismatch)=>owner!=caller,
-44 | |             Err(SceneUpdateError::Closed)=>owner==caller && !open,
-45 | |             Err(SceneUpdateError::EmptyFrame)=>owner==caller && open && count==0,
+47 | |             Err(SceneUpdateError::OwnerMismatch)=>owner!=caller,
+48 | |             Err(SceneUpdateError::Closed)=>owner==caller && !open,
+49 | |             Err(SceneUpdateError::EmptyFrame)=>owner==caller && open && count==0,
 ...  |
-57 | |                 && current<u64::MAX && next as int==current as int+1,
-58 | |         },
+61 | |                 && current<u64::MAX && next as int==current as int+1,
+62 | |         },
    | |_________^ failed this postcondition
 ...
-65 | /     match next_ui_update_version(current,expected) {
-66 | |         Some(_)=>Ok(()),
-67 | |         _=>Err(SceneUpdateError::InvalidSuccessor {expected,next}),
-68 | |     }
+79 | /     match next_ui_update_version(current, expected) {
+80 | |         Some(_)=>Ok(()),
+81 | |         _ => Err(SceneUpdateError::InvalidSuccessor { expected, next }),
+82 | |     }
    | |_____- at the end of the function body
 
 error: aborting due to 1 previous error

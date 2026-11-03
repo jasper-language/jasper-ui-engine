@@ -2947,7 +2947,7 @@
     ],
     "returncode": 0,
     "log": "evidence/final-closeout-audit/baseline.log",
-    "log_sha256": "ae1a15b7786ed17df59dc3f73393eea9f73153e60059b0d0d92958f85c47a6ef"
+    "log_sha256": "84226a578af95b44153e39a1a51e7177dc85349904591c6ae153d02451d9fd55"
   },
   "final_gate": {
     "ready": true,

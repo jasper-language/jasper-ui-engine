@@ -460,8 +460,11 @@ variant directly, validates local UTF-8 cursor bounds and the current owner/seri
 and returns the original borrowed event. Committed Text and all other variants
 are rejected by this preedit-only entry point. An empty preedit with absent cursor
 preserves clear intent; this does not itself clear a native editor or UI pixels.
-The pure host conversion/admission path has independent scoped evidence. The
-stateful DesktopInput wrapper's clock-related Kani failure remains pending.
+The pure host conversion/admission path has independent scoped evidence. Pointer
+state now lives in the clock-free `DesktopPointerState`, whose transitions take an
+explicit timestamp and pass Verus and Kani; `DesktopInput` only adds the `Instant`
+read. Kani still does not run `DesktopInput::ime` itself because that type holds an
+`Instant`.
 
 ### Owned UI preedit presentation state
 

@@ -425,6 +425,114 @@ pub fn assert_bold_alias(weights: &[u16], group_max: &[u16]) {
     assert_eq!(bold_alias_admits(weights,group_max),expected);
 }
 
+/// Independent millisecond oracle over the widened value: exact when it fits, u64::MAX otherwise.
+/// 独立毫秒规格：可表示时精确，否则为 u64::MAX。
+pub fn assert_desktop_timestamp(elapsed: u128) {
+    let result = desktop_timestamp_millis(elapsed);
+    if elapsed <= u64::MAX as u128 {
+        assert_eq!(result as u128, elapsed);
+    } else {
+        assert_eq!(result, u64::MAX);
+    }
+}
+
+/// One clock-free pointer transition: (operation, button tag, Other code, x bits, y bits, timestamp).
+/// 一次无时钟指针转换：（操作、按钮标签、Other 码、x 位、y 位、时间戳）。
+pub type DesktopPointerStep = (u8, u8, u16, u32, u32, u64);
+
+/// Runs the real state against an array model of held buttons kept as (variant rank, code); the
+/// expected drag button is the model's smallest entry, independent of the production set.
+/// 以真实状态对照数组模型（变体序、码）；拖动按钮取模型最小项，不依赖生产集合。
+pub fn assert_desktop_pointer_path(steps: &[DesktopPointerStep]) {
+    let button_of = |tag: u8, code: u16| match tag % 6 {
+        0 => MouseButton::Left,
+        1 => MouseButton::Right,
+        2 => MouseButton::Middle,
+        3 => MouseButton::Back,
+        4 => MouseButton::Forward,
+        _ => MouseButton::Other(code),
+    };
+    let key_of = |tag: u8, code: u16| (tag % 6, if tag % 6 == 5 { code } else { 0 });
+    let mut state = DesktopPointerState::new();
+    let mut held: [Option<(u8, u16)>; 8] = [None; 8];
+    let mut position = (0f32.to_bits(), 0f32.to_bits());
+    let mut modifiers = Modifiers { shift: false, control: false, alt: false, meta: false };
+    let mut step = 0;
+    while step < steps.len() && step < held.len() {
+        let (operation, tag, code, x, y, timestamp) = steps[step];
+        step += 1;
+        let button = button_of(tag, code);
+        let key = key_of(tag, code);
+        let (event, phase, expected_button, pressure) = match operation % 4 {
+            0 => {
+                position = (x, y);
+                let event = state.moved_at(Point { x: f32::from_bits(x), y: f32::from_bits(y) }, timestamp);
+                let mut smallest: Option<(u8, u16)> = None;
+                let mut slot = 0;
+                while slot < held.len() {
+                    if let Some(entry) = held[slot] {
+                        let lower = match smallest {
+                            Some(known) => entry < known,
+                            None => true,
+                        };
+                        if lower {
+                            smallest = Some(entry);
+                        }
+                    }
+                    slot += 1;
+                }
+                let phase = if smallest.is_some() { PointerPhase::Move } else { PointerPhase::Hover };
+                (event, phase, smallest.map(|(rank, code)| button_of(rank, code)), 0.0f32)
+            }
+            1 => {
+                let mut known = false;
+                let mut free = held.len();
+                let mut slot = 0;
+                while slot < held.len() {
+                    known |= held[slot] == Some(key);
+                    if held[slot].is_none() {
+                        free = slot;
+                    }
+                    slot += 1;
+                }
+                if !known && free < held.len() {
+                    held[free] = Some(key);
+                }
+                (state.pressed_at(button, timestamp), PointerPhase::Down, Some(button), 1.0)
+            }
+            2 => {
+                let mut slot = 0;
+                while slot < held.len() {
+                    if held[slot] == Some(key) {
+                        held[slot] = None;
+                    }
+                    slot += 1;
+                }
+                (state.released_at(button, timestamp), PointerPhase::Up, Some(button), 0.0)
+            }
+            _ => {
+                modifiers = Modifiers { shift: tag & 1 != 0, control: tag & 2 != 0, alt: tag & 4 != 0, meta: tag & 8 != 0 };
+                state.set_modifiers(modifiers);
+                assert_eq!(state.modifiers(), modifiers);
+                continue;
+            }
+        };
+        assert_eq!(event.phase, phase);
+        assert_eq!(event.button, expected_button);
+        assert_eq!(event.timestamp_millis, timestamp);
+        assert_eq!((event.position.x.to_bits(), event.position.y.to_bits()), position);
+        assert_eq!(event.pressure.to_bits(), pressure.to_bits());
+        assert_eq!(event.modifiers, modifiers);
+        assert_eq!(event.pointer_id, PointerId(0));
+        assert_eq!(event.kind, PointerKind::Mouse);
+        assert_eq!(event.is_primary, matches!(expected_button, Some(MouseButton::Left) | None));
+        assert!(!event.eraser);
+        assert_eq!(event.twist.to_bits(), 0);
+        assert_eq!((event.tilt.x.to_bits(), event.tilt.y.to_bits()), (0, 0));
+        assert_eq!((event.contact.width.to_bits(), event.contact.height.to_bits()), (0, 0));
+    }
+}
+
 /// Independent glyph-skew oracle in the f64 domain: a transform equal to a pure horizontal skew
 /// (a = d = 1.0, b = e = f = 0.0, either zero sign) has its skew negated; anything else, NaN
 /// coefficients included, keeps every bit of c.
@@ -1590,6 +1698,23 @@ mod kani_checks {
     }
 
     #[kani::proof]
+    fn desktop_timestamp_saturation() {
+        assert_desktop_timestamp(kani::any());
+    }
+
+    // Real state and Vec, arbitrary buttons, positions and timestamps; no clock in the state path.
+    // 真实状态与 Vec，任意按钮、坐标与时间戳；状态路径中没有时钟。
+    #[kani::proof]
+    #[kani::unwind(17)]
+    fn desktop_pointer_state_path() {
+        let press = || -> DesktopPointerStep { (1, kani::any(), kani::any(), 0, 0, kani::any()) };
+        let motion = || -> DesktopPointerStep { (0, 0, 0, kani::any(), kani::any(), kani::any()) };
+        let release = || -> DesktopPointerStep { (2, kani::any(), kani::any(), 0, 0, kani::any()) };
+        let modifiers: DesktopPointerStep = (3, kani::any(), 0, 0, 0, 0);
+        assert_desktop_pointer_path(&[press(), modifiers, press(), motion(), release(), motion(), release(), motion()]);
+    }
+
+    #[kani::proof]
     fn glyph_skew_mirror() {
         assert_glyph_skew(kani::any(), kani::any(), kani::any(), kani::any(), kani::any(), kani::any());
         assert_glyph_skew_pure(kani::any(), kani::any());
@@ -1995,6 +2120,13 @@ mod properties {
             assert_color_construct(r, g, b, a, alpha);
         }
         #[test]
+        fn desktop_pointer_property(elapsed in any::<u128>(), near in 0u64..3, steps in proptest::collection::vec(any::<DesktopPointerStep>(), 0..12)) {
+            assert_desktop_timestamp(elapsed);
+            assert_desktop_timestamp(u64::MAX as u128 + near as u128);
+            assert_desktop_timestamp(u64::MAX as u128 - near as u128);
+            assert_desktop_pointer_path(&steps);
+        }
+        #[test]
         fn glyph_skew_property(coeffs in any::<[u64; 6]>(), c in any::<u64>(), signs in any::<u8>(), pick in any::<u8>()) {
             let [a, b, _, d, e, f] = coeffs;
             assert_glyph_skew(a, b, c, d, e, f);
@@ -2340,6 +2472,19 @@ mod memory {
         ] {
             assert_bold_alias(weights,maxima);
         }
+        for elapsed in [0, 1, u64::MAX as u128, u64::MAX as u128 + 1, u128::MAX] {
+            assert_desktop_timestamp(elapsed);
+        }
+        assert_desktop_pointer_path(&[
+            (0, 0, 0, 1.5f32.to_bits(), f32::NAN.to_bits(), u64::MAX),
+            (1, 5, 9, 0, 0, 3),
+            (1, 1, 0, 0, 0, 2),
+            (3, 15, 0, 0, 0, 0),
+            (0, 0, 0, 2.5f32.to_bits(), 0, 1),
+            (2, 1, 0, 0, 0, 0),
+            (2, 5, 9, 0, 0, 7),
+            (0, 0, 0, 0, 0, 7),
+        ]);
         let skew = 14f64.to_radians().tan().to_bits();
         for signs in 0..8 {
             assert_glyph_skew_pure(skew, signs);
@@ -2536,6 +2681,8 @@ mod schedules {
                 assert_font_order(&[first[0] as u64, first[1] as u64], first[2] as u64, first[3] as usize);
                 assert_font_weight(u16::from_le_bytes([first[0], first[1] & 7]));
                 assert_glyph_skew_pure(u64::from_le_bytes([first[0], first[1], first[2], first[3], 0, 0, 0, 0]), first[2]);
+                assert_desktop_timestamp(first[0] as u128);
+                assert_desktop_pointer_path(&[(1, first[0], first[1] as u16, 0, 0, first[2] as u64), (0, 0, 0, first[3] as u32, 0, 1), (2, first[0], first[1] as u16, 0, 0, 2)]);
                 assert_color_construct(first[0], first[1], first[2], first[3], first[0] ^ first[3]);
                 assert_font_family(&first[..(first[2] as usize & 3)]);
                 assert_damage_span(Some((first[0] as u32, first[1] as u32)), first[2] as u32);

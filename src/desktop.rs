@@ -1,7 +1,6 @@
 //! winit desktop host: raw window events to the host-neutral input model.
 //! 这一层只做规范化；窗口创建、呈现和 GPU 选择由后续桌面宿主切片接入。
 
-use std::collections::BTreeSet;
 use std::time::Instant;
 
 use winit::dpi::PhysicalPosition;
@@ -63,13 +62,183 @@ pub fn rgba_to_u32(pixels: &[u8], out: &mut [u32]) -> Result<(), PixelError> {
 }
 // END VERIFIED PIXEL CONVERT KERNEL
 
-/// Stateful translator for one desktop window.
-// BEGIN VERIFIED DESKTOP INPUT TYPE
-pub struct DesktopInput {
+// BEGIN VERIFIED DESKTOP POINTER KERNEL
+/// Saturates a millisecond count instead of wrapping it into an earlier timestamp.
+/// 毫秒数超出 u64 时饱和，不回绕成更早的时间戳。
+pub fn desktop_timestamp_millis(elapsed: u128) -> u64 {
+    if elapsed > u64::MAX as u128 {
+        u64::MAX
+    } else {
+        elapsed as u64
+    }
+}
+
+/// Total order of button identities; distinct buttons never share a key.
+/// 按钮身份的全序键；不同按钮的键互不相同。
+pub fn desktop_button_key(button: MouseButton) -> u32 {
+    match button {
+        MouseButton::Left => 0,
+        MouseButton::Right => 1,
+        MouseButton::Middle => 2,
+        MouseButton::Back => 3,
+        MouseButton::Forward => 4,
+        MouseButton::Other(code) => 5 + code as u32,
+    }
+}
+
+/// First index of ascending `held` whose key is not below `key`.
+/// 升序 `held` 中首个键不小于 `key` 的下标。
+pub fn desktop_button_position(held: &[MouseButton], key: u32) -> usize {
+    let mut at = 0usize;
+    while at < held.len() && desktop_button_key(held[at]) < key {
+        at += 1;
+    }
+    at
+}
+
+/// A motion sample is a drag while any button is held, otherwise a hover.
+pub fn desktop_motion_phase(any_pressed: bool) -> PointerPhase {
+    if any_pressed {
+        PointerPhase::Move
+    } else {
+        PointerPhase::Hover
+    }
+}
+
+/// Assembles one mouse sample; the timestamp is an input, never read from a clock here.
+/// 组装一个鼠标样本；时间戳由调用方传入，此处不读时钟。
+pub fn desktop_pointer_event(
+    pointer_id: PointerId,
+    phase: PointerPhase,
+    position: Point,
+    button: Option<MouseButton>,
+    pressure: f32,
+    modifiers: Modifiers,
+    timestamp_millis: u64,
+) -> PointerEvent {
+    PointerEvent {
+        pointer_id,
+        kind: PointerKind::Mouse,
+        phase,
+        position,
+        pressure,
+        tilt: Point { x: 0.0, y: 0.0 },
+        twist: 0.0,
+        contact: Size {
+            width: 0.0,
+            height: 0.0,
+        },
+        is_primary: matches!(button, Some(MouseButton::Left) | None),
+        eraser: false,
+        button,
+        modifiers,
+        timestamp_millis,
+    }
+}
+// END VERIFIED DESKTOP POINTER KERNEL
+
+/// Clock-free pointer state of one desktop window; every transition takes its timestamp.
+/// 单窗口无时钟指针状态；每次转换都显式接收时间戳。
+// BEGIN VERIFIED DESKTOP POINTER STATE TYPE
+pub struct DesktopPointerState {
     pointer_id: PointerId,
     position: Point,
-    pressed: BTreeSet<MouseButton>,
+    // Strictly ascending by `desktop_button_key`; a window holds only a handful of buttons.
+    // 按 `desktop_button_key` 严格升序；一个窗口同时按下的按钮极少。
+    pressed: Vec<MouseButton>,
     modifiers: Modifiers,
+}
+// END VERIFIED DESKTOP POINTER STATE TYPE
+
+// BEGIN VERIFIED DESKTOP POINTER STATE KERNEL
+impl DesktopPointerState {
+    pub fn new() -> Self {
+        Self {
+            pointer_id: PointerId(0),
+            position: Point { x: 0.0, y: 0.0 },
+            pressed: Vec::new(),
+            modifiers: Modifiers {
+                shift: false,
+                control: false,
+                alt: false,
+                meta: false,
+            },
+        }
+    }
+
+    pub fn modifiers(&self) -> Modifiers {
+        self.modifiers
+    }
+
+    pub fn set_modifiers(&mut self, modifiers: Modifiers) {
+        self.modifiers = modifiers;
+    }
+
+    pub fn moved_at(&mut self, position: Point, timestamp_millis: u64) -> PointerEvent {
+        self.position = position;
+        let button = if self.pressed.is_empty() {
+            None
+        } else {
+            Some(self.pressed[0])
+        };
+        desktop_pointer_event(
+            self.pointer_id,
+            desktop_motion_phase(!self.pressed.is_empty()),
+            self.position,
+            button,
+            0.0,
+            self.modifiers,
+            timestamp_millis,
+        )
+    }
+
+    pub fn pressed_at(&mut self, button: MouseButton, timestamp_millis: u64) -> PointerEvent {
+        let key = desktop_button_key(button);
+        let at = desktop_button_position(self.pressed.as_slice(), key);
+        if at == self.pressed.len() || desktop_button_key(self.pressed[at]) != key {
+            self.pressed.insert(at, button);
+        }
+        desktop_pointer_event(
+            self.pointer_id,
+            PointerPhase::Down,
+            self.position,
+            Some(button),
+            1.0,
+            self.modifiers,
+            timestamp_millis,
+        )
+    }
+
+    pub fn released_at(&mut self, button: MouseButton, timestamp_millis: u64) -> PointerEvent {
+        let key = desktop_button_key(button);
+        let at = desktop_button_position(self.pressed.as_slice(), key);
+        if at < self.pressed.len() && desktop_button_key(self.pressed[at]) == key {
+            self.pressed.remove(at);
+        }
+        desktop_pointer_event(
+            self.pointer_id,
+            PointerPhase::Up,
+            self.position,
+            Some(button),
+            0.0,
+            self.modifiers,
+            timestamp_millis,
+        )
+    }
+}
+// END VERIFIED DESKTOP POINTER STATE KERNEL
+
+impl Default for DesktopPointerState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Stateful translator for one desktop window; the clock is read only in `now_millis`.
+/// 单窗口有状态转换器；只有 `now_millis` 读时钟。
+// BEGIN VERIFIED DESKTOP INPUT TYPE
+pub struct DesktopInput {
+    pointer: DesktopPointerState,
     start: Instant,
 }
 // END VERIFIED DESKTOP INPUT TYPE
@@ -83,12 +252,13 @@ impl Default for DesktopInput {
 impl DesktopInput {
     pub fn new() -> Self {
         Self {
-            pointer_id: PointerId(0),
-            position: Point::ZERO,
-            pressed: BTreeSet::new(),
-            modifiers: Modifiers::default(),
+            pointer: DesktopPointerState::new(),
             start: Instant::now(),
         }
+    }
+
+    fn now_millis(&self) -> u64 {
+        desktop_timestamp_millis(self.start.elapsed().as_millis())
     }
 
     /// Translates one winit window event.
@@ -99,12 +269,12 @@ impl DesktopInput {
             }
             WindowEvent::ModifiersChanged(modifiers) => {
                 let state = modifiers.state();
-                self.modifiers = Modifiers {
+                self.pointer.set_modifiers(Modifiers {
                     shift: state.shift_key(),
                     control: state.control_key(),
                     alt: state.alt_key(),
                     meta: state.super_key(),
-                };
+                });
                 Vec::new()
             }
             WindowEvent::CursorMoved { position, .. } => {
@@ -123,33 +293,18 @@ impl DesktopInput {
     }
 
     pub fn cursor_moved(&mut self, position: PhysicalPosition<f64>) -> PointerEvent {
-        self.position = Point::new(position.x as f32, position.y as f32);
-        let phase = if self.pressed.is_empty() {
-            PointerPhase::Hover
-        } else {
-            PointerPhase::Move
-        };
-        self.pointer(phase, self.pressed.iter().next().copied(), 0.0)
+        let now = self.now_millis();
+        self.pointer
+            .moved_at(Point::new(position.x as f32, position.y as f32), now)
     }
 
     pub fn mouse_input(&mut self, state: ElementState, button: WinitMouseButton) -> PointerEvent {
         let button = map_button(button);
-        let phase = match state {
-            ElementState::Pressed => {
-                self.pressed.insert(button);
-                PointerPhase::Down
-            }
-            ElementState::Released => {
-                self.pressed.remove(&button);
-                PointerPhase::Up
-            }
-        };
-        let pressure = if state == ElementState::Pressed {
-            1.0
-        } else {
-            0.0
-        };
-        self.pointer(phase, Some(button), pressure)
+        let now = self.now_millis();
+        match state {
+            ElementState::Pressed => self.pointer.pressed_at(button, now),
+            ElementState::Released => self.pointer.released_at(button, now),
+        }
     }
 
     /// winit reports positive deltas as content moving right/down; the engine
@@ -172,21 +327,18 @@ impl DesktopInput {
             ElementState::Released => KeyPhase::Up,
         };
         let name = key_name(&event.logical_key);
+        let modifiers = self.pointer.modifiers();
         let mut out = vec![InputEvent::Key(KeyEvent {
             key: name.clone(),
             phase,
-            modifiers: self.modifiers,
+            modifiers,
             repeat: event.repeat,
         })];
 
         // Text commits come from IME on modern platforms. For plain character
         // keys without command modifiers, also emit the text sample so simple
         // editors work before a full IME pipeline is attached.
-        if phase == KeyPhase::Down
-            && !self.modifiers.control
-            && !self.modifiers.alt
-            && !self.modifiers.meta
-        {
+        if phase == KeyPhase::Down && !modifiers.control && !modifiers.alt && !modifiers.meta {
             if let Key::Character(text) = &event.logical_key {
                 out.push(InputEvent::Text(text.to_string()));
             } else if event.logical_key == Key::Named(NamedKey::Space) {
@@ -201,29 +353,6 @@ impl DesktopInput {
         normalize_ime(event)
     }
     // END VERIFIED DESKTOP IME DELEGATE KERNEL
-
-    fn pointer(
-        &self,
-        phase: PointerPhase,
-        button: Option<MouseButton>,
-        pressure: f32,
-    ) -> PointerEvent {
-        PointerEvent {
-            pointer_id: self.pointer_id,
-            kind: PointerKind::Mouse,
-            phase,
-            position: self.position,
-            pressure,
-            tilt: Point::ZERO,
-            twist: 0.0,
-            contact: Size::ZERO,
-            is_primary: button == Some(MouseButton::Left) || button.is_none(),
-            eraser: false,
-            button,
-            modifiers: self.modifiers,
-            timestamp_millis: self.start.elapsed().as_millis() as u64,
-        }
-    }
 }
 
 fn map_button(button: WinitMouseButton) -> MouseButton {
@@ -289,6 +418,45 @@ mod tests {
             input.cursor_moved(PhysicalPosition::new(11.0, 21.0)).phase,
             PointerPhase::Hover
         );
+    }
+
+    #[test]
+    fn pointer_state_transitions_echo_explicit_timestamps() {
+        let mut state = DesktopPointerState::new();
+        let hover = state.moved_at(Point::new(1.0, 2.0), 7);
+        assert_eq!(
+            (hover.phase, hover.button, hover.timestamp_millis),
+            (PointerPhase::Hover, None, 7)
+        );
+        assert!(hover.is_primary);
+        let down = state.pressed_at(MouseButton::Right, u64::MAX);
+        assert_eq!(
+            (
+                down.phase,
+                down.position,
+                down.pressure,
+                down.timestamp_millis
+            ),
+            (PointerPhase::Down, Point::new(1.0, 2.0), 1.0, u64::MAX)
+        );
+        assert!(!down.is_primary);
+        // An earlier host timestamp is reported as given, not clamped to the previous sample.
+        let drag = state.moved_at(Point::new(3.0, 4.0), 3);
+        assert_eq!(
+            (drag.phase, drag.button, drag.timestamp_millis),
+            (PointerPhase::Move, Some(MouseButton::Right), 3)
+        );
+        let up = state.released_at(MouseButton::Right, 9);
+        assert_eq!((up.phase, up.pressure), (PointerPhase::Up, 0.0));
+        assert_eq!(state.moved_at(Point::ZERO, 10).phase, PointerPhase::Hover);
+    }
+
+    #[test]
+    fn elapsed_millis_saturate_instead_of_wrapping() {
+        assert_eq!(desktop_timestamp_millis(0), 0);
+        assert_eq!(desktop_timestamp_millis(u64::MAX as u128), u64::MAX);
+        assert_eq!(desktop_timestamp_millis(u64::MAX as u128 + 1), u64::MAX);
+        assert_eq!(desktop_timestamp_millis(u128::MAX), u64::MAX);
     }
 
     #[test]

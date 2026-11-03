@@ -3,24 +3,24 @@
   "status": "proved",
   "scope": "stand-in admission for one physical font blob: nonempty equal-length per-face weights/group maxima, each face is its family-style-width group maximum, each maximum <=500; not font parsing, name/family grouping, upstream registration, CSS matching, blob ID selection or painting",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "5af9d61c8c2aeb48a7b1614c88f9096d78cd5141dac67c7cdb898645749a4add",
+  "source_sha256": "3a37c98f63c84bdf06bf24c962622f765f7a96a58ccddba154c367a24db800dc",
   "sources": {
-    "src/native_adapter/native_fonts.rs": "5af9d61c8c2aeb48a7b1614c88f9096d78cd5141dac67c7cdb898645749a4add"
+    "src/native_adapter/native_fonts.rs": "3a37c98f63c84bdf06bf24c962622f765f7a96a58ccddba154c367a24db800dc"
   },
   "kernel_sha256": "270f1d740052e87a1647ae98f79525f0a7ef560b17bd100ded18cf1768f0ee02",
   "dependencies": {},
   "proof_sha256": "a3ffc840566ddeed8e4a27dec325157898e8d61f8878454a541c9b311717abab",
-  "runner_sha256": "9540af0672b18c9450db6b15358235e982ada2e2563b12500985b3e7202c415c",
+  "runner_sha256": "ddbeb4018f62ac6eee850625e4283dff7394a90eb6b910b9b4f3ce61e4cefcc7",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
-    "<home>/.local/share/jasper-ui-verification/verus-x86-linux/verus",
+    "<home>/verus/verus",
     "--crate-type",
     "lib",
     "<repo>/evidence/bold-alias-kernel/kernel.rs"
   ],
   "exit_code": 0,
   "solver": {
-    "path": "<home>/.local/share/jasper-ui-verification/verus-x86-linux/z3",
+    "path": "<home>/verus/z3",
     "version": "Z3 version 4.16.0 - 64 bit\n",
     "explicit_override": null
   },

@@ -3,26 +3,26 @@
   "status": "proved",
   "scope": "Exact source-success, exact successor version and detached-candidate readiness gate before active replacement; source patch semantics, candidate construction and replacement assignment are excluded.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
+  "source_sha256": "b47e1ff2e7af63f1615f70c4e718f08188778bb6c1e7907085fc46c86fffd988",
   "sources": {
-    "src/native_adapter/native_scene.rs": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac"
+    "src/native_adapter/native_scene.rs": "b47e1ff2e7af63f1615f70c4e718f08188778bb6c1e7907085fc46c86fffd988"
   },
-  "kernel_sha256": "00db83b2a2b982d4b7075c93c74abe40b5ce7aa33432c10a2e1744bf240bfbd6",
+  "kernel_sha256": "c294b6e76b86280d9c03562858f4cbb62c1f6cb8f6716eaf6a8097defd0d0c2c",
   "dependencies": {
-    "scene-update-error-type": "e51ba92d111f3c76e2b9b17418f5f44f30451bf604c57c1f9b2ea378403956cb"
+    "scene-update-error-type": "256606b123f0efa48b755744e08ea821890120a43d4fcfbb60cb9c74f24a8875"
   },
-  "proof_sha256": "378c9547c817e1a3003fade74f086b915fab6d614083fbd5f5a8970f9d861ca6",
-  "runner_sha256": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e",
+  "proof_sha256": "0552292c208851decf5f7bcf3f9d7749c8c2e88ed7c1507bf7d1f30feb3017eb",
+  "runner_sha256": "ddbeb4018f62ac6eee850625e4283dff7394a90eb6b910b9b4f3ce61e4cefcc7",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
-    "<home>/.local/share/jasper-ui-verification/verus-x86-linux/verus",
+    "<home>/verus/verus",
     "--crate-type",
     "lib",
     "<repo>/evidence/scene-frame-completion-kernel/kernel.rs"
   ],
   "exit_code": 0,
   "solver": {
-    "path": "<home>/.local/share/jasper-ui-verification/verus-x86-linux/z3",
+    "path": "<home>/verus/z3",
     "version": "Z3 version 4.16.0 - 64 bit\n",
     "explicit_override": null
   },

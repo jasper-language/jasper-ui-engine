@@ -1,6 +1,6 @@
 #![no_main]
 use jasper_ui_read_verification::{
-    assert_borrow, assert_bold_alias, assert_bytes_slot, assert_canvas_import, assert_canvas_pixel, assert_capture_query, assert_color_construct,
+    assert_borrow, assert_bold_alias, assert_desktop_pointer_path, assert_desktop_timestamp, DesktopPointerStep, assert_bytes_slot, assert_canvas_import, assert_canvas_pixel, assert_capture_query, assert_color_construct,
     assert_command_modifier, assert_cursor, assert_endpoint, assert_focus_cleanup,
     assert_damage_convergence, assert_damage_rect, assert_damage_span, assert_damage_write, assert_focus_selection, assert_font_family, assert_font_order, assert_font_weight, assert_frame_damage, assert_glyph_skew, assert_glyph_skew_pure, assert_frame_pace, assert_frame_reuse, assert_frame_tick, assert_gpu_readback_layout, assert_header, assert_access_actions, assert_access_change, assert_access_request, assert_text_offset, assert_text_range, assert_hover_lifecycle, assert_input_retire,
     assert_keyboard_focus, assert_payload, assert_pixel_conversion, assert_pointer_order,
@@ -145,6 +145,15 @@ fuzz_target!(|data: &[u8]| {
         assert_glyph_skew(word(0), word(8), word(16), word(24), word(32), word(40));
     }
     assert_glyph_skew_pure(word(16), data[3]);
+    assert_desktop_timestamp(u128::from_le_bytes(data[0..16].try_into().unwrap()) >> (data[16] & 127));
+    let steps: Vec<DesktopPointerStep> = data[8..]
+        .chunks_exact(21)
+        .map(|c| {
+            let u32_at = |at: usize| u32::from_le_bytes(c[at..at + 4].try_into().unwrap());
+            (c[0], c[1], u16::from_le_bytes([c[2], c[3]]), u32_at(4), u32_at(8), u64::from_le_bytes(c[12..20].try_into().unwrap()) >> (c[20] & 63))
+        })
+        .collect();
+    assert_desktop_pointer_path(&steps);
     assert_font_family(&data[24..data.len().min(24 + len % 160)]);
     assert_text_range(len, pos, total, pos, data[2] & 1 == 1, data[3] & 1 == 1);
     assert_text_range(len % 9, len % 9, pos % 11, total % 11, data[2] & 2 == 2, data[3] & 2 == 2);

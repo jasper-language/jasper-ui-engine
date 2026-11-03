@@ -2,14 +2,14 @@ use vstd::prelude::*;
 verus! {
 
 
-#[derive(Clone,Copy,Debug,PartialEq,Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SceneUpdateError {
     OwnerMismatch,
     Closed,
     EmptyFrame,
     CapacityExceeded,
-    StaleVersion {expected:u64,current:u64},
-    InvalidSuccessor {expected:u64,next:u64},
+    StaleVersion { expected: u64, current: u64 },
+    InvalidSuccessor { expected: u64, next: u64 },
     SourceRejected,
     NativeRejected,
 }
@@ -30,7 +30,9 @@ pub(crate) fn complete_scene_frame(source_ok:bool,source_version:u64,next:u64,ca
             Err(SceneUpdateError::InvalidSuccessor {..})=>false,
         },
     {
-    if !source_ok || source_version!=next {return Err(SceneUpdateError::SourceRejected);}
+    if !source_ok || source_version != next {
+        return Err(SceneUpdateError::SourceRejected);
+    }
     if false {return Err(SceneUpdateError::NativeRejected);}
     Ok(())
 }

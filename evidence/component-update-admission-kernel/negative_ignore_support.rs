@@ -2,14 +2,14 @@ use vstd::prelude::*;
 verus! {
 
 
-#[derive(Clone,Copy,Debug,PartialEq,Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ComponentUpdateError {
     OwnerContextMismatch,
     Closed,
     EmptyFrame,
     CapacityExceeded,
-    StaleSequence {expected:u64,current:u64},
-    SequenceExhausted {current:u64},
+    StaleSequence { expected: u64, current: u64 },
+    SequenceExhausted { current: u64 },
     UnsupportedForView,
     NativeRejected,
 }
@@ -38,13 +38,27 @@ pub(crate) fn admit_component_frame(owner_ok:bool,open:bool,count:usize,current:
                 && native_ready && supported,
         },
     {
-    if !owner_ok {return Err(ComponentUpdateError::OwnerContextMismatch);}
-    if !open {return Err(ComponentUpdateError::Closed);}
-    if count==0 {return Err(ComponentUpdateError::EmptyFrame);}
-    if count>4096 {return Err(ComponentUpdateError::CapacityExceeded);}
-    if current!=expected {return Err(ComponentUpdateError::StaleSequence {expected,current});}
-    if current==u64::MAX {return Err(ComponentUpdateError::SequenceExhausted {current});}
-    if !native_ready {return Err(ComponentUpdateError::NativeRejected);}
+    if !owner_ok {
+        return Err(ComponentUpdateError::OwnerContextMismatch);
+    }
+    if !open {
+        return Err(ComponentUpdateError::Closed);
+    }
+    if count == 0 {
+        return Err(ComponentUpdateError::EmptyFrame);
+    }
+    if count > 4096 {
+        return Err(ComponentUpdateError::CapacityExceeded);
+    }
+    if current != expected {
+        return Err(ComponentUpdateError::StaleSequence { expected, current });
+    }
+    if current == u64::MAX {
+        return Err(ComponentUpdateError::SequenceExhausted { current });
+    }
+    if !native_ready {
+        return Err(ComponentUpdateError::NativeRejected);
+    }
     if false {return Err(ComponentUpdateError::UnsupportedForView);}
     Ok(())
 }

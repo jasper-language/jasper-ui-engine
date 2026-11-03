@@ -832,7 +832,7 @@ pub closed spec fn surface_view_model(view: &Rgba8SurfaceView) -> (Seq<u8>, u32,
 {""",
         "function_count": 1, "depends": [], "evidence": "text-range-kernel",
         "scope": "layout-to-source text range admission (identical length, ordered, in range with end included, both ends on character boundaries) only; not the Parley selection geometry, text equality or coordinate mapping",
-        "mutations": [("accept-reversed-range", "\n    layout_len == source_len && start <= end && end", "\n    layout_len == source_len && end"),
+        "mutations": [("accept-reversed-range", "    layout_len == source_len\n        && start <= end\n", "    layout_len == source_len\n"),
                       ("ignore-end-boundary", "start_on_boundary && end_on_boundary\n}", "start_on_boundary\n}")],
     },
     "gpu-readback": {
@@ -1568,7 +1568,164 @@ KERNELS["desktop-ime-normalize"] = {
 }
 
 
-KERNELS["desktop-input-type"] = {"source":"src/desktop.rs","marker":"DESKTOP INPUT","suffix":"TYPE","signature":None,"depends":["normalized-input-type"],"internal_only":True,"spec_prelude":"use std::collections::BTreeSet; use std::time::Instant;\n#[verifier::external_type_specification] #[verifier::external_body] pub struct ExInstant(std::time::Instant);"}
+KERNELS["desktop-pointer-state-type"] = {"source":"src/desktop.rs","marker":"DESKTOP POINTER STATE","suffix":"TYPE","signature":None,"depends":["desktop-pointer"],"internal_only":True,"spec_prelude":"use std::time::Instant;\n#[verifier::external_type_specification] #[verifier::external_body] pub struct ExInstant(std::time::Instant);\npub closed spec fn desktop_held(s: DesktopPointerState) -> Seq<MouseButton> { s.pressed@ }\npub closed spec fn desktop_position(s: DesktopPointerState) -> Point { s.position }\npub closed spec fn desktop_modifiers(s: DesktopPointerState) -> Modifiers { s.modifiers }\npub closed spec fn desktop_pointer_id(s: DesktopPointerState) -> PointerId { s.pointer_id }\nproof fn desktop_button_key_injective(a: MouseButton, b: MouseButton) requires desktop_button_key_spec(a) == desktop_button_key_spec(b), ensures a == b { match a { MouseButton::Other(x) => { match b { MouseButton::Other(y) => { assert(x == y); } _ => {} } } _ => {} } }\npub open spec fn desktop_held_sorted(held: Seq<MouseButton>) -> bool { forall|i: int, j: int| 0 <= i < j < held.len() ==> #[trigger] desktop_button_key_spec(held[i]) < #[trigger] desktop_button_key_spec(held[j]) }\n"}
+KERNELS["desktop-input-type"] = {"source":"src/desktop.rs","marker":"DESKTOP INPUT","suffix":"TYPE","signature":None,"depends":["desktop-pointer-state-type"],"internal_only":True}
+KERNELS["desktop-pointer"] = {
+ "source":"src/desktop.rs","marker":"DESKTOP POINTER","property":"UI-DESKTOP-POINTER-001",
+ "signature":"pub fn desktop_timestamp_millis(elapsed: u128) -> u64 {",
+ "contract":"""pub fn desktop_timestamp_millis(elapsed: u128) -> (result: u64)
+    ensures result as int == (if elapsed as int > u64::MAX as int { u64::MAX as int } else { elapsed as int }),
+{""",
+ "extra_annotations":[
+  ("pub fn desktop_button_key(button: MouseButton) -> u32 {","""pub fn desktop_button_key(button: MouseButton) -> (result: u32)
+    ensures result as int == desktop_button_key_spec(button),
+{"""),
+  ("pub fn desktop_button_position(held: &[MouseButton], key: u32) -> usize {","""pub fn desktop_button_position(held: &[MouseButton], key: u32) -> (at: usize)
+    requires forall|i: int, j: int| 0 <= i < j < held@.len() ==> #[trigger] desktop_button_key_spec(held@[i]) < #[trigger] desktop_button_key_spec(held@[j]),
+    ensures at <= held@.len(), forall|i: int| 0 <= i < at ==> #[trigger] desktop_button_key_spec(held@[i]) < key as int,
+        forall|i: int| at <= i < held@.len() ==> #[trigger] desktop_button_key_spec(held@[i]) >= key as int,
+{"""),
+  ("    while at < held.len() && desktop_button_key(held[at]) < key {","""    while at < held.len() && desktop_button_key(held[at]) < key
+        invariant at <= held@.len(),
+            forall|i: int, j: int| 0 <= i < j < held@.len() ==> #[trigger] desktop_button_key_spec(held@[i]) < #[trigger] desktop_button_key_spec(held@[j]),
+            forall|i: int| 0 <= i < at ==> #[trigger] desktop_button_key_spec(held@[i]) < key as int,
+        decreases held@.len() - at,
+    {"""),
+  ("pub fn desktop_motion_phase(any_pressed: bool) -> PointerPhase {","""pub fn desktop_motion_phase(any_pressed: bool) -> (result: PointerPhase)
+    ensures result == (if any_pressed { PointerPhase::Move } else { PointerPhase::Hover }),
+{"""),
+  ("""    timestamp_millis: u64,
+) -> PointerEvent {""","""    timestamp_millis: u64,
+) -> (result: PointerEvent)
+    ensures result.pointer_id == pointer_id, result.kind == PointerKind::Mouse, result.phase == phase,
+        result.position == position, result.pressure == pressure, result.button == button,
+        result.modifiers == modifiers, result.timestamp_millis == timestamp_millis, !result.eraser,
+        result.is_primary == (button == Some(MouseButton::Left) || button.is_none()),
+{"""),
+ ],
+ "function_count":5,"depends":["normalized-input-type"],"evidence":"desktop-pointer-kernel",
+ "spec_prelude":"pub open spec fn desktop_button_key_spec(button: MouseButton) -> int { match button { MouseButton::Left => 0, MouseButton::Right => 1, MouseButton::Middle => 2, MouseButton::Back => 3, MouseButton::Forward => 4, MouseButton::Other(code) => 5 + code as int } }\n",
+ "scope":"Clock-free desktop pointer kernel: saturating millisecond conversion over all u128, motion phase, and sample assembly echoing the caller's timestamp, position, button, pressure and modifiers with the primary-button rule. Float fields are carried, not computed. The BTreeSet state transitions (no container spec in this Verus release), winit event mapping and the Instant read are outside this proof.",
+ "mutations":[("wrap-timestamp","        u64::MAX\n    } else {\n        elapsed as u64","        elapsed as u64\n    } else {\n        elapsed as u64"),
+              ("clock-independent-echo","        timestamp_millis,\n    }\n}","        timestamp_millis: 0,\n    }\n}"),
+              ("drag-as-hover","    if any_pressed {\n        PointerPhase::Move","    if any_pressed {\n        PointerPhase::Hover")],
+}
+DESKTOP_PRESS_INSERT = """            self.pressed.insert(at, button);
+            proof {
+                assert forall|b: MouseButton| #[trigger] self.pressed@.contains(b) <==> (before.contains(b) || b == button) by {
+                    if self.pressed@.contains(b) {
+                        let k = choose|k: int| 0 <= k < self.pressed@.len() && self.pressed@[k] == b;
+                        if k < at as int { assert(before[k] == b); } else if k > at as int { assert(before[k - 1] == b); }
+                    }
+                    if before.contains(b) {
+                        let k = choose|k: int| 0 <= k < before.len() && before[k] == b;
+                        if k < at as int { assert(self.pressed@[k] == b); } else { assert(self.pressed@[k + 1] == b); }
+                    }
+                    if b == button { assert(self.pressed@[at as int] == b); }
+                }
+            }
+"""
+DESKTOP_RELEASE_REMOVE = """            proof { desktop_button_key_injective(before[at as int], button); }
+            self.pressed.remove(at);
+            proof {
+                assert forall|b: MouseButton| #[trigger] self.pressed@.contains(b) <==> (before.contains(b) && b != button) by {
+                    if self.pressed@.contains(b) {
+                        let k = choose|k: int| 0 <= k < self.pressed@.len() && self.pressed@[k] == b;
+                        if k < at as int { assert(before[k] == b); assert(desktop_button_key_spec(before[k]) < key as int); }
+                        else { assert(before[k + 1] == b); assert(desktop_button_key_spec(before[at as int]) < desktop_button_key_spec(before[k + 1])); }
+                    }
+                    if before.contains(b) && b != button {
+                        let k = choose|k: int| 0 <= k < before.len() && before[k] == b;
+                        if k < at as int { assert(self.pressed@[k] == b); } else if k > at as int { assert(self.pressed@[k - 1] == b); }
+                    }
+                }
+            }
+"""
+KERNELS["desktop-pointer-state"] = {
+ "source":"src/desktop.rs","marker":"DESKTOP POINTER STATE","property":"UI-DESKTOP-POINTER-STATE-001",
+ "signature":"pub fn new() -> Self {",
+ "contract":"""pub fn new() -> (result: Self)
+    ensures desktop_held(result).len() == 0, desktop_held_sorted(desktop_held(result)), desktop_pointer_id(result) == PointerId(0),
+{""",
+ "extra_annotations":[
+  ("pub fn modifiers(&self) -> Modifiers {","""pub fn modifiers(&self) -> (result: Modifiers)
+    ensures result == desktop_modifiers(*self),
+{"""),
+  ("pub fn set_modifiers(&mut self, modifiers: Modifiers) {","""pub fn set_modifiers(&mut self, modifiers: Modifiers)
+    ensures desktop_modifiers(*final(self)) == modifiers, desktop_held(*final(self)) == desktop_held(*old(self)),
+        desktop_position(*final(self)) == desktop_position(*old(self)), desktop_pointer_id(*final(self)) == desktop_pointer_id(*old(self)),
+{"""),
+  ("pub fn moved_at(&mut self, position: Point, timestamp_millis: u64) -> PointerEvent {","""pub fn moved_at(&mut self, position: Point, timestamp_millis: u64) -> (result: PointerEvent)
+    ensures desktop_position(*final(self)) == position, desktop_held(*final(self)) == desktop_held(*old(self)),
+        desktop_modifiers(*final(self)) == desktop_modifiers(*old(self)), desktop_pointer_id(*final(self)) == desktop_pointer_id(*old(self)),
+        result.position == position, result.timestamp_millis == timestamp_millis, result.pointer_id == desktop_pointer_id(*old(self)),
+        result.modifiers == desktop_modifiers(*old(self)), result.kind == PointerKind::Mouse, result.pressure == 0.0f32,
+        result.phase == (if desktop_held(*old(self)).len() > 0 { PointerPhase::Move } else { PointerPhase::Hover }),
+        result.button == (if desktop_held(*old(self)).len() > 0 { Some(desktop_held(*old(self))[0]) } else { None }),
+{"""),
+  ("""        let key = desktop_button_key(button);
+        let at = desktop_button_position(self.pressed.as_slice(), key);
+        if at == self.pressed.len() || desktop_button_key(self.pressed[at]) != key {
+            self.pressed.insert(at, button);
+        }
+""","""        let ghost before = self.pressed@;
+        let key = desktop_button_key(button);
+        let at = desktop_button_position(self.pressed.as_slice(), key);
+        if at == self.pressed.len() || desktop_button_key(self.pressed[at]) != key {
+""" + DESKTOP_PRESS_INSERT + """        } else {
+            proof {
+                desktop_button_key_injective(before[at as int], button);
+                assert(before[at as int] == button);
+                assert forall|b: MouseButton| #[trigger] self.pressed@.contains(b) <==> (before.contains(b) || b == button) by {
+                    if b == button { assert(self.pressed@[at as int] == b); }
+                }
+            }
+        }
+"""),
+  ("""        let key = desktop_button_key(button);
+        let at = desktop_button_position(self.pressed.as_slice(), key);
+        if at < self.pressed.len() && desktop_button_key(self.pressed[at]) == key {
+            self.pressed.remove(at);
+        }
+""","""        let ghost before = self.pressed@;
+        let key = desktop_button_key(button);
+        let at = desktop_button_position(self.pressed.as_slice(), key);
+        if at < self.pressed.len() && desktop_button_key(self.pressed[at]) == key {
+""" + DESKTOP_RELEASE_REMOVE + """        } else {
+            proof {
+                assert forall|b: MouseButton| #[trigger] self.pressed@.contains(b) <==> (before.contains(b) && b != button) by {
+                    if before.contains(b) && b == button {
+                        let k = choose|k: int| 0 <= k < before.len() && before[k] == b;
+                        assert(desktop_button_key_spec(before[k]) == key as int);
+                        if k > at as int { assert(desktop_button_key_spec(before[at as int]) < desktop_button_key_spec(before[k])); }
+                    }
+                }
+            }
+        }
+"""),
+  ("pub fn pressed_at(&mut self, button: MouseButton, timestamp_millis: u64) -> PointerEvent {","""pub fn pressed_at(&mut self, button: MouseButton, timestamp_millis: u64) -> (result: PointerEvent)
+    requires desktop_held_sorted(desktop_held(*old(self))),
+    ensures desktop_held_sorted(desktop_held(*final(self))),
+        forall|b: MouseButton| #[trigger] desktop_held(*final(self)).contains(b) <==> (desktop_held(*old(self)).contains(b) || b == button),
+        desktop_position(*final(self)) == desktop_position(*old(self)), desktop_modifiers(*final(self)) == desktop_modifiers(*old(self)), desktop_pointer_id(*final(self)) == desktop_pointer_id(*old(self)),
+        result.phase == PointerPhase::Down, result.button == Some(button), result.position == desktop_position(*old(self)),
+        result.pressure == 1.0f32, result.modifiers == desktop_modifiers(*old(self)), result.timestamp_millis == timestamp_millis, result.pointer_id == desktop_pointer_id(*old(self)),
+{"""),
+  ("pub fn released_at(&mut self, button: MouseButton, timestamp_millis: u64) -> PointerEvent {","""pub fn released_at(&mut self, button: MouseButton, timestamp_millis: u64) -> (result: PointerEvent)
+    requires desktop_held_sorted(desktop_held(*old(self))),
+    ensures desktop_held_sorted(desktop_held(*final(self))),
+        forall|b: MouseButton| #[trigger] desktop_held(*final(self)).contains(b) <==> (desktop_held(*old(self)).contains(b) && b != button),
+        desktop_position(*final(self)) == desktop_position(*old(self)), desktop_modifiers(*final(self)) == desktop_modifiers(*old(self)), desktop_pointer_id(*final(self)) == desktop_pointer_id(*old(self)),
+        result.phase == PointerPhase::Up, result.button == Some(button), result.position == desktop_position(*old(self)),
+        result.pressure == 0.0f32, result.modifiers == desktop_modifiers(*old(self)), result.timestamp_millis == timestamp_millis, result.pointer_id == desktop_pointer_id(*old(self)),
+{"""),
+ ],
+ "function_count":5,"depends":["desktop-pointer-state-type"],"evidence":"desktop-pointer-state-kernel",
+ "scope":"Clock-free desktop pointer state: the held list stays strictly ascending, press/release change exactly the given button (Vec contents over all states with the ordering invariant), motion reports the lowest held button, and every sample echoes position, modifiers, pointer id and the caller's timestamp. The Instant read and winit event mapping are outside this proof.",
+ "mutations":[("press-drops-button",DESKTOP_PRESS_INSERT,"            let _ = at;\n"),
+              ("release-keeps-button",DESKTOP_RELEASE_REMOVE,"            let _ = at;\n"),
+              ("motion-loses-button","            Some(self.pressed[0])\n","            None\n")],
+}
 KERNELS["desktop-ime-delegate"] = {
  "source":"src/desktop.rs","marker":"DESKTOP IME DELEGATE","property":"UI-DESKTOP-IME-DELEGATE-001",
  "signature":"pub fn ime(&mut self, event: &Ime) -> Option<InputEvent> {",
@@ -2095,6 +2252,18 @@ KERNELS["native-backend-frame-import"]={
         ("swap-frame-dimensions","Canvas::from_rgba8(width,height,pixels)","Canvas::from_rgba8(height,width,pixels)")],
 }
 
+def annotate(body, signature, contract):
+    # A pattern that still matches verbatim stays verbatim. Otherwise tokens must match exactly;
+    # only layout rustfmt owns may differ: whitespace and the trailing comma it adds before a
+    # closing delimiter.
+    # 仍能逐字匹配的保持逐字；否则词法须逐字一致，只容忍 rustfmt 掌管的版式：空白，以及它在右括号或右花括号前补的尾逗号。
+    if body.count(signature) == 1:
+        return body.replace(signature, contract, 1), 1
+    tokens = [re.escape(token) for token in re.findall(r"\w+|\S", signature)]
+    pattern = r"\s*".join(tokens).replace(r"\s*\)", r"\s*,?\s*\)").replace(r"\s*\}", r"\s*,?\s*\}")
+    return re.subn(pattern, lambda _: contract, body)
+
+
 def extract(root, name):
     config = KERNELS[name]
     source = (root / config["source"]).read_text()
@@ -2106,13 +2275,13 @@ def extract(root, name):
     body = source.split(begin, 1)[1].split(end, 1)[0]
     if config["signature"] is None:
         return body, body
-    if body.count(config["signature"]) != 1:
+    annotated, count = annotate(body, config["signature"], config["contract"])
+    if count != 1:
         raise ValueError(name + ": signature changed; review contract")
-    annotated = body.replace(config["signature"], config["contract"], 1)
     for signature, contract in config.get("extra_annotations", []):
-        if annotated.count(signature) != 1:
+        annotated, count = annotate(annotated, signature, contract)
+        if count != 1:
             raise ValueError(name + ": additional signature changed; review contract")
-        annotated = annotated.replace(signature, contract, 1)
     return body, annotated
 
 
@@ -2177,10 +2346,11 @@ def main():
     positive = summary(output)
     controls = []
     for label, pattern, replacement in config["mutations"]:
-        if proof.count(pattern) != 1:
+        mutated, count = annotate(proof, pattern, replacement)
+        if count != 1:
             raise ValueError("review negative control: " + label)
         path = evidence / ("negative_" + label.replace("-", "_") + ".rs")
-        path.write_text(proof.replace(pattern, replacement, 1))
+        path.write_text(mutated)
         negative = subprocess.run([args.verus, *options, str(path)],
                                   capture_output=True, text=True, timeout=60)
         negative_output = negative.stdout + negative.stderr

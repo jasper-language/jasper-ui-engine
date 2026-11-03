@@ -54,9 +54,9 @@
       "script": "scripts/capture-window-xvfb.sh",
       "script_sha256": "ff1da2489ad3828d030ac187af28918faecb6873498abdb2a72aa1028a259c22",
       "window_log": "window.log",
-      "window_log_sha256": "1e7d103bc92ff15a47a830803d422292053f221bd3d1ee65498d02b5aa038331",
+      "window_log_sha256": "cecfdcd238ffff5c8732f307934345c809c79c0bfe412c83deffc3df2e98e8f9",
       "window_once_log_sha256": "102a8b91a24201a01be08c30a476c94dda02b170e4f3036e47962cca33bd9563",
-      "gpu_window_log_sha256": "d531159b5756e622fb3b537d8e9d57aed6fdbd93d722bbd4054d49eab4d33ed2"
+      "gpu_window_log_sha256": "82bcb5fe9609d2e2e90b9425044478110c008f4868d6547f1062db58b512d199"
     }
   },
   "limitations": [

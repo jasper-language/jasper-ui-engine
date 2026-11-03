@@ -3,26 +3,26 @@
   "status": "proved",
   "scope": "Exact component-frame admission ordering before native mutation; actual element/view-type support is supplied as the proved predicate by the caller, and native mapping failure after preflight is excluded.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "cc1820ab15b3a75f1a4edf05978b1a6b4321c68617cc7b71cc5266e395d9a8da",
+  "source_sha256": "9871dc3155d4ad6e4428fbea08610ad8f7b396cfa798380e64a9bd1522124a6e",
   "sources": {
-    "src/native_adapter/native_view.rs": "cc1820ab15b3a75f1a4edf05978b1a6b4321c68617cc7b71cc5266e395d9a8da"
+    "src/native_adapter/native_view.rs": "9871dc3155d4ad6e4428fbea08610ad8f7b396cfa798380e64a9bd1522124a6e"
   },
-  "kernel_sha256": "0973345b0b600725420b97f086ef6ca145abf88bb48a76281b7683b5634050b1",
+  "kernel_sha256": "eade559890ea8f473752b6f9fcd9f4af1567be6665019105981d1d1ad275bcf7",
   "dependencies": {
-    "component-update-error-type": "f8c8c8197eae66aefc5b09237f6af7076bc27cf71703590ed830ba2ff18fd732"
+    "component-update-error-type": "3a013b1723f7cdb6df80d91c4c8d6305463b54dcec778ee2cae4bd5f830e5939"
   },
-  "proof_sha256": "874f82e4950ee3a01f1d10a653f3382fcc0050f562a8f91870db503b1c43e8d0",
-  "runner_sha256": "fa6ac67c4f8ef79d41ddb98564271733e96879fe96ae3f1f46f04c997686d551",
+  "proof_sha256": "6b64649d310c362aed38f86519cd4f9e0ec072e6c43385cec9ba48902058ac22",
+  "runner_sha256": "ddbeb4018f62ac6eee850625e4283dff7394a90eb6b910b9b4f3ce61e4cefcc7",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
-    "<home>/.local/share/jasper-ui-verification/verus-x86-linux/verus",
+    "<home>/verus/verus",
     "--crate-type",
     "lib",
     "<repo>/evidence/component-update-admission-kernel/kernel.rs"
   ],
   "exit_code": 0,
   "solver": {
-    "path": "<home>/.local/share/jasper-ui-verification/verus-x86-linux/z3",
+    "path": "<home>/verus/z3",
     "version": "Z3 version 4.16.0 - 64 bit\n",
     "explicit_override": null
   },
