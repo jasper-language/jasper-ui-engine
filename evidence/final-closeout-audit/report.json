@@ -1,12 +1,17 @@
 {
   "schema_version": 1,
   "kind": "jasper-ui-closeout-audit",
-  "generated_at": "2026-11-03T12:10:54.511662+00:00",
+  "generated_at": "2026-11-03T12:13:26.206585+00:00",
   "claim": "audit only; no checklist completion or whole-engine acceptance is claimed",
   "git": {
-    "branch": "dev/ui36-handle-fallible",
-    "commit": "59311fe722b067814854212c41cbfec35c99303e",
-    "dirty_paths": []
+    "branch": "main",
+    "commit": "90fbb5c1af304bba1a8d3b0eaceeae525affa4df",
+    "dirty_paths": [
+      " M docs/status.md",
+      " M evidence/final-checklist-audit-pending/report.json",
+      " M evidence/final-checklist-audit/report.json",
+      " M evidence/native-engine-frame-sequence/report.json"
+    ]
   },
   "final_audit": {
     "path": "evidence/final-checklist-audit/report.json",
@@ -15,7 +20,7 @@
     "recorded_status": "complete",
     "recorded_completed_items": 6,
     "covers_head": true,
-    "basis_commit": "9f68783a8bd6a1987c67550f9969c322bc6f32a6",
+    "basis_commit": "ab3785fcca87871311b879a528fdc488242dbfe3",
     "material_changed_since_basis": [],
     "references": [
       {
@@ -2635,7 +2640,7 @@
     },
     {
       "path": "evidence/final-checklist-audit/report.json",
-      "sha256": "7f15c3ee3654cd8198205c8b7a95d3f4ffc217f15ff20bb4fc6cb85f071349e1",
+      "sha256": "fda7b00b4238ec042e8514e3860d717725ec00c624e6dc47d3c52c5a1f085bcb",
       "status": "complete",
       "recorded_sources": 37,
       "stale_or_missing_sources": [],
@@ -2650,7 +2655,7 @@
     },
     {
       "path": "evidence/final-checklist-audit-pending/report.json",
-      "sha256": "ab37e6887d3ad5970dce36a59a44b731b6200ab0e4a59b4543dcec5bb6f2024d",
+      "sha256": "4815847d951c1f8f6e30b349c2a4976ea23c1c483c5ba27499210174ea28b4ee",
       "status": "incomplete_no_checklist_item_fully_complete",
       "recorded_sources": 0,
       "stale_or_missing_sources": [],
@@ -2658,7 +2663,7 @@
     },
     {
       "path": "evidence/final-closeout-audit/report.json",
-      "sha256": "806645e1bc54a4758cfb4c8d065697d8baf68913882edf4362b0b15bf00a54b2",
+      "sha256": "a5b43261aab5b387fb627b9582a1f03a37094c55daed3b8cc12718734b6dc991",
       "status": "unspecified",
       "recorded_sources": 0,
       "stale_or_missing_sources": [],
@@ -3157,7 +3162,7 @@
     },
     {
       "path": "evidence/native-engine-frame-sequence/report.json",
-      "sha256": "6191ce8e0ed4011a116102e7a6fe91057fb446e4a979d16602bd00b6ca3f12af",
+      "sha256": "72773cc2366d6556c8658f82a1160224713e5e294505063b21b315c40794ab1c",
       "status": "engineering_scope_passes_full_formal_transaction_pending",
       "recorded_sources": 9,
       "stale_or_missing_sources": [
@@ -6785,7 +6790,7 @@
         "exists": true,
         "contained": true,
         "ahead": 0,
-        "tip": "6acc88e6683f9a6c40d696fa5a53c1c6a6a0e89a"
+        "tip": "14cda4d27472ece180e09d04da6be88d6007a919"
       },
       {
         "branch": "codex/item3-render",
@@ -6793,7 +6798,7 @@
         "exists": true,
         "contained": true,
         "ahead": 0,
-        "tip": "2112ac1cee10d612af235f69308c55ed49a893c3"
+        "tip": "a60e60cae2d8e30fdae55782f2167b54c670c35e"
       },
       {
         "branch": "codex/item4-interaction",
@@ -6801,7 +6806,7 @@
         "exists": true,
         "contained": true,
         "ahead": 0,
-        "tip": "8b92becfeb9ed3dfdbb8fc1def4dd5e0b2c727da"
+        "tip": "d3a29f35fddd336ba72995772693e7718761c4ae"
       },
       {
         "branch": "codex/item5-migration",
@@ -6809,7 +6814,7 @@
         "exists": true,
         "contained": true,
         "ahead": 0,
-        "tip": "bd84045f540d8136e7d234141c514f4d4261d0c9"
+        "tip": "c0d429c6960d47ac47d59ec2bc2e4a9befb4b072"
       }
     ],
     "status": "included",
@@ -6966,7 +6971,7 @@
     "completion_claimed": false,
     "static_audit_complete": true,
     "final_report_covers_head": true,
-    "final_report_basis": "9f68783a8bd6a1987c67550f9969c322bc6f32a6",
+    "final_report_basis": "ab3785fcca87871311b879a528fdc488242dbfe3",
     "material_paths_changed_since_final_report_basis": 0,
     "missing_required_sources": 0,
     "missing_required_evidence": 0,
@@ -6975,22 +6980,15 @@
     "unresolved_item_blockers": 0
   },
   "baseline_regression": {
-    "status": "passed",
-    "started_at": "2026-11-03T12:10:27.376241+00:00",
-    "finished_at": "2026-11-03T12:10:54.216780+00:00",
-    "command": [
-      "<repo>/scripts/verify-in-vm.sh",
-      "env",
-      "bash",
-      "scripts/closeout-baseline.sh"
-    ],
-    "returncode": 0,
-    "log": "evidence/final-closeout-audit/baseline.log",
-    "log_sha256": "c89cbedb37374e9b20df9c02fa3c6490d0861a492fdab96fab7fa0040312fa3b"
+    "status": "not_run",
+    "reason": "use --run-baseline after work is integrated; heavy checks stay inside the VM"
   },
   "final_gate": {
-    "ready": true,
-    "failures": [],
+    "ready": false,
+    "failures": [
+      "VM baseline regression did not pass",
+      "worktree is dirty"
+    ],
     "note": "Default audits may be incomplete; --require-ready enforces this exact list."
   }
 }

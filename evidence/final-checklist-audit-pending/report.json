@@ -4,11 +4,11 @@
   "completed_items": 0,
   "total_items": 6,
   "commits": [
-    "c562bdc UI21: subtree real-Map backend capability evidence",
-    "83ff1ee UI21: synthetic bold, candidate frame transaction, host GPU target",
-    "db59a6b UI22: full caller path and verification-chain wiring",
-    "5b0885e UI23: rerun affected native proofs and preserve unwind=5 failure",
-    "3a52933 UI25: structured scene-update rejection contract"
+    "6accb3f UI21: subtree real-Map backend capability evidence",
+    "7df257f UI21: synthetic bold, candidate frame transaction, host GPU target",
+    "7a5ac4c UI22: full caller path and verification-chain wiring",
+    "ae258d2 UI23: rerun affected native proofs and preserve unwind=5 failure",
+    "5290847 UI25: structured scene-update rejection contract"
   ],
   "items": {
     "1_public_contract": {

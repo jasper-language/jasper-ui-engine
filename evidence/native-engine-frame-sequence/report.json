@@ -2,7 +2,7 @@
   "date": "2026-11-02",
   "checklist_item": 2,
   "status": "engineering_scope_passes_full_formal_transaction_pending",
-  "base_commit": "6840fc90c5d2c42e3cd664dc9f47327b1335c4e7",
+  "base_commit": "5bb36696366d1b6edf430c98e6b17782ab6ea6c2",
   "scope": "Application-facing native Engine feature aliases, canonical whole-frame update/rejection path, Blitz tree/style/layout/event/render integration, consumed-ID lifecycle retirement, active caller migration and VM regressions.",
   "sources": {
     "Cargo.toml": "a78eb3be5b5b5c6da54a716d20c33baaec37563515026960bc90e296188ddd65",

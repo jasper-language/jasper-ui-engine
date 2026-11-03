@@ -52,15 +52,15 @@
     "src/handle.rs": "f623079e05ca9787f4f2a05359c52ea8784107e8c83ff999e27cfce316cff88e"
   },
   "commits": [
-    "468a2eebece386b52f3751413ce7e720a2016b11 item 2 formal Engine frame sequence",
-    "2112ac1cee10d612af235f69308c55ed49a893c3 item 3 host rendering lifecycle",
-    "8b92becfeb9ed3dfdbb8fc1def4dd5e0b2c727da item 4 interaction and external service client",
-    "bd84045f540d8136e7d234141c514f4d4261d0c9 item 5 public caller migration",
-    "e0c2d37 item 6 source snapshot, completion standard and closeout gate",
-    "72f491d0d97f0ba4ca3f73d278bed869eade4539 integrate all prior item branch refs",
-    "68b8605fa6b06505dfda4094aa0e3c085bf1e9c6 item 6 completed closeout evidence",
-    "6610bbfc7f299c41ebaeac98d25db9730cc52bf4 rebind final audit to UI34/UI35 (clock-free desktop pointer state; generation handle table)",
-    "9f68783a8bd6a1987c67550f9969c322bc6f32a6 rebind final audit to UI36 (handle status; fallible handle storage growth)"
+    "6f125a6a65bc3906e312858c8eae0558abe4b5d0 item 2 formal Engine frame sequence",
+    "a60e60cae2d8e30fdae55782f2167b54c670c35e item 3 host rendering lifecycle",
+    "d3a29f35fddd336ba72995772693e7718761c4ae item 4 interaction and external service client",
+    "c0d429c6960d47ac47d59ec2bc2e4a9befb4b072 item 5 public caller migration",
+    "24b96f4 item 6 source snapshot, completion standard and closeout gate",
+    "d628fd666af922d43152fad10779eef889c986c7 integrate all prior item branch refs",
+    "f35d09b39e2e31deb01dec104378b1666dba7e9b item 6 completed closeout evidence",
+    "bb31de152036f40ab09cbbb8d26430226a40b020 rebind final audit to UI34/UI35 (clock-free desktop pointer state; generation handle table)",
+    "ab3785fcca87871311b879a528fdc488242dbfe3 rebind final audit to UI36 (handle status; fallible handle storage growth)"
   ],
   "items": {
     "1_public_contracts": {

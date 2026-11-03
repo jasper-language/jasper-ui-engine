@@ -814,7 +814,7 @@ GPU 直接绘制到宿主 `TextureView` 后，`needs_frame` 在宿主 `Queue::pr
 
 不在 `verify-ui.py` 列表内的独立内核 `preedit-lifecycle-dispatch` 的反例 `ignore-disabled-owner` 在新匹配下有两处命中，仍需要单独修正；其余独立内核的提取与反例匹配已静态核对，但本轮没有逐个重跑 Verus。
 
-**证据脱敏。** UI21 起有 64 个已跟踪的证据文件含构建机主目录路径。新增 `scripts/sanitize-evidence.py`，把这类路径换成 `<repo>` / `<home>`，并同步证据内记录的文件哈希，当前树已为零。今后每次重新生成已跟踪证据后都要运行一次。已推送的历史提交不做改写，仍然包含这些路径。
+**证据脱敏。** UI21 起有 64 个已跟踪的证据文件含构建机主目录路径。新增 `scripts/sanitize-evidence.py`，把这类路径换成 `<repo>` / `<home>`，并同步证据内记录的文件哈希，当前树已为零。今后每次重新生成已跟踪证据后都要运行一次。2026-11-03 已按用户裁决改写公开历史，清除所有提交中的这类路径和内部名称，原提交号随之变化；证据中记录的提交号已同步为新值。
 
 **交付门状态。** 本轮 `closeout-baseline` 通过，但 `audit-closeout.py --require-ready` 现在返回未就绪：最终审计记录绑定在 UI32 的提交上，不覆盖本次改动的 `src/desktop.rs`（构建 VM 回传证据也会让工作树变脏）。第 1–5 项的完成记录尚未对新提交重新绑定。
 
