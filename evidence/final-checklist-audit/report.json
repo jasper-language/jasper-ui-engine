@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "jasper-ui-final-checklist-audit",
   "status": "complete",
-  "date": "2026-11-02",
+  "date": "2026-11-03",
   "completion_standard": "functional_gaps_closed_and_basic_proofs_passed",
   "completion_policy": "Items 1-5 are complete when their functional gaps are closed and basic admission, integration and real-caller evidence passes. Complex capacity-limited, mathematical or live-platform proofs are non-blocking entries in the Claude proof backlog.",
   "completed_items": 6,
@@ -47,7 +47,9 @@
     "tests/native_accesskit_bridge.rs": "a252859061116da97dac80f37d5b1721275a92c558cb6d6655fb39b679d6228d",
     "tests/native_gpu_host_view.rs": "5cabaaf2091c3e10de8def043b7d902a61ed37831dcdaf97d366461860422fc9",
     "scripts/audit-closeout.py": "3b93b12e36c6362619be0df660bf2affdd70d83473ac4efff94b671d1a2b1d7c",
-    "scripts/closeout-baseline.sh": "324530f8c5033ff29ae0e1f245c756c0d47c3da32d6cf30666ec15ec19d9bc8e"
+    "scripts/closeout-baseline.sh": "324530f8c5033ff29ae0e1f245c756c0d47c3da32d6cf30666ec15ec19d9bc8e",
+    "src/desktop.rs": "298bea8e2dc8c62581025782419a948c3e5715bc494f0e174591aa8f1644bb28",
+    "src/handle.rs": "d39bb2d620de2e406f76c7431fae90935923ec8e29a53a069a14c196d7350eca"
   },
   "commits": [
     "468a2eebece386b52f3751413ce7e720a2016b11 item 2 formal Engine frame sequence",
@@ -56,7 +58,8 @@
     "bd84045f540d8136e7d234141c514f4d4261d0c9 item 5 public caller migration",
     "e0c2d37 item 6 source snapshot, completion standard and closeout gate",
     "72f491d0d97f0ba4ca3f73d278bed869eade4539 integrate all prior item branch refs",
-    "68b8605fa6b06505dfda4094aa0e3c085bf1e9c6 item 6 completed closeout evidence"
+    "68b8605fa6b06505dfda4094aa0e3c085bf1e9c6 item 6 completed closeout evidence",
+    "6610bbfc7f299c41ebaeac98d25db9730cc52bf4 rebind final audit to UI34/UI35 (clock-free desktop pointer state; generation handle table)"
   ],
   "items": {
     "1_public_contracts": {
@@ -64,7 +67,13 @@
       "completion_standard": "functional_gaps_closed_and_basic_proofs_passed",
       "summary": "Typed scene, component, event, semantics, version and ownership contracts are consumed through the root native facade; rejection and capability boundaries are explicit.",
       "blocking_gaps": [],
-      "residual_proofs": ["CP-01", "CP-02", "CP-03", "CP-04", "CP-05"],
+      "residual_proofs": [
+        "CP-01",
+        "CP-02",
+        "CP-03",
+        "CP-04",
+        "CP-05"
+      ],
       "evidence": [
         "../scene-update-error-contract-chain/report.json",
         "../component-update-error-contract-chain/report.json",
@@ -77,7 +86,11 @@
       "completion_standard": "functional_gaps_closed_and_basic_proofs_passed",
       "summary": "Application code uses the formal Engine/HostRenderer path. Whole-frame add, remove, reorder, style, text and semantic updates commit atomically; CPU native frames feed checked backend submission and presentation.",
       "blocking_gaps": [],
-      "residual_proofs": ["CP-02", "CP-03", "CP-04"],
+      "residual_proofs": [
+        "CP-02",
+        "CP-03",
+        "CP-04"
+      ],
       "evidence": [
         "../native-engine-frame-sequence/report.json",
         "../scene-frame-completion-chain/report.json",
@@ -89,7 +102,10 @@
       "completion_standard": "functional_gaps_closed_and_basic_proofs_passed",
       "summary": "CPU Surface, injected fonts and DPI are connected; GPU TextureView presentation and present acknowledgement are implemented. HostRenderer gates each operation by active Surface generation and covers suspend, resume and retirement.",
       "blocking_gaps": [],
-      "residual_proofs": ["CP-04", "CP-06"],
+      "residual_proofs": [
+        "CP-04",
+        "CP-06"
+      ],
       "evidence": [
         "../native-host-render-lifecycle/report.json",
         "../native-font-bold-alias-chain/report.json",
@@ -101,7 +117,10 @@
       "completion_standard": "functional_gaps_closed_and_basic_proofs_passed",
       "summary": "Focus, pointer, capture, cancellation, rebinding, deletion and retirement are routed through public contracts. TextInputSession consumes authoritative external display snapshots and transient native preedit without owning a second editor; AccessKit conversion and platform bridge limits are explicit.",
       "blocking_gaps": [],
-      "residual_proofs": ["CP-05", "CP-07"],
+      "residual_proofs": [
+        "CP-05",
+        "CP-07"
+      ],
       "evidence": [
         "../native-interaction-closure/report.json"
       ]
@@ -111,7 +130,11 @@
       "completion_standard": "functional_gaps_closed_and_basic_proofs_passed",
       "summary": "hello, pointer, window, gpu_window and full_scene use only formal public entries. The full declaration-to-retirement caller, pure visual focus/scroll/accessibility preservation, X11 click, lifecycle generation gate and a same-VM CPU baseline pass.",
       "blocking_gaps": [],
-      "residual_proofs": ["CP-06", "CP-07", "CP-08"],
+      "residual_proofs": [
+        "CP-06",
+        "CP-07",
+        "CP-08"
+      ],
       "evidence": [
         "../item5-full-path-baseline/report.json",
         "../item5-window-interaction/interaction.log",
@@ -124,7 +147,16 @@
       "completion_standard": "functional_gaps_closed_and_basic_proofs_passed",
       "summary": "All prior item branches are integrated. Source hashes, tool pins, formatting, dependency pin, default/native CPU/native GPU builds, default tests, 179 native CPU library tests, native integration, AccessKit, X11/host lifecycle and software Vulkan tests pass in the resource-limited VM.",
       "blocking_gaps": [],
-      "residual_proofs": ["CP-01", "CP-02", "CP-03", "CP-04", "CP-05", "CP-06", "CP-07", "CP-08"],
+      "residual_proofs": [
+        "CP-01",
+        "CP-02",
+        "CP-03",
+        "CP-04",
+        "CP-05",
+        "CP-06",
+        "CP-07",
+        "CP-08"
+      ],
       "evidence": [
         "../final-closeout-audit/report.json",
         "../final-closeout-audit/baseline.log"
