@@ -26,7 +26,14 @@ struct Tree {
 
 impl Tree {
     fn new(id: u64, kind: Kind) -> Self {
-        Self { id, kind, gap: 0.0, label: String::new(), scroll: 0.0, children: Vec::new() }
+        Self {
+            id,
+            kind,
+            gap: 0.0,
+            label: String::new(),
+            scroll: 0.0,
+            children: Vec::new(),
+        }
     }
     fn holds(&self, id: u64) -> bool {
         self.id == id || self.children.iter().any(|child| child.holds(id))
@@ -49,13 +56,36 @@ impl Tree {
 /// Generated operation; the same value drives the production patch and the model.
 #[derive(Clone, Debug)]
 enum Op {
-    Insert { parent: u64, index: usize, id: u64, kind: Kind, child: Option<u64> },
-    Style { id: u64, gap: u8 },
-    Semantics { id: u64, label: u8 },
-    Text { id: u64, text: u8 },
-    Canvas { id: u64, width: u8 },
-    Scroll { id: u64, x: u8 },
-    Remove { id: u64 },
+    Insert {
+        parent: u64,
+        index: usize,
+        id: u64,
+        kind: Kind,
+        child: Option<u64>,
+    },
+    Style {
+        id: u64,
+        gap: u8,
+    },
+    Semantics {
+        id: u64,
+        label: u8,
+    },
+    Text {
+        id: u64,
+        text: u8,
+    },
+    Canvas {
+        id: u64,
+        width: u8,
+    },
+    Scroll {
+        id: u64,
+        x: u8,
+    },
+    Remove {
+        id: u64,
+    },
 }
 
 /// A canvas identified by its hit-region count, so the model never compares drawing operations.
@@ -77,28 +107,51 @@ fn native_kind(id: u64, kind: &Kind) -> Node {
 
 fn patch_of(op: &Op) -> ScenePatch {
     match op {
-        Op::Insert { parent, index, id, kind, child } => {
+        Op::Insert {
+            parent,
+            index,
+            id,
+            kind,
+            child,
+        } => {
             let mut node = native_kind(*id, kind);
             if let Some(child) = child {
                 node = node.child(Node::container(NodeId(*child)));
             }
-            ScenePatch::Insert { parent: NodeId(*parent), index: *index, node }
+            ScenePatch::Insert {
+                parent: NodeId(*parent),
+                index: *index,
+                node,
+            }
         }
         Op::Style { id, gap } => ScenePatch::UpdateStyle {
             id: NodeId(*id),
-            style: Style { gap: *gap as f32, ..Style::default() },
+            style: Style {
+                gap: *gap as f32,
+                ..Style::default()
+            },
         },
         Op::Semantics { id, label } => ScenePatch::UpdateSemantics {
             id: NodeId(*id),
-            semantics: Semantics { label: label.to_string(), ..Semantics::default() },
+            semantics: Semantics {
+                label: label.to_string(),
+                ..Semantics::default()
+            },
         },
-        Op::Text { id, text } => ScenePatch::UpdateText { id: NodeId(*id), text: text.to_string() },
-        Op::Canvas { id, width } => {
-            ScenePatch::SetCanvas { id: NodeId(*id), canvas: canvas_with(*width as u32) }
-        }
+        Op::Text { id, text } => ScenePatch::UpdateText {
+            id: NodeId(*id),
+            text: text.to_string(),
+        },
+        Op::Canvas { id, width } => ScenePatch::SetCanvas {
+            id: NodeId(*id),
+            canvas: canvas_with(*width as u32),
+        },
         Op::Scroll { id, x } => ScenePatch::SetScroll {
             id: NodeId(*id),
-            offset: Point { x: *x as f32, y: 0.0 },
+            offset: Point {
+                x: *x as f32,
+                y: 0.0,
+            },
         },
         Op::Remove { id } => ScenePatch::Remove { id: NodeId(*id) },
     }
@@ -107,7 +160,13 @@ fn patch_of(op: &Op) -> ScenePatch {
 fn model_apply(tree: &mut Tree, op: &Op) -> Result<(), SceneError> {
     let missing = |id: u64| SceneError::NodeNotFound(NodeId(id));
     match op {
-        Op::Insert { parent, index, id, kind, child } => {
+        Op::Insert {
+            parent,
+            index,
+            id,
+            kind,
+            child,
+        } => {
             if tree.holds(*id) {
                 return Err(SceneError::DuplicateNode(NodeId(*id)));
             }
@@ -125,9 +184,7 @@ fn model_apply(tree: &mut Tree, op: &Op) -> Result<(), SceneError> {
             target.children.insert(at, inserted);
         }
         Op::Style { id, gap } => tree.at(*id).ok_or(missing(*id))?.gap = *gap as f32,
-        Op::Semantics { id, label } => {
-            tree.at(*id).ok_or(missing(*id))?.label = label.to_string()
-        }
+        Op::Semantics { id, label } => tree.at(*id).ok_or(missing(*id))?.label = label.to_string(),
         Op::Text { id, text } => {
             let target = tree.at(*id).ok_or(missing(*id))?;
             if !matches!(target.kind, Kind::Text(_)) {
@@ -179,10 +236,20 @@ fn check_batches(batches: &[(u8, Vec<Op>)]) {
     for (stale_by, ops) in batches {
         let before = scene.clone();
         let patches: Vec<ScenePatch> = ops.iter().map(patch_of).collect();
-        let expected_version = if *stale_by % 4 == 3 { version + 1 + *stale_by as u64 } else { version };
+        let expected_version = if *stale_by % 4 == 3 {
+            version + 1 + *stale_by as u64
+        } else {
+            version
+        };
         let result = scene.apply_batch_at(expected_version, &patches);
         if expected_version != version {
-            assert_eq!(result, Err(SceneError::StaleVersion { expected: expected_version, actual: version }));
+            assert_eq!(
+                result,
+                Err(SceneError::StaleVersion {
+                    expected: expected_version,
+                    actual: version
+                })
+            );
             assert_eq!(scene, before);
             continue;
         }
@@ -205,19 +272,60 @@ fn check_batches(batches: &[(u8, Vec<Op>)]) {
 
 #[test]
 fn fixed_batches_commit_whole_or_not_at_all() {
-    let insert = |parent, id, kind| Op::Insert { parent, index: usize::MAX, id, kind, child: None };
+    let insert = |parent, id, kind| Op::Insert {
+        parent,
+        index: usize::MAX,
+        id,
+        kind,
+        child: None,
+    };
     check_batches(&[
         (0, vec![]),
-        (0, vec![insert(0, 1, Kind::Text("a".into())), insert(0, 2, Kind::Canvas(0))]),
+        (
+            0,
+            vec![
+                insert(0, 1, Kind::Text("a".into())),
+                insert(0, 2, Kind::Canvas(0)),
+            ],
+        ),
         // The second patch fails, so the applied first patch must not survive.
-        (0, vec![Op::Text { id: 1, text: 7 }, Op::Text { id: 2, text: 8 }]),
+        (
+            0,
+            vec![Op::Text { id: 1, text: 7 }, Op::Text { id: 2, text: 8 }],
+        ),
         // A later patch observes an earlier patch of the same batch.
-        (0, vec![insert(2, 3, Kind::Container), Op::Remove { id: 3 }, Op::Canvas { id: 2, width: 4 }]),
+        (
+            0,
+            vec![
+                insert(2, 3, Kind::Container),
+                Op::Remove { id: 3 },
+                Op::Canvas { id: 2, width: 4 },
+            ],
+        ),
         (3, vec![Op::Remove { id: 1 }]),
         (0, vec![insert(0, 4, Kind::Container), Op::Remove { id: 0 }]),
-        (0, vec![Op::Insert { parent: 0, index: 0, id: 5, kind: Kind::Container, child: Some(5) }]),
-        (0, vec![Op::Style { id: 9, gap: 1 }, Op::Scroll { id: 0, x: 2 }]),
-        (0, vec![Op::Style { id: 0, gap: 1 }, Op::Semantics { id: 1, label: 3 }, Op::Scroll { id: 0, x: 2 }]),
+        (
+            0,
+            vec![Op::Insert {
+                parent: 0,
+                index: 0,
+                id: 5,
+                kind: Kind::Container,
+                child: Some(5),
+            }],
+        ),
+        (
+            0,
+            vec![Op::Style { id: 9, gap: 1 }, Op::Scroll { id: 0, x: 2 }],
+        ),
+        (
+            0,
+            vec![
+                Op::Style { id: 0, gap: 1 },
+                Op::Semantics { id: 1, label: 3 },
+                Op::Scroll { id: 0, x: 2 },
+            ],
+        ),
     ]);
 }
 
