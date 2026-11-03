@@ -3,9 +3,9 @@
   "status": "proved",
   "scope": "Exact production stage ordering over arbitrary stage closures: the builder precondition is reachable only from a source stage at the exact successor, and every result is tied to the closure outcomes that produced it. Patch semantics, Blitz construction, state restoration, active replacement assignment and panic unwinding are excluded; unwinding is covered by Proptest/Miri and the real-view integration test, not by this proof.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "dd03b4ffb00cade3ddcea693528bcee594e79d9327b6988b1ed4b563ba21714c",
+  "source_sha256": "778852eef7d9c60e867cf680807cb491c061858334953a633f2092a6debe0aa6",
   "sources": {
-    "src/native_adapter/native_scene.rs": "dd03b4ffb00cade3ddcea693528bcee594e79d9327b6988b1ed4b563ba21714c"
+    "src/native_adapter/native_scene.rs": "778852eef7d9c60e867cf680807cb491c061858334953a633f2092a6debe0aa6"
   },
   "kernel_sha256": "74257605dd70fc1a249d9d20998a0bca4d57a5382a72aa9818433f452d48ddd6",
   "dependencies": {
@@ -13,7 +13,7 @@
     "scene-frame-completion": "c294b6e76b86280d9c03562858f4cbb62c1f6cb8f6716eaf6a8097defd0d0c2c"
   },
   "proof_sha256": "bd74a290e68ba4a105ab5f6ff46c63560ca04d6e7e98a42facde79f973f74828",
-  "runner_sha256": "0953111ba4c0e4594388178fa55065ce99c218c74da0e2fa4fd24327b9d7e0e0",
+  "runner_sha256": "e6b0f634eb0a8827af63141a4a4c6f08f824526db658d0d928144e12e44fa5a2",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/verus/verus",

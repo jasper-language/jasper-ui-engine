@@ -3,10 +3,10 @@
   "status": "proved",
   "scope": "Exact production structured patch admission and real reused version/count predicates; source/native rejection variants are assigned outside this kernel and are excluded. No native mutation loop or host authentication proof.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "dd03b4ffb00cade3ddcea693528bcee594e79d9327b6988b1ed4b563ba21714c",
+  "source_sha256": "778852eef7d9c60e867cf680807cb491c061858334953a633f2092a6debe0aa6",
   "sources": {
     "src/input_identity.rs": "953b0982be297777cc3e2c3f3a02f697df71d83c2d3e5bc21202baa06250aa0d",
-    "src/native_adapter/native_scene.rs": "dd03b4ffb00cade3ddcea693528bcee594e79d9327b6988b1ed4b563ba21714c"
+    "src/native_adapter/native_scene.rs": "778852eef7d9c60e867cf680807cb491c061858334953a633f2092a6debe0aa6"
   },
   "kernel_sha256": "dfecc4647be48d37ec7e808c109eca42c2ea44ef7f63e2decb349aef9ba8802d",
   "dependencies": {
@@ -15,7 +15,7 @@
     "ui-update-next": "8c815cd78d43311906ab3a2d625ee1f156d2f0247bf31bdb807a2c3ad5c17679"
   },
   "proof_sha256": "def00edcec11d7ee687603f6e9f25dc585cf6b65bf8f089b9c21d59a4a4d443f",
-  "runner_sha256": "0953111ba4c0e4594388178fa55065ce99c218c74da0e2fa4fd24327b9d7e0e0",
+  "runner_sha256": "e6b0f634eb0a8827af63141a4a4c6f08f824526db658d0d928144e12e44fa5a2",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/verus/verus",

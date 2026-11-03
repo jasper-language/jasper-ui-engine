@@ -855,3 +855,9 @@ GPU 直接绘制到宿主 `TextureView` 后，`needs_frame` 在宿主 `Queue::pr
 原全域的规模与固定树几乎相同，因此逐棵枚举树没有收益。
 
 **未通过。** 这项义务仍未得到结论，没有反例，也没有通过：CaDiCaL 在 26G 地址空间上限内运行 785.3 秒后，于数组后处理阶段报告内存不足；Kissat 和两种数组编码也都没有结论。这组展开界是否充分仍未确认。下一步是用固定版本的真实 Bitwuzla 跑这组配置。`apply_update → apply_patches` 的整帧性质完全未动。完整记录见 `evidence/native-subtree-unwindset-capability/report.json`。生产代码与验证入口均未改动。
+
+## 2026-11-03：批次折叠（CP-03 子性质）与 CP-02 单属性尝试
+
+`Scene::apply_batch_at` 的暂存循环改为 `stage_scene_batch` 加无接收者的 `apply_detached`，行为不变。折叠本身有六步证据（Loom 为 N/A）。真实 `Scene` 事务由 `tests/scene_batch_transaction.rs` 对照独立树模型测试，整个事务仍未证明，范围见 `verification.md` 的 UI-SCENE-BATCH-STAGE-001。
+
+CP-02 仍无判定：只选一个断言（切片后 30 个 VCC）在 45 分钟内没有结果。

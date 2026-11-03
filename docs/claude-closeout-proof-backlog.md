@@ -10,13 +10,15 @@
 
 ### CP-02
 
-**真实 `BTreeMap` 的 `source_subtree_contains` 与整帧实现级证明。** 早先把 Bitwuzla 运行记为 `unwind=5/6/8` 展开不足，已更正（2026-11-03）：虚拟机中没有 bitwuzla 可执行文件，那些结果是求解器 `ERROR`，并未否定任何展开界。按循环设界（`--unwindset`，展开断言保留）后全域公式降到 190827 步/3376 个 VCC，但 CaDiCaL 在 26G 上限内于数组后处理阶段内存不足，仍无结论，见 `evidence/native-subtree-unwindset-capability/report.json`。真实 Bitwuzla 0.8.2 首次运行（2026-11-03，获批后在构建虚拟机内固定版本编译）：同一公式约 41–48 分钟返回 sat。此前据此推断“至少一个检查可违反”，已撤回（2026-11-03）：这个 sat 落在 Kani 的 `reachability_check` 探针上（表达式恒为 FALSE，只报告可达性），不是违反，也不是反例。排除探针、只查真实属性（1436/1503 个属性，3174 个 VCC）后，6300 秒超时，求解器无任何输出，所以真实属性既未通过也未被违反，展开界充分性仍未确认，见 `evidence/native-subtree-bitwuzla-capability/report.json`。直接调用 cbmc 时，其 `VERIFICATION FAILED` 须先核对属性类别。不得用较小展开、固定树或替代 Map 通过。还需闭合 `apply_update → apply_patches` 的完整整帧性质。
+**真实 `BTreeMap` 的 `source_subtree_contains` 与整帧实现级证明。** 早先把 Bitwuzla 运行记为 `unwind=5/6/8` 展开不足，已更正（2026-11-03）：虚拟机中没有 bitwuzla 可执行文件，那些结果是求解器 `ERROR`，并未否定任何展开界。按循环设界（`--unwindset`，展开断言保留）后全域公式降到 190827 步/3376 个 VCC，但 CaDiCaL 在 26G 上限内于数组后处理阶段内存不足，仍无结论，见 `evidence/native-subtree-unwindset-capability/report.json`。真实 Bitwuzla 0.8.2 首次运行（2026-11-03，获批后在构建虚拟机内固定版本编译）：同一公式约 41–48 分钟返回 sat。此前据此推断“至少一个检查可违反”，已撤回（2026-11-03）：这个 sat 落在 Kani 的 `reachability_check` 探针上（表达式恒为 FALSE，只报告可达性），不是违反，也不是反例。排除探针、只查真实属性（1436/1503 个属性，3174 个 VCC）后，6300 秒超时，求解器无任何输出，所以真实属性既未通过也未被违反，展开界充分性仍未确认，见 `evidence/native-subtree-bitwuzla-capability/report.json`。只选 `real_map_case` 的相等断言一个属性（切片后 30 个 VCC）也在 45 分钟限时内没有结果，求解器零输出（当时构建机与六步链同跑，负载 3–6），未通过也未违反。直接调用 cbmc 时，其 `VERIFICATION FAILED` 须先核对属性类别。不得用较小展开、固定树或替代 Map 通过。还需闭合 `apply_update → apply_patches` 的完整整帧性质。
 
 ### CP-03
 
 **NativeScene 候选构造、状态恢复与整帧有序证明。** 已有提交门和集成事务证据，但来源补丁应用、Blitz 候选构造/替换、焦点/滚动/指针/帧缓存恢复及第三方 panic 回滚仍未形成完整六阶段实现级证明。
 
-已闭合的子性质（2026-11-03，UI-SCENE-FRAME-ORDER-001）：`order_scene_frame` 的阶段顺序。对任意阶段闭包，构造阶段的前置条件只能由精确后继上成功的来源满足，结果绑定到产生它的阶段输出；反例被拒，见 `evidence/scene-frame-order-chain/report.json`。阶段内 panic 由 Proptest/Miri 对真实内核、由集成测试对真实 `NativeScene` 与真实 Blitz 候选检查，这是测试证据，不是证明，且 panic 是在构造阶段外层注入的，不是 Blitz 内部抛出的。仍未覆盖：`apply_batch_at` 的补丁语义与原子性（UI-TXN-ATOMIC-001）、候选构造本身、焦点/滚动/指针/帧缓存恢复的实现级规格、`*self = candidate` 析构旧视图时的 panic、活动文档读取路径上第三方内部可变性的影响。
+已闭合的子性质（2026-11-03，UI-SCENE-FRAME-ORDER-001）：`order_scene_frame` 的阶段顺序。对任意阶段闭包，构造阶段的前置条件只能由精确后继上成功的来源满足，结果绑定到产生它的阶段输出；反例被拒，见 `evidence/scene-frame-order-chain/report.json`。阶段内 panic 由 Proptest/Miri 对真实内核、由集成测试对真实 `NativeScene` 与真实 Blitz 候选检查，这是测试证据，不是证明，且 panic 是在构造阶段外层注入的，不是 Blitz 内部抛出的。同日闭合 UI-SCENE-BATCH-STAGE-001：`stage_scene_batch` 的折叠。对任意状态、补丁、错误类型与任意闭包，`Ok` 是从独立值开始、每个补丁按序恰好成功应用一次的组合，`Err` 是成功前缀之后第一个失败的错误；四个反例被拒，见 `evidence/scene-batch-stage-chain/report.json`。真实 `Scene::apply_batch_at` 由独立树模型对照测试，这是测试证据，不是证明，所以 UI-TXN-ATOMIC-001 仍是 not_verified。
+
+仍未覆盖：`apply_one` 的补丁语义、`Scene` 的克隆与身份校验、`apply_batch_at` 中版本赋值与整体替换两条语句的实现级规格、候选构造本身、焦点/滚动/指针/帧缓存恢复的实现级规格、`*self = candidate` 析构旧视图时的 panic、活动文档读取路径上第三方内部可变性的影响。
 
 ### CP-04
 

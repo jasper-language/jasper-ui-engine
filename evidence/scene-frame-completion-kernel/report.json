@@ -3,16 +3,16 @@
   "status": "proved",
   "scope": "Exact source-success, exact successor version and detached-candidate readiness gate before active replacement; source patch semantics, candidate construction and replacement assignment are excluded.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "dd03b4ffb00cade3ddcea693528bcee594e79d9327b6988b1ed4b563ba21714c",
+  "source_sha256": "778852eef7d9c60e867cf680807cb491c061858334953a633f2092a6debe0aa6",
   "sources": {
-    "src/native_adapter/native_scene.rs": "dd03b4ffb00cade3ddcea693528bcee594e79d9327b6988b1ed4b563ba21714c"
+    "src/native_adapter/native_scene.rs": "778852eef7d9c60e867cf680807cb491c061858334953a633f2092a6debe0aa6"
   },
   "kernel_sha256": "c294b6e76b86280d9c03562858f4cbb62c1f6cb8f6716eaf6a8097defd0d0c2c",
   "dependencies": {
     "scene-update-error-type": "256606b123f0efa48b755744e08ea821890120a43d4fcfbb60cb9c74f24a8875"
   },
   "proof_sha256": "0552292c208851decf5f7bcf3f9d7749c8c2e88ed7c1507bf7d1f30feb3017eb",
-  "runner_sha256": "0953111ba4c0e4594388178fa55065ce99c218c74da0e2fa4fd24327b9d7e0e0",
+  "runner_sha256": "e6b0f634eb0a8827af63141a4a4c6f08f824526db658d0d928144e12e44fa5a2",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/verus/verus",

@@ -1,0 +1,57 @@
+{
+  "property": "UI-SCENE-BATCH-STAGE-001",
+  "status": "proved",
+  "scope": "Exact production fold over arbitrary state, patch and error types with an arbitrary closure: a ghost trace gives Ok as the in-order composition of one successful application per patch, and Err as the error of the first failing application after a successful prefix. Patch semantics, Scene::clone, identity validation, the version gate, the active assignment and panic unwinding are excluded; unwinding and the real Scene transaction are covered by Proptest/Miri tests, not by this proof.",
+  "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
+  "source_sha256": "ec429d376674ce5b060e2ed45da46dea901d54907caddc3e94f48e8d16f01a4c",
+  "sources": {
+    "src/scene.rs": "ec429d376674ce5b060e2ed45da46dea901d54907caddc3e94f48e8d16f01a4c"
+  },
+  "kernel_sha256": "e177fe8a750730a557b1a1666690a93c907d673aa81d5508d1c67eadeee10708",
+  "dependencies": {},
+  "proof_sha256": "6ef196fad2930d81faa2784c3a22a8a35f86a1ad61064c1ee78b1aa58b1cc6a4",
+  "runner_sha256": "e6b0f634eb0a8827af63141a4a4c6f08f824526db658d0d928144e12e44fa5a2",
+  "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
+  "command": [
+    "<home>/verus/verus",
+    "--crate-type",
+    "lib",
+    "<repo>/evidence/scene-batch-stage-kernel/kernel.rs"
+  ],
+  "exit_code": 0,
+  "solver": {
+    "path": "<home>/verus/z3",
+    "version": "Z3 version 4.16.0 - 64 bit\n",
+    "explicit_override": null
+  },
+  "verified_obligations": 2,
+  "negative_controls": [
+    {
+      "name": "stop-after-first-patch",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "reapply-after-loop",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "skip-a-patch",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "apply-wrong-patch",
+      "rejected": true,
+      "exit_code": 1
+    }
+  ],
+  "negative_control_rejected": true,
+  "trust_boundary": [
+    "Verus/vstd and SMT solver",
+    "Rust/Verus integer, references and slice semantics",
+    "signature annotation/extraction script",
+    "Rust compiler and target execution"
+  ]
+}

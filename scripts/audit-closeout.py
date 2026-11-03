@@ -192,6 +192,8 @@ PROOF_BACKLOG = {
             "evidence/scene-frame-completion-kernel/report.json",
             "evidence/scene-frame-order-kernel/report.json",
             "evidence/scene-frame-order-chain/report.json",
+            "evidence/scene-batch-stage-kernel/report.json",
+            "evidence/scene-batch-stage-chain/report.json",
         ],
     },
     "CP-04": {

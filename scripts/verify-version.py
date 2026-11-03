@@ -2086,6 +2086,65 @@ KERNELS["scene-frame-order"] = {
 }
 
 
+KERNELS["scene-batch-stage"] = {
+    "source":"src/scene.rs", "marker":"SCENE BATCH STAGE",
+    "property":"UI-SCENE-BATCH-STAGE-001",
+    "spec_prelude":"""pub open spec fn batch_stage_trace<S,P,E,F:Fn(S,&P)->Result<S,E>>(apply:F,start:S,patches:Seq<P>,trace:Seq<S>)->bool {
+    1<=trace.len()<=patches.len()+1 && trace[0]==start
+        && forall|i:int| 0<=i<trace.len()-1 ==> apply.ensures((#[trigger] trace[i],&patches[i]),Ok::<S,E>(trace[i+1]))
+}
+""",
+    "signature":"""fn stage_scene_batch<S, P, E>(
+    detached: S,
+    patches: &[P],
+    apply: impl Fn(S, &P) -> Result<S, E>,
+) -> Result<S, E> {""",
+    "contract":"""fn stage_scene_batch<S,P,E,F:Fn(S,&P)->Result<S,E>>(detached:S,patches:&[P],apply:F)->(result:Result<S,E>)
+        requires forall|s:S,p:&P| #[trigger] apply.requires((s,p)),
+        ensures match result {
+            Ok(end)=>exists|trace:Seq<S>| #[trigger] batch_stage_trace(apply,detached,patches@,trace)
+                && trace.len()==patches@.len()+1 && trace.last()==end,
+            Err(error)=>exists|trace:Seq<S>| #[trigger] batch_stage_trace(apply,detached,patches@,trace)
+                && trace.len()<=patches@.len()
+                && apply.ensures((trace.last(),&patches@[trace.len()-1]),Err::<S,E>(error)),
+        },
+    {""",
+    "extra_annotations":[
+        ("    let mut index = 0usize;","    let mut index = 0usize;\n    let ghost mut trace=seq![detached];"),
+        ("    while index < patches.len() {","""    while index < patches.len()
+        invariant index<=patches.len(),
+            forall|s:S,p:&P| #[trigger] apply.requires((s,p)),
+            batch_stage_trace(apply,detached,patches@,trace),
+            trace.len()==index+1, trace.last()==staged,
+        decreases patches.len()-index,
+    {
+        let ghost before=staged;"""),
+        ("            Ok(next) => staged = next,","""            Ok(next) => {
+                proof {
+                    let grown=trace.push(next);
+                    assert forall|i:int| 0<=i<grown.len()-1 implies apply.ensures((#[trigger] grown[i],&patches@[i]),Ok::<S,E>(grown[i+1])) by {
+                        if i<trace.len()-1 {assert(grown[i]==trace[i] && grown[i+1]==trace[i+1]);}
+                        else {assert(i==index as int && grown[i]==before && grown[i+1]==next);}
+                    };
+                    trace=grown;
+                }
+                staged = next;
+            },"""),
+        ("            Err(error) => return Err(error),","""            Err(error) => {
+                assert(batch_stage_trace(apply,detached,patches@,trace));
+                assert(trace.len()-1==index as int);
+                return Err(error);
+            },"""),
+    ],
+    "depends":[], "evidence":"scene-batch-stage-kernel", "function_count":1,
+    "scope":"Exact production fold over arbitrary state, patch and error types with an arbitrary closure: a ghost trace gives Ok as the in-order composition of one successful application per patch, and Err as the error of the first failing application after a successful prefix. Patch semantics, Scene::clone, identity validation, the version gate, the active assignment and panic unwinding are excluded; unwinding and the real Scene transaction are covered by Proptest/Miri tests, not by this proof.",
+    "mutations":[("stop-after-first-patch","while index<patches.len()\n        invariant","while index<patches.len() && index<1\n        invariant"),
+                 ("reapply-after-loop","    Ok(staged)\n}","    if patches.len()>0 {match apply(staged,&patches[0]) {Ok(next)=>staged=next,Err(error)=>return Err(error)}}\n    Ok(staged)\n}")],
+    "refused_mutations":[("skip-a-patch","index += 1;","index += 1; if index<patches.len() {index += 1;}","invariant not satisfied at end of loop body"),
+                         ("apply-wrong-patch","match apply(staged,&patches[index])","match apply(staged,&patches[0])","assertion failed")],
+}
+
+
 KERNELS["source-insert-index"] = {
     "source":"src/native_adapter/native_scene.rs", "marker":"SOURCE INSERT INDEX",
     "property":"UI-SOURCE-INSERT-INDEX-001",
@@ -2791,7 +2850,8 @@ def main():
     # 阶段顺序反例在其调用处被拒，而非后置条件。
     for label, pattern, replacement, refusal in [
             *[(*mutation, "postcondition not satisfied") for mutation in config["mutations"]],
-            *[(*mutation, "fails to satisfy `callee.requires(args)`") for mutation in config.get("precondition_mutations", [])]]:
+            *[(*mutation, "fails to satisfy `callee.requires(args)`") for mutation in config.get("precondition_mutations", [])],
+            *config.get("refused_mutations", [])]:
         mutated, count = annotate(proof, pattern, replacement)
         if count != 1:
             raise ValueError("review negative control: " + label)

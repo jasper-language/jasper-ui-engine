@@ -34,7 +34,7 @@ Loom 当前执行实际生产函数体的调用侧调度场景：两个线程共
 |---|---|---|---|
 | UI-TXN-VERSION-001 | `scene.rs::next_scene_version` | 对所有 u64：小于最大值时返回严格增加 1 的版本；最大值时拒绝；无回绕/溢出 | 以 `evidence/version-kernel/report.json` 的实际结果和源码哈希为准；报告缺失/失配即 not_verified |
 | UI-TXN-ADMISSION-001 | `scene.rs::decide_scene_version` 及版本计算依赖 | 陈旧版本优先拒绝；匹配空批不推进；匹配非空批耗尽拒绝；可推进时精确加 1 | proved，两个生产函数体同时验证，2 verified/0 errors；错误准入反例被拒；需匹配当前源码哈希 |
-| UI-TXN-ATOMIC-001 | `Scene::apply_batch_at` | 非法/陈旧/耗尽失败保持旧场景；非空成功推进一次；空批不变 | not_verified；有单元测试，尚无整个事务证明 |
+| UI-TXN-ATOMIC-001 | `Scene::apply_batch_at` | 非法/陈旧/耗尽失败保持旧场景；非空成功推进一次；空批不变 | not_verified；折叠部分已证（UI-SCENE-BATCH-STAGE-001），整个事务只有独立模型对照测试与单元测试，尚无证明 |
 | UI-SCENE-ID-001 | `Scene::try_new` / `validate` / 插入/布局入口 | 全树 ID 唯一、父子关系与根约束保持 | not_verified；子树内部/跨树重复 ID 已检查，回滚与布局拒绝已有测试；遍历、BTreeSet、clone 与整个更新链尚未证明 |
 | UI-DECODE-RANGE-001-END | `batch.rs::checked_read_end` | 对所有 usize 输入：成功终点等于起点+长度且在边界内；失败当且仅当读取非法；运算不溢出 | proved，生产函数体 Verus 1 verified/0 errors，错误终点反例被拒；证据需匹配源码哈希 |
 | UI-DECODE-RANGE-001 | `batch.rs::Cursor::take` 与真实读取依赖 | 返回请求字节序列；成功精确推进；失败位置不变且错误为 Truncated；保留缓冲字节视图 | proved，原始 Cursor/方法/错误类型及读取依赖同场验证；反例被拒；不覆盖复合字段与完整解析器 |
@@ -962,3 +962,20 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 真实路径测试（`frame_stage_panic_or_rejection_leaves_active_view_then_same_frame_commits`，测试证据，不是证明）：真实 `NativeScene` 与真实 Blitz 候选上，构造前 panic、候选建成后 panic、原生拒绝与来源拒绝都不改变版本、焦点、按下、指针、滚动、帧缓存、节点映射和重绘像素，随后同一帧能提交并恢复交互状态。在构造阶段前清掉 `last_pointer` 的变异会使它失败（手动一次，未入 Verus 反例表）。
 
 未覆盖：`apply_batch_at` 的补丁语义与原子性；候选构造与状态恢复的实现级规格；Blitz 内部抛出的 panic（测试是在构造阶段外层注入的）；替换时析构旧视图的 panic；读取路径上第三方内部可变性。证据：`evidence/scene-frame-order-kernel/`、`evidence/scene-frame-order-chain/report.json`。
+
+## UI-SCENE-BATCH-STAGE-001：批次折叠（2026-11-03，CP-03 子性质）
+
+`Scene::apply_batch_at` 的暂存循环改为 `stage_scene_batch`，每步是无接收者的 `Scene::apply_detached`，所以暂存阶段在类型上碰不到活动场景。行为不变。
+
+| 阶段 | 范围 | 结果 |
+|---|---|---|
+| Verus/Z3 | 任意状态、补丁、错误类型与任意闭包：幽灵轨迹表明 `Ok` 是每个补丁按序恰好成功一次的组合，`Err` 是成功前缀之后第一个失败的错误 | 2 verified/0 errors。四个反例被拒：首补丁后停止、循环后重放（后置条件）；跳过补丁（循环不变式）；应用错误补丁（失败见证断言） |
+| Proptest | 真实内核对照独立折叠模型，含应用阶段 panic 展开；真实 `Scene` 对照独立树模型 | 各 256 例通过 |
+| Miri | 边界与三个 panic 位置，独立值恰好释放一次；真实 `Scene` 的固定批次 | 通过；生成式模型测试在 Miri 下跳过 |
+| cargo-fuzz | 只覆盖无 panic 路径 | `read_boundary` 69973 次（`batch_decode` 1191048 次不触及此内核） |
+| Kani | 起点、至多四个补丁与长度符号化；Kani 不建模展开 | 206 checks / 0 failed |
+| Loom | N/A：内核无共享状态与同步原语，`&mut self` 由编译器排除并发 | 不计 PASS；未添加替代运行 |
+
+真实路径测试（`tests/scene_batch_transaction.rs`，测试证据，不是证明）：公开 API 上的真实 `Scene` 对照独立树模型，覆盖陈旧批、空批、首个失败的错误值、每批后的整树比较、失败后场景与版本不变、成功推进一次、同批后续补丁看到先前补丁。四个手动变异都使它失败（各一次，未入 Verus 反例表）：直接在活动场景上应用、不推进版本、首补丁后停止、补丁逆序。
+
+未覆盖：`apply_one` 的补丁语义；`Scene` 的克隆、`validate` 与 `collect_unique_ids`；`apply_batch_at` 中版本赋值与 `*self = next` 的实现级规格；公开 API 到不了的 `VersionExhausted`（由现有 crate 内单元测试检查）；克隆或析构旧场景时的 panic。证据：`evidence/scene-batch-stage-kernel/`、`evidence/scene-batch-stage-chain/report.json`。

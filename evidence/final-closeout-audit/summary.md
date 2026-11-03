@@ -2,8 +2,8 @@
 
 This report is an audit snapshot, not a delivery acceptance record.
 
-- branch: `dev/cp02-probe-correction`
-- commit: `60ee9bc34339c8fce9266ece414cc02ee165999f`
+- branch: `dev/cp02-bitwuzla`
+- commit: `e909ef688ddb5445e1d5eb95fab7a1272f9aa906`
 - explicit item 1-5 completions: 5/5
 - final report materially covers HEAD: `true`
 - missing required evidence: 0

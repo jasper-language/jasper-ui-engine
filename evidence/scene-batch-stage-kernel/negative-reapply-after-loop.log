@@ -1,0 +1,46 @@
+verification results:: 1 verified, 1 errors
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+  --> <repo>/evidence/scene-batch-stage-kernel/negative_reapply_after_loop.rs:11:1
+   |
+11 | fn stage_scene_batch<S,P,E,F:Fn(S,&P)->Result<S,E>>(detached:S,patches:&[P],apply:F)->(result:Result<S,E>)
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: postcondition not satisfied
+  --> <repo>/evidence/scene-batch-stage-kernel/negative_reapply_after_loop.rs:13:17
+   |
+13 |           ensures match result {
+   |  _________________^
+14 | |             Ok(end)=>exists|trace:Seq<S>| #[trigger] batch_stage_trace(apply,detached,patches@,trace)
+15 | |                 && trace.len()==patches@.len()+1 && trace.last()==end,
+16 | |             Err(error)=>exists|trace:Seq<S>| #[trigger] batch_stage_trace(apply,detached,patches@,trace)
+17 | |                 && trace.len()<=patches@.len()
+18 | |                 && apply.ensures((trace.last(),&patches@[trace.len()-1]),Err::<S,E>(error)),
+19 | |         },
+   | |_________^ failed this postcondition
+...
+52 |       if patches.len()>0 {match apply(staged,&patches[0]) {Ok(next)=>staged=next,Err(error)=>return Err(error)}}
+   |                                                                                              ----------------- at this exit
+
+error: postcondition not satisfied
+  --> <repo>/evidence/scene-batch-stage-kernel/negative_reapply_after_loop.rs:13:17
+   |
+13 |           ensures match result {
+   |  _________________^
+14 | |             Ok(end)=>exists|trace:Seq<S>| #[trigger] batch_stage_trace(apply,detached,patches@,trace)
+15 | |                 && trace.len()==patches@.len()+1 && trace.last()==end,
+16 | |             Err(error)=>exists|trace:Seq<S>| #[trigger] batch_stage_trace(apply,detached,patches@,trace)
+17 | |                 && trace.len()<=patches@.len()
+18 | |                 && apply.ensures((trace.last(),&patches@[trace.len()-1]),Err::<S,E>(error)),
+19 | |         },
+   | |_________^ failed this postcondition
+20 | /     {
+21 | |     let mut staged = detached;
+22 | |     let mut index = 0usize;
+23 | |     let ghost mut trace=seq![detached];
+...  |
+53 | |     Ok(staged)
+54 | | }
+   | |_- at the end of the function body
+
+error: aborting due to 2 previous errors
+

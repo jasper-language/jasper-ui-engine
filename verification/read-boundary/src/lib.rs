@@ -758,6 +758,75 @@ pub fn assert_scene_frame_panic(panic_in_source: bool, source_version: u64, toke
     assert_eq!(active, token);
 }
 
+/// Real fold against an independent model: each patch in order, once, up to the first failure;
+/// the result is that failure or the model's fold; the detached value is released exactly once.
+/// 真实折叠对照独立模型：按序每补丁一次直到首个失败；结果是该失败或模型折叠值；独立值恰释放一次。
+pub fn assert_scene_batch_stage(start: u64, patches: &[u8]) {
+    let fails = |patch: u8| patch % 5 == 0;
+    let step = |state: u64, patch: u8| state.wrapping_mul(31).wrapping_add(patch as u64);
+    let live = std::cell::Cell::new(0);
+    let calls = std::cell::Cell::new(0usize);
+    let result = stage_scene_batch(FrameToken::new(&live, start), patches, |staged: FrameToken<'_>, patch: &u8| {
+        assert_eq!(*patch, patches[calls.get()]);
+        calls.set(calls.get() + 1);
+        if fails(*patch) {
+            return Err((staged.1, *patch));
+        }
+        Ok(FrameToken::new(&live, step(staged.1, *patch)))
+    });
+    let mut expected = start;
+    let mut failure = None;
+    let mut applied = 0;
+    while applied < patches.len() && failure.is_none() {
+        if fails(patches[applied]) {
+            failure = Some((expected, patches[applied]));
+        } else {
+            expected = step(expected, patches[applied]);
+        }
+        applied += 1;
+    }
+    assert_eq!(calls.get(), applied);
+    match (result, failure) {
+        (Ok(end), None) => {
+            assert_eq!(end.1, expected);
+            assert_eq!(live.get(), 1);
+        }
+        (Err(error), Some(first)) => {
+            assert_eq!(error, first);
+            assert_eq!(live.get(), 0);
+        }
+        _ => panic!("stage outcome differs from the model"),
+    }
+    assert_eq!(live.get(), 0);
+}
+
+/// A panicking application unwinds out of the real fold: later patches never run, every detached
+/// value is released once, and an active value only assigned after `Ok` stays untouched.
+/// 应用 panic 穿出真实折叠：后续补丁不运行，独立值恰释放一次，仅在 Ok 后赋值的活动值不变。
+#[cfg(test)]
+pub fn assert_scene_batch_panic(start: u64, patches: &[u8], panic_at: usize) {
+    let live = std::cell::Cell::new(0);
+    let calls = std::cell::Cell::new(0usize);
+    let mut active = start;
+    let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let next = stage_scene_batch(FrameToken::new(&live, start), patches, |staged: FrameToken<'_>, patch: &u8| -> Result<FrameToken<'_>, ()> {
+            let index = calls.get();
+            calls.set(index + 1);
+            if index == panic_at {
+                std::panic::resume_unwind(Box::new("patch application"));
+            }
+            Ok(FrameToken::new(&live, staged.1 ^ *patch as u64 ^ 1))
+        });
+        active = next.map_or(active, |value| value.1);
+    }));
+    assert_eq!(outcome.is_err(), panic_at < patches.len());
+    assert_eq!(calls.get(), patches.len().min(panic_at + 1));
+    assert_eq!(live.get(), 0);
+    if outcome.is_err() {
+        assert_eq!(active, start);
+    }
+}
+
 /// Runs the real state against an array model of held buttons kept as (variant rank, code); the
 /// expected drag button is the model's smallest entry, independent of the production set.
 /// 以真实状态对照数组模型（变体序、码）；拖动按钮取模型最小项，不依赖生产集合。
@@ -2039,6 +2108,17 @@ mod kani_checks {
         assert_scene_frame_order(kani::any(), kani::any(), kani::any(), kani::any(), kani::any());
     }
 
+    // Arbitrary start and patches of every length up to four through the real fold; unwinding is
+    // outside Kani's model. 任意起点与至多四个任意补丁穿过真实折叠；展开不在 Kani 模型内。
+    #[kani::proof]
+    #[kani::unwind(6)]
+    fn scene_batch_stage() {
+        let patches: [u8; 4] = kani::any();
+        let len: usize = kani::any();
+        kani::assume(len <= patches.len());
+        assert_scene_batch_stage(kani::any(), &patches[..len]);
+    }
+
     // Real table and Vec storage: fixed operation shape, arbitrary first generation, values and
     // foreign handle. The arbitrary-shape model path runs in Proptest/fuzz; retirement below.
     // 真实表与 Vec 存储：操作形状固定，首代、值与外来句柄任意；任意形状模型路径由 Proptest/fuzz 覆盖。
@@ -2503,6 +2583,12 @@ mod properties {
             assert_scene_frame_order(source_ok, version, version, ready, token);
             assert_scene_frame_panic(panic_in_source, version, token);
         }
+
+        #[test]
+        fn scene_batch_stage_property(start in any::<u64>(), patches in prop::collection::vec(any::<u8>(), 0..16), panic_at in 0usize..18) {
+            assert_scene_batch_stage(start, &patches);
+            assert_scene_batch_panic(start, &patches, panic_at);
+        }
         #[test]
         fn glyph_skew_property(coeffs in any::<[u64; 6]>(), c in any::<u64>(), signs in any::<u8>(), pick in any::<u8>()) {
             let [a, b, _, d, e, f] = coeffs;
@@ -2886,6 +2972,12 @@ mod memory {
             }
             assert_scene_frame_panic(true, version, version);
             assert_scene_frame_panic(false, version, version);
+            assert_scene_batch_stage(version, &[]);
+            assert_scene_batch_stage(version, &[1, 2, 3]);
+            assert_scene_batch_stage(version, &[1, 5, 3]);
+            assert_scene_batch_panic(version, &[1, 2, 3], 0);
+            assert_scene_batch_panic(version, &[1, 2, 3], 2);
+            assert_scene_batch_panic(version, &[1, 2, 3], 3);
         }
         assert_desktop_pointer_path(&[
             (0, 0, 0, 1.5f32.to_bits(), f32::NAN.to_bits(), u64::MAX),
@@ -3097,6 +3189,7 @@ mod schedules {
                 assert_glyph_skew_pure(u64::from_le_bytes([first[0], first[1], first[2], first[3], 0, 0, 0, 0]), first[2]);
                 assert_desktop_timestamp(first[0] as u128);
                 assert_scene_frame_order(first[0] & 1 == 1, first[1] as u64, first[2] as u64, first[3] & 1 == 1, first[0] as u64);
+                assert_scene_batch_stage(first[0] as u64, &first[..(first[1] as usize & 3)]);
                 assert_desktop_pointer_path(&[(1, first[0], first[1] as u16, 0, 0, first[2] as u64), (0, 0, 0, first[3] as u32, 0, 1), (2, first[0], first[1] as u16, 0, 0, 2)]);
                 assert_color_construct(first[0], first[1], first[2], first[3], first[0] ^ first[3]);
                 assert_font_family(&first[..(first[2] as usize & 3)]);

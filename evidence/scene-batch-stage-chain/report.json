@@ -1,0 +1,123 @@
+{
+  "property": "UI-SCENE-BATCH-STAGE-001",
+  "backlog_item": "CP-03",
+  "status": "subproperty_scoped_checks_passed",
+  "cp03_closed": false,
+  "production": {
+    "file": "src/scene.rs",
+    "function": "stage_scene_batch",
+    "file_sha256": "ec429d376674ce5b060e2ed45da46dea901d54907caddc3e94f48e8d16f01a4c",
+    "kernel_sha256": "e177fe8a750730a557b1a1666690a93c907d673aa81d5508d1c67eadeee10708",
+    "caller": "Scene::apply_batch_at"
+  },
+  "specification": "For arbitrary state, patch and error types and an arbitrary closure: a ghost trace shows Ok is the in-order composition of exactly one successful application per patch starting from the detached value, and Err is the error of the first failing application after a successful prefix.",
+  "tools": {
+    "verus": "Version: 0.2026.10.18.7d82994",
+    "z3": "Z3 version 4.16.0 - 64 bit",
+    "kani": "0.68.0",
+    "cbmc": "6.11.0",
+    "nightly": "nightly-2026-10-17"
+  },
+  "config": {
+    "entry": "python3 scripts/verify-ui.py --verus <verus>",
+    "fuzz_seconds": 20,
+    "proptest_cases": 256,
+    "proptest_seed": "12345"
+  },
+  "stages": {
+    "Verus+Z3": {
+      "result": "passed",
+      "verified": 2,
+      "errors": 0,
+      "negative_controls": [
+        {
+          "name": "stop-after-first-patch",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "reapply-after-loop",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "skip-a-patch",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "apply-wrong-patch",
+          "rejected": true,
+          "exit_code": 1
+        }
+      ],
+      "controls_rejected_by": {
+        "stop-after-first-patch": "postcondition",
+        "reapply-after-loop": "postcondition",
+        "skip-a-patch": "loop invariant",
+        "apply-wrong-patch": "assertion at the failure witness"
+      }
+    },
+    "Proptest": {
+      "result": "passed",
+      "harness": [
+        "properties::scene_batch_stage_property",
+        "tests/scene_batch_transaction.rs::batches_match_the_model"
+      ],
+      "includes": "patch application unwinding through the real kernel; the real Scene against an independent tree model"
+    },
+    "Miri": {
+      "result": "passed",
+      "harness": [
+        "memory boundaries with three unwinding positions",
+        "tests/scene_batch_transaction.rs::fixed_batches_commit_whole_or_not_at_all"
+      ],
+      "note": "no leak of detached values; the generated model test is ignored under Miri"
+    },
+    "cargo-fuzz": {
+      "result": "passed",
+      "target": "read_boundary",
+      "completed_runs": [
+        69973,
+        1191048
+      ],
+      "note": "no-panic path only; the two counts are read_boundary and batch_decode, and only read_boundary reaches this kernel"
+    },
+    "Kani": {
+      "result": "passed",
+      "harness": "kani_checks::scene_batch_stage",
+      "checks": 206,
+      "failed": 0,
+      "chain_harnesses_successful": 61,
+      "note": "start value, up to four patches and the length symbolic; Kani has no unwinding model"
+    },
+    "Loom": {
+      "result": "N/A",
+      "reason": "The kernel holds no shared state and no synchronization primitive; Scene::apply_batch_at owns the scene through &mut self, so the compiler excludes concurrent access.",
+      "substitute_evidence": "None added: the compiler's exclusive-borrow rule is the argument. It is not a concurrency proof."
+    }
+  },
+  "real_scene_test": {
+    "test": "tests/scene_batch_transaction.rs",
+    "class": "tested, not proved",
+    "covers": "Real Scene::apply_batch_at through the public API against an independent tree model: stale batches, empty batches, first-failure errors, whole-tree comparison after each batch, unchanged scene and version on failure, one version step on success, and a later patch observing an earlier one in the same batch.",
+    "mutation_checked": "Four manual mutations each made it fail (one run each, not in the Verus control table): applying patches in place on the active scene, not advancing the version, stopping after the first patch, reversing patch order."
+  },
+  "uncovered": [
+    "Patch semantics of apply_one, which the model test checks but no proof covers",
+    "Scene::clone, validate and collect_unique_ids",
+    "The version-assignment and *self = next statements of apply_batch_at: the only evidence is the test above and the fact that apply_detached takes no receiver",
+    "VersionExhausted on the real Scene: not reachable through the public API, covered by the existing in-crate unit test",
+    "Panic while cloning or while dropping the old scene: panic paths were injected only in the kernel harness",
+    "UI-TXN-ATOMIC-001 therefore stays not_verified as a whole-transaction property"
+  ],
+  "chain": {
+    "report": "evidence/validation-chain/report.json",
+    "complete": false,
+    "scoped_checks_complete": true,
+    "acceptance_pending": [
+      "capture-query: original arbitrary two-key Kani obligation is unresolved; single-key harness is diagnostic only"
+    ]
+  },
+  "completion_claimed": false
+}

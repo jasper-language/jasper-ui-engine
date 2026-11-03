@@ -1,0 +1,9 @@
+verification results:: 1 verified, 1 errors
+error: invariant not satisfied at end of loop body
+  --> <repo>/evidence/scene-batch-stage-kernel/negative_skip_a_patch.rs:28:13
+   |
+28 |             trace.len()==index+1, trace.last()==staged,
+   |             ^^^^^^^^^^^^^^^^^^^^
+
+error: aborting due to 1 previous error
+

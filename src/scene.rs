@@ -172,13 +172,17 @@ impl Scene {
                 VersionDecision::Advance(version) => version,
             };
         self.validate()?;
-        let mut next = self.clone();
-        for patch in patches {
-            next.apply_one(patch.clone())?;
-        }
+        let mut next = stage_scene_batch(self.clone(), patches, Self::apply_detached)?;
         next.version = next_version;
         *self = next;
         Ok(())
+    }
+
+    /// A plain function with no receiver, so staging cannot reach the active scene.
+    /// 无接收者的普通函数，暂存阶段无法触及活动场景。
+    fn apply_detached(mut staged: Scene, patch: &ScenePatch) -> Result<Scene, SceneError> {
+        staged.apply_one(patch.clone())?;
+        Ok(staged)
     }
 
     fn apply_one(&mut self, patch: ScenePatch) -> Result<(), SceneError> {
@@ -335,6 +339,28 @@ fn decide_scene_version(current: u64, expected: u64, empty: bool) -> VersionDeci
     }
 }
 // END VERIFIED TRANSACTION GATE KERNEL
+
+// BEGIN VERIFIED SCENE BATCH STAGE KERNEL
+/// Folds the patches over a detached value in order, each exactly once, stopping at the first
+/// failure. The value moves through the fold, so a failure leaves nothing to undo or to reuse.
+/// 按序把补丁折叠到独立值上，每个恰好一次，遇首个失败即停；值随折叠移动，失败后无可撤销也无可复用。
+fn stage_scene_batch<S, P, E>(
+    detached: S,
+    patches: &[P],
+    apply: impl Fn(S, &P) -> Result<S, E>,
+) -> Result<S, E> {
+    let mut staged = detached;
+    let mut index = 0usize;
+    while index < patches.len() {
+        match apply(staged, &patches[index]) {
+            Ok(next) => staged = next,
+            Err(error) => return Err(error),
+        }
+        index += 1;
+    }
+    Ok(staged)
+}
+// END VERIFIED SCENE BATCH STAGE KERNEL
 
 /// Traverses iteratively so identity validation itself does not recurse.
 /// 迭代遍历，身份校验本身不递归；不代表后续布局/克隆已具备深度资源限制。
