@@ -2271,6 +2271,21 @@ pub proof fn handle_stale_stays_dead(before: Seq<u32>, after: Seq<u32>, h: Handl
     requires handle_advanced(before, after), (h.index as int) < before.len(), h.generation < before[h.index as int],
     ensures !handle_live_in(after, h),
 { assert(before[h.index as int] <= after[h.index as int]); }
+pub open spec fn handle_status_in(slots: Seq<u32>, h: Handle) -> HandleStatus {
+    if !((h.index as int) < slots.len() && h.generation % 2 == 1) { HandleStatus::Invalid }
+    else if h.generation == slots[h.index as int] { HandleStatus::Live }
+    else if h.generation < slots[h.index as int] { HandleStatus::Stale }
+    else { HandleStatus::Invalid }
+}
+/// A stale handle stays stale across any sequence of advancing steps.
+pub proof fn handle_stale_stays_stale(before: Seq<u32>, after: Seq<u32>, h: Handle)
+    requires handle_advanced(before, after), handle_status_in(before, h) == HandleStatus::Stale,
+    ensures handle_status_in(after, h) == HandleStatus::Stale,
+{ assert(before[h.index as int] <= after[h.index as int]); }
+/// Only a live handle reads as live.
+pub proof fn handle_status_live_exact(slots: Seq<u32>, h: Handle)
+    ensures (handle_status_in(slots, h) == HandleStatus::Live) == handle_live_in(slots, h),
+{}
 pub closed spec fn handle_table_slots<T>(t: HandleTable<T>) -> Seq<u32> { t.allocator.slots@ }
 pub closed spec fn handle_table_values<T>(t: HandleTable<T>) -> Seq<Option<T>> { t.values@ }
 pub closed spec fn handle_table_capacity<T>(t: HandleTable<T>) -> u32 { t.allocator.capacity }
@@ -2329,21 +2344,33 @@ ALLOC_REUSE_P = """                proof {
 ALLOC_NEW = """                if self.slots.len() >= self.capacity as usize {
                     return None;
                 }
+                // The free list is empty here, so this room covers every later release.
+                // 此处空闲表为空，这份空间足以容纳此后的每次释放，释放因此从不分配。
+                if !handle_try_reserve(&mut self.slots, 1)
+                    || !handle_try_reserve(&mut self.free, self.slots.len() + 1)
+                {
+                    return None;
+                }
                 let index = self.slots.len() as u32;
                 let generation = self.first_generation;
                 self.slots.push(generation);
                 Some(Handle { index, generation })
 """
-ALLOC_NEW_P = """                proof { assert(before_free.len() == 0); }
-                if self.slots.len() >= self.capacity as usize {
-                    proof {
-                        assert forall|i: int| 0 <= i < before_slots.len() implies !handle_reusable(#[trigger] before_slots[i]) by {
-                            if handle_reusable(before_slots[i]) {
-                                assert(self.slots@[i] == before_slots[i]);
-                                let k = choose|k: int| 0 <= k < self.free@.len() && #[trigger] self.free@[k] as int == i;
-                            }
+ALLOC_NEW_P = """                proof {
+                    assert(before_free.len() == 0);
+                    assert forall|i: int| 0 <= i < before_slots.len() implies !handle_reusable(#[trigger] before_slots[i]) by {
+                        if handle_reusable(before_slots[i]) {
+                            assert(self.slots@[i] == before_slots[i]);
+                            let k = choose|k: int| 0 <= k < self.free@.len() && #[trigger] self.free@[k] as int == i;
                         }
                     }
+                }
+                if self.slots.len() >= self.capacity as usize {
+                    return None;
+                }
+                if !handle_try_reserve(&mut self.slots, 1)
+                    || !handle_try_reserve(&mut self.free, self.slots.len() + 1)
+                {
                     return None;
                 }
                 let index = self.slots.len() as u32;
@@ -2422,7 +2449,15 @@ RELEASE_WRITE_P = """        let ghost before_slots = self.slots@;
         }
         true
 """
-TABLE_INSERT = """        match self.allocator.allocate() {
+TABLE_INSERT = """        // Reserved before the allocator commits, so failure leaves no live slot without a value.
+        // 先于分配器提交预留，失败时不会留下无值的存活槽位。
+        if self.allocator.free.is_empty()
+            && self.allocator.slots.len() < self.allocator.capacity as usize
+            && !handle_try_reserve(&mut self.values, 1)
+        {
+            return Err(value);
+        }
+        match self.allocator.allocate() {
             None => Err(value),
             Some(handle) => {
                 let index = handle.index as usize;
@@ -2437,6 +2472,12 @@ TABLE_INSERT = """        match self.allocator.allocate() {
 """
 TABLE_INSERT_P = """        let ghost before_values = self.values@;
         let ghost before_slots = self.allocator.slots@;
+        if self.allocator.free.is_empty()
+            && self.allocator.slots.len() < self.allocator.capacity as usize
+            && !handle_try_reserve(&mut self.values, 1)
+        {
+            return Err(value);
+        }
         match self.allocator.allocate() {
             None => Err(value),
             Some(handle) => {
@@ -2510,6 +2551,22 @@ KERNELS["handle"] = {
     ensures result == handle_live_in(handle_slots(*self), handle),
     {
         let index"""),
+  ("""fn handle_try_reserve<U>(values: &mut Vec<U>, additional: usize) -> bool {
+""","""#[verifier::external_body]
+fn handle_try_reserve<U>(values: &mut Vec<U>, additional: usize) -> (result: bool)
+    ensures final(values)@ == old(values)@,
+{
+"""),
+  ("""    pub fn status(&self, handle: Handle) -> HandleStatus {
+        let index""","""    pub fn status(&self, handle: Handle) -> (result: HandleStatus)
+    ensures result == handle_status_in(handle_slots(*self), handle),
+    {
+        let index"""),
+  ("""    pub fn status(&self, handle: Handle) -> HandleStatus {
+        self.allocator""","""    pub fn status(&self, handle: Handle) -> (result: HandleStatus)
+    ensures result == handle_status_in(handle_table_slots(*self), handle),
+    {
+        self.allocator"""),
   ("""pub fn allocate(&mut self) -> Option<Handle> {
 ""","""pub fn allocate(&mut self) -> (result: Option<Handle>)
     requires handle_wf(*old(self)),
@@ -2523,7 +2580,6 @@ KERNELS["handle"] = {
                     && handle_reusable(handle_slots(*old(self))[h.index as int]) && handle_slots(*old(self))[h.index as int] < h.generation)
                 && (forall|i: int| 0 <= i < handle_slots(*old(self)).len() && i != h.index as int ==> #[trigger] handle_slots(*final(self))[i] == handle_slots(*old(self))[i]),
             None => handle_slots(*final(self)) == handle_slots(*old(self))
-                && handle_slots(*old(self)).len() == handle_capacity(*old(self)) as int
                 && (forall|i: int| 0 <= i < handle_slots(*old(self)).len() ==> !handle_reusable(#[trigger] handle_slots(*old(self))[i])),
         },
 {
@@ -2592,12 +2648,15 @@ KERNELS["handle"] = {
 {"""),
   (TABLE_REMOVE, TABLE_REMOVE_P),
  ],
- "function_count":14,"depends":["handle-type"],"evidence":"handle-kernel",
- "scope":"Generation allocator and generic handle table over all states with the well-formed invariant: generations only rise and never wrap, odd means live, the free list is exactly the reusable slots without duplicates, a full allocator has no reusable slot, stale/foreign/repeated releases change nothing, a released generation stays dead, and a table value is reachable only through its live handle. Allocation failure of Vec growth (abort) and the future FFI surface are outside this proof.",
+ "function_count":16,"depends":["handle-type"],"evidence":"handle-kernel",
+ "scope":"Generation allocator and generic handle table over all states with the well-formed invariant: generations only rise and never wrap, odd means live, the free list is exactly the reusable slots without duplicates, a refused allocation changes nothing and leaves no reusable slot, stale/foreign/repeated releases change nothing, a released generation stays dead, and a table value is reachable only through its live handle, and status is exactly live/stale/invalid with stale preserved by advancing. Reservation is an external_body assumption (contents unchanged); Vec capacity, hence release never allocating, is tested under a failing allocator rather than proved. The future FFI surface is outside this proof.",
  "mutations":[("reuse-without-advance",ALLOC_REUSE_P,ALLOC_REUSE.replace("self.slots[index as usize] + 1;","self.slots[index as usize];")),
               ("release-ignores-generation","            && handle_generation_is_live(handle.generation)\n            && self.slots[index] == handle.generation","            && handle_generation_is_live(handle.generation)"),
               ("retired-slot-reused",RELEASE_WRITE_P,RELEASE_WRITE.replace("        if generation != HANDLE_GENERATION_RETIRED {\n            self.free.push(handle.index);\n        }\n","        self.free.push(handle.index);\n")),
-              ("capacity-ignored","                if self.slots.len() >= self.capacity as usize {\n                    proof","                if self.slots.len() > self.capacity as usize {\n                    proof"),
+              ("capacity-ignored","                if self.slots.len() >= self.capacity as usize {\n                    return None;","                if self.slots.len() > self.capacity as usize {\n                    return None;"),
+              ("status-even-counts-stale","index >= self.slots.len() || !handle_generation_is_live(handle.generation)","index >= self.slots.len()"),
+              ("status-future-counts-stale","handle.generation < current","handle.generation != current"),
+              ("reserve-reports-failure-after-commit","        match self.allocator.allocate() {\n            None => Err(value),","        match self.allocator.allocate() {\n            None => { self.values.pop(); Err(value) }"),
               ("remove-keeps-value",TABLE_REMOVE_P,TABLE_REMOVE.replace("self.values[handle.index as usize].take()","None"))],
 }
 

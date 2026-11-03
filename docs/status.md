@@ -823,3 +823,10 @@ GPU 直接绘制到宿主 `TextureView` 后，`needs_frame` 在宿主 `Queue::pr
 新增 `handle` 模块：`Handle`（`repr(C)`，8 字节）、`HandleAllocator`、`HandleTable<T>`。这是 ABI 草案第 3 节的 Rust 实现，尚无 FFI 导出，也不冻结 ABI，且未接入 `Engine`。
 实测：`tests/handle_table.rs` 5/5；性质与证明范围见 `verification.md` 的 UI-HANDLE-001。
 未完成：`Vec` 增长失败仍中止进程；保留/引用规则、窗口销毁关系、跨进程句柄空间未决定；FFI 导出未开始。
+
+## 2026-11-03 UI36：句柄状态分类与增长失败可恢复（FFI 前置）
+
+`HandleAllocator`/`HandleTable` 新增 `status` → `HandleStatus { Live, Stale, Invalid }`，为 ABI 的 StaleHandle/InvalidHandle 区分提供依据。槽位、空闲表与值表改为可失败增长：分配失败时 `allocate` 返回 `None`、`insert` 交还值，状态不变；空闲表在追加槽位时一次预留，`release`/`remove` 与槽位复用不再分配。
+实测与证明范围见 `verification.md` 的 UI-HANDLE-001。
+
+未完成：错误码与 panic 屏障、FFI 导出、保留/引用规则、窗口销毁关系、跨进程句柄空间。`Engine` 尚未经句柄表寻址。

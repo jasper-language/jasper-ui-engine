@@ -99,7 +99,8 @@ stages = [
                ["cargo", "+" + a.nightly, "miri", "test", "--locked", "--no-default-features", "--test", "canvas_import"],
                ["cargo", "+" + a.nightly, "miri", "test", "--locked", "--no-default-features", "--test", "resource_gate"],
                ["cargo", "+" + a.nightly, "miri", "test", "--locked", "--no-default-features", "--test", "bytes_slot"],
-               ["cargo", "+" + a.nightly, "miri", "test", "--locked", "--no-default-features", "--test", "handle_table"]]),
+               ["cargo", "+" + a.nightly, "miri", "test", "--locked", "--no-default-features", "--test", "handle_table"],
+               ["cargo", "+" + a.nightly, "miri", "test", "--locked", "--no-default-features", "--test", "handle_alloc_failure"]]),
     ("cargo-fuzz", [["cargo", "fuzz", "--version"]] + [
         ["cargo", "+" + a.nightly, "fuzz", "run", target, str(corpora / target), "--",
          "-max_total_time=" + str(a.fuzz_seconds), "-max_len=4096", "-rss_limit_mb=1024",
@@ -167,8 +168,8 @@ for stage in report["stages"]:
     output = log_path.read_text()
     required = {
         "Proptest": [("test result: ok. 2 passed", 3), ("test result: ok. 3 passed", 1), ("test result: ok. 50 passed", 1), ("test result: ok. 8 passed", 1)],
-        "Miri": [("test result: ok. 2 passed", 4), ("test result: ok. 3 passed", 1), ("test result: ok. 5 passed", 1)],
-        "Kani": [("VERIFICATION:- SUCCESSFUL", 58)],
+        "Miri": [("test result: ok. 2 passed", 4), ("test result: ok. 3 passed", 2), ("test result: ok. 6 passed", 1)],
+        "Kani": [("VERIFICATION:- SUCCESSFUL", 59)],
         "Loom": [("test result: ok. 1 passed", 1)],
     }
     matched = all(output.count(token) >= count for token, count in required.get(stage["name"], []))

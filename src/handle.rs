@@ -11,6 +11,16 @@ pub struct Handle {
     pub generation: u32,
 }
 
+/// What a handle means to its table: live, issued earlier and since released, or never
+/// issued by this slot. Stale generations stay stale; see `verification.md`.
+/// 句柄对其表的含义：存活、曾签发且已释放、或此槽位从未签发。过期代数永远过期。
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum HandleStatus {
+    Live,
+    Stale,
+    Invalid,
+}
+
 /// Slot generations only move upward: odd is live, even is vacant, and the retired value
 /// is permanently vacant, so generations never wrap.
 /// 槽位代数只增不减：奇数存活、偶数空闲，退役值永久空闲，代数不回绕。
@@ -34,6 +44,12 @@ pub const HANDLE_GENERATION_RETIRED: u32 = 0xFFFF_FFFE;
 
 fn handle_generation_is_live(generation: u32) -> bool {
     generation & 1 == 1
+}
+
+/// Reports allocation failure instead of aborting; the contents are untouched either way.
+/// 分配失败时返回 false 而不中止进程；两种情况下内容都不变。
+fn handle_try_reserve<U>(values: &mut Vec<U>, additional: usize) -> bool {
+    values.try_reserve(additional).is_ok()
 }
 
 impl HandleAllocator {
@@ -74,8 +90,27 @@ impl HandleAllocator {
             && self.slots[index] == handle.generation
     }
 
+    /// A generation odd and below the slot's current one was issued earlier, perhaps by a
+    /// previous run that `with_first_generation` skipped past.
+    /// 低于槽位当前代数的奇数代曾被签发，也可能来自 `with_first_generation` 越过的上次运行。
+    pub fn status(&self, handle: Handle) -> HandleStatus {
+        let index = handle.index as usize;
+        if index >= self.slots.len() || !handle_generation_is_live(handle.generation) {
+            return HandleStatus::Invalid;
+        }
+        let current = self.slots[index];
+        if handle.generation == current {
+            HandleStatus::Live
+        } else if handle.generation < current {
+            HandleStatus::Stale
+        } else {
+            HandleStatus::Invalid
+        }
+    }
+
     /// Reuses a vacant slot under a newer generation or appends one within capacity.
-    /// 以更新的代数复用空闲槽位，或在容量内追加；已满且无可复用槽位时拒绝。
+    /// `None` means no slot can be issued: full, or storage could not grow.
+    /// 以更新的代数复用空闲槽位，或在容量内追加；已满或存储无法增长时返回 `None`，且不改变状态。
     pub fn allocate(&mut self) -> Option<Handle> {
         match self.free.pop() {
             Some(index) => {
@@ -85,6 +120,13 @@ impl HandleAllocator {
             }
             None => {
                 if self.slots.len() >= self.capacity as usize {
+                    return None;
+                }
+                // The free list is empty here, so this room covers every later release.
+                // 此处空闲表为空，这份空间足以容纳此后的每次释放，释放因此从不分配。
+                if !handle_try_reserve(&mut self.slots, 1)
+                    || !handle_try_reserve(&mut self.free, self.slots.len() + 1)
+                {
                     return None;
                 }
                 let index = self.slots.len() as u32;
@@ -132,9 +174,21 @@ impl<T> HandleTable<T> {
         self.allocator.is_live(handle)
     }
 
-    /// A full table returns the value to the caller instead of dropping it.
-    /// 表满时把值交还调用方，不丢弃。
+    pub fn status(&self, handle: Handle) -> HandleStatus {
+        self.allocator.status(handle)
+    }
+
+    /// A table that is full or cannot grow returns the value to the caller instead of dropping it.
+    /// 表满或无法增长时把值交还调用方，不丢弃。
     pub fn insert(&mut self, value: T) -> Result<Handle, T> {
+        // Reserved before the allocator commits, so failure leaves no live slot without a value.
+        // 先于分配器提交预留，失败时不会留下无值的存活槽位。
+        if self.allocator.free.is_empty()
+            && self.allocator.slots.len() < self.allocator.capacity as usize
+            && !handle_try_reserve(&mut self.values, 1)
+        {
+            return Err(value);
+        }
         match self.allocator.allocate() {
             None => Err(value),
             Some(handle) => {

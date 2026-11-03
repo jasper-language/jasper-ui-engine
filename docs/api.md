@@ -513,7 +513,9 @@ correlation metadata and provides no independent authorization.
 ## Generation-checked handles
 
 `handle::HandleTable<T>` stores owned values behind `handle::Handle { index, generation }`.
-`insert` returns a handle or gives the value back when the host-chosen capacity is full;
+`insert` returns a handle or gives the value back when the host-chosen capacity is full or
+storage cannot grow (allocation failure is reported, not fatal, and release never allocates);
+`status` separates `Live`, `Stale` (issued earlier) and `Invalid` (never issued by that slot);
 `get`, `get_mut` and `remove` reject stale, foreign and repeated handles without any state
 change. Generations only rise and an exhausted slot retires instead of wrapping. This is
 the Rust side of the native handle design; no FFI is exported and no ABI is frozen.

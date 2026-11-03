@@ -444,6 +444,20 @@ pub type DesktopPointerStep = (u8, u8, u16, u32, u32, u64);
 /// 句柄表的独立数组模型：存活值与每槽最新代数；全部历史句柄都必须保持正确的存活判定。
 pub type HandleStep = (u8, u8, u32);
 
+fn handle_status_oracle(slots: &[Option<(u32, Option<u32>)>], handle: Handle) -> HandleStatus {
+    let current = match slots.get(handle.index as usize) {
+        Some(Some((generation, _))) => *generation,
+        _ => return HandleStatus::Invalid,
+    };
+    if handle.generation % 2 == 0 || handle.generation > current {
+        HandleStatus::Invalid
+    } else if handle.generation == current {
+        HandleStatus::Live
+    } else {
+        HandleStatus::Stale
+    }
+}
+
 pub fn assert_handle_path(capacity: u32, first: u32, steps: &[HandleStep]) {
     const SLOTS: usize = 4;
     const HISTORY: usize = 8;
@@ -520,6 +534,7 @@ pub fn assert_handle_path(capacity: u32, first: u32, steps: &[HandleStep]) {
                     && foreign.generation % 2 == 1
                     && matches!(slots[foreign.index as usize], Some((generation, _)) if generation == foreign.generation);
                 assert_eq!(table.is_live(foreign), live);
+                assert_eq!(table.status(foreign), handle_status_oracle(&slots, foreign));
                 if let Some(held) = table.get_mut(foreign) {
                     assert!(live);
                     *held = held.wrapping_add(1);
@@ -537,6 +552,7 @@ pub fn assert_handle_path(capacity: u32, first: u32, steps: &[HandleStep]) {
             };
             assert_eq!(table.get(handle).copied(), expected);
             assert_eq!(table.is_live(handle), expected.is_some());
+            assert_eq!(table.status(handle), handle_status_oracle(&slots, handle));
             seen += 1;
         }
     }
@@ -600,6 +616,37 @@ pub fn assert_handle_allocator_path(first: u32, index: u32, generation: u32) {
     }
 }
 
+/// Status through both types: live, then stale once released, against an arbitrary foreign handle.
+/// 经两种类型核对状态：存活，释放后过期；外来句柄任意。
+pub fn assert_handle_status_path(first: u32, index: u32, generation: u32) {
+    let Some(mut allocator) = HandleAllocator::with_first_generation(1, first) else {
+        return;
+    };
+    let foreign = Handle { index, generation };
+    let expected = |current: u32| {
+        if index != 0 || generation & 1 == 0 || generation > current {
+            HandleStatus::Invalid
+        } else if generation == current {
+            HandleStatus::Live
+        } else {
+            HandleStatus::Stale
+        }
+    };
+    let live = allocator.allocate().unwrap();
+    assert_eq!(allocator.status(live), HandleStatus::Live);
+    assert_eq!(allocator.status(foreign), expected(first));
+    assert!(allocator.release(live));
+    assert_eq!(allocator.status(live), HandleStatus::Stale);
+    assert_eq!(allocator.status(foreign), if generation & 1 == 1 && index == 0 && generation <= first { HandleStatus::Stale } else { HandleStatus::Invalid });
+
+    let mut table = HandleTable::new(1);
+    let held = table.insert(0u8).unwrap();
+    assert_eq!(table.status(held), HandleStatus::Live);
+    assert_eq!(table.status(foreign), expected(1));
+    table.remove(held);
+    assert_eq!(table.status(held), HandleStatus::Stale);
+}
+
 /// A slot about to exhaust retires permanently and never reissues, whatever the other slots do.
 /// 即将耗尽的槽位永久退役、不再签发；全零句柄与非法首代永远被拒。
 pub fn assert_handle_retirement(index_probe: u32) {
@@ -618,6 +665,10 @@ pub fn assert_handle_retirement(index_probe: u32) {
     assert!(allocator.allocate().is_none());
     assert!(!allocator.is_live(handle));
     assert!(!allocator.is_live(Handle { index: 0, generation: HANDLE_GENERATION_RETIRED }));
+    assert_eq!(allocator.status(handle), HandleStatus::Stale);
+    assert_eq!(allocator.status(Handle { index: 0, generation: 0 }), HandleStatus::Invalid);
+    assert_eq!(allocator.status(Handle { index: 0, generation: HANDLE_GENERATION_RETIRED }), HandleStatus::Invalid);
+    assert_eq!(allocator.status(Handle { index: 0, generation: u32::MAX }), HandleStatus::Invalid);
     assert_eq!(allocator.capacity(), 1);
 }
 
@@ -1915,6 +1966,13 @@ mod kani_checks {
     }
 
     #[kani::proof]
+    #[kani::unwind(4)]
+    #[kani::solver(kissat)]
+    fn handle_status_path() {
+        assert_handle_status_path(kani::any(), kani::any(), kani::any());
+    }
+
+    #[kani::proof]
     #[kani::unwind(3)]
     fn handle_retirement() {
         assert_handle_retirement(kani::any());
@@ -2333,6 +2391,8 @@ mod properties {
             assert_handle_retirement(probe);
             assert_handle_allocator_path(first, probe % 3, first);
             assert_handle_allocator_path(first | 1, 0, first | 1);
+            assert_handle_status_path(first, probe % 3, first);
+            assert_handle_status_path(first | 1, near % 2, near | 1);
             assert_handle_fixed_path(first, probe % 3, first, near as u8, 9);
             assert_handle_fixed_path(first | 1, near % 3, first | 1, near as u8, 9);
         }
@@ -2537,6 +2597,9 @@ mod memory {
         assert_handle_path(1, HANDLE_GENERATION_RETIRED - 1, &[(0, 0, 5), (1, 0, 0), (0, 0, 6), (2, 0, HANDLE_GENERATION_RETIRED)]);
         assert_handle_path(1, HANDLE_GENERATION_RETIRED, &[(0, 0, 5)]);
         assert_handle_retirement(u32::MAX);
+        assert_handle_status_path(3, 0, 1);
+        assert_handle_status_path(3, 0, 3);
+        assert_handle_status_path(3, 0, 5);
         assert_handle_fixed_path(1, 0, 1, 5, 6);
         assert_handle_fixed_path(1, 1, 2, 5, 6);
         assert_handle_fixed_path(HANDLE_GENERATION_RETIRED - 1, 1, HANDLE_GENERATION_RETIRED - 1, 5, 6);

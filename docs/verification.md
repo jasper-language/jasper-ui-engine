@@ -938,8 +938,10 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 
 ## UI-HANDLE-001：代际句柄分配器与句柄表（2026-11-03）
 
-`HandleAllocator` 与泛型 `HandleTable<T>` 全部方法（`new`、`with_first_generation`、`capacity`、`is_live`、`allocate`、`release`、`insert`、`get`、`get_mut`、`remove`）完成实现级 Verus 证明，对所有满足不变式的状态成立：代数只增不减且不回绕；奇数当且仅当存活；空闲表恰为可复用槽位且无重复；分配失败时已满且没有可复用槽位；过期、外来与重复释放不改变状态；被释放的代数此后永不复活（`handle_stale_stays_dead`）；表中的值只能经其存活句柄取到，其他槽位不受影响。五个反例被拒：复用不递增、释放不查代数、退役槽位复用、无视容量、移除不取值。
+`HandleAllocator` 与泛型 `HandleTable<T>` 全部方法（`new`、`with_first_generation`、`capacity`、`is_live`、`status`、`allocate`、`release`、`insert`、`get`、`get_mut`、`remove`）完成实现级 Verus 证明，对所有满足不变式的状态成立：代数只增不减且不回绕；奇数当且仅当存活；空闲表恰为可复用槽位且无重复；分配返回 `None` 时状态不变且没有可复用槽位；过期、外来与重复释放不改变状态；被释放的代数此后永不复活（`handle_stale_stays_dead`）；表中的值只能经其存活句柄取到，其他槽位不受影响；`status` 恰为存活、过期（奇数且低于槽位当前代数）、无效三分，过期状态在任意推进下保持（`handle_stale_stays_stale`）。八个反例被拒：复用不递增、释放不查代数、退役槽位复用、无视容量、偶数代算过期、未来代算过期、插入失败路径改动值表、移除不取值。
 
-后续阶段用独立数组模型对照真实实现：Proptest 与 fuzz 覆盖任意操作序列（含临近耗尽的首代与外来句柄）并在每步核对全部历史句柄；Miri 覆盖边界与自有值恰好释放一次；Kani 三个 harness：分配器转换（首代与外来句柄任意，容量 1）、表路径（值与外来句柄任意，首代为 1，因首代只进入分配器）、退役路径。Kani 的操作形状是固定的，任意形状的路径由 Verus 不变式与 Proptest/fuzz 承担。Loom 只验证句柄表可作为独占值在线程内使用：这些类型没有同步原语，共享修改由 `&mut` 排除。
+后续阶段用独立数组模型对照真实实现：Proptest 与 fuzz 覆盖任意操作序列（含临近耗尽的首代与外来句柄）并在每步核对全部历史句柄；Miri 覆盖边界与自有值恰好释放一次；Kani 四个 harness：分配器转换（首代与外来句柄任意，容量 1）、表路径（值与外来句柄任意，首代为 1，因首代只进入分配器）、退役路径、状态路径（首代与外来句柄任意，经分配器与表两种类型）。状态断言单列 harness，是因为并入分配器转换后 CBMC 超过 30 分钟未结束，拆开后两者分别约 163 秒与 30 秒；这是求解成本的拆分，范围未缩小。Kani 的操作形状是固定的，任意形状的路径由 Verus 不变式与 Proptest/fuzz 承担。Loom 只验证句柄表可作为独占值在线程内使用：这些类型没有同步原语，共享修改由 `&mut` 排除。
 
-未覆盖：`Vec` 增长失败（中止进程，不是可恢复错误，FFI 冻结前须处理）；FFI 导出与跨进程句柄空间。证据：`evidence/handle-kernel/`、`evidence/validation-chain/report.json`。
+增长失败（UI36）：槽位、空闲表与值表的增长都经 `handle_try_reserve`（`Vec::try_reserve`）。该函数在 Verus 中是 `external_body`，只假设「内容不变」，属于对标准库的信任边界；Verus 不追踪 `Vec` 容量，所以「`None` 只在已满或确实无法增长时出现」与「释放从不分配」不是 Verus 结论。前者由模型对照承担（Proptest/fuzz/Kani 中分配不失败，模型要求 `None` 当且仅当已满且无可复用槽位）；后者由 `tests/handle_alloc_failure.rs`（含 Miri）以按线程配给的失败分配器实测：分配额度为 0 时 33 个槽位全部释放并复用，值、槽位、空闲表逐个失败时状态不变、值交还调用方。去掉空闲表预留的变异在这里会使进程中止，被该测试抓到（手动一次，未入 Verus 反例表）。Kani 不建模分配失败。
+
+未覆盖：`Handle` 与 `HandleStatus` 以外的错误码映射；FFI 导出与跨进程句柄空间；预留假设以外的标准库行为。证据：`evidence/handle-kernel/`、`evidence/validation-chain/report.json`。

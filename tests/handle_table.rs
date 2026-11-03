@@ -1,7 +1,9 @@
 //! Public-API behavior of generation-checked handles.
 //! 代际句柄的公开接口行为。
 
-use jasper_ui_engine::handle::{Handle, HandleAllocator, HandleTable, HANDLE_GENERATION_RETIRED};
+use jasper_ui_engine::handle::{
+    Handle, HandleAllocator, HandleStatus, HandleTable, HANDLE_GENERATION_RETIRED,
+};
 
 #[test]
 fn handle_layout_is_two_fixed_width_words() {
@@ -45,6 +47,32 @@ fn stale_foreign_and_repeated_handles_are_rejected_without_effect() {
         assert_eq!(table.remove(foreign), None);
     }
     assert_eq!(table.get(second), Some(&"b"));
+}
+
+#[test]
+fn status_separates_live_stale_and_never_issued() {
+    let mut table = HandleTable::with_first_generation(2, 3).unwrap();
+    let first = table.insert(1u8).unwrap();
+    assert_eq!(table.status(first), HandleStatus::Live);
+    table.remove(first).unwrap();
+    assert_eq!(table.status(first), HandleStatus::Stale);
+    let reused = table.insert(2).unwrap();
+    assert_eq!(table.status(reused), HandleStatus::Live);
+    assert_eq!(table.status(first), HandleStatus::Stale);
+
+    let at = |index, generation| Handle { index, generation };
+    // A generation this run skipped past counts as stale, not as forged.
+    // 本次运行越过的代数算过期，不算伪造。
+    assert_eq!(table.status(at(0, 1)), HandleStatus::Stale);
+    for never in [
+        at(0, 0),
+        at(0, 4),
+        at(0, reused.generation + 2),
+        at(1, 3),
+        at(u32::MAX, 3),
+    ] {
+        assert_eq!(table.status(never), HandleStatus::Invalid);
+    }
 }
 
 #[test]
