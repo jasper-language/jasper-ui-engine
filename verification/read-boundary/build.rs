@@ -74,6 +74,14 @@ fn main() {
             &["GLYPH SKEW KERNEL"][..],
         ),
         (
+            "../../src/native_adapter/native_scene.rs",
+            &[
+                "SCENE UPDATE ERROR TYPE KERNEL",
+                "SCENE FRAME COMPLETION KERNEL",
+                "SCENE FRAME ORDER KERNEL",
+            ][..],
+        ),
+        (
             "../../src/resource.rs",
             &["RESOURCE GATE KERNEL", "BYTES SLOT KERNEL"][..],
         ),

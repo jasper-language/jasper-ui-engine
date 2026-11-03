@@ -14,7 +14,7 @@ KEYS = (
     'ui-view-slot', 'ui-view-read-borrow', 'ui-view-write-borrow', 'ui-update-next',
     'native-component-version', 'native-activation-admission', 'component-update-support',
     'component-update-admission',
-    'scene-work-capacity', 'scene-update-admission', 'scene-frame-completion', 'source-insert-index',
+    'scene-work-capacity', 'scene-update-admission', 'scene-frame-completion', 'scene-frame-order', 'source-insert-index',
     'text-display-version', 'text-display-close', 'scene-host-close', 'cpu-frame-bytes', 'capture-cancel-policy', 'native-host-context', 'scene-snapshot-identity', 'scene-host-identity', 'semantic-role-tag', 'native-backend-frame-import',
 )
 
@@ -39,21 +39,24 @@ def check(root):
             evidence = report_path.parent
             positive = registry['summary']((evidence / 'verus.log').read_text())
             controls_match = True
-            for label, pattern, replacement in config['mutations']:
+            mutations = [(*item, 'postcondition not satisfied') for item in config['mutations']] + [
+                (*item, 'fails to satisfy `callee.requires(args)`')
+                for item in config.get('precondition_mutations', [])]
+            for label, pattern, replacement, refusal in mutations:
                 negative_source = evidence / ('negative_' + label.replace('-', '_') + '.rs')
                 negative_log = (evidence / ('negative-' + label + '.log')).read_text()
                 stats = registry['summary'](negative_log)
                 controls_match &= (proof.count(pattern) == 1
                     and negative_source.read_text() == proof.replace(pattern, replacement, 1)
                     and stats is not None and stats[1] > 0
-                    and 'postcondition not satisfied' in negative_log)
+                    and refusal in negative_log)
             matches = {
                 'proved_report': report['status'] == 'proved' and report['exit_code'] == 0,
                 'property': report['property'] == config['property'],
                 'negative_controls': report.get('negative_control_rejected') is True
-                    and len(report.get('negative_controls', [])) == len(config['mutations'])
+                    and len(report.get('negative_controls', [])) == len(mutations)
                     and {item['name'] for item in report.get('negative_controls', [])}
-                        == {item[0] for item in config['mutations']}
+                        == {item[0] for item in mutations}
                     and all(item.get('rejected') is True and item.get('exit_code') == 1
                             for item in report.get('negative_controls', [])),
                 'body': digest(extracted[key][0]) == report['kernel_sha256'],

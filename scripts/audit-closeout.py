@@ -190,6 +190,8 @@ PROOF_BACKLOG = {
         "evidence": [
             "evidence/native-scene-candidate-transaction-pending/report.json",
             "evidence/scene-frame-completion-kernel/report.json",
+            "evidence/scene-frame-order-kernel/report.json",
+            "evidence/scene-frame-order-chain/report.json",
         ],
     },
     "CP-04": {

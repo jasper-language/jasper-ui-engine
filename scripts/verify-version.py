@@ -2052,6 +2052,39 @@ KERNELS["scene-frame-completion"] = {
     "mutations":[("ignore-source-version","if !source_ok || source_version!=next {return Err(SceneUpdateError::SourceRejected);}","if !source_ok {return Err(SceneUpdateError::SourceRejected);}"),("commit-without-candidate","if !candidate_ready {return Err(SceneUpdateError::NativeRejected);}","if false {return Err(SceneUpdateError::NativeRejected);}")],
 }
 
+KERNELS["scene-frame-order"] = {
+    "source":"src/native_adapter/native_scene.rs", "marker":"SCENE FRAME ORDER",
+    "property":"UI-SCENE-FRAME-ORDER-001",
+    "signature":"pub(crate) fn order_scene_frame<S,C>(next:u64,apply_source:impl FnOnce()->(bool,u64,S),build_candidate:impl FnOnce(S)->Option<C>)->Result<C,SceneUpdateError> {",
+    "contract":"""pub(crate) fn order_scene_frame<S,C>(next:u64,apply_source:impl FnOnce()->(bool,u64,S),build_candidate:impl FnOnce(S)->Option<C>)
+    ->(result:Result<C,SceneUpdateError>)
+        requires
+            apply_source.requires(()),
+            forall|stage:(bool,u64,S)| #[trigger] apply_source.ensures((),stage) && stage.0 && stage.1==next
+                ==> build_candidate.requires((stage.2,)),
+        ensures match result {
+            Ok(candidate)=>exists|stage:(bool,u64,S)| #[trigger] apply_source.ensures((),stage) && stage.0 && stage.1==next
+                && build_candidate.ensures((stage.2,),Some(candidate)),
+            Err(SceneUpdateError::SourceRejected)=>exists|stage:(bool,u64,S)| #[trigger] apply_source.ensures((),stage)
+                && !(stage.0 && stage.1==next),
+            Err(SceneUpdateError::NativeRejected)=>exists|stage:(bool,u64,S)| #[trigger] apply_source.ensures((),stage) && stage.0 && stage.1==next
+                && build_candidate.ensures((stage.2,),None),
+            Err(SceneUpdateError::OwnerMismatch)=>false,
+            Err(SceneUpdateError::Closed)=>false,
+            Err(SceneUpdateError::EmptyFrame)=>false,
+            Err(SceneUpdateError::CapacityExceeded)=>false,
+            Err(SceneUpdateError::StaleVersion {..})=>false,
+            Err(SceneUpdateError::InvalidSuccessor {..})=>false,
+        },
+    {""",
+    "depends":["scene-update-error-type","scene-frame-completion"], "evidence":"scene-frame-order-kernel", "function_count":1,
+    "scope":"Exact production stage ordering over arbitrary stage closures: the builder precondition is reachable only from a source stage at the exact successor, and every result is tied to the closure outcomes that produced it. Patch semantics, Blitz construction, state restoration, active replacement assignment and panic unwinding are excluded; unwinding is covered by Proptest/Miri and the real-view integration test, not by this proof.",
+    "mutations":[("misreport-source-rejection","if let Err(error)=complete_scene_frame(source_ok,source_version,next,candidate.is_some()) {return Err(error);}","if let Err(_)=complete_scene_frame(source_ok,source_version,next,candidate.is_some()) {return Err(SceneUpdateError::NativeRejected);}"),
+                 ("skip-completion-gate","if let Err(error)=complete_scene_frame(source_ok,source_version,next,candidate.is_some()) {return Err(error);}","")],
+    "precondition_mutations":[("build-ignoring-version","if source_ok && source_version==next {build_candidate(source)}","if source_ok {build_candidate(source)}"),
+                              ("build-rejected-source","if source_ok && source_version==next {build_candidate(source)}","if !source_ok {build_candidate(source)}")],
+}
+
 
 KERNELS["source-insert-index"] = {
     "source":"src/native_adapter/native_scene.rs", "marker":"SOURCE INSERT INDEX",
@@ -2754,7 +2787,11 @@ def main():
     (evidence / "verus.log").write_text(output)
     positive = summary(output)
     controls = []
-    for label, pattern, replacement in config["mutations"]:
+    # A stage-order control is rejected at the call it would make, not at the postcondition.
+    # 阶段顺序反例在其调用处被拒，而非后置条件。
+    for label, pattern, replacement, refusal in [
+            *[(*mutation, "postcondition not satisfied") for mutation in config["mutations"]],
+            *[(*mutation, "fails to satisfy `callee.requires(args)`") for mutation in config.get("precondition_mutations", [])]]:
         mutated, count = annotate(proof, pattern, replacement)
         if count != 1:
             raise ValueError("review negative control: " + label)
@@ -2768,7 +2805,7 @@ def main():
         # An option/parser/type error is not a valid rejected counterexample.
         # 参数、解析或类型错误不算有效反例，必须实际触发后置条件验证失败。
         rejected = (negative.returncode != 0 and stats is not None and stats[1] > 0
-                    and "postcondition not satisfied" in negative_output)
+                    and refusal in negative_output)
         controls.append({"name": label, "rejected": rejected, "exit_code": negative.returncode})
     passed = (version.returncode == 0 and solver.returncode == 0 and result.returncode == 0 and positive is not None
               and positive[0] >= sum(KERNELS[name].get("function_count", int(KERNELS[name]["signature"] is not None)) for name in ordered)

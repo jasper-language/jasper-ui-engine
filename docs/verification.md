@@ -945,3 +945,20 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 增长失败（UI36）：槽位、空闲表与值表的增长都经 `handle_try_reserve`（`Vec::try_reserve`）。该函数在 Verus 中是 `external_body`，只假设「内容不变」，属于对标准库的信任边界；Verus 不追踪 `Vec` 容量，所以「`None` 只在已满或确实无法增长时出现」与「释放从不分配」不是 Verus 结论。前者由模型对照承担（Proptest/fuzz/Kani 中分配不失败，模型要求 `None` 当且仅当已满且无可复用槽位）；后者由 `tests/handle_alloc_failure.rs`（含 Miri）以按线程配给的失败分配器实测：分配额度为 0 时 33 个槽位全部释放并复用，值、槽位、空闲表逐个失败时状态不变、值交还调用方。去掉空闲表预留的变异在这里会使进程中止，被该测试抓到（手动一次，未入 Verus 反例表）。Kani 不建模分配失败。
 
 未覆盖：`Handle` 与 `HandleStatus` 以外的错误码映射；FFI 导出与跨进程句柄空间；预留假设以外的标准库行为。证据：`evidence/handle-kernel/`、`evidence/validation-chain/report.json`。
+
+## UI-SCENE-FRAME-ORDER-001：整帧阶段顺序（2026-11-03，CP-03 子性质）
+
+`order_scene_frame` 把来源阶段与候选构造阶段排成唯一合法顺序，`apply_patches_result` 经它运行，结果为 `Ok` 后才替换活动视图。
+
+| 阶段 | 范围 | 结果 |
+|---|---|---|
+| Verus/Z3 | 任意阶段闭包：构造阶段的前置条件只能由精确后继上成功的来源满足；每个结果绑定到产生它的阶段输出 | 3 verified/0 errors。四个反例被拒：错报来源拒绝、跳过完成门（后置条件）；忽略版本构造、在被拒来源上构造（构造调用的 `callee.requires`） |
+| Proptest | 真实内核对照精确模型，含两个阶段的 panic 展开 | 256 例通过 |
+| Miri | 边界与两条展开路径，独立阶段值恰好释放一次 | 通过 |
+| cargo-fuzz | 只覆盖无 panic 路径（fuzz 的 panic 钩子会中止进程） | `read_boundary` 79021 次、`batch_decode` 1472893 次 |
+| Kani | 全部阶段结果与 `u64` 值符号化；Kani 不建模展开 | 174 checks / 0 failed |
+| Loom | N/A：内核无共享状态与同步原语，`&mut self` 排除并发。替代证据只是既有调度场景中的一次线程内调用，不是并发证明 | 不计 PASS |
+
+真实路径测试（`frame_stage_panic_or_rejection_leaves_active_view_then_same_frame_commits`，测试证据，不是证明）：真实 `NativeScene` 与真实 Blitz 候选上，构造前 panic、候选建成后 panic、原生拒绝与来源拒绝都不改变版本、焦点、按下、指针、滚动、帧缓存、节点映射和重绘像素，随后同一帧能提交并恢复交互状态。在构造阶段前清掉 `last_pointer` 的变异会使它失败（手动一次，未入 Verus 反例表）。
+
+未覆盖：`apply_batch_at` 的补丁语义与原子性；候选构造与状态恢复的实现级规格；Blitz 内部抛出的 panic（测试是在构造阶段外层注入的）；替换时析构旧视图的 panic；读取路径上第三方内部可变性。证据：`evidence/scene-frame-order-kernel/`、`evidence/scene-frame-order-chain/report.json`。

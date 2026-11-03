@@ -393,6 +393,18 @@ impl NativeScene {
         next: u64,
         patches: &[ScenePatch],
     ) -> Result<(), SceneUpdateError> {
+        self.apply_patches_built_by(caller, expected, next, patches, Self::rebuild_candidate)
+    }
+    /// The whole frame transaction with its native construction stage as a parameter. Both
+    /// stages only hold `&self`, so a stage panic unwinds past a view nothing has written.
+    fn apply_patches_built_by(
+        &mut self,
+        caller: u64,
+        expected: u64,
+        next: u64,
+        patches: &[ScenePatch],
+        build: impl FnOnce(&Self, Scene, Option<NodeId>, &[ScenePatch]) -> Option<Self>,
+    ) -> Result<(), SceneUpdateError> {
         admit_scene_update(
             self.owner,
             caller,
@@ -405,18 +417,17 @@ impl NativeScene {
         let focused = self
             .focused_node(caller, expected)
             .filter(|id| !self.frame_retires_node(*id, patches));
-        let mut source = self.source.clone();
-        let source_ok = source.apply_batch_at(expected, patches).is_ok();
-        let source_version = source.version();
-        let candidate = if source_ok && source_version == next {
-            self.rebuild_candidate(source, focused, patches)
-        } else {
-            None
-        };
-        complete_scene_frame(source_ok, source_version, next, candidate.is_some())?;
-        let Some(candidate) = candidate else {
-            return Err(SceneUpdateError::NativeRejected);
-        };
+        let view = &*self;
+        let candidate = order_scene_frame(
+            next,
+            || {
+                let mut source = view.source.clone();
+                let source_ok = source.apply_batch_at(expected, patches).is_ok();
+                let source_version = source.version();
+                (source_ok, source_version, source)
+            },
+            |source| build(view, source, focused, patches),
+        )?;
         *self = candidate;
         Ok(())
     }
@@ -1891,6 +1902,31 @@ pub(crate) fn complete_scene_frame(
 }
 // END VERIFIED SCENE FRAME COMPLETION KERNEL
 
+// BEGIN VERIFIED SCENE FRAME ORDER KERNEL
+/// Run the detached frame stages in their only legal order: the builder receives only a source
+/// that succeeded at the exact successor, and neither stage is handed the active view's storage.
+/// The caller replaces the active view after `Ok`, so a stage panic leaves nothing to undo.
+pub(crate) fn order_scene_frame<S, C>(
+    next: u64,
+    apply_source: impl FnOnce() -> (bool, u64, S),
+    build_candidate: impl FnOnce(S) -> Option<C>,
+) -> Result<C, SceneUpdateError> {
+    let (source_ok, source_version, source) = apply_source();
+    let candidate = if source_ok && source_version == next {
+        build_candidate(source)
+    } else {
+        None
+    };
+    if let Err(error) = complete_scene_frame(source_ok, source_version, next, candidate.is_some()) {
+        return Err(error);
+    }
+    match candidate {
+        Some(candidate) => Ok(candidate),
+        None => Err(SceneUpdateError::NativeRejected),
+    }
+}
+// END VERIFIED SCENE FRAME ORDER KERNEL
+
 // BEGIN VERIFIED SCENE WORK CAPACITY KERNEL
 /// Candidate admission count only; not an allocator bound for text, fonts or upstream scratch.
 pub(crate) fn scene_work_fits(prepared: usize, pending: usize, incoming: usize) -> bool {
@@ -3112,6 +3148,156 @@ mod tests {
         assert!(!native.apply_patches(10, version, scene.version(), &patches));
         assert!(native.close(10));
         assert!(!native.apply_patches(10, scene.version(), scene.version() + 1, &patches));
+    }
+
+    /// Everything a host can observe of the active view without repainting it.
+    #[cfg(feature = "cpu-pending")]
+    fn active_view_state(native: &NativeScene, version: u64) -> String {
+        let document = native.document.as_ref().unwrap();
+        let scroll = document.viewport_scroll();
+        format!(
+            "{:?} {:?} {:?} {:?} {} {:?} {:?} {:?} {:?}",
+            native.snapshot_identity(10),
+            native.focused_node(10, version),
+            document.get_mousedown_node_id(),
+            native.last_pointer,
+            native.frame_dirty,
+            native
+                .frame_cache
+                .as_ref()
+                .map(|(w, h, pixels)| (*w, *h, pixels.len())),
+            (scroll.x, scroll.y),
+            native.nodes,
+            native.source.version(),
+        )
+    }
+
+    #[test]
+    #[cfg(feature = "cpu-pending")]
+    fn frame_stage_panic_or_rejection_leaves_active_view_then_same_frame_commits() {
+        use crate::{native_events::NativeEventReply, native_view::PointerAction};
+        use std::panic::{catch_unwind, resume_unwind, AssertUnwindSafe};
+        let bytes =
+            std::fs::read(std::env::var("JASPER_UI_TEST_FONT").expect("injected font required"))
+                .unwrap();
+        let mut button = Node::text(NodeId(2), "Before");
+        button.semantics = Semantics {
+            role: Role::Button,
+            focusable: true,
+            ..Default::default()
+        };
+        button.style = Style::default().height(Length::Px(80.0));
+        let filler =
+            Node::container(NodeId(3)).with_style(Style::default().height(Length::Px(800.0)));
+        let mut scene = Scene::new(Node::container(NodeId(1)).with_children(vec![button, filler]));
+        let mut native = NativeScene::from_scene(10, &scene, &bytes, 320, 200).unwrap();
+        let version = scene.version();
+        assert!(native.set_viewport_scroll_from_host(10, version, 0.0, 4.0));
+        assert!(native.focus_from_host(10, version, NodeId(2), &mut |_| {}));
+        assert!(native.pointer_from_host(
+            10,
+            version,
+            PointerAction::Down,
+            12.0,
+            12.0,
+            true,
+            &mut |_| NativeEventReply::default()
+        ));
+        let before = native.render_cpu(10, 8 * 1024 * 1024).unwrap();
+        let state = active_view_state(&native, version);
+        // Non-vacuous: the state this test protects is actually live.
+        assert_eq!(native.focused_node(10, version), Some(NodeId(2)));
+        assert!(native
+            .document
+            .as_ref()
+            .unwrap()
+            .get_mousedown_node_id()
+            .is_some());
+        assert_eq!(native.last_pointer, Some((12.0, 12.0)));
+        assert_eq!(native.document.as_ref().unwrap().viewport_scroll().y, 4.0);
+        assert!(!native.frame_dirty && native.frame_cache.is_some());
+        let patches = [ScenePatch::UpdateText {
+            id: NodeId(2),
+            text: "After".into(),
+        }];
+        let next = version + 1;
+        // Repaint from the active document, not the cached frame.
+        let mut assert_untouched = |native: &mut NativeScene| {
+            assert_eq!(active_view_state(native, version), state);
+            assert!(native.invalidate_frame_from_host(10));
+            assert!(before == native.render_cpu(10, 8 * 1024 * 1024).unwrap());
+            assert_eq!(active_view_state(native, version), state);
+        };
+        // Panic before any native construction.
+        let outcome = catch_unwind(AssertUnwindSafe(|| {
+            native.apply_patches_built_by(10, version, next, &patches, |_, _, _, _| {
+                resume_unwind(Box::new("builder"))
+            })
+        }));
+        assert!(outcome.is_err());
+        assert_untouched(&mut native);
+        // Panic with a complete real candidate alive: unwinding drops its Blitz document.
+        let outcome = catch_unwind(AssertUnwindSafe(|| {
+            native.apply_patches_built_by(
+                10,
+                version,
+                next,
+                &patches,
+                |view, source, focused, frame| {
+                    let candidate = view.rebuild_candidate(source, focused, frame);
+                    assert!(candidate.is_some());
+                    resume_unwind(Box::new("after candidate"))
+                },
+            )
+        }));
+        assert!(outcome.is_err());
+        assert_untouched(&mut native);
+        // A real candidate discarded by a native rejection.
+        assert_eq!(
+            native.apply_patches_built_by(
+                10,
+                version,
+                next,
+                &patches,
+                |view, source, focused, frame| {
+                    assert!(view.rebuild_candidate(source, focused, frame).is_some());
+                    None
+                }
+            ),
+            Err(SceneUpdateError::NativeRejected)
+        );
+        assert_untouched(&mut native);
+        // A rejected source never reaches the builder.
+        let invalid = [ScenePatch::UpdateText {
+            id: NodeId(1),
+            text: "Container is not text".into(),
+        }];
+        assert_eq!(
+            native.apply_patches_built_by(10, version, next, &invalid, |_, _, _, _| {
+                panic!("builder ran on a rejected source")
+            }),
+            Err(SceneUpdateError::SourceRejected)
+        );
+        assert_untouched(&mut native);
+        // Nothing poisoned: the same frame commits and restores interaction state.
+        scene.apply_batch_at(version, &patches).unwrap();
+        assert!(native.apply_patches(10, version, next, &patches));
+        assert_eq!(native.snapshot_identity(10), Some((next, 3)));
+        assert_eq!(native.focused_node(10, next), Some(NodeId(2)));
+        assert!(native
+            .document
+            .as_ref()
+            .unwrap()
+            .get_mousedown_node_id()
+            .is_some());
+        assert_eq!(native.last_pointer, Some((12.0, 12.0)));
+        assert_eq!(native.document.as_ref().unwrap().viewport_scroll().y, 4.0);
+        assert!(native.frame_dirty && native.frame_cache.is_some());
+        let after = native.render_cpu(10, 8 * 1024 * 1024).unwrap();
+        assert!(after != before);
+        let mut reference = NativeScene::from_scene(10, &scene, &bytes, 320, 200).unwrap();
+        assert!(reference.set_viewport_scroll_from_host(10, next, 0.0, 4.0));
+        assert!(after == reference.render_cpu(10, 8 * 1024 * 1024).unwrap());
     }
 
     #[test]

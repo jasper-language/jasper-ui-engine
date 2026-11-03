@@ -672,6 +672,92 @@ pub fn assert_handle_retirement(index_probe: u32) {
     assert_eq!(allocator.capacity(), 1);
 }
 
+/// Counts live tokens so a dropped or leaked stage value cannot go unnoticed.
+struct FrameToken<'a>(&'a std::cell::Cell<i32>, u64);
+impl<'a> FrameToken<'a> {
+    fn new(live: &'a std::cell::Cell<i32>, value: u64) -> Self {
+        live.set(live.get() + 1);
+        Self(live, value)
+    }
+}
+impl Drop for FrameToken<'_> {
+    fn drop(&mut self) {
+        self.0.set(self.0.get() - 1);
+    }
+}
+
+/// Real stage ordering against the exact model: each stage runs at most once, the builder runs
+/// only at the exact successor and receives that source, and only `Ok` carries a candidate.
+/// 真实阶段顺序对照精确模型：每阶段至多一次，构造仅在精确后继时运行且收到该来源，只有 Ok 带候选。
+pub fn assert_scene_frame_order(source_ok: bool, source_version: u64, next: u64, candidate_ready: bool, token: u64) {
+    let live = std::cell::Cell::new(0);
+    let (applied, built) = (std::cell::Cell::new(0u8), std::cell::Cell::new(0u8));
+    let result = order_scene_frame(
+        next,
+        || {
+            applied.set(applied.get() + 1);
+            assert_eq!(built.get(), 0);
+            (source_ok, source_version, FrameToken::new(&live, token))
+        },
+        |source: FrameToken<'_>| {
+            built.set(built.get() + 1);
+            assert_eq!(applied.get(), 1);
+            assert_eq!(source.1, token);
+            candidate_ready.then(|| FrameToken::new(&live, source.1))
+        },
+    );
+    let admitted = source_ok && source_version == next;
+    assert_eq!(applied.get(), 1);
+    assert_eq!(built.get(), admitted as u8);
+    match result {
+        Ok(candidate) => {
+            assert!(admitted && candidate_ready);
+            assert_eq!(candidate.1, token);
+            assert_eq!(live.get(), 1);
+        }
+        Err(error) => {
+            let expected = if admitted { SceneUpdateError::NativeRejected } else { SceneUpdateError::SourceRejected };
+            assert_eq!(error, expected);
+            assert!(!(admitted && candidate_ready));
+            assert_eq!(live.get(), 0);
+        }
+    }
+    assert_eq!(live.get(), 0);
+}
+
+/// A panicking stage unwinds out of the real kernel: the later stage never runs, the detached
+/// values are dropped once, and an active value only assigned after `Ok` stays untouched.
+/// 阶段 panic 穿出真实内核：后一阶段不运行，独立值恰释放一次，仅在 Ok 后赋值的活动值不变。
+/// Not reachable under cargo-fuzz (its hook aborts on panic) or Kani (no unwinding).
+#[cfg(test)]
+pub fn assert_scene_frame_panic(panic_in_source: bool, source_version: u64, token: u64) {
+    let live = std::cell::Cell::new(0);
+    let built = std::cell::Cell::new(false);
+    let mut active = token;
+    let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let candidate = order_scene_frame(
+            source_version,
+            || {
+                let source = FrameToken::new(&live, token);
+                if panic_in_source {
+                    std::panic::resume_unwind(Box::new("source stage"));
+                }
+                (true, source_version, source)
+            },
+            |source: FrameToken<'_>| -> Option<u64> {
+                built.set(true);
+                let _partial = FrameToken::new(&live, source.1);
+                std::panic::resume_unwind(Box::new("candidate stage"))
+            },
+        );
+        active = candidate.map_or(active, |value| value ^ 1);
+    }));
+    assert!(outcome.is_err());
+    assert_eq!(built.get(), !panic_in_source);
+    assert_eq!(live.get(), 0);
+    assert_eq!(active, token);
+}
+
 /// Runs the real state against an array model of held buttons kept as (variant rank, code); the
 /// expected drag button is the model's smallest entry, independent of the production set.
 /// 以真实状态对照数组模型（变体序、码）；拖动按钮取模型最小项，不依赖生产集合。
@@ -1946,6 +2032,13 @@ mod kani_checks {
         assert_desktop_pointer_path(&[press(), modifiers, press(), motion(), release(), motion(), release(), motion()]);
     }
 
+    // Arbitrary stage outcomes through the real kernel; unwinding is outside Kani's model.
+    // 任意阶段结果穿过真实内核；展开不在 Kani 模型内。
+    #[kani::proof]
+    fn scene_frame_order() {
+        assert_scene_frame_order(kani::any(), kani::any(), kani::any(), kani::any(), kani::any());
+    }
+
     // Real table and Vec storage: fixed operation shape, arbitrary first generation, values and
     // foreign handle. The arbitrary-shape model path runs in Proptest/fuzz; retirement below.
     // 真实表与 Vec 存储：操作形状固定，首代、值与外来句柄任意；任意形状模型路径由 Proptest/fuzz 覆盖。
@@ -2405,6 +2498,12 @@ mod properties {
             assert_desktop_pointer_path(&steps);
         }
         #[test]
+        fn scene_frame_order_property(source_ok in any::<bool>(), version in any::<u64>(), next in any::<u64>(), ready in any::<bool>(), token in any::<u64>(), panic_in_source in any::<bool>()) {
+            assert_scene_frame_order(source_ok, version, next, ready, token);
+            assert_scene_frame_order(source_ok, version, version, ready, token);
+            assert_scene_frame_panic(panic_in_source, version, token);
+        }
+        #[test]
         fn glyph_skew_property(coeffs in any::<[u64; 6]>(), c in any::<u64>(), signs in any::<u8>(), pick in any::<u8>()) {
             let [a, b, _, d, e, f] = coeffs;
             assert_glyph_skew(a, b, c, d, e, f);
@@ -2780,6 +2879,14 @@ mod memory {
         for elapsed in [0, 1, u64::MAX as u128, u64::MAX as u128 + 1, u128::MAX] {
             assert_desktop_timestamp(elapsed);
         }
+        for version in [0, 1, u64::MAX] {
+            for (source_ok, ready) in [(false, false), (false, true), (true, false), (true, true)] {
+                assert_scene_frame_order(source_ok, version, version, ready, version);
+                assert_scene_frame_order(source_ok, version, version.wrapping_add(1), ready, version);
+            }
+            assert_scene_frame_panic(true, version, version);
+            assert_scene_frame_panic(false, version, version);
+        }
         assert_desktop_pointer_path(&[
             (0, 0, 0, 1.5f32.to_bits(), f32::NAN.to_bits(), u64::MAX),
             (1, 5, 9, 0, 0, 3),
@@ -2989,6 +3096,7 @@ mod schedules {
                 assert_font_weight(u16::from_le_bytes([first[0], first[1] & 7]));
                 assert_glyph_skew_pure(u64::from_le_bytes([first[0], first[1], first[2], first[3], 0, 0, 0, 0]), first[2]);
                 assert_desktop_timestamp(first[0] as u128);
+                assert_scene_frame_order(first[0] & 1 == 1, first[1] as u64, first[2] as u64, first[3] & 1 == 1, first[0] as u64);
                 assert_desktop_pointer_path(&[(1, first[0], first[1] as u16, 0, 0, first[2] as u64), (0, 0, 0, first[3] as u32, 0, 1), (2, first[0], first[1] as u16, 0, 0, 2)]);
                 assert_color_construct(first[0], first[1], first[2], first[3], first[0] ^ first[3]);
                 assert_font_family(&first[..(first[2] as usize & 3)]);

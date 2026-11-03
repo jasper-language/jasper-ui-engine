@@ -1,0 +1,112 @@
+{
+  "property": "UI-SCENE-FRAME-ORDER-001",
+  "backlog_item": "CP-03",
+  "status": "subproperty_scoped_checks_passed",
+  "cp03_closed": false,
+  "production": {
+    "file": "src/native_adapter/native_scene.rs",
+    "function": "order_scene_frame",
+    "file_sha256": "778852eef7d9c60e867cf680807cb491c061858334953a633f2092a6debe0aa6",
+    "kernel_sha256": "74257605dd70fc1a249d9d20998a0bca4d57a5382a72aa9818433f452d48ddd6",
+    "production_regions_sha256": "dc0d8c75861487c1e78ccd84184ecf54fd242998968166b93e4c5ce770e0268c"
+  },
+  "specification": "For arbitrary stage closures: the builder precondition is reachable only from a source stage that succeeded at the exact successor; Ok carries the builder's candidate from such a source; SourceRejected and NativeRejected are tied to the stage outcomes that caused them; no other error is produced.",
+  "tools": {
+    "verus": "Version: 0.2026.10.18.7d82994",
+    "z3": "Z3 version 4.16.0 - 64 bit",
+    "kani": "0.68.0",
+    "cbmc": "6.11.0",
+    "nightly": "nightly-2026-10-17"
+  },
+  "config": {
+    "entry": "python3 scripts/verify-ui.py --verus <verus>",
+    "fuzz_seconds": 20,
+    "proptest_cases": 256,
+    "proptest_seed": "12345"
+  },
+  "stages": {
+    "Verus+Z3": {
+      "result": "passed",
+      "verified": 3,
+      "errors": 0,
+      "negative_controls": [
+        {
+          "name": "misreport-source-rejection",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "skip-completion-gate",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "build-ignoring-version",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "build-rejected-source",
+          "rejected": true,
+          "exit_code": 1
+        }
+      ],
+      "precondition_controls_rejected_by": "callee.requires(args) at the builder call"
+    },
+    "Proptest": {
+      "result": "passed",
+      "harness": "properties::scene_frame_order_property",
+      "includes": "source and candidate stage unwinding through the real kernel"
+    },
+    "Miri": {
+      "result": "passed",
+      "harness": "memory boundaries, including both unwinding paths",
+      "note": "no leak of detached stage values"
+    },
+    "cargo-fuzz": {
+      "result": "passed",
+      "target": "read_boundary",
+      "completed_runs": [
+        79021,
+        1472893
+      ],
+      "note": "no-panic path only: the fuzz panic hook aborts, so unwinding is not exercised here"
+    },
+    "Kani": {
+      "result": "passed",
+      "harness": "kani_checks::scene_frame_order",
+      "checks": 174,
+      "failed": 0,
+      "chain_harnesses_successful": 60,
+      "note": "all stage outcomes and u64 values symbolic; Kani has no unwinding model"
+    },
+    "Loom": {
+      "result": "N/A",
+      "reason": "The kernel holds no shared state and no synchronization primitive; the caller owns the view through &mut self, so the compiler excludes concurrent access.",
+      "substitute_evidence": "One in-thread call inside the existing schedule scenario, which shows only that the kernel runs on a thread. It is not a concurrency proof."
+    }
+  },
+  "real_view_test": {
+    "test": "native_scene::tests::frame_stage_panic_or_rejection_leaves_active_view_then_same_frame_commits",
+    "class": "tested, not proved",
+    "covers": "Real NativeScene and real Blitz candidate. Panic before construction, panic with a built candidate alive, native rejection and source rejection each leave version, focus, press, pointer, scroll, frame cache, node map and repainted pixels unchanged; the same frame then commits and restores interaction state.",
+    "mutation_checked": "Clearing last_pointer before the builder stage made this test fail (manual, one run; not in the Verus control table)."
+  },
+  "uncovered": [
+    "apply_batch_at patch semantics and atomicity (UI-TXN-ATOMIC-001)",
+    "rebuild_candidate construction and an implementation-level specification of focus, scroll, pointer and frame-cache restoration",
+    "panics raised inside Blitz itself: the test injects them around the construction stage",
+    "a panic while dropping the old view in *self = candidate",
+    "third-party interior mutability on the read paths that build the candidate",
+    "the chain report's source list does not include src/native_adapter; this kernel is bound through production_regions_sha256 and the file hash above"
+  ],
+  "chain": {
+    "report": "evidence/validation-chain/report.json",
+    "complete": false,
+    "scoped_checks_complete": true,
+    "acceptance_pending": [
+      "capture-query: original arbitrary two-key Kani obligation is unresolved; single-key harness is diagnostic only"
+    ]
+  },
+  "completion_claimed": false
+}
