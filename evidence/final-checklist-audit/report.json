@@ -65,7 +65,8 @@
     "66aca394629ae7d76645e6fae6351f09d231bd51 rebind final audit to UI38 (scene frame stage order; behavior preserved)",
     "f067fce9a2a471e2d09a00bc8ba955841696f986 rebind final audit to CP-02 Bitwuzla record (no source change)",
     "f97d19b4dc12337b87bc1e1f5bc1d5b74d5fdc71 rebind final audit to CP-02 reachability probe correction (no source change)",
-    "03af023e9ee89d1d94dc1f646c4199e85c8747e3 rebind final audit to UI38 batch stage (stage_scene_batch fold; behavior preserved)"
+    "03af023e9ee89d1d94dc1f646c4199e85c8747e3 rebind final audit to UI38 batch stage (stage_scene_batch fold; behavior preserved)",
+    "ab36fa6ee767a32901766c29abe0a7ae15da2948 rebind final audit to UI38 test formatting (no behavior change)"
   ],
   "items": {
     "1_public_contracts": {
