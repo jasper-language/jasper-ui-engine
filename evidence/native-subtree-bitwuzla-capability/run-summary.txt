@@ -1,0 +1,31 @@
+== first-allprops.log
+764:Runtime Symex: 14.6469s
+765:size of program expression: 190827 steps
+767:Generated 8578 VCC(s), 3376 remaining after simplification
+768:Runtime Postprocess Equation: 0.209755s
+771:Runtime Convert SSA: 10.272s
+773:Runtime Solver: 2487.6s
+774:Runtime decision procedure: 2497.94s
+== stop-kani-parser-panic.log
+764:Runtime Symex: 17.2907s
+765:size of program expression: 190827 steps
+767:Generated 8578 VCC(s), 3376 remaining after simplification
+768:Runtime Postprocess Equation: 0.164112s
+771:Runtime Convert SSA: 12.2389s
+773:Runtime Solver: 2445.6s
+774:Runtime decision procedure: 2458.13s
+776:thread '<unnamed>' (852441) panicked at kani-driver/src/cbmc_output_parser.rs:477:21:
+777:called `Result::unwrap()` on an `Err` value: Error("data did not match any variant of untagged enum ParserItem", line: 0, column: 0)
+== direct.log
+667:Runtime Symex: 16.2726s
+668:size of program expression: 190827 steps
+670:Generated 8578 VCC(s), 3376 remaining after simplification
+671:Runtime Postprocess Equation: 0.267531s
+674:Runtime Convert SSA: 11.538s
+rc=124 2026-11-03T17:28:50Z
+2026-11-03T16:30:13Z
+--no-malloc-may-fail  --no-undefined-shift-check  --no-signed-overflow-check  --nan-check  --no-self-loops-to-assumptions  --no-pointer-primitive-check  --bitwuzla  --slice-formula  --object-bits 13 --unwind 4 --verbosity 9 
+9070f45a8fbb343bc807c0c44ecd8cb1d664645d5840c0db2d9ea24ac40efde5
+61bdc637a291c27597fc04263328ecd29d36cc12
+313M	<home>/work/cp02-bitwuzla
+/dev/sda1       193G  172G   22G  90% /
