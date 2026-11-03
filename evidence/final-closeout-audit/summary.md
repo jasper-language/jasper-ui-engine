@@ -2,8 +2,8 @@
 
 This report is an audit snapshot, not a delivery acceptance record.
 
-- branch: `dev/ui38-frame-order`
-- commit: `c77f543f5080b122bb66e3698e2fe265c1ba0d06`
+- branch: `dev/cp02-bitwuzla`
+- commit: `e909ef688ddb5445e1d5eb95fab7a1272f9aa906`
 - explicit item 1-5 completions: 5/5
 - final report materially covers HEAD: `true`
 - missing required evidence: 0
@@ -11,7 +11,7 @@ This report is an audit snapshot, not a delivery acceptance record.
 - stale/missing recorded source hashes: 0
 - branch refs included: `included`
 - tool configuration: `passed`
-- evidence reports indexed: 399
+- evidence reports indexed: 400
 
 ## Checklist readings
 

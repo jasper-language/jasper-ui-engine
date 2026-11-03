@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "kind": "jasper-ui-closeout-audit",
-  "generated_at": "2026-11-03T14:50:28.524195+00:00",
+  "generated_at": "2026-11-03T17:47:22.669948+00:00",
   "claim": "audit only; no checklist completion or whole-engine acceptance is claimed",
   "git": {
-    "branch": "dev/ui38-frame-order",
-    "commit": "c77f543f5080b122bb66e3698e2fe265c1ba0d06",
+    "branch": "dev/cp02-bitwuzla",
+    "commit": "e909ef688ddb5445e1d5eb95fab7a1272f9aa906",
     "dirty_paths": []
   },
   "final_audit": {
@@ -15,7 +15,7 @@
     "recorded_status": "complete",
     "recorded_completed_items": 6,
     "covers_head": true,
-    "basis_commit": "66aca394629ae7d76645e6fae6351f09d231bd51",
+    "basis_commit": "f067fce9a2a471e2d09a00bc8ba955841696f986",
     "material_changed_since_basis": [],
     "references": [
       {
@@ -81,7 +81,7 @@
     "scripts/audit-closeout.py": "4ce7bdf7ce965233c313030ae76d3c1f62e42ea085cdb4c2cb8379f71aaaf232",
     "scripts/closeout-baseline.sh": "324530f8c5033ff29ae0e1f245c756c0d47c3da32d6cf30666ec15ec19d9bc8e",
     "scripts/test-audit-closeout.py": "34fa073556b494d37030b4d0372260030a205ec2dfd38bf47022c01dea546e3a",
-    "docs/claude-closeout-proof-backlog.md": "89f061beb08fe0879b595726e6cee187a209d05cc5cfeaf09e1f01d8f84dc6fd",
+    "docs/claude-closeout-proof-backlog.md": "fea314186ec3f435681ad971937aac294071bb6912065561e1f4f46a66157e01",
     "docs/closeout.md": "a25c5809261e484384943ffcdfa715f519b74919733b8df82462ebfa560666a6",
     "scripts/verify-ui.py": "73015498e7a73cd4ac5e7732555d71d2fd90f57cb786228b15d096cd698fdd6a",
     "scripts/verify-in-vm.sh": "cc88cbb9afde9788d8154b4bb8501e975ffef039c96e452e355836e50ac4c3ba",
@@ -2635,7 +2635,7 @@
     },
     {
       "path": "evidence/final-checklist-audit/report.json",
-      "sha256": "fe967ee24d2d30c9094cb45461db209f6afbd02862cfd2eee9060926fbc339ce",
+      "sha256": "540e6a41bd3071a800266a0d2d61f2312dda7c0e77844f63d75dd0cd2ea2f44a",
       "status": "complete",
       "recorded_sources": 37,
       "stale_or_missing_sources": [],
@@ -2658,7 +2658,7 @@
     },
     {
       "path": "evidence/final-closeout-audit/report.json",
-      "sha256": "8545a0c86f62ddcec969e1f433268a3dd664aaa3095f6cd3759765a50f067daa",
+      "sha256": "7f2dc620b5c006da273498fe17b06fefb456f492ce7f66f543575626a3aafefb",
       "status": "unspecified",
       "recorded_sources": 0,
       "stale_or_missing_sources": [],
@@ -3319,6 +3319,14 @@
       "completion_flags": {
         "checklist_item_2_complete": false
       }
+    },
+    {
+      "path": "evidence/native-subtree-bitwuzla-capability/report.json",
+      "sha256": "a8f041b48e58ccdee3d6675b4c723f126292f31773a117d3840049e2226294af",
+      "status": "incomplete_not_passed",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
     },
     {
       "path": "evidence/native-subtree-expanded-capability/report.json",
@@ -4437,7 +4445,7 @@
     }
   ],
   "evidence_index_summary": {
-    "reports": 399,
+    "reports": 400,
     "with_stale_or_missing_recorded_sources": 244,
     "with_explicit_completion": 10
   },
@@ -7004,7 +7012,7 @@
     "completion_claimed": false,
     "static_audit_complete": true,
     "final_report_covers_head": true,
-    "final_report_basis": "66aca394629ae7d76645e6fae6351f09d231bd51",
+    "final_report_basis": "f067fce9a2a471e2d09a00bc8ba955841696f986",
     "material_paths_changed_since_final_report_basis": 0,
     "missing_required_sources": 0,
     "missing_required_evidence": 0,
@@ -7014,8 +7022,8 @@
   },
   "baseline_regression": {
     "status": "passed",
-    "started_at": "2026-11-03T14:50:19.516277+00:00",
-    "finished_at": "2026-11-03T14:50:28.258452+00:00",
+    "started_at": "2026-11-03T17:47:01.363680+00:00",
+    "finished_at": "2026-11-03T17:47:22.400123+00:00",
     "command": [
       "<repo>/scripts/verify-in-vm.sh",
       "env",
@@ -7024,7 +7032,7 @@
     ],
     "returncode": 0,
     "log": "evidence/final-closeout-audit/baseline.log",
-    "log_sha256": "ffc6dc101032ca76a0f895f87586ce1ce536a722d5eb93aa16660025545170fd"
+    "log_sha256": "64fa633096c34cd72f5795969ac313c9f3511cf41880a79866df3c73c818b3ed"
   },
   "final_gate": {
     "ready": true,
