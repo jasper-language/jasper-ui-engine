@@ -60,7 +60,8 @@
     "d628fd666af922d43152fad10779eef889c986c7 integrate all prior item branch refs",
     "f35d09b39e2e31deb01dec104378b1666dba7e9b item 6 completed closeout evidence",
     "bb31de152036f40ab09cbbb8d26430226a40b020 rebind final audit to UI34/UI35 (clock-free desktop pointer state; generation handle table)",
-    "ab3785fcca87871311b879a528fdc488242dbfe3 rebind final audit to UI36 (handle status; fallible handle storage growth)"
+    "ab3785fcca87871311b879a528fdc488242dbfe3 rebind final audit to UI36 (handle status; fallible handle storage growth)",
+    "dc91c656ff3d15af44e14ad66bf5dc9ac83feb9e rebind final audit to CP-02 record correction (solver ERROR reinterpretation; no source change)"
   ],
   "items": {
     "1_public_contracts": {
