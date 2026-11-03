@@ -1,0 +1,85 @@
+{
+  "status": "incomplete_not_passed",
+  "property": "CP-02 sub-obligation: the production source_subtree_contains agrees with an independent oracle on the original two-entry real BTreeMap symbolic domain, including real insertion and real drop",
+  "production_changed": false,
+  "input_domain_reduced": false,
+  "checks_disabled": false,
+  "substituted_map": false,
+  "drop_skipped": false,
+  "tool_versions": {
+    "kani": "0.68.0",
+    "cbmc": "6.11.0"
+  },
+  "harness": "real-map-full-domain.rs (diagnostic snapshot, not in the chain)",
+  "unwinding": "unwindset.sh: global 4, per-loop bounds; unwinding assertions stay enabled, so a low bound fails rather than passes",
+  "finding_1_correction": {
+    "claim_corrected": "Earlier reports read Bitwuzla runs at unwind 2/4/5/6/8 as failed unwinding assertions, i.e. insufficient bounds.",
+    "actual": "Those logs show Status: ERROR on every non-trivial check and 0 FAILURE. No bitwuzla executable exists in the VM, so CBMC could not obtain a solver answer.",
+    "reproduction": "A stub bitwuzla that logs its arguments and exits 127 was invoked by CBMC on the SMT2 problem and reproduced the summary: 0 of 1116 failed, 4 unreachable, 683 SUCCESS, 429 ERROR, VERIFICATION FAILED.",
+    "consequence": "Whether any of those global bounds is sufficient is unknown; none was refuted. Bitwuzla has never actually been run on this obligation. Failures during symex or SSA conversion (object capacity, OOM, timeouts) are unaffected and remain valid."
+  },
+  "finding_2_formula_size": {
+    "note": "Internal-node loops were being unwound although two entries never create an internal node, because symex does not see node height or length as constants.",
+    "runs": [
+      {
+        "bounds": "global 8 (earlier run)",
+        "steps": 1943281,
+        "remaining_vccs": 23160
+      },
+      {
+        "bounds": "global 3, fixed tree",
+        "steps": 238092,
+        "remaining_vccs": 4136,
+        "convert_ssa_seconds": 316.8
+      },
+      {
+        "bounds": "unwindset, fixed tree",
+        "steps": 189386,
+        "remaining_vccs": 3368,
+        "convert_ssa_seconds": 29.8
+      },
+      {
+        "bounds": "unwindset, full original domain",
+        "steps": 190827,
+        "remaining_vccs": 3376,
+        "convert_ssa_seconds": 6.45
+      }
+    ],
+    "observation": "Symbolic parents, start and target cost almost nothing beyond a fixed tree, so enumerating fixed trees would not help."
+  },
+  "finding_3_sat_attempts": [
+    {
+      "configuration": "full domain, unwindset, CaDiCaL, 26G address-space cap, otherwise idle VM",
+      "result": "failed_oom",
+      "observed": "CBMC reported out of memory in array post-processing during propositional reduction after 785.3 s of solver time. No check verdict."
+    },
+    {
+      "configuration": "full domain, unwindset, CaDiCaL, no cap, VM shared with other workloads",
+      "result": "killed_by_global_oom",
+      "observed": "Kernel OOM killer took CBMC at 635 s. Not a verdict."
+    },
+    {
+      "configuration": "full domain, unwindset, external Kissat, no cap, VM shared",
+      "result": "stopped_by_operator",
+      "observed": "Stopped at 1253 s, about 13 GB in use, to relieve VM swap pressure. No verdict."
+    },
+    {
+      "configuration": "full domain, unwindset, CaDiCaL, --arrays-uf-never, 11G cap",
+      "result": "timeout",
+      "observed": "500 s limit; SSA conversion 88.7 s, then no verdict."
+    },
+    {
+      "configuration": "full domain, unwindset, CaDiCaL, --arrays-uf-always, 11G cap",
+      "result": "timeout",
+      "observed": "500 s limit; SSA conversion 15.3 s, then no verdict."
+    }
+  ],
+  "sufficiency_of_unwindset": "Unproven: no run reached a verdict, so these per-loop bounds are still unconfirmed.",
+  "unit_of_blame": "Verifier capacity in array post-processing, not a failing application path; no counterexample was produced.",
+  "next_steps": [
+    "Build a pinned real Bitwuzla and run the unwindset configuration on it; this is the first real SMT attempt.",
+    "Otherwise keep the real map and original domain and look for a different encoding of heap byte arrays.",
+    "The apply_update to apply_patches whole-frame property remains entirely open."
+  ],
+  "whole_adapter_accepted": false
+}

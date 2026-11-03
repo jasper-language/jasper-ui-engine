@@ -633,6 +633,8 @@ UI19 刻画的反斜体已修正。新增 `src/native_adapter/glyph_skew.rs`：�
 | `unwind=4` + Z3/CVC5 | CBMC SMT 转换在 `map::at` / status 6 失败 |
 | `unwind=4` + Bitwuzla `arrays-uf-always` / `full-slice` | 仍在转换阶段内存不足；`full-slice` 反使剩余 VCC 增至 6944 |
 
+（2026-11-03 更正：本表及扩容报告中记为“展开断言失败”的 Bitwuzla 结果实为求解器 `ERROR`，虚拟机中没有 bitwuzla 可执行文件；相关展开界结论撤回，见文末同日条目。）
+
 此外，Kissat 在 `unwind=2` 的 SAT 阶段超时。上述运行保留为后端能力负控，明确证明旧超时不能解释为边界充分，也没有资格据 object 参数或较小展开界宣称通过。完整记录见 `evidence/native-subtree-solver-capability/report.json`。
 
 第 1 项仍保持未勾选：真实 Map 的 Kani 义务未完成，`apply_update → apply_patches` 的完整整帧变更证明也仍缺；后续需要新的验证器/后端编码，或保持真实 Map、完整性质、原始域与全部断言的非缩减分解。
@@ -830,3 +832,20 @@ GPU 直接绘制到宿主 `TextureView` 后，`needs_frame` 在宿主 `Queue::pr
 实测与证明范围见 `verification.md` 的 UI-HANDLE-001。
 
 未完成：错误码与 panic 屏障、FFI 导出、保留/引用规则、窗口销毁关系、跨进程句柄空间。`Engine` 尚未经句柄表寻址。
+
+## 2026-11-03：真实 Map 子树证明的记录更正与公式缩减（CP-02 未完成）
+
+**更正。** 此前把 Bitwuzla 在各展开界下的结果记为“展开断言失败”，这一判断是错的。这些日志的非平凡检查全部是 `Status: ERROR`，`FAILURE` 为 0；虚拟机里也没有 bitwuzla 可执行文件。用一个只记录参数并以 127 退出的桩求解器可复现同样的摘要（0 of 1116 failed、683 SUCCESS、429 ERROR）。所以 Bitwuzla 从未真正在这项义务上运行过，也没有任何展开界被否定。符号执行、SSA 转换、容量和内存相关的观察仍然有效。
+
+**公式缩减。** 两个条目不会产生内部节点，但符号执行看不出节点高度和长度是常量，因此一直在展开内部节点的循环。改为按循环设界并保留全部展开断言后，公式明显变小：
+
+| 配置 | 步数 | 剩余 VCC | SSA 转换 |
+|---|---|---|---|
+| 全局 unwind=8（早先） | 1943281 | 23160 | — |
+| 全局 unwind=3，固定树 | 238092 | 4136 | 316.8 秒 |
+| 按循环设界，固定树 | 189386 | 3368 | 29.8 秒 |
+| 按循环设界，原全域 | 190827 | 3376 | 6.45 秒 |
+
+原全域的规模与固定树几乎相同，因此逐棵枚举树没有收益。
+
+**未通过。** 这项义务仍未得到结论，没有反例，也没有通过：CaDiCaL 在 26G 地址空间上限内运行 785.3 秒后，于数组后处理阶段报告内存不足；Kissat 和两种数组编码也都没有结论。这组展开界是否充分仍未确认。下一步是用固定版本的真实 Bitwuzla 跑这组配置。`apply_update → apply_patches` 的整帧性质完全未动。完整记录见 `evidence/native-subtree-unwindset-capability/report.json`。生产代码与验证入口均未改动。

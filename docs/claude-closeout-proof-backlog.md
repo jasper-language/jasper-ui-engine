@@ -10,7 +10,7 @@
 
 ### CP-02
 
-**真实 `BTreeMap` 的 `source_subtree_contains` 与整帧实现级证明。** 当前扩容后的 `unwind=5/6/8` 已有明确不足或失败证据；不得用较小展开、固定树或替代 Map 通过。还需闭合 `apply_update → apply_patches` 的完整整帧性质。
+**真实 `BTreeMap` 的 `source_subtree_contains` 与整帧实现级证明。** 早先把 Bitwuzla 运行记为 `unwind=5/6/8` 展开不足，已更正（2026-11-03）：虚拟机中没有 bitwuzla 可执行文件，那些结果是求解器 `ERROR`，并未否定任何展开界。按循环设界（`--unwindset`，展开断言保留）后全域公式降到 190827 步/3376 个 VCC，但 CaDiCaL 在 26G 上限内于数组后处理阶段内存不足，仍无结论，见 `evidence/native-subtree-unwindset-capability/report.json`。不得用较小展开、固定树或替代 Map 通过。还需闭合 `apply_update → apply_patches` 的完整整帧性质。
 
 ### CP-03
 

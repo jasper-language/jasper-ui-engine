@@ -1,4 +1,5 @@
 {
+  "correction": "Correction 2026-11-03: every result recorded here as failed_unwinding_assertions was a solver ERROR, not a refuted bound. No bitwuzla executable was available, so all non-trivial checks reported ERROR with 0 FAILURE. Those bound conclusions are withdrawn; symex, SSA-conversion, capacity and OOM observations stand. See ../native-subtree-unwindset-capability/report.json.",
   "status": "incomplete_no_supported_backend_completed_within_fixed_vm_limits",
   "scope": "The unchanged actual source_subtree_contains function, the original two-entry real BTreeMap input domain, independent scalar oracle, safety checks, and unwinding assertions. Only CBMC/Kani backend encoding and loop bounds were varied.",
   "resource_limits": {

@@ -1,4 +1,5 @@
 {
+  "correction": "Correction 2026-11-03: every result recorded here as failed_unwinding_assertions was a solver ERROR, not a refuted bound. No bitwuzla executable was available, so all non-trivial checks reported ERROR with 0 FAILURE. Those bound conclusions are withdrawn; symex, SSA-conversion, capacity and OOM observations stand. See ../native-subtree-unwindset-capability/report.json.",
   "status": "incomplete_resource_relaxation_exhausted",
   "scope": "The unchanged production source_subtree_contains, original two-entry real BTreeMap and symbolic input domain, independent oracle, safety checks and unwinding assertions. The default constrained profile was retained; explicit user authorization allowed larger VM memory, swap and wall time.",
   "default_profile": {
