@@ -10,7 +10,7 @@
   "kernel_sha256": "e177fe8a750730a557b1a1666690a93c907d673aa81d5508d1c67eadeee10708",
   "dependencies": {},
   "proof_sha256": "6ef196fad2930d81faa2784c3a22a8a35f86a1ad61064c1ee78b1aa58b1cc6a4",
-  "runner_sha256": "e6b0f634eb0a8827af63141a4a4c6f08f824526db658d0d928144e12e44fa5a2",
+  "runner_sha256": "272bcf0e256086d3019adbffed4895589a8fa463cfd7a3e4f27b61107adece43",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/verus/verus",

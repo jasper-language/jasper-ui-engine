@@ -1,0 +1,9 @@
+verification results:: 0 verified, 1 errors
+error: assertion failed
+   --> <repo>/evidence/scene-interaction-restore-kernel/negative_skip_hover.rs:109:12
+    |
+109 |     assert(candidate.log()=~=head);
+    |            ^^^^^^^^^^^^^^^^^^^^^^ assertion failed
+
+error: aborting due to 1 previous error
+

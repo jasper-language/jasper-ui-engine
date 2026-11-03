@@ -460,32 +460,17 @@ impl NativeScene {
             width,
             height,
         )?;
-        {
-            let document = candidate.document.as_mut()?;
-            document.set_viewport(viewport);
-            document.set_viewport_scroll(viewport_scroll);
-        }
-        if let Some(id) = pressed {
-            if candidate.source_visible(id) {
-                let native = candidate.nodes.get(&id)?.0;
-                candidate
-                    .document
-                    .as_mut()?
-                    .set_mousedown_node_id(Some(native));
-            }
-        }
-        if let Some(id) = focused {
-            if candidate.focus_eligible(id) {
-                let native = candidate.nodes.get(&id)?.0;
-                candidate.document.as_mut()?.set_focus_to(native);
-            }
-        }
-        if let Some((x, y)) = self.last_pointer {
-            candidate.document.as_mut()?.set_hover_to(x, y);
-        }
-        candidate.document.as_mut()?.resolve(0.0);
-        candidate.last_pointer = self.last_pointer;
-        candidate.frame_cache = self.frame_cache.clone();
+        restore_candidate_interaction(
+            &mut candidate,
+            CarriedInteraction {
+                viewport,
+                scroll: viewport_scroll,
+                pressed,
+                focused,
+                pointer: self.last_pointer,
+                frame_cache: self.frame_cache.clone(),
+            },
+        )?;
         Some(candidate)
     }
     /// A frame that removes a node also retires its native press/focus identity. Reusing
@@ -1927,6 +1912,110 @@ pub(crate) fn order_scene_frame<S, C>(
 }
 // END VERIFIED SCENE FRAME ORDER KERNEL
 
+// BEGIN VERIFIED SCENE INTERACTION RESTORE KERNEL
+/// Interaction state one frame carries from the active view into its detached candidate.
+pub(crate) struct CarriedInteraction<I, V, S, P, C> {
+    viewport: V,
+    scroll: S,
+    pressed: Option<I>,
+    focused: Option<I>,
+    pointer: Option<P>,
+    frame_cache: C,
+}
+
+/// The candidate's own writes. `None` means it lost its document or a node mapping.
+pub(crate) trait RestoreCandidate<I, V, S, P, C> {
+    fn restore_viewport(&mut self, viewport: V, scroll: S) -> Option<()>;
+    fn press_admitted(&self, id: I) -> bool;
+    fn restore_press(&mut self, id: I) -> Option<()>;
+    fn focus_admitted(&self, id: I) -> bool;
+    fn restore_focus(&mut self, id: I) -> Option<()>;
+    fn restore_hover(&mut self, pointer: P) -> Option<()>;
+    fn resolve_restored(&mut self) -> Option<()>;
+    fn adopt_pointer_and_cache(&mut self, pointer: Option<P>, frame_cache: C);
+}
+
+/// Replay carried state in its only legal order: viewport, then each identity the candidate still
+/// admits, then hover, then one resolve; the pointer and frame cache are adopted only after that.
+/// A failed write rejects the whole candidate, whereas an identity it no longer admits just drops.
+/// 按唯一合法顺序重放：视口、候选仍准入的身份、悬停、一次解析，之后才采纳指针与帧缓存。
+/// 写失败则整个候选作废；候选不再准入的身份只是丢弃。
+fn restore_candidate_interaction<I: Copy, V, S, P: Copy, C, T: RestoreCandidate<I, V, S, P, C>>(
+    candidate: &mut T,
+    carried: CarriedInteraction<I, V, S, P, C>,
+) -> Option<()> {
+    let CarriedInteraction {
+        viewport,
+        scroll,
+        pressed,
+        focused,
+        pointer,
+        frame_cache,
+    } = carried;
+    candidate.restore_viewport(viewport, scroll)?;
+    if let Some(id) = pressed {
+        if candidate.press_admitted(id) {
+            candidate.restore_press(id)?;
+        }
+    }
+    if let Some(id) = focused {
+        if candidate.focus_admitted(id) {
+            candidate.restore_focus(id)?;
+        }
+    }
+    if let Some(position) = pointer {
+        candidate.restore_hover(position)?;
+    }
+    candidate.resolve_restored()?;
+    candidate.adopt_pointer_and_cache(pointer, frame_cache);
+    Some(())
+}
+// END VERIFIED SCENE INTERACTION RESTORE KERNEL
+
+type CachedFrame = Option<(u32, u32, Vec<u8>)>;
+impl RestoreCandidate<NodeId, Viewport, blitz_dom::util::Point<f64>, (f32, f32), CachedFrame>
+    for NativeScene
+{
+    fn restore_viewport(
+        &mut self,
+        viewport: Viewport,
+        scroll: blitz_dom::util::Point<f64>,
+    ) -> Option<()> {
+        let document = self.document.as_mut()?;
+        document.set_viewport(viewport);
+        document.set_viewport_scroll(scroll);
+        Some(())
+    }
+    fn press_admitted(&self, id: NodeId) -> bool {
+        self.source_visible(id)
+    }
+    fn restore_press(&mut self, id: NodeId) -> Option<()> {
+        let native = self.nodes.get(&id)?.0;
+        self.document.as_mut()?.set_mousedown_node_id(Some(native));
+        Some(())
+    }
+    fn focus_admitted(&self, id: NodeId) -> bool {
+        self.focus_eligible(id)
+    }
+    fn restore_focus(&mut self, id: NodeId) -> Option<()> {
+        let native = self.nodes.get(&id)?.0;
+        self.document.as_mut()?.set_focus_to(native);
+        Some(())
+    }
+    fn restore_hover(&mut self, (x, y): (f32, f32)) -> Option<()> {
+        self.document.as_mut()?.set_hover_to(x, y);
+        Some(())
+    }
+    fn resolve_restored(&mut self) -> Option<()> {
+        self.document.as_mut()?.resolve(0.0);
+        Some(())
+    }
+    fn adopt_pointer_and_cache(&mut self, pointer: Option<(f32, f32)>, frame_cache: CachedFrame) {
+        self.last_pointer = pointer;
+        self.frame_cache = frame_cache;
+    }
+}
+
 // BEGIN VERIFIED SCENE WORK CAPACITY KERNEL
 /// Candidate admission count only; not an allocator bound for text, fonts or upstream scratch.
 pub(crate) fn scene_work_fits(prepared: usize, pending: usize, incoming: usize) -> bool {
@@ -3298,6 +3387,118 @@ mod tests {
         let mut reference = NativeScene::from_scene(10, &scene, &bytes, 320, 200).unwrap();
         assert!(reference.set_viewport_scroll_from_host(10, next, 0.0, 4.0));
         assert!(after == reference.render_cpu(10, 8 * 1024 * 1024).unwrap());
+    }
+
+    /// The success path of the replay on a real document, read back from the replaced view.
+    #[test]
+    #[cfg(feature = "cpu-pending")]
+    fn committed_frame_replays_interaction_state_and_drops_what_the_candidate_refuses() {
+        use crate::{native_events::NativeEventReply, native_view::PointerAction};
+        let bytes =
+            std::fs::read(std::env::var("JASPER_UI_TEST_FONT").expect("injected font required"))
+                .unwrap();
+        let button = |id: u64, height: f32| {
+            let mut node = Node::text(NodeId(id), "Go");
+            node.semantics = Semantics {
+                role: Role::Button,
+                focusable: true,
+                ..Default::default()
+            };
+            node.style = Style::default().height(Length::Px(height));
+            node
+        };
+        let filler =
+            Node::container(NodeId(4)).with_style(Style::default().height(Length::Px(800.0)));
+        let scene = Scene::new(Node::container(NodeId(1)).with_children(vec![
+            button(2, 80.0),
+            button(3, 80.0),
+            filler,
+        ]));
+        let mut native = NativeScene::from_scene(10, &scene, &bytes, 320, 200).unwrap();
+        let version = scene.version();
+        assert!(native.set_viewport_from_host(10, 400, 300, 2.0));
+        assert!(native.set_viewport_scroll_from_host(10, version, 0.0, 6.0));
+        assert!(native.pointer_from_host(
+            10,
+            version,
+            PointerAction::Down,
+            12.0,
+            12.0,
+            true,
+            &mut |_| NativeEventReply::default()
+        ));
+        let pressed_native = native.document.as_ref().unwrap().get_mousedown_node_id();
+        let native_id = |native: &NativeScene, id: NodeId| native.nodes.get(&id).unwrap().0;
+        let press = [NodeId(2), NodeId(3)]
+            .into_iter()
+            .find(|id| pressed_native == Some(native_id(&native, *id)))
+            .expect("the press landed on a button");
+        let focus = if press == NodeId(2) {
+            NodeId(3)
+        } else {
+            NodeId(2)
+        };
+        assert!(native.focus_from_host(10, version, focus, &mut |_| {}));
+        native.render_cpu(10, 16 * 1024 * 1024).unwrap();
+        let viewport = native.document.as_ref().unwrap().viewport().clone();
+        let cached = native.frame_cache.clone();
+        assert!(native
+            .document
+            .as_ref()
+            .unwrap()
+            .get_hover_node_id()
+            .is_some());
+        assert!(cached.is_some());
+
+        // Both identities survive and every carried value reaches the replaced view.
+        let next = version + 1;
+        assert!(native.apply_patches(
+            10,
+            version,
+            next,
+            &[ScenePatch::UpdateText {
+                id: press,
+                text: "Ok".into(),
+            }],
+        ));
+        let document = native.document.as_ref().unwrap();
+        assert_eq!(document.viewport().window_size, viewport.window_size);
+        assert_eq!(document.viewport().hidpi_scale, viewport.hidpi_scale);
+        assert_eq!(document.viewport_scroll().y, 6.0);
+        assert_eq!(
+            document.get_mousedown_node_id(),
+            Some(native_id(&native, press))
+        );
+        assert!(document.get_hover_node_id().is_some());
+        assert_eq!(native.focused_node(10, next), Some(focus));
+        assert_eq!(native.last_pointer, Some((12.0, 12.0)));
+        assert_eq!(native.frame_cache, cached);
+
+        // Hiding both identities drops them without rejecting the frame.
+        let last = next + 1;
+        let hidden = Style::default()
+            .height(Length::Px(80.0))
+            .display(crate::style::Display::None);
+        assert!(native.apply_patches(
+            10,
+            next,
+            last,
+            &[
+                ScenePatch::UpdateStyle {
+                    id: press,
+                    style: hidden.clone(),
+                },
+                ScenePatch::UpdateStyle {
+                    id: focus,
+                    style: hidden,
+                },
+            ],
+        ));
+        let document = native.document.as_ref().unwrap();
+        assert_eq!(document.get_mousedown_node_id(), None);
+        assert_eq!(native.focused_node(10, last), None);
+        assert_eq!(native.last_pointer, Some((12.0, 12.0)));
+        assert_eq!(document.viewport_scroll().y, 6.0);
     }
 
     #[test]

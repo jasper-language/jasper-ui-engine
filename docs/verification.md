@@ -979,3 +979,20 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 真实路径测试（`tests/scene_batch_transaction.rs`，测试证据，不是证明）：公开 API 上的真实 `Scene` 对照独立树模型，覆盖陈旧批、空批、首个失败的错误值、每批后的整树比较、失败后场景与版本不变、成功推进一次、同批后续补丁看到先前补丁。四个手动变异都使它失败（各一次，未入 Verus 反例表）：直接在活动场景上应用、不推进版本、首补丁后停止、补丁逆序。
 
 未覆盖：`apply_one` 的补丁语义；`Scene` 的克隆、`validate` 与 `collect_unique_ids`；`apply_batch_at` 中版本赋值与 `*self = next` 的实现级规格；公开 API 到不了的 `VersionExhausted`（由现有 crate 内单元测试检查）；克隆或析构旧场景时的 panic。证据：`evidence/scene-batch-stage-kernel/`、`evidence/scene-batch-stage-chain/report.json`。
+
+## UI-SCENE-INTERACTION-RESTORE-001：候选的交互状态重放（2026-11-04，CP-03 子性质）
+
+`NativeScene::rebuild_candidate` 的后半段改为 `restore_candidate_interaction`，候选的每次写入是 `RestoreCandidate` trait 的一个方法。行为不变。
+
+| 阶段 | 范围 | 结果 |
+|---|---|---|
+| Verus/Z3 | 任意候选（写入遵守 trait 契约）与任意携带值：`Some` 时写入序列恰为视口、仍被准入的按下、仍被准入的焦点、悬停、一次解析、采纳指针与帧缓存；未准入的身份写入在调用处被拒；`None` 只出现在写入失败之后 | 1 verified/0 errors。十一个反例被拒：五个在后置条件（跳过解析、解析两次、先采纳后解析、不采纳、成功路径返回 `None`），四个在中间断言（跳过视口、吞掉按下失败、丢弃已准入焦点、跳过悬停），两个在前置条件（写入未准入的按下或焦点） |
+| Proptest | 真实内核对照独立脚本，含写入 panic 展开 | 256 例通过 |
+| Miri | 每个失败位置与 panic 位置，携带值恰好释放一次 | 通过 |
+| cargo-fuzz | 只覆盖无 panic 路径 | `read_boundary` 91295 次（`batch_decode` 1395218 次不触及此内核） |
+| Kani | 携带值、两个准入掩码与失败位置符号化；Kani 不建模展开 | 3338 checks / 0 failed |
+| Loom | N/A：内核无共享状态与同步原语，候选在提交前只被构造阶段独占持有 | 不计 PASS；未添加替代运行 |
+
+真实路径测试（`committed_frame_replays_interaction_state_and_drops_what_the_candidate_refuses`，测试证据，不是证明）：真实 `NativeScene` 与真实 Blitz 文档，读回替换后的视图，检查窗口尺寸与缩放、滚动、按下、悬停、焦点、指针和帧缓存；隐藏节点后按下与焦点被丢弃而帧仍提交。对 `NativeScene` 的 trait 实现做的九个手动变异都使它失败（各一次，未入 Verus 反例表）：不写视口、不写滚动、不写按下、不写焦点、不写悬停、不存指针、不存帧缓存、按下总准入、焦点总准入。
+
+假设与未覆盖：`NativeScene` 的 trait 实现只由测试检查，未证明其满足契约；契约假设写入不改变准入判定，理由是写入只碰文档，准入只读来源元数据，这一点未形式化。Blitz 在这些写入与 `resolve` 中的行为、候选构造本身、`frame_retires_node`（依赖 CP-02 的 `source_subtree_contains`）都在证明之外。证据：`evidence/scene-interaction-restore-kernel/`、`evidence/scene-interaction-restore-chain/report.json`。

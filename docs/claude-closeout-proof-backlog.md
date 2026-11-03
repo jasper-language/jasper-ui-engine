@@ -18,7 +18,9 @@
 
 已闭合的子性质（2026-11-03，UI-SCENE-FRAME-ORDER-001）：`order_scene_frame` 的阶段顺序。对任意阶段闭包，构造阶段的前置条件只能由精确后继上成功的来源满足，结果绑定到产生它的阶段输出；反例被拒，见 `evidence/scene-frame-order-chain/report.json`。阶段内 panic 由 Proptest/Miri 对真实内核、由集成测试对真实 `NativeScene` 与真实 Blitz 候选检查，这是测试证据，不是证明，且 panic 是在构造阶段外层注入的，不是 Blitz 内部抛出的。同日闭合 UI-SCENE-BATCH-STAGE-001：`stage_scene_batch` 的折叠。对任意状态、补丁、错误类型与任意闭包，`Ok` 是从独立值开始、每个补丁按序恰好成功应用一次的组合，`Err` 是成功前缀之后第一个失败的错误；四个反例被拒，见 `evidence/scene-batch-stage-chain/report.json`。真实 `Scene::apply_batch_at` 由独立树模型对照测试，这是测试证据，不是证明，所以 UI-TXN-ATOMIC-001 仍是 not_verified。
 
-仍未覆盖：`apply_one` 的补丁语义、`Scene` 的克隆与身份校验、`apply_batch_at` 中版本赋值与整体替换两条语句的实现级规格、候选构造本身、焦点/滚动/指针/帧缓存恢复的实现级规格、`*self = candidate` 析构旧视图时的 panic、活动文档读取路径上第三方内部可变性的影响。
+2026-11-04 闭合 UI-SCENE-INTERACTION-RESTORE-001：`restore_candidate_interaction` 的重放。对写入遵守 trait 契约的任意候选，成功时写入序列恰为视口、仍被准入的按下与焦点、悬停、一次解析、采纳指针与帧缓存，`None` 只出现在写入失败之后；反例被拒，见 `evidence/scene-interaction-restore-chain/report.json`。`NativeScene` 的 trait 实现由真实文档测试和九个手动变异检查，这是测试证据，不是证明；Blitz 对这些写入的处理也不在证明内。
+
+仍未覆盖：`apply_one` 的补丁语义、`Scene` 的克隆与身份校验、`apply_batch_at` 中版本赋值与整体替换两条语句的实现级规格、候选构造本身、`NativeScene` 的 `RestoreCandidate` 实现满足契约（含写入不改变准入判定）、`*self = candidate` 析构旧视图时的 panic、活动文档读取路径上第三方内部可变性的影响。
 
 ### CP-04
 

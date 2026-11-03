@@ -861,3 +861,7 @@ GPU 直接绘制到宿主 `TextureView` 后，`needs_frame` 在宿主 `Queue::pr
 `Scene::apply_batch_at` 的暂存循环改为 `stage_scene_batch` 加无接收者的 `apply_detached`，行为不变。折叠本身有六步证据（Loom 为 N/A）。真实 `Scene` 事务由 `tests/scene_batch_transaction.rs` 对照独立树模型测试，整个事务仍未证明，范围见 `verification.md` 的 UI-SCENE-BATCH-STAGE-001。
 
 CP-02 仍无判定：只选一个断言（切片后 30 个 VCC）在 45 分钟内没有结果。
+
+## 2026-11-04：候选的交互状态重放（CP-03 子性质）
+
+`NativeScene::rebuild_candidate` 的恢复段改为 `restore_candidate_interaction`，行为不变。重放顺序有六步证据（Loom 为 N/A），前提是候选的写入遵守 trait 契约。`NativeScene` 的实现只由真实文档测试和九个手动变异检查，没有证明。Blitz 对这些写入的处理、候选构造、`apply_one` 的补丁语义仍未证明，范围见 `verification.md` 的 UI-SCENE-INTERACTION-RESTORE-001。

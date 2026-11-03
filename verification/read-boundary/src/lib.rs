@@ -827,6 +827,143 @@ pub fn assert_scene_batch_panic(start: u64, patches: &[u8], panic_at: usize) {
     }
 }
 
+/// One candidate write as the model records it. 模型记录的一次候选写入。
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum RestoreWrite {
+    Viewport(u64, u64),
+    Press(u8),
+    Focus(u8),
+    Hover(u8),
+    Resolve,
+    Adopt(Option<u8>, u64),
+}
+
+/// Recording candidate: admission is a bit mask, and the write numbered `fail_at` fails.
+/// 记录型候选：准入是位掩码，编号为 `fail_at` 的写入失败。
+struct RecordedRestore {
+    writes: [Option<RestoreWrite>; 8],
+    len: usize,
+    press_mask: u8,
+    focus_mask: u8,
+    fail_at: u8,
+    panic_at: u8,
+    failed: bool,
+}
+
+impl RecordedRestore {
+    fn write(&mut self, write: RestoreWrite) -> Option<()> {
+        assert!(!self.failed);
+        let number = self.len as u8;
+        if number == self.panic_at {
+            std::panic::resume_unwind(Box::new("candidate write"));
+        }
+        if number == self.fail_at {
+            self.failed = true;
+            return None;
+        }
+        self.writes[self.len] = Some(write);
+        self.len += 1;
+        Some(())
+    }
+}
+
+impl<'a> RestoreCandidate<u8, FrameToken<'a>, u64, u8, FrameToken<'a>> for RecordedRestore {
+    fn restore_viewport(&mut self, viewport: FrameToken<'a>, scroll: u64) -> Option<()> {
+        self.write(RestoreWrite::Viewport(viewport.1, scroll))
+    }
+    fn press_admitted(&self, id: u8) -> bool {
+        self.press_mask >> (id & 7) & 1 == 1
+    }
+    fn restore_press(&mut self, id: u8) -> Option<()> {
+        self.write(RestoreWrite::Press(id))
+    }
+    fn focus_admitted(&self, id: u8) -> bool {
+        self.focus_mask >> (id & 7) & 1 == 1
+    }
+    fn restore_focus(&mut self, id: u8) -> Option<()> {
+        self.write(RestoreWrite::Focus(id))
+    }
+    fn restore_hover(&mut self, pointer: u8) -> Option<()> {
+        self.write(RestoreWrite::Hover(pointer))
+    }
+    fn resolve_restored(&mut self) -> Option<()> {
+        self.write(RestoreWrite::Resolve)
+    }
+    fn adopt_pointer_and_cache(&mut self, pointer: Option<u8>, frame_cache: FrameToken<'a>) {
+        assert!(!self.failed);
+        self.writes[self.len] = Some(RestoreWrite::Adopt(pointer, frame_cache.1));
+        self.len += 1;
+    }
+}
+
+/// The real replay against an independently written script: the writes are exactly its prefix up
+/// to the failure, `None` only after a failed write, and both carried values are released once.
+/// 真实重放对照独立脚本：写入恰为失败前的前缀，仅写失败后为 None，两个携带值都恰释放一次。
+pub fn assert_scene_interaction_restore(viewport: u64, scroll: u64, pressed: Option<u8>, focused: Option<u8>, pointer: Option<u8>, cache: u64, press_mask: u8, focus_mask: u8, fail_at: u8) {
+    let mut script = [None; 8];
+    let mut count = 0;
+    let mut push = |write| {
+        script[count] = Some(write);
+        count += 1;
+    };
+    push(RestoreWrite::Viewport(viewport, scroll));
+    match pressed {
+        Some(id) if press_mask >> (id & 7) & 1 == 1 => push(RestoreWrite::Press(id)),
+        _ => {}
+    }
+    match focused {
+        Some(id) if focus_mask >> (id & 7) & 1 == 1 => push(RestoreWrite::Focus(id)),
+        _ => {}
+    }
+    if let Some(position) = pointer {
+        push(RestoreWrite::Hover(position));
+    }
+    push(RestoreWrite::Resolve);
+    push(RestoreWrite::Adopt(pointer, cache));
+    // Adoption cannot fail, so only the writes before it are failure positions.
+    // 采纳不会失败，只有它之前的写入才是失败位置。
+    let fallible = count - 1;
+    let live = std::cell::Cell::new(0);
+    let mut candidate = RecordedRestore { writes: [None; 8], len: 0, press_mask, focus_mask, fail_at, panic_at: u8::MAX, failed: false };
+    let result = restore_candidate_interaction(&mut candidate, CarriedInteraction {
+        viewport: FrameToken::new(&live, viewport),
+        scroll,
+        pressed,
+        focused,
+        pointer,
+        frame_cache: FrameToken::new(&live, cache),
+    });
+    assert_eq!(live.get(), 0);
+    let fails = (fail_at as usize) < fallible;
+    assert_eq!(result.is_none(), fails);
+    assert_eq!(candidate.failed, fails);
+    assert_eq!(candidate.len, if fails { fail_at as usize } else { count });
+    assert_eq!(candidate.writes[..candidate.len], script[..candidate.len]);
+}
+
+/// A panicking candidate write unwinds out of the replay: nothing after it runs, both carried values
+/// are released once, and the recorded writes stop at the panic.
+/// 候选写入 panic 穿出重放：其后不再运行，两个携带值都恰释放一次，记录止于 panic。
+#[cfg(test)]
+pub fn assert_scene_interaction_restore_panic(viewport: u64, scroll: u64, cache: u64, panic_at: u8) {
+    let live = std::cell::Cell::new(0);
+    let mut candidate = RecordedRestore { writes: [None; 8], len: 0, press_mask: 0xff, focus_mask: 0xff, fail_at: u8::MAX, panic_at, failed: false };
+    let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        restore_candidate_interaction(&mut candidate, CarriedInteraction {
+            viewport: FrameToken::new(&live, viewport),
+            scroll,
+            pressed: Some(1),
+            focused: Some(2),
+            pointer: Some(3),
+            frame_cache: FrameToken::new(&live, cache),
+        })
+    }));
+    // Five fallible writes precede the infallible adoption. 不会失败的采纳之前有五次可失败写入。
+    assert_eq!(outcome.is_err(), panic_at < 5);
+    assert_eq!(candidate.len, if panic_at < 5 { panic_at as usize } else { 6 });
+    assert_eq!(live.get(), 0);
+}
+
 /// Runs the real state against an array model of held buttons kept as (variant rank, code); the
 /// expected drag button is the model's smallest entry, independent of the production set.
 /// 以真实状态对照数组模型（变体序、码）；拖动按钮取模型最小项，不依赖生产集合。
@@ -2119,6 +2256,14 @@ mod kani_checks {
         assert_scene_batch_stage(kani::any(), &patches[..len]);
     }
 
+    // Arbitrary carried values, admission masks and failure position through the real replay;
+    // unwinding is outside Kani's model. 任意携带值、准入掩码与失败位置穿过真实重放；展开不在 Kani 模型内。
+    #[kani::proof]
+    #[kani::unwind(9)]
+    fn scene_interaction_restore() {
+        assert_scene_interaction_restore(kani::any(), kani::any(), kani::any(), kani::any(), kani::any(), kani::any(), kani::any(), kani::any(), kani::any());
+    }
+
     // Real table and Vec storage: fixed operation shape, arbitrary first generation, values and
     // foreign handle. The arbitrary-shape model path runs in Proptest/fuzz; retirement below.
     // 真实表与 Vec 存储：操作形状固定，首代、值与外来句柄任意；任意形状模型路径由 Proptest/fuzz 覆盖。
@@ -2590,6 +2735,11 @@ mod properties {
             assert_scene_batch_panic(start, &patches, panic_at);
         }
         #[test]
+        fn scene_interaction_restore_property(viewport in any::<u64>(), scroll in any::<u64>(), pressed in any::<Option<u8>>(), focused in any::<Option<u8>>(), pointer in any::<Option<u8>>(), cache in any::<u64>(), press_mask in any::<u8>(), focus_mask in any::<u8>(), fail_at in 0u8..9, panic_at in 0u8..9) {
+            assert_scene_interaction_restore(viewport, scroll, pressed, focused, pointer, cache, press_mask, focus_mask, fail_at);
+            assert_scene_interaction_restore_panic(viewport, scroll, cache, panic_at);
+        }
+        #[test]
         fn glyph_skew_property(coeffs in any::<[u64; 6]>(), c in any::<u64>(), signs in any::<u8>(), pick in any::<u8>()) {
             let [a, b, _, d, e, f] = coeffs;
             assert_glyph_skew(a, b, c, d, e, f);
@@ -2978,6 +3128,11 @@ mod memory {
             assert_scene_batch_panic(version, &[1, 2, 3], 0);
             assert_scene_batch_panic(version, &[1, 2, 3], 2);
             assert_scene_batch_panic(version, &[1, 2, 3], 3);
+            for fail_at in 0..7 {
+                assert_scene_interaction_restore(version, 2, Some(1), Some(2), Some(3), 4, 0xff, 0xff, fail_at);
+                assert_scene_interaction_restore_panic(version, 2, 4, fail_at);
+            }
+            assert_scene_interaction_restore(version, 2, Some(1), Some(2), None, 4, 0, 0, 9);
         }
         assert_desktop_pointer_path(&[
             (0, 0, 0, 1.5f32.to_bits(), f32::NAN.to_bits(), u64::MAX),
@@ -3190,6 +3345,7 @@ mod schedules {
                 assert_desktop_timestamp(first[0] as u128);
                 assert_scene_frame_order(first[0] & 1 == 1, first[1] as u64, first[2] as u64, first[3] & 1 == 1, first[0] as u64);
                 assert_scene_batch_stage(first[0] as u64, &first[..(first[1] as usize & 3)]);
+                assert_scene_interaction_restore(first[0] as u64, first[1] as u64, Some(first[2]), Some(first[3]), Some(first[0]), first[1] as u64, first[2], first[3], first[0]);
                 assert_desktop_pointer_path(&[(1, first[0], first[1] as u16, 0, 0, first[2] as u64), (0, 0, 0, first[3] as u32, 0, 1), (2, first[0], first[1] as u16, 0, 0, 2)]);
                 assert_color_construct(first[0], first[1], first[2], first[3], first[0] ^ first[3]);
                 assert_font_family(&first[..(first[2] as usize & 3)]);

@@ -79,6 +79,7 @@ fn main() {
                 "SCENE UPDATE ERROR TYPE KERNEL",
                 "SCENE FRAME COMPLETION KERNEL",
                 "SCENE FRAME ORDER KERNEL",
+                "SCENE INTERACTION RESTORE KERNEL",
             ][..],
         ),
         (

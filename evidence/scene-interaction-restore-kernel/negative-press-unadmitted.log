@@ -1,0 +1,24 @@
+verification results:: 0 verified, 1 errors
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+  --> <repo>/evidence/scene-interaction-restore-kernel/negative_press_unadmitted.rs:70:1
+   |
+70 | fn restore_candidate_interaction<I:Copy,V,S,P:Copy,C,T:RestoreCandidate<I,V,S,P,C>>(candidate:&mut T,carried:CarriedInteraction<I,V,S,P,C>)->(result:Option<()>)
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: precondition not satisfied
+  --> <repo>/evidence/scene-interaction-restore-kernel/negative_press_unadmitted.rs:92:13
+   |
+43 |         requires old(self).press_ok(id),
+   |                  ---------------------- failed precondition
+...
+92 |             candidate.restore_press(id)?;
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: assertion failed
+  --> <repo>/evidence/scene-interaction-restore-kernel/negative_press_unadmitted.rs:96:12
+   |
+96 |     assert(candidate.log()=~=head);
+   |            ^^^^^^^^^^^^^^^^^^^^^^ assertion failed
+
+error: aborting due to 2 previous errors
+

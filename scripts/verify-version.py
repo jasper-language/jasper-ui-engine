@@ -2145,6 +2145,102 @@ KERNELS["scene-batch-stage"] = {
 }
 
 
+KERNELS["scene-interaction-restore"] = {
+    "source":"src/native_adapter/native_scene.rs", "marker":"SCENE INTERACTION RESTORE",
+    "property":"UI-SCENE-INTERACTION-RESTORE-001",
+    "spec_prelude":"""pub ghost enum RestoreEvent<I,V,S,P,C> { Viewport(V,S), Press(I), Focus(I), Hover(P), Resolve, Adopt(Option<P>,C), Failed }
+spec fn same_gates<I,V,S,P,C,T:RestoreCandidate<I,V,S,P,C>>(a:T,b:T)->bool {
+    (forall|id:I| (#[trigger] a.press_ok(id))==b.press_ok(id)) && (forall|id:I| (#[trigger] a.focus_ok(id))==b.focus_ok(id))
+}
+spec fn press_part<I,V,S,P,C,T:RestoreCandidate<I,V,S,P,C>>(t:T,c:CarriedInteraction<I,V,S,P,C>)->Seq<RestoreEvent<I,V,S,P,C>> {
+    if c.pressed is Some && t.press_ok(c.pressed->0) {seq![RestoreEvent::Press(c.pressed->0)]} else {Seq::empty()}
+}
+spec fn focus_part<I,V,S,P,C,T:RestoreCandidate<I,V,S,P,C>>(t:T,c:CarriedInteraction<I,V,S,P,C>)->Seq<RestoreEvent<I,V,S,P,C>> {
+    if c.focused is Some && t.focus_ok(c.focused->0) {seq![RestoreEvent::Focus(c.focused->0)]} else {Seq::empty()}
+}
+spec fn hover_part<I,V,S,P,C>(c:CarriedInteraction<I,V,S,P,C>)->Seq<RestoreEvent<I,V,S,P,C>> {
+    if c.pointer is Some {seq![RestoreEvent::Hover(c.pointer->0)]} else {Seq::empty()}
+}
+spec fn restore_script<I,V,S,P,C,T:RestoreCandidate<I,V,S,P,C>>(t:T,c:CarriedInteraction<I,V,S,P,C>)->Seq<RestoreEvent<I,V,S,P,C>> {
+    seq![RestoreEvent::Viewport(c.viewport,c.scroll)]+press_part(t,c)+focus_part(t,c)+hover_part(c)
+        +seq![RestoreEvent::Resolve,RestoreEvent::Adopt(c.pointer,c.frame_cache)]
+}
+""",
+    "signature":"""fn restore_candidate_interaction<I: Copy, V, S, P: Copy, C, T: RestoreCandidate<I, V, S, P, C>>(
+    candidate: &mut T,
+    carried: CarriedInteraction<I, V, S, P, C>,
+) -> Option<()> {""",
+    "contract":"""fn restore_candidate_interaction<I:Copy,V,S,P:Copy,C,T:RestoreCandidate<I,V,S,P,C>>(candidate:&mut T,carried:CarriedInteraction<I,V,S,P,C>)->(result:Option<()>)
+        ensures match result {
+            Some(_)=>final(candidate).log()=~=old(candidate).log()+restore_script(*old(candidate),carried),
+            None=>final(candidate).log().len()>0 && final(candidate).log().last() is Failed,
+        },
+    {
+    let ghost start=candidate.log();
+    let ghost gates=*candidate;""",
+    "extra_annotations":[
+        ("pub(crate) trait RestoreCandidate<I, V, S, P, C> {","""pub(crate) trait RestoreCandidate<I, V, S, P, C>: Sized {
+    spec fn log(&self)->Seq<RestoreEvent<I,V,S,P,C>>;
+    spec fn press_ok(&self,id:I)->bool;
+    spec fn focus_ok(&self,id:I)->bool;"""),
+        ("fn restore_viewport(&mut self, viewport: V, scroll: S) -> Option<()>;","""fn restore_viewport(&mut self, viewport: V, scroll: S) -> (r:Option<()>)
+        ensures forall|id:I| (#[trigger] final(self).press_ok(id))==old(self).press_ok(id),
+            forall|id:I| (#[trigger] final(self).focus_ok(id))==old(self).focus_ok(id),
+            r is Some ==> final(self).log()==old(self).log().push(RestoreEvent::Viewport(viewport,scroll)),
+            r is None ==> final(self).log()==old(self).log().push(RestoreEvent::Failed);"""),
+        ("fn press_admitted(&self, id: I) -> bool;","fn press_admitted(&self, id: I) -> (r:bool) ensures r==self.press_ok(id);"),
+        ("fn restore_press(&mut self, id: I) -> Option<()>;","""fn restore_press(&mut self, id: I) -> (r:Option<()>)
+        requires old(self).press_ok(id),
+        ensures forall|id:I| (#[trigger] final(self).press_ok(id))==old(self).press_ok(id),
+            forall|id:I| (#[trigger] final(self).focus_ok(id))==old(self).focus_ok(id),
+            r is Some ==> final(self).log()==old(self).log().push(RestoreEvent::Press(id)),
+            r is None ==> final(self).log()==old(self).log().push(RestoreEvent::Failed);"""),
+        ("fn focus_admitted(&self, id: I) -> bool;","fn focus_admitted(&self, id: I) -> (r:bool) ensures r==self.focus_ok(id);"),
+        ("fn restore_focus(&mut self, id: I) -> Option<()>;","""fn restore_focus(&mut self, id: I) -> (r:Option<()>)
+        requires old(self).focus_ok(id),
+        ensures forall|id:I| (#[trigger] final(self).press_ok(id))==old(self).press_ok(id),
+            forall|id:I| (#[trigger] final(self).focus_ok(id))==old(self).focus_ok(id),
+            r is Some ==> final(self).log()==old(self).log().push(RestoreEvent::Focus(id)),
+            r is None ==> final(self).log()==old(self).log().push(RestoreEvent::Failed);"""),
+        ("fn restore_hover(&mut self, pointer: P) -> Option<()>;","""fn restore_hover(&mut self, pointer: P) -> (r:Option<()>)
+        ensures r is Some ==> final(self).log()==old(self).log().push(RestoreEvent::Hover(pointer)),
+            r is None ==> final(self).log()==old(self).log().push(RestoreEvent::Failed);"""),
+        ("fn resolve_restored(&mut self) -> Option<()>;","""fn resolve_restored(&mut self) -> (r:Option<()>)
+        ensures r is Some ==> final(self).log()==old(self).log().push(RestoreEvent::Resolve),
+            r is None ==> final(self).log()==old(self).log().push(RestoreEvent::Failed);"""),
+        ("fn adopt_pointer_and_cache(&mut self, pointer: Option<P>, frame_cache: C);","""fn adopt_pointer_and_cache(&mut self, pointer: Option<P>, frame_cache: C)
+        ensures final(self).log()==old(self).log().push(RestoreEvent::Adopt(pointer,frame_cache));"""),
+        ("    candidate.restore_viewport(viewport, scroll)?;","""    candidate.restore_viewport(viewport, scroll)?;
+    assert(same_gates(*candidate,gates));
+    let ghost head=start+seq![RestoreEvent::Viewport(carried.viewport,carried.scroll)];
+    assert(candidate.log()=~=head);"""),
+        ("    if let Some(id) = focused {","""    let ghost head=head+press_part(gates,carried);
+    assert(candidate.log()=~=head);
+    assert(same_gates(*candidate,gates));
+    if let Some(id) = focused {"""),
+        ("    if let Some(position) = pointer {","""    let ghost head=head+focus_part(gates,carried);
+    assert(candidate.log()=~=head);
+    if let Some(position) = pointer {"""),
+        ("    candidate.resolve_restored()?;","""    let ghost head=head+hover_part(carried);
+    assert(candidate.log()=~=head);
+    candidate.resolve_restored()?;"""),
+    ],
+    "depends":[], "evidence":"scene-interaction-restore-kernel", "function_count":1,
+    "scope":"Exact production replay over an arbitrary candidate whose writes obey the trait contract: success is exactly viewport, each carried identity still admitted, hover, one resolve, then pointer and frame cache adoption, with no write of an unadmitted identity; None only follows a failed write. NativeScene's trait implementation, the assumption that its writes leave the admission gates unchanged, and everything Blitz does in those writes are outside the proof.",
+    "mutations":[("skip-resolve","candidate.resolve_restored()?;",""),
+                 ("resolve-twice","candidate.resolve_restored()?;","candidate.resolve_restored()?; candidate.resolve_restored()?;"),
+                 ("adopt-before-resolve","candidate.resolve_restored()?;\n    candidate.adopt_pointer_and_cache(pointer, frame_cache);","candidate.adopt_pointer_and_cache(pointer, frame_cache);\n    candidate.resolve_restored()?;"),
+                 ("adopt-nothing","candidate.adopt_pointer_and_cache(pointer, frame_cache);",""),
+                 ("spurious-rejection","candidate.adopt_pointer_and_cache(pointer, frame_cache);\n    Some(())","candidate.adopt_pointer_and_cache(pointer, frame_cache);\n    None")],
+    "refused_mutations":[("skip-viewport","candidate.restore_viewport(viewport, scroll)?;\n    assert(same_gates","let _dropped=(viewport,scroll);\n    assert(same_gates","assertion failed"),
+                         ("swallow-failed-press","candidate.restore_press(id)?;","let _=candidate.restore_press(id);","assertion failed"),
+                         ("drop-admitted-focus","if candidate.focus_admitted(id) {\n            candidate.restore_focus(id)?;\n        }","","assertion failed"),
+                         ("skip-hover","candidate.restore_hover(position)?;","","assertion failed"),
+                         ("press-unadmitted","if candidate.press_admitted(id) {\n            candidate.restore_press(id)?;","if true {\n            candidate.restore_press(id)?;","precondition not satisfied"),
+                         ("focus-unadmitted","if candidate.focus_admitted(id) {\n            candidate.restore_focus(id)?;","if true {\n            candidate.restore_focus(id)?;","precondition not satisfied")],
+}
+
+
 KERNELS["source-insert-index"] = {
     "source":"src/native_adapter/native_scene.rs", "marker":"SOURCE INSERT INDEX",
     "property":"UI-SOURCE-INSERT-INDEX-001",

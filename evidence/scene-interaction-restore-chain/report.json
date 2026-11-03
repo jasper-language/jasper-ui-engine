@@ -1,0 +1,154 @@
+{
+  "property": "UI-SCENE-INTERACTION-RESTORE-001",
+  "backlog_item": "CP-03",
+  "status": "subproperty_scoped_checks_passed",
+  "cp03_closed": false,
+  "production": {
+    "file": "src/native_adapter/native_scene.rs",
+    "function": "restore_candidate_interaction",
+    "file_sha256": "1538ef0d6261eae062a109585c4d15333f8a26f64af41942a86d1924cf183010",
+    "kernel_sha256": "7381377f7f41938cb31df7c93b71a813d7164fe05e67e519ff3bc7e55dff8a90",
+    "caller": "NativeScene::rebuild_candidate"
+  },
+  "specification": "Exact production replay over an arbitrary candidate whose writes obey the trait contract: success is exactly viewport, each carried identity still admitted, hover, one resolve, then pointer and frame cache adoption, with no write of an unadmitted identity; None only follows a failed write. NativeScene's trait implementation, the assumption that its writes leave the admission gates unchanged, and everything Blitz does in those writes are outside the proof.",
+  "tools": {
+    "verus": "Version: 0.2026.10.18.7d82994",
+    "z3": "Z3 version 4.16.0 - 64 bit",
+    "kani": "0.68.0",
+    "cbmc": "6.11.0",
+    "nightly": "nightly-2026-10-17"
+  },
+  "config": {
+    "entry": "python3 scripts/verify-ui.py --verus <verus>",
+    "fuzz_seconds": 20,
+    "proptest_cases": 256,
+    "proptest_seed": "12345"
+  },
+  "stages": {
+    "Verus+Z3": {
+      "result": "passed",
+      "verified": 1,
+      "errors": 0,
+      "negative_controls": [
+        {
+          "name": "skip-resolve",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "resolve-twice",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "adopt-before-resolve",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "adopt-nothing",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "spurious-rejection",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "skip-viewport",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "swallow-failed-press",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "drop-admitted-focus",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "skip-hover",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "press-unadmitted",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "focus-unadmitted",
+          "rejected": true,
+          "exit_code": 1
+        }
+      ],
+      "note": "Six controls are rejected at an intermediate assertion or at the guarded call rather than at the postcondition."
+    },
+    "Proptest": {
+      "result": "passed",
+      "harness": [
+        "properties::scene_interaction_restore_property"
+      ],
+      "includes": "the real kernel against an independently written script, and candidate writes that unwind"
+    },
+    "Miri": {
+      "result": "passed",
+      "harness": [
+        "memory boundaries: every failure and panic position"
+      ],
+      "note": "carried values released exactly once"
+    },
+    "cargo-fuzz": {
+      "result": "passed",
+      "target": "read_boundary",
+      "completed_runs": [
+        91295,
+        1395218
+      ],
+      "note": "no-panic path only; the two counts are read_boundary and batch_decode, and only read_boundary reaches this kernel"
+    },
+    "Kani": {
+      "result": "passed",
+      "harness": "kani_checks::scene_interaction_restore",
+      "checks": 3338,
+      "failed": 0,
+      "chain_harnesses_successful": 62,
+      "note": "carried values, both admission masks and the failure position symbolic; Kani has no unwinding model"
+    },
+    "Loom": {
+      "result": "N/A",
+      "reason": "The kernel holds no shared state and no synchronization primitive; the candidate is exclusively owned by the construction stage until it is committed.",
+      "substitute_evidence": "None added. It is not a concurrency proof."
+    }
+  },
+  "real_scene_test": {
+    "test": "native_scene::tests::committed_frame_replays_interaction_state_and_drops_what_the_candidate_refuses",
+    "class": "tested, not proved",
+    "covers": "Real NativeScene and real Blitz document, read back from the replaced view: window size and scale, scroll, press, hover, focus, pointer and frame cache; hiding both identities drops them while the frame still commits.",
+    "mutation_checked": "Nine manual mutations of the NativeScene trait implementation each made it fail (one run each, not in the Verus control table): no viewport, no scroll, no press, no focus, no hover, no stored pointer, no stored frame cache, press always admitted, focus always admitted."
+  },
+  "assumptions": [
+    "NativeScene's RestoreCandidate implementation satisfies the trait contract: checked only by the test above",
+    "Writes leave the admission gates unchanged: writes touch the document and admission reads source metadata, which is not formalized"
+  ],
+  "uncovered": [
+    "What Blitz does inside these writes and resolve",
+    "Candidate construction itself",
+    "frame_retires_node, which depends on the CP-02 source_subtree_contains obligation",
+    "Panics raised inside Blitz, and dropping the old view at the replacement",
+    "Patch semantics of apply_one"
+  ],
+  "chain": {
+    "report": "evidence/validation-chain/report.json",
+    "complete": false,
+    "scoped_checks_complete": true,
+    "acceptance_pending": [
+      "capture-query: original arbitrary two-key Kani obligation is unresolved; single-key harness is diagnostic only"
+    ]
+  },
+  "completion_claimed": false
+}
