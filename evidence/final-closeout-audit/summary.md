@@ -2,8 +2,8 @@
 
 This report is an audit snapshot, not a delivery acceptance record.
 
-- branch: `main`
-- commit: `90fbb5c1af304bba1a8d3b0eaceeae525affa4df`
+- branch: `dev/ui37-cp02-subtree`
+- commit: `59d19fe556ac7833549f711ca17025cbcb7fec93`
 - explicit item 1-5 completions: 5/5
 - final report materially covers HEAD: `true`
 - missing required evidence: 0
@@ -11,7 +11,7 @@ This report is an audit snapshot, not a delivery acceptance record.
 - stale/missing recorded source hashes: 0
 - branch refs included: `included`
 - tool configuration: `passed`
-- evidence reports indexed: 396
+- evidence reports indexed: 397
 
 ## Checklist readings
 
