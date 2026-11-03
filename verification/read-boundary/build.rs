@@ -131,6 +131,7 @@ fn main() {
                 "DESKTOP POINTER STATE KERNEL",
             ][..],
         ),
+        ("../../src/handle.rs", &["HANDLE TYPE", "HANDLE KERNEL"][..]),
         (
             "../../src/scene.rs",
             &["NODE ID TYPE", "VERSION KERNEL", "TRANSACTION GATE KERNEL"][..],

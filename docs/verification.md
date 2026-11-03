@@ -936,3 +936,10 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 
 范围限于无时钟状态。`Instant::now` / `elapsed`、`now_millis` 的组合、winit 映射与 `DesktopInput::ime` 的 Kani 不在其中，也不是用假时钟绕过的：状态路径里已没有时钟。证据：`evidence/desktop-pointer-kernel/`、`evidence/desktop-pointer-state-kernel/`、`evidence/validation-chain/report.json`。
 
+## UI-HANDLE-001：代际句柄分配器与句柄表（2026-11-03）
+
+`HandleAllocator` 与泛型 `HandleTable<T>` 全部方法（`new`、`with_first_generation`、`capacity`、`is_live`、`allocate`、`release`、`insert`、`get`、`get_mut`、`remove`）完成实现级 Verus 证明，对所有满足不变式的状态成立：代数只增不减且不回绕；奇数当且仅当存活；空闲表恰为可复用槽位且无重复；分配失败时已满且没有可复用槽位；过期、外来与重复释放不改变状态；被释放的代数此后永不复活（`handle_stale_stays_dead`）；表中的值只能经其存活句柄取到，其他槽位不受影响。五个反例被拒：复用不递增、释放不查代数、退役槽位复用、无视容量、移除不取值。
+
+后续阶段用独立数组模型对照真实实现：Proptest 与 fuzz 覆盖任意操作序列（含临近耗尽的首代与外来句柄）并在每步核对全部历史句柄；Miri 覆盖边界与自有值恰好释放一次；Kani 三个 harness：分配器转换（首代与外来句柄任意，容量 1）、表路径（值与外来句柄任意，首代为 1，因首代只进入分配器）、退役路径。Kani 的操作形状是固定的，任意形状的路径由 Verus 不变式与 Proptest/fuzz 承担。Loom 只验证句柄表可作为独占值在线程内使用：这些类型没有同步原语，共享修改由 `&mut` 排除。
+
+未覆盖：`Vec` 增长失败（中止进程，不是可恢复错误，FFI 冻结前须处理）；FFI 导出与跨进程句柄空间。证据：`evidence/handle-kernel/`、`evidence/validation-chain/report.json`。

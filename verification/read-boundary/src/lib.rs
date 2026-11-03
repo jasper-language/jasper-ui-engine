@@ -440,6 +440,187 @@ pub fn assert_desktop_timestamp(elapsed: u128) {
 /// 一次无时钟指针转换：（操作、按钮标签、Other 码、x 位、y 位、时间戳）。
 pub type DesktopPointerStep = (u8, u8, u16, u32, u32, u64);
 
+/// Independent array oracle for the handle table: live values and each slot's newest generation.
+/// 句柄表的独立数组模型：存活值与每槽最新代数；全部历史句柄都必须保持正确的存活判定。
+pub type HandleStep = (u8, u8, u32);
+
+pub fn assert_handle_path(capacity: u32, first: u32, steps: &[HandleStep]) {
+    const SLOTS: usize = 4;
+    const HISTORY: usize = 8;
+    let capacity = capacity % (SLOTS as u32 + 1);
+    let first = first | 1;
+    let Some(mut table) = HandleTable::with_first_generation(capacity, first) else {
+        assert!(first >= HANDLE_GENERATION_RETIRED);
+        return;
+    };
+    let mut slots: [Option<(u32, Option<u32>)>; SLOTS] = [None; SLOTS];
+    let mut history: [Option<Handle>; HISTORY] = [None; HISTORY];
+    let mut issued = 0;
+    let mut step = 0;
+    while step < steps.len() {
+        let (operation, pick, value) = steps[step];
+        step += 1;
+        match operation % 3 {
+            0 => {
+                let mut reusable = false;
+                let mut filled = 0;
+                let mut slot = 0;
+                while slot < SLOTS {
+                    if let Some((generation, held)) = slots[slot] {
+                        filled += 1;
+                        reusable |= held.is_none() && generation != HANDLE_GENERATION_RETIRED;
+                    }
+                    slot += 1;
+                }
+                match table.insert(value) {
+                    Ok(handle) => {
+                        let at = handle.index as usize;
+                        assert!(at < capacity as usize && handle.generation % 2 == 1);
+                        match slots[at] {
+                            Some((old, held)) => {
+                                assert!(held.is_none() && old != HANDLE_GENERATION_RETIRED && handle.generation == old + 1);
+                            }
+                            None => {
+                                assert_eq!((at, handle.generation), (filled, first));
+                                assert!(!reusable);
+                            }
+                        }
+                        slots[at] = Some((handle.generation, Some(value)));
+                        if issued < HISTORY {
+                            history[issued] = Some(handle);
+                            issued += 1;
+                        }
+                    }
+                    Err(returned) => {
+                        assert_eq!(returned, value);
+                        assert!(!reusable && filled == capacity as usize);
+                    }
+                }
+            }
+            1 => {
+                let target = if issued > 0 && pick & 0x80 == 0 { history[pick as usize % issued] } else { None };
+                let handle = target.unwrap_or(Handle { index: pick as u32, generation: value });
+                let at = handle.index as usize;
+                let held = if at < SLOTS {
+                    match slots[at] {
+                        Some((generation, held)) if generation == handle.generation => held,
+                        _ => None,
+                    }
+                } else {
+                    None
+                };
+                assert_eq!(table.remove(handle), held);
+                if held.is_some() {
+                    slots[at] = Some((handle.generation + 1, None));
+                }
+            }
+            _ => {
+                let foreign = Handle { index: pick as u32, generation: value };
+                let live = (foreign.index as usize) < SLOTS
+                    && foreign.generation % 2 == 1
+                    && matches!(slots[foreign.index as usize], Some((generation, _)) if generation == foreign.generation);
+                assert_eq!(table.is_live(foreign), live);
+                if let Some(held) = table.get_mut(foreign) {
+                    assert!(live);
+                    *held = held.wrapping_add(1);
+                    let (generation, _) = slots[foreign.index as usize].unwrap();
+                    slots[foreign.index as usize] = Some((generation, Some(*held)));
+                }
+            }
+        }
+        let mut seen = 0;
+        while seen < issued {
+            let handle = history[seen].unwrap();
+            let expected = match slots[handle.index as usize] {
+                Some((generation, held)) if generation == handle.generation => held,
+                _ => None,
+            };
+            assert_eq!(table.get(handle).copied(), expected);
+            assert_eq!(table.is_live(handle), expected.is_some());
+            seen += 1;
+        }
+    }
+}
+
+/// Two inserts, a foreign probe, removal and slot reuse with every input arbitrary.
+/// 两次插入、外来句柄探测、移除与槽位复用，全部输入任意。
+pub fn assert_handle_fixed_path(first: u32, index: u32, generation: u32, a: u8, b: u8) {
+    let Some(mut table) = HandleTable::with_first_generation(2, first) else {
+        assert!(first & 1 != 1 || first >= HANDLE_GENERATION_RETIRED);
+        return;
+    };
+    assert!(first & 1 == 1 && first < HANDLE_GENERATION_RETIRED);
+    let foreign = Handle { index, generation };
+    let one = table.insert(a).unwrap();
+    let two = table.insert(b).unwrap();
+    assert_eq!((one, two), (Handle { index: 0, generation: first }, Handle { index: 1, generation: first }));
+    assert!(table.insert(a).is_err());
+    let expected = if foreign == one {
+        Some(a)
+    } else if foreign == two {
+        Some(b)
+    } else {
+        None
+    };
+    assert_eq!(table.get(foreign).copied(), expected);
+    assert_eq!(table.remove(foreign), expected);
+    assert_eq!(table.remove(foreign), None);
+    if expected.is_some() && first == HANDLE_GENERATION_RETIRED - 1 {
+        // The released slot retired; nothing is reusable and capacity is spent.
+        // 被释放的槽位已退役，无可复用槽位且容量已满。
+        assert_eq!(table.insert(b), Err(b));
+    } else if expected.is_some() {
+        let reused = table.insert(b).unwrap();
+        assert_eq!((reused.index, reused.generation), (foreign.index, first + 2));
+        assert_eq!(table.get(foreign), None);
+        assert_eq!(table.get(reused), Some(&b));
+    }
+}
+
+/// Allocator transitions with arbitrary first generation and foreign handle.
+/// 分配器转换，首代与外来句柄任意。
+pub fn assert_handle_allocator_path(first: u32, index: u32, generation: u32) {
+    let Some(mut allocator) = HandleAllocator::with_first_generation(1, first) else {
+        assert!(first & 1 != 1 || first >= HANDLE_GENERATION_RETIRED);
+        return;
+    };
+    assert!(first & 1 == 1 && first < HANDLE_GENERATION_RETIRED);
+    let foreign = Handle { index, generation };
+    let live = allocator.allocate().unwrap();
+    assert_eq!(live, Handle { index: 0, generation: first });
+    assert!(allocator.allocate().is_none());
+    assert_eq!(allocator.is_live(foreign), foreign == live);
+    assert_eq!(allocator.release(foreign), foreign == live);
+    assert!(!allocator.is_live(foreign) || foreign != live);
+    if foreign == live {
+        match allocator.allocate() {
+            Some(next) => assert_eq!(next, Handle { index: 0, generation: first + 2 }),
+            None => assert_eq!(first, HANDLE_GENERATION_RETIRED - 1),
+        }
+    }
+}
+
+/// A slot about to exhaust retires permanently and never reissues, whatever the other slots do.
+/// 即将耗尽的槽位永久退役、不再签发；全零句柄与非法首代永远被拒。
+pub fn assert_handle_retirement(index_probe: u32) {
+    let last = HANDLE_GENERATION_RETIRED - 1;
+    assert!(HandleAllocator::with_first_generation(1, 2).is_none());
+    assert!(HandleAllocator::with_first_generation(1, HANDLE_GENERATION_RETIRED).is_none());
+    assert!(HandleAllocator::with_first_generation(1, u32::MAX).is_none());
+    let mut allocator = HandleAllocator::with_first_generation(1, last).unwrap();
+    assert!(!allocator.is_live(Handle { index: 0, generation: 0 }));
+    let handle = allocator.allocate().unwrap();
+    assert_eq!(handle, Handle { index: 0, generation: last });
+    assert!(allocator.allocate().is_none());
+    assert!(!allocator.release(Handle { index: index_probe | 1, generation: last }));
+    assert!(allocator.release(handle));
+    assert!(!allocator.release(handle));
+    assert!(allocator.allocate().is_none());
+    assert!(!allocator.is_live(handle));
+    assert!(!allocator.is_live(Handle { index: 0, generation: HANDLE_GENERATION_RETIRED }));
+    assert_eq!(allocator.capacity(), 1);
+}
+
 /// Runs the real state against an array model of held buttons kept as (variant rank, code); the
 /// expected drag button is the model's smallest entry, independent of the production set.
 /// 以真实状态对照数组模型（变体序、码）；拖动按钮取模型最小项，不依赖生产集合。
@@ -1714,6 +1895,31 @@ mod kani_checks {
         assert_desktop_pointer_path(&[press(), modifiers, press(), motion(), release(), motion(), release(), motion()]);
     }
 
+    // Real table and Vec storage: fixed operation shape, arbitrary first generation, values and
+    // foreign handle. The arbitrary-shape model path runs in Proptest/fuzz; retirement below.
+    // 真实表与 Vec 存储：操作形状固定，首代、值与外来句柄任意；任意形状模型路径由 Proptest/fuzz 覆盖。
+    #[kani::proof]
+    #[kani::unwind(4)]
+    #[kani::solver(kissat)]
+    fn handle_table_path() {
+        // The first generation only reaches the allocator, whose harness keeps it arbitrary.
+        // 首代只进入分配器，其 harness 保持任意。
+        assert_handle_fixed_path(1, kani::any(), kani::any(), kani::any(), kani::any());
+    }
+
+    #[kani::proof]
+    #[kani::unwind(4)]
+    #[kani::solver(kissat)]
+    fn handle_allocator_path() {
+        assert_handle_allocator_path(kani::any(), kani::any(), kani::any());
+    }
+
+    #[kani::proof]
+    #[kani::unwind(3)]
+    fn handle_retirement() {
+        assert_handle_retirement(kani::any());
+    }
+
     #[kani::proof]
     fn glyph_skew_mirror() {
         assert_glyph_skew(kani::any(), kani::any(), kani::any(), kani::any(), kani::any(), kani::any());
@@ -2120,6 +2326,18 @@ mod properties {
             assert_color_construct(r, g, b, a, alpha);
         }
         #[test]
+        fn handle_table_property(capacity in 0u32..6, first in any::<u32>(), near in 0u32..4, probe in any::<u32>(), steps in proptest::collection::vec((0u8..3, any::<u8>(), any::<u32>()), 0..40), small in proptest::collection::vec((0u8..3, 0u8..4, 0u32..6), 0..40)) {
+            assert_handle_path(capacity, first, &steps);
+            assert_handle_path(capacity, HANDLE_GENERATION_RETIRED.wrapping_sub(near * 2 + 1), &small);
+            assert_handle_path(capacity, 1, &small);
+            assert_handle_retirement(probe);
+            assert_handle_allocator_path(first, probe % 3, first);
+            assert_handle_allocator_path(first | 1, 0, first | 1);
+            assert_handle_fixed_path(first, probe % 3, first, near as u8, 9);
+            assert_handle_fixed_path(first | 1, near % 3, first | 1, near as u8, 9);
+        }
+
+        #[test]
         fn desktop_pointer_property(elapsed in any::<u128>(), near in 0u64..3, steps in proptest::collection::vec(any::<DesktopPointerStep>(), 0..12)) {
             assert_desktop_timestamp(elapsed);
             assert_desktop_timestamp(u64::MAX as u128 + near as u128);
@@ -2311,6 +2529,30 @@ mod properties {
 #[cfg(test)]
 mod memory {
     use super::*;
+
+    #[test]
+    fn handle_table_boundaries() {
+        assert_handle_path(2, 1, &[(0, 0, 5), (0, 0, 6), (0, 0, 7), (1, 0, 0), (1, 0, 0), (0, 0, 8), (2, 0, 3), (2, 1, 2)]);
+        assert_handle_path(0, 1, &[(0, 0, 5), (1, 200, 0), (2, 9, 1)]);
+        assert_handle_path(1, HANDLE_GENERATION_RETIRED - 1, &[(0, 0, 5), (1, 0, 0), (0, 0, 6), (2, 0, HANDLE_GENERATION_RETIRED)]);
+        assert_handle_path(1, HANDLE_GENERATION_RETIRED, &[(0, 0, 5)]);
+        assert_handle_retirement(u32::MAX);
+        assert_handle_fixed_path(1, 0, 1, 5, 6);
+        assert_handle_fixed_path(1, 1, 2, 5, 6);
+        assert_handle_fixed_path(HANDLE_GENERATION_RETIRED - 1, 1, HANDLE_GENERATION_RETIRED - 1, 5, 6);
+        // Owned values drop exactly once through remove, reuse and the table itself.
+        // 自有值经移除、复用与表析构恰好释放一次。
+        let mut table = HandleTable::new(2);
+        let first = table.insert(vec![1u8; 8]).unwrap();
+        let second = table.insert(vec![2u8; 8]).unwrap();
+        assert_eq!(table.insert(vec![3u8; 8]).unwrap_err(), vec![3u8; 8]);
+        table.get_mut(first).unwrap().push(9);
+        assert_eq!(table.remove(first).unwrap().len(), 9);
+        let third = table.insert(vec![4u8; 8]).unwrap();
+        assert_eq!((third.index, third.generation), (first.index, first.generation + 2));
+        assert!(table.get(first).is_none());
+        assert_eq!(table.get(second).unwrap()[0], 2);
+    }
 
     #[test]
     fn bold_alias_boundaries() {
@@ -2642,6 +2884,8 @@ mod schedules {
                 assert_eq!(storage_a.bytes(7, storage_key), Some(&[11, 22, 33, 44][..]));
                 assert_text_classes('中');
                 assert_command_modifier(1);
+                assert_handle_path(2, 1, &[(0, 0, 5), (0, 0, 6), (1, 0, 0), (0, 0, 7), (2, 0, 3)]);
+                assert_handle_retirement(0);
                 let mut gate = ResourceGate::new(7, 42);
                 let key = gate.issue(7).unwrap();
                 thread::yield_now();

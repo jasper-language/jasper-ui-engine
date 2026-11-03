@@ -2252,6 +2252,356 @@ KERNELS["native-backend-frame-import"]={
         ("swap-frame-dimensions","Canvas::from_rgba8(width,height,pixels)","Canvas::from_rgba8(height,width,pixels)")],
 }
 
+HANDLE_PRELUDE = r"""
+pub closed spec fn handle_slots(a: HandleAllocator) -> Seq<u32> { a.slots@ }
+pub closed spec fn handle_capacity(a: HandleAllocator) -> u32 { a.capacity }
+pub open spec fn handle_reusable(g: u32) -> bool { g % 2 == 0 && g < 0xFFFF_FFFEu32 }
+pub open spec fn handle_live_in(slots: Seq<u32>, h: Handle) -> bool { (h.index as int) < slots.len() && h.generation % 2 == 1 && slots[h.index as int] == h.generation }
+pub open spec fn handle_advanced(before: Seq<u32>, after: Seq<u32>) -> bool { before.len() <= after.len() && forall|i: int| 0 <= i < before.len() ==> before[i] <= #[trigger] after[i] }
+pub closed spec fn handle_wf(a: HandleAllocator) -> bool {
+    &&& a.first_generation % 2 == 1 && a.first_generation < 0xFFFF_FFFEu32
+    &&& a.slots@.len() <= a.capacity as int
+    &&& forall|i: int| 0 <= i < a.slots@.len() ==> #[trigger] a.slots@[i] <= 0xFFFF_FFFEu32
+    &&& forall|k: int| 0 <= k < a.free@.len() ==> (#[trigger] a.free@[k] as int) < a.slots@.len() && handle_reusable(a.slots@[a.free@[k] as int])
+    &&& forall|j: int, k: int| 0 <= j < k < a.free@.len() ==> #[trigger] a.free@[j] != #[trigger] a.free@[k]
+    &&& forall|i: int| 0 <= i < a.slots@.len() && handle_reusable(#[trigger] a.slots@[i]) ==> exists|k: int| 0 <= k < a.free@.len() && #[trigger] a.free@[k] as int == i
+}
+/// A generation left behind never comes back, across any sequence of advancing steps.
+pub proof fn handle_stale_stays_dead(before: Seq<u32>, after: Seq<u32>, h: Handle)
+    requires handle_advanced(before, after), (h.index as int) < before.len(), h.generation < before[h.index as int],
+    ensures !handle_live_in(after, h),
+{ assert(before[h.index as int] <= after[h.index as int]); }
+pub closed spec fn handle_table_slots<T>(t: HandleTable<T>) -> Seq<u32> { t.allocator.slots@ }
+pub closed spec fn handle_table_values<T>(t: HandleTable<T>) -> Seq<Option<T>> { t.values@ }
+pub closed spec fn handle_table_capacity<T>(t: HandleTable<T>) -> u32 { t.allocator.capacity }
+pub closed spec fn handle_table_wf<T>(t: HandleTable<T>) -> bool {
+    &&& handle_wf(t.allocator)
+    &&& t.values@.len() == t.allocator.slots@.len()
+    &&& forall|i: int| 0 <= i < t.values@.len() ==> (#[trigger] t.values@[i] is Some <==> t.allocator.slots@[i] % 2 == 1)
+}
+pub open spec fn handle_table_value<T>(slots: Seq<u32>, values: Seq<Option<T>>, h: Handle) -> Option<T> {
+    if handle_live_in(slots, h) { values[h.index as int] } else { None }
+}
+"""
+ALLOC_REUSE = """                let generation = self.slots[index as usize] + 1;
+                self.slots[index as usize] = generation;
+                Some(Handle { index, generation })
+"""
+ALLOC_REUSE_P = """                proof {
+                    assert(index == before_free[before_free.len() - 1]);
+                    assert(before_free[before_free.len() - 1] as int == index as int);
+                    assert(self.free@ == before_free.drop_last());
+                }
+                let generation = self.slots[index as usize] + 1;
+                self.slots[index as usize] = generation;
+                proof {
+                    assert forall|k: int| 0 <= k < self.free@.len() implies #[trigger] self.free@[k] != index by {
+                        assert(self.free@[k] == before_free[k]);
+                        assert(before_free[k] != before_free[before_free.len() - 1]);
+                    }
+                    assert forall|k: int| 0 <= k < self.free@.len() implies (#[trigger] self.free@[k] as int) < self.slots@.len() && handle_reusable(self.slots@[self.free@[k] as int]) by {
+                        assert(self.free@[k] == before_free[k]);
+                        assert(self.free@[k] != index);
+                        assert(handle_reusable(before_slots[before_free[k] as int]));
+                    }
+                    assert forall|j: int, k: int| 0 <= j < k < self.free@.len() implies #[trigger] self.free@[j] != #[trigger] self.free@[k] by {
+                        assert(self.free@[j] == before_free[j]);
+                        assert(self.free@[k] == before_free[k]);
+                        assert(before_free[j] != before_free[k]);
+                    }
+                    assert forall|i: int| 0 <= i < self.slots@.len() implies #[trigger] self.slots@[i] <= 0xFFFF_FFFEu32 by {
+                        if i != index as int { assert(self.slots@[i] == before_slots[i]); assert(before_slots[i] <= 0xFFFF_FFFEu32); }
+                    }
+                    assert forall|i: int| 0 <= i < self.slots@.len() && handle_reusable(#[trigger] self.slots@[i]) implies exists|k: int| 0 <= k < self.free@.len() && #[trigger] self.free@[k] as int == i by {
+                        assert(i != index as int);
+                        assert(self.slots@[i] == before_slots[i]);
+                        assert(before_slots[i] == self.slots@[i]);
+                        let k = choose|k: int| 0 <= k < before_free.len() && #[trigger] before_free[k] as int == i;
+                        assert(k != before_free.len() - 1);
+                        assert(self.free@[k] == before_free[k]);
+                    }
+                    assert forall|i: int| 0 <= i < before_slots.len() implies before_slots[i] <= #[trigger] self.slots@[i] by {
+                        if i != index as int { assert(self.slots@[i] == before_slots[i]); }
+                    }
+                }
+                Some(Handle { index, generation })
+"""
+ALLOC_NEW = """                if self.slots.len() >= self.capacity as usize {
+                    return None;
+                }
+                let index = self.slots.len() as u32;
+                let generation = self.first_generation;
+                self.slots.push(generation);
+                Some(Handle { index, generation })
+"""
+ALLOC_NEW_P = """                proof { assert(before_free.len() == 0); }
+                if self.slots.len() >= self.capacity as usize {
+                    proof {
+                        assert forall|i: int| 0 <= i < before_slots.len() implies !handle_reusable(#[trigger] before_slots[i]) by {
+                            if handle_reusable(before_slots[i]) {
+                                assert(self.slots@[i] == before_slots[i]);
+                                let k = choose|k: int| 0 <= k < self.free@.len() && #[trigger] self.free@[k] as int == i;
+                            }
+                        }
+                    }
+                    return None;
+                }
+                let index = self.slots.len() as u32;
+                let generation = self.first_generation;
+                self.slots.push(generation);
+                proof {
+                    assert(index as int == before_slots.len());
+                    assert forall|i: int| 0 <= i < self.slots@.len() implies #[trigger] self.slots@[i] <= 0xFFFF_FFFEu32 by {
+                        if i < before_slots.len() { assert(self.slots@[i] == before_slots[i]); assert(before_slots[i] <= 0xFFFF_FFFEu32); }
+                    }
+                    assert forall|i: int| 0 <= i < self.slots@.len() && handle_reusable(#[trigger] self.slots@[i]) implies exists|k: int| 0 <= k < self.free@.len() && #[trigger] self.free@[k] as int == i by {
+                        assert(i != index as int);
+                        assert(self.slots@[i] == before_slots[i]);
+                        assert(before_slots[i] == self.slots@[i]);
+                        let k = choose|k: int| 0 <= k < before_free.len() && #[trigger] before_free[k] as int == i;
+                    }
+                    assert forall|i: int| 0 <= i < before_slots.len() implies before_slots[i] <= #[trigger] self.slots@[i] by {
+                        assert(self.slots@[i] == before_slots[i]);
+                    }
+                }
+                Some(Handle { index, generation })
+"""
+RELEASE_WRITE = """        let generation = handle.generation + 1;
+        self.slots[handle.index as usize] = generation;
+        if generation != HANDLE_GENERATION_RETIRED {
+            self.free.push(handle.index);
+        }
+        true
+"""
+RELEASE_WRITE_P = """        let ghost before_slots = self.slots@;
+        let ghost before_free = self.free@;
+        proof { assert(before_slots[handle.index as int] <= 0xFFFF_FFFEu32); }
+        let generation = handle.generation + 1;
+        self.slots[handle.index as usize] = generation;
+        proof {
+            assert forall|k: int| 0 <= k < before_free.len() implies #[trigger] before_free[k] != handle.index by {
+                assert(handle_reusable(before_slots[before_free[k] as int]));
+            }
+        }
+        if generation != HANDLE_GENERATION_RETIRED {
+            self.free.push(handle.index);
+        }
+        proof {
+            assert forall|k: int| 0 <= k < self.free@.len() implies (#[trigger] self.free@[k] as int) < self.slots@.len() && handle_reusable(self.slots@[self.free@[k] as int]) by {
+                if k < before_free.len() {
+                    assert(self.free@[k] == before_free[k]);
+                    assert(before_free[k] != handle.index);
+                    assert(handle_reusable(before_slots[before_free[k] as int]));
+                }
+            }
+            assert forall|j: int, k: int| 0 <= j < k < self.free@.len() implies #[trigger] self.free@[j] != #[trigger] self.free@[k] by {
+                assert(self.free@[j] == before_free[j]);
+                if k < before_free.len() {
+                    assert(self.free@[k] == before_free[k]);
+                    assert(before_free[j] != before_free[k]);
+                } else {
+                    assert(before_free[j] != handle.index);
+                }
+            }
+            assert forall|i: int| 0 <= i < self.slots@.len() implies #[trigger] self.slots@[i] <= 0xFFFF_FFFEu32 by {
+                if i != handle.index as int { assert(self.slots@[i] == before_slots[i]); assert(before_slots[i] <= 0xFFFF_FFFEu32); }
+            }
+            assert forall|i: int| 0 <= i < self.slots@.len() && handle_reusable(#[trigger] self.slots@[i]) implies exists|k: int| 0 <= k < self.free@.len() && #[trigger] self.free@[k] as int == i by {
+                if i == handle.index as int {
+                    assert(self.free@[before_free.len() as int] as int == i);
+                } else {
+                    assert(self.slots@[i] == before_slots[i]);
+                    assert(before_slots[i] == self.slots@[i]);
+                    let k = choose|k: int| 0 <= k < before_free.len() && #[trigger] before_free[k] as int == i;
+                    assert(self.free@[k] == before_free[k]);
+                }
+            }
+            assert forall|i: int| 0 <= i < before_slots.len() implies before_slots[i] <= #[trigger] self.slots@[i] by {
+                if i != handle.index as int { assert(self.slots@[i] == before_slots[i]); }
+            }
+        }
+        true
+"""
+TABLE_INSERT = """        match self.allocator.allocate() {
+            None => Err(value),
+            Some(handle) => {
+                let index = handle.index as usize;
+                if index == self.values.len() {
+                    self.values.push(Some(value));
+                } else {
+                    self.values[index] = Some(value);
+                }
+                Ok(handle)
+            }
+        }
+"""
+TABLE_INSERT_P = """        let ghost before_values = self.values@;
+        let ghost before_slots = self.allocator.slots@;
+        match self.allocator.allocate() {
+            None => Err(value),
+            Some(handle) => {
+                let index = handle.index as usize;
+                if index == self.values.len() {
+                    self.values.push(Some(value));
+                } else {
+                    self.values[index] = Some(value);
+                }
+                proof {
+                    assert forall|i: int| 0 <= i < self.values@.len() implies (#[trigger] self.values@[i] is Some <==> self.allocator.slots@[i] % 2 == 1) by {
+                        if i != handle.index as int {
+                            assert(self.values@[i] == before_values[i]);
+                            assert(self.allocator.slots@[i] == before_slots[i]);
+                        }
+                    }
+                }
+                Ok(handle)
+            }
+        }
+"""
+TABLE_REMOVE = """        if !self.allocator.release(handle) {
+            return None;
+        }
+        self.values[handle.index as usize].take()
+"""
+TABLE_REMOVE_P = """        let ghost before_values = self.values@;
+        let ghost before_slots = self.allocator.slots@;
+        if !self.allocator.release(handle) {
+            return None;
+        }
+        let removed = self.values[handle.index as usize].take();
+        proof {
+            assert forall|i: int| 0 <= i < self.values@.len() implies (#[trigger] self.values@[i] is Some <==> self.allocator.slots@[i] % 2 == 1) by {
+                if i != handle.index as int {
+                    assert(self.values@[i] == before_values[i]);
+                    assert(self.allocator.slots@[i] == before_slots[i]);
+                }
+            }
+        }
+        removed
+"""
+KERNELS["handle-type"] = {"source":"src/handle.rs","marker":"HANDLE","suffix":"TYPE","signature":None,"depends":[],"internal_only":True,"spec_prelude":HANDLE_PRELUDE}
+KERNELS["handle"] = {
+ "source":"src/handle.rs","marker":"HANDLE","property":"UI-HANDLE-001",
+ "signature":"impl HandleAllocator {\n    pub fn new(capacity: u32) -> Self {",
+ "contract":"""impl HandleAllocator {
+    pub fn new(capacity: u32) -> (result: Self)
+    ensures handle_wf(result), handle_slots(result).len() == 0, handle_capacity(result) == capacity,
+{""",
+ "extra_annotations":[
+  ("""fn handle_generation_is_live(generation: u32) -> bool {
+""","""fn handle_generation_is_live(generation: u32) -> (result: bool)
+    ensures result == (generation % 2 == 1),
+{
+    proof { assert(generation & 1u32 == generation % 2) by (bit_vector); }
+"""),
+  ("""pub fn with_first_generation(capacity: u32, first_generation: u32) -> Option<Self> {
+        if""","""pub fn with_first_generation(capacity: u32, first_generation: u32) -> (result: Option<Self>)
+    ensures match result {
+        Some(a) => first_generation % 2 == 1 && first_generation < 0xFFFF_FFFEu32 && handle_wf(a) && handle_slots(a).len() == 0 && handle_capacity(a) == capacity,
+        None => first_generation % 2 != 1 || first_generation >= 0xFFFF_FFFEu32,
+    },
+{
+        if"""),
+  ("pub fn capacity(&self) -> u32 {","""pub fn capacity(&self) -> (result: u32)
+    ensures result == handle_capacity(*self),
+{"""),
+  ("""    pub fn is_live(&self, handle: Handle) -> bool {
+        let index""","""    pub fn is_live(&self, handle: Handle) -> (result: bool)
+    ensures result == handle_live_in(handle_slots(*self), handle),
+    {
+        let index"""),
+  ("""pub fn allocate(&mut self) -> Option<Handle> {
+""","""pub fn allocate(&mut self) -> (result: Option<Handle>)
+    requires handle_wf(*old(self)),
+    ensures handle_wf(*final(self)), handle_capacity(*final(self)) == handle_capacity(*old(self)),
+        handle_advanced(handle_slots(*old(self)), handle_slots(*final(self))),
+        match result {
+            Some(h) => handle_live_in(handle_slots(*final(self)), h)
+                && h.index as int <= handle_slots(*old(self)).len()
+                && (h.index as int == handle_slots(*old(self)).len() ==> handle_slots(*final(self)).len() == handle_slots(*old(self)).len() + 1)
+                && ((h.index as int) < handle_slots(*old(self)).len() ==> handle_slots(*final(self)).len() == handle_slots(*old(self)).len()
+                    && handle_reusable(handle_slots(*old(self))[h.index as int]) && handle_slots(*old(self))[h.index as int] < h.generation)
+                && (forall|i: int| 0 <= i < handle_slots(*old(self)).len() && i != h.index as int ==> #[trigger] handle_slots(*final(self))[i] == handle_slots(*old(self))[i]),
+            None => handle_slots(*final(self)) == handle_slots(*old(self))
+                && handle_slots(*old(self)).len() == handle_capacity(*old(self)) as int
+                && (forall|i: int| 0 <= i < handle_slots(*old(self)).len() ==> !handle_reusable(#[trigger] handle_slots(*old(self))[i])),
+        },
+{
+        let ghost before_slots = self.slots@;
+        let ghost before_free = self.free@;
+"""),
+  (ALLOC_REUSE, ALLOC_REUSE_P),
+  (ALLOC_NEW, ALLOC_NEW_P),
+  ("pub fn release(&mut self, handle: Handle) -> bool {","""pub fn release(&mut self, handle: Handle) -> (result: bool)
+    requires handle_wf(*old(self)),
+    ensures handle_wf(*final(self)), handle_capacity(*final(self)) == handle_capacity(*old(self)),
+        handle_advanced(handle_slots(*old(self)), handle_slots(*final(self))),
+        result == handle_live_in(handle_slots(*old(self)), handle),
+        result ==> handle_slots(*final(self)) == handle_slots(*old(self)).update(handle.index as int, (handle.generation + 1) as u32) && !handle_live_in(handle_slots(*final(self)), handle),
+        !result ==> handle_slots(*final(self)) == handle_slots(*old(self)),
+{"""),
+  (RELEASE_WRITE, RELEASE_WRITE_P),
+  ("impl<T> HandleTable<T> {\n    pub fn new(capacity: u32) -> Self {","""impl<T> HandleTable<T> {
+    pub fn new(capacity: u32) -> (result: Self)
+    ensures handle_table_wf(result), handle_table_slots(result).len() == 0, handle_table_capacity(result) == capacity,
+{"""),
+  ("""    pub fn with_first_generation(capacity: u32, first_generation: u32) -> Option<Self> {
+        match""","""    pub fn with_first_generation(capacity: u32, first_generation: u32) -> (result: Option<Self>)
+    ensures match result {
+        Some(t) => first_generation % 2 == 1 && first_generation < 0xFFFF_FFFEu32 && handle_table_wf(t) && handle_table_slots(t).len() == 0 && handle_table_capacity(t) == capacity,
+        None => first_generation % 2 != 1 || first_generation >= 0xFFFF_FFFEu32,
+    },
+    {
+        match"""),
+  ("""    pub fn is_live(&self, handle: Handle) -> bool {
+        self.allocator""","""    pub fn is_live(&self, handle: Handle) -> (result: bool)
+    ensures result == handle_live_in(handle_table_slots(*self), handle),
+    {
+        self.allocator"""),
+  ("pub fn insert(&mut self, value: T) -> Result<Handle, T> {","""pub fn insert(&mut self, value: T) -> (result: Result<Handle, T>)
+    requires handle_table_wf(*old(self)),
+    ensures handle_table_wf(*final(self)), handle_advanced(handle_table_slots(*old(self)), handle_table_slots(*final(self))),
+        match result {
+            Ok(h) => handle_table_value(handle_table_slots(*final(self)), handle_table_values(*final(self)), h) == Some(value)
+                && (forall|other: Handle| other.index != h.index && (other.index as int) < handle_table_slots(*old(self)).len() ==>
+                    #[trigger] handle_table_value(handle_table_slots(*final(self)), handle_table_values(*final(self)), other) == handle_table_value(handle_table_slots(*old(self)), handle_table_values(*old(self)), other)),
+            Err(returned) => returned == value && handle_table_slots(*final(self)) == handle_table_slots(*old(self)) && handle_table_values(*final(self)) == handle_table_values(*old(self)),
+        },
+{"""),
+  (TABLE_INSERT, TABLE_INSERT_P),
+  ("pub fn get(&self, handle: Handle) -> Option<&T> {","""pub fn get(&self, handle: Handle) -> (result: Option<&T>)
+    requires handle_table_wf(*self),
+    ensures match handle_table_value(handle_table_slots(*self), handle_table_values(*self), handle) { Some(v) => result == Some(&v), None => result is None },
+{"""),
+  ("pub fn get_mut(&mut self, handle: Handle) -> Option<&mut T> {","""pub fn get_mut(&mut self, handle: Handle) -> (result: Option<&mut T>)
+    requires handle_table_wf(*old(self)),
+    ensures handle_table_slots(*final(self)) == handle_table_slots(*old(self)),
+        match result {
+            Some(r) => handle_table_value(handle_table_slots(*old(self)), handle_table_values(*old(self)), handle) == Some(*r)
+                && handle_table_values(*final(self)) == handle_table_values(*old(self)).update(handle.index as int, Some(*final(r))),
+            None => handle_table_value(handle_table_slots(*old(self)), handle_table_values(*old(self)), handle) is None && handle_table_values(*final(self)) == handle_table_values(*old(self)),
+        },
+{"""),
+  ("pub fn remove(&mut self, handle: Handle) -> Option<T> {","""pub fn remove(&mut self, handle: Handle) -> (result: Option<T>)
+    requires handle_table_wf(*old(self)),
+    ensures handle_table_wf(*final(self)), handle_advanced(handle_table_slots(*old(self)), handle_table_slots(*final(self))),
+        result == handle_table_value(handle_table_slots(*old(self)), handle_table_values(*old(self)), handle),
+        handle_table_value(handle_table_slots(*final(self)), handle_table_values(*final(self)), handle) is None,
+        forall|other: Handle| other.index != handle.index ==>
+            #[trigger] handle_table_value(handle_table_slots(*final(self)), handle_table_values(*final(self)), other) == handle_table_value(handle_table_slots(*old(self)), handle_table_values(*old(self)), other),
+{"""),
+  (TABLE_REMOVE, TABLE_REMOVE_P),
+ ],
+ "function_count":14,"depends":["handle-type"],"evidence":"handle-kernel",
+ "scope":"Generation allocator and generic handle table over all states with the well-formed invariant: generations only rise and never wrap, odd means live, the free list is exactly the reusable slots without duplicates, a full allocator has no reusable slot, stale/foreign/repeated releases change nothing, a released generation stays dead, and a table value is reachable only through its live handle. Allocation failure of Vec growth (abort) and the future FFI surface are outside this proof.",
+ "mutations":[("reuse-without-advance",ALLOC_REUSE_P,ALLOC_REUSE.replace("self.slots[index as usize] + 1;","self.slots[index as usize];")),
+              ("release-ignores-generation","            && handle_generation_is_live(handle.generation)\n            && self.slots[index] == handle.generation","            && handle_generation_is_live(handle.generation)"),
+              ("retired-slot-reused",RELEASE_WRITE_P,RELEASE_WRITE.replace("        if generation != HANDLE_GENERATION_RETIRED {\n            self.free.push(handle.index);\n        }\n","        self.free.push(handle.index);\n")),
+              ("capacity-ignored","                if self.slots.len() >= self.capacity as usize {\n                    proof","                if self.slots.len() > self.capacity as usize {\n                    proof"),
+              ("remove-keeps-value",TABLE_REMOVE_P,TABLE_REMOVE.replace("self.values[handle.index as usize].take()","None"))],
+}
+
+
 def annotate(body, signature, contract):
     # A pattern that still matches verbatim stays verbatim. Otherwise tokens must match exactly;
     # only layout rustfmt owns may differ: whitespace and the trailing comma it adds before a

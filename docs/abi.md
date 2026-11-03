@@ -34,7 +34,8 @@
 
 - Jasper 侧：`Handle { index: u32, generation: u32 }` 一类不透明句柄。
 - Rust 侧：句柄表 + 代际；`index` 复用但 `generation` 变化，旧句柄失效。
-- 创建/保留/释放规则、重复释放、失效检查、异步任务与窗口销毁关系必须在实现前写死。
+- 已实现（未导出 FFI）：`src/handle.rs` 的 `Handle`（`repr(C)`，两个 u32，8 字节）、`HandleAllocator` 与 `HandleTable<T>`。槽位代数只增不减：奇数存活、偶数空闲；耗尽值 `HANDLE_GENERATION_RETIRED` 永久退役，不回绕；全零句柄永远无效；过期、外来与重复释放一律拒绝且不改变状态；容量是宿主显式上限，表满时把值交还调用方。重启的宿主可用 `with_first_generation` 越过上次运行签发的代数。规格见 `verification.md` 的 UI-HANDLE-001。
+- 仍未决定：保留/引用计数规则、异步任务与窗口销毁关系、跨进程句柄空间；这些必须在 FFI 冻结前写死。
 - Jasper GC 对象：不暴露裸地址；通过受控缓冲区传递；确需零拷贝时单独设计 Pin/生命周期协议。
 - Rust 资源（GPU 纹理/字体缓存/窗口）由 Rust 管理；Jasper 只持句柄。
 

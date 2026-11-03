@@ -1,6 +1,6 @@
 #![no_main]
 use jasper_ui_read_verification::{
-    assert_borrow, assert_bold_alias, assert_desktop_pointer_path, assert_desktop_timestamp, DesktopPointerStep, assert_bytes_slot, assert_canvas_import, assert_canvas_pixel, assert_capture_query, assert_color_construct,
+    assert_borrow, assert_bold_alias, assert_desktop_pointer_path, assert_desktop_timestamp, DesktopPointerStep, assert_handle_allocator_path, assert_handle_fixed_path, assert_handle_path, assert_handle_retirement, HandleStep, assert_bytes_slot, assert_canvas_import, assert_canvas_pixel, assert_capture_query, assert_color_construct,
     assert_command_modifier, assert_cursor, assert_endpoint, assert_focus_cleanup,
     assert_damage_convergence, assert_damage_rect, assert_damage_span, assert_damage_write, assert_focus_selection, assert_font_family, assert_font_order, assert_font_weight, assert_frame_damage, assert_glyph_skew, assert_glyph_skew_pure, assert_frame_pace, assert_frame_reuse, assert_frame_tick, assert_gpu_readback_layout, assert_header, assert_access_actions, assert_access_change, assert_access_request, assert_text_offset, assert_text_range, assert_hover_lifecycle, assert_input_retire,
     assert_keyboard_focus, assert_payload, assert_pixel_conversion, assert_pointer_order,
@@ -154,6 +154,16 @@ fuzz_target!(|data: &[u8]| {
         })
         .collect();
     assert_desktop_pointer_path(&steps);
+    let handle_steps: Vec<HandleStep> = data[8..]
+        .chunks_exact(6)
+        .map(|c| (c[0], c[1], u32::from_le_bytes(c[2..6].try_into().unwrap())))
+        .take(64)
+        .collect();
+    assert_handle_path(len as u32, pos as u32, &handle_steps);
+    assert_handle_path(pos as u32, 1, &handle_steps);
+    assert_handle_retirement(total as u32);
+    assert_handle_allocator_path(pos as u32, len as u32 % 3, pos as u32);
+    assert_handle_fixed_path(pos as u32, len as u32 % 3, pos as u32, data[0], data[1]);
     assert_font_family(&data[24..data.len().min(24 + len % 160)]);
     assert_text_range(len, pos, total, pos, data[2] & 1 == 1, data[3] & 1 == 1);
     assert_text_range(len % 9, len % 9, pos % 11, total % 11, data[2] & 2 == 2, data[3] & 2 == 2);

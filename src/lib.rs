@@ -39,6 +39,7 @@ pub mod gesture;
 #[cfg(feature = "gpu")]
 pub mod gpu_wgpu;
 pub mod graphics;
+pub mod handle;
 pub mod hit_test;
 pub mod host_capabilities;
 pub mod input;
