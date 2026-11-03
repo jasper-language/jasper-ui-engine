@@ -1,0 +1,7 @@
+int main(){int i=0; while(i<5){i++;} __CPROVER_assert(i==5,"real"); __CPROVER_assert(0,"probe"); return 0;}
+A cbmc ctl.c --unwind 2 --bitwuzla --property main.assertion.1 --stop-on-fail
+  Violated property: unwinding assertion loop 0 / VERIFICATION FAILED
+B cbmc ctl.c --unwind 6 --bitwuzla --property main.assertion.1 --stop-on-fail
+  VERIFICATION SUCCESSFUL
+C cbmc ctl.c --unwind 6 --bitwuzla --stop-on-fail
+  probe / VERIFICATION FAILED

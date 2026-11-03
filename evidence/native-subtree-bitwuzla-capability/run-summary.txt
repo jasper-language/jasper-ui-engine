@@ -29,3 +29,17 @@ rc=124 2026-11-03T17:28:50Z
 61bdc637a291c27597fc04263328ecd29d36cc12
 313M	<home>/work/cp02-bitwuzla
 /dev/sda1       193G  172G   22G  90% /
+== run D (direct3.sh): all properties, solver stdout kept
+Generated 8578 VCC(s), 3376 remaining after simplification
+Runtime Solver: 2908.88s
+Violated property:
+  file src/ancestry.rs function ancestry::proofs::real_map_full_domain line 63 thread 0
+  KANI_CHECK_ID_jasper_ui_native_activation_verification.62eab6692db1f0b8::jasper_ui_native_activation_verification_109
+  FALSE
+class from --show-properties: reachability_check (a Kani probe, not a violation)
+rc=10
+== run E (direct4.sh): 1436 of 1503 properties, reachability_check excluded
+Generated 8376 VCC(s), 3174 remaining after simplification
+2026-11-03T18:46:49Z started
+2026-11-03T18:47:45Z solver started
+rc=124 2026-11-03T20:32:01Z, solver output empty

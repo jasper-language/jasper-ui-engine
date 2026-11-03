@@ -33,7 +33,8 @@
    "peak_rss_gb": 2.7,
    "outcome": "stopped_by_operator",
    "observed": "The first Bitwuzla call returned after 2487.6 s and CBMC started a second call on a new SMT2 problem. Stopped 6 minutes into the second call because the 3000 s limit could not produce a summary.",
-   "inference": "CBMC's all-properties loop only re-solves after sat, so the first answer was very likely sat: at least one check is violable in that encoding. Bitwuzla's answer itself was not captured, and no property or trace was seen. This is not yet a counterexample and says nothing about whether the application or a bound is at fault."
+   "inference": "CBMC's all-properties loop only re-solves after sat, so the first answer was very likely sat: at least one check is violable in that encoding. Bitwuzla's answer itself was not captured, and no property or trace was seen. This is not yet a counterexample and says nothing about whether the application or a bound is at fault.",
+   "correction_2026_11_03": "The inference above is withdrawn. Kani's goto program carries 67 reachability_check probes whose expression is the constant FALSE; a sat from them is expected and reports reachability, not a violation. Run D shows the same formula answering sat on such a probe, so sat here gives no evidence that any real check is violable."
   },
   {
    "id": "B",
@@ -47,17 +48,54 @@
    "mode": "direct cbmc with Kani's argv minus --json-ui, plus --stop-on-fail --trace",
    "outcome": "timeout",
    "observed": "3500 s limit reached during the first solver call while the VM carried other workloads (load 13 to 18). No verdict."
+  },
+  {
+   "id": "D",
+   "mode": "direct cbmc, Kani's argv plus --stop-on-fail --trace, solver stdout kept via tee",
+   "script": "direct3.sh",
+   "solver_seconds": 2908.88,
+   "peak_rss_gb": 2.8,
+   "vm_load": "6 to 17",
+   "outcome": "sat_on_kani_probe_not_a_violation",
+   "exit_code": 10,
+   "observed": "Solver answered sat and returned all 104588 get-value lines. CBMC printed VERIFICATION FAILED on real_map_full_domain line 63 with expression FALSE, inputs a=b=s=t=3, before the trace enters real_map_case.",
+   "classification": "show-properties identifies it as class reachability_check, property real_map_full_domain.reachability_check.1. Not an unwinding assertion, not a harness assertion, not a counterexample. CBMC's own FAILED text is misleading here because direct cbmc does not apply Kani's post-processing of probes."
+  },
+  {
+   "id": "E",
+   "mode": "as D, with --property for every property except class reachability_check (1436 of 1503)",
+   "script": "direct4.sh",
+   "formula": {
+    "steps": 190827,
+    "remaining_vccs": 3174,
+    "remaining_vccs_before_filter": 3376,
+    "smt2_bytes": 233790953
+   },
+   "limit_seconds": 6300,
+   "vm_load": "12 to 16 at the end, shared with other workloads",
+   "outcome": "timeout",
+   "exit_code": 124,
+   "observed": "No solver answer after about 6250 s of solving. Empty solver output. No property checked, no verdict either way."
   }
  ],
  "verdict": "none",
- "first_real_solver_answer": "Bitwuzla does return on this formula in about 41 minutes on a lightly shared VM; earlier SAT backends never reached an answer.",
- "sufficiency_of_unwindset": "Still unproven. If the sat comes from an unwinding assertion, these bounds are too low; a low bound fails rather than passes.",
+ "first_real_solver_answer": "Bitwuzla answers the unfiltered formula in about 41 to 48 minutes, but that answer is sat on a reachability probe and says nothing about real properties. No solver has yet answered the query over real properties.",
+ "sufficiency_of_unwindset": "Still unproven. No unwinding assertion has been reported either way.",
  "resume": [
-  "Run direct.sh again with a limit of at least 5400 s, ideally with the VM otherwise idle; its text output carries the violated property and trace.",
-  "Classify the first violated property: unwinding assertion means raise that loop's bound; harness assertion means a real disagreement to investigate; any other check means inspect the trace.",
-  "After any fix, require an all-properties run ending in unsat before recording a pass; add the existing wrong-target negative control on the same configuration."
+  "Do not read VERIFICATION FAILED from direct cbmc without checking the property class; exclude reachability_check as direct4.sh does.",
+  "Finding a model took about 41 to 48 minutes even for a trivially reachable probe, so most of the cost may be the formula's memory model and not the query. That is a hypothesis, not a measurement.",
+  "Next bounded attempt: select only real_map_case.assertion.1 so --slice-formula can shrink the query, one run with a stated limit. A pass there covers that one property only and is not the sub-obligation.",
+  "Recording a pass still needs every real property unsat on this configuration, plus the wrong-target control."
  ],
  "whole_frame_property": "apply_update to apply_patches remains open.",
  "whole_adapter_accepted": false,
- "completion_claimed": false
+ "completion_claimed": false,
+ "negative_controls_for_filter": {
+  "file": "filter-controls.txt",
+  "result": "On a small C program: filtered with a too-low bound still fails the unwinding assertion; filtered with enough bound succeeds with the probe excluded; unfiltered fails on the probe. Run E's own VCC count fell by exactly 202. These show how the filter behaves; they are not controls on the real harness. The wrong-target control on the real configuration has not been run."
+ },
+ "identity": {
+  "cbmc_argv_sha256": "038f99e6fec6ab42fa5c6fefe29735f71d09b32890667aae642f5fa2064bc6a4",
+  "real_property_list_sha256": "d8898ebc4cc5fd35c4968e32a7f15d25ef6fb4931abb0d983b453d1cb1113200"
+ }
 }

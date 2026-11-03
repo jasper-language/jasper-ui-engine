@@ -10,7 +10,7 @@
 
 ### CP-02
 
-**真实 `BTreeMap` 的 `source_subtree_contains` 与整帧实现级证明。** 早先把 Bitwuzla 运行记为 `unwind=5/6/8` 展开不足，已更正（2026-11-03）：虚拟机中没有 bitwuzla 可执行文件，那些结果是求解器 `ERROR`，并未否定任何展开界。按循环设界（`--unwindset`，展开断言保留）后全域公式降到 190827 步/3376 个 VCC，但 CaDiCaL 在 26G 上限内于数组后处理阶段内存不足，仍无结论，见 `evidence/native-subtree-unwindset-capability/report.json`。真实 Bitwuzla 0.8.2 首次运行（2026-11-03，获批后在构建虚拟机内固定版本编译）：同一公式约 41 分钟返回，随后 CBMC 进入第二轮求解，按其循环逻辑第一轮很可能是 sat，即至少一个检查在该编码下可违反；但还没有拿到被违反的属性与轨迹（一次 kani-driver 解析崩溃、一次 3500 秒超时），所以这不是反例，也没有结论，展开界充分性仍未确认，见 `evidence/native-subtree-bitwuzla-capability/report.json`。不得用较小展开、固定树或替代 Map 通过。还需闭合 `apply_update → apply_patches` 的完整整帧性质。
+**真实 `BTreeMap` 的 `source_subtree_contains` 与整帧实现级证明。** 早先把 Bitwuzla 运行记为 `unwind=5/6/8` 展开不足，已更正（2026-11-03）：虚拟机中没有 bitwuzla 可执行文件，那些结果是求解器 `ERROR`，并未否定任何展开界。按循环设界（`--unwindset`，展开断言保留）后全域公式降到 190827 步/3376 个 VCC，但 CaDiCaL 在 26G 上限内于数组后处理阶段内存不足，仍无结论，见 `evidence/native-subtree-unwindset-capability/report.json`。真实 Bitwuzla 0.8.2 首次运行（2026-11-03，获批后在构建虚拟机内固定版本编译）：同一公式约 41–48 分钟返回 sat。此前据此推断“至少一个检查可违反”，已撤回（2026-11-03）：这个 sat 落在 Kani 的 `reachability_check` 探针上（表达式恒为 FALSE，只报告可达性），不是违反，也不是反例。排除探针、只查真实属性（1436/1503 个属性，3174 个 VCC）后，6300 秒超时，求解器无任何输出，所以真实属性既未通过也未被违反，展开界充分性仍未确认，见 `evidence/native-subtree-bitwuzla-capability/report.json`。直接调用 cbmc 时，其 `VERIFICATION FAILED` 须先核对属性类别。不得用较小展开、固定树或替代 Map 通过。还需闭合 `apply_update → apply_patches` 的完整整帧性质。
 
 ### CP-03
 
