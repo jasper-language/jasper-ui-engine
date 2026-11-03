@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "kind": "jasper-ui-closeout-audit",
-  "generated_at": "2026-11-02T19:13:49.462920+00:00",
+  "generated_at": "2026-11-03T10:23:14.406383+00:00",
   "claim": "audit only; no checklist completion or whole-engine acceptance is claimed",
   "git": {
-    "branch": "codex/item6-closeout",
-    "commit": "05fcdbe395940ba6fff71ad7c7a7cddfd2b102ad",
+    "branch": "main",
+    "commit": "d96fac8612041bf38a754a982fafc35f81c3f6e3",
     "dirty_paths": []
   },
   "final_audit": {
@@ -15,7 +15,7 @@
     "recorded_status": "complete",
     "recorded_completed_items": 6,
     "covers_head": true,
-    "basis_commit": "68b8605fa6b06505dfda4094aa0e3c085bf1e9c6",
+    "basis_commit": "6610bbfc7f299c41ebaeac98d25db9730cc52bf4",
     "material_changed_since_basis": [],
     "references": [
       {
@@ -81,9 +81,9 @@
     "scripts/audit-closeout.py": "3b93b12e36c6362619be0df660bf2affdd70d83473ac4efff94b671d1a2b1d7c",
     "scripts/closeout-baseline.sh": "324530f8c5033ff29ae0e1f245c756c0d47c3da32d6cf30666ec15ec19d9bc8e",
     "scripts/test-audit-closeout.py": "34fa073556b494d37030b4d0372260030a205ec2dfd38bf47022c01dea546e3a",
-    "docs/claude-closeout-proof-backlog.md": "3fafda5b0f387a449da6ef4bde03715f558846c6627bc69105fa2900f6dacceb",
+    "docs/claude-closeout-proof-backlog.md": "c4e562bf36160b567ca67dbc7ec68d446c746d3418970acbb038d244aff66bc1",
     "docs/closeout.md": "a25c5809261e484384943ffcdfa715f519b74919733b8df82462ebfa560666a6",
-    "scripts/verify-ui.py": "dbfacc3f0d894ddc2d1f173a69212b8f3e3fc3f8ed3fe0b1348985e5292f1995",
+    "scripts/verify-ui.py": "b08598b4c3ece3c8935d132a35170be14b0cfd8d7e5b7254a53c294657798e88",
     "scripts/verify-in-vm.sh": "cc88cbb9afde9788d8154b4bb8501e975ffef039c96e452e355836e50ac4c3ba",
     ".github/workflows/ci.yml": "eeae3e2da1889165faffa3ec1471a9f4db6b3606cb2087e09260bd6a0c85d5b1",
     "Cargo.toml": "a78eb3be5b5b5c6da54a716d20c33baaec37563515026960bc90e296188ddd65",
@@ -91,23 +91,2331 @@
   },
   "evidence_index": [
     {
-      "path": "evidence/bold-alias-kernel/report.json",
-      "sha256": "5a425d3fd7e5c52e48730d34d9d9fb0be829d06f205d4d8e7477e6ea3be7fcb0",
+      "path": "evidence/access-actions-kernel/report.json",
+      "sha256": "811f26d6d26a1952d7d62cd891de9ed8baa26e2790634f1840135108fe519cbe",
       "status": "proved",
       "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/access-change-kernel/report.json",
+      "sha256": "989cdff8398f891683c0ff62595b743f3a325573f947568f73f0e224a62a350e",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/access-request-kernel/report.json",
+      "sha256": "4b2740f525b9d787308339e96c6a2f9749ff35c97b54b600093f0a92ee502fbe",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-accessible-label-pending/report.json",
+      "sha256": "111931111d6078ce693afbe316917d713f9c48a585d555c346423ba19b6f2b68",
+      "status": "native_diagnostic_passed_acceptance_pending",
+      "recorded_sources": 3,
       "stale_or_missing_sources": [
-        "src/native_adapter/native_fonts.rs"
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs"
       ],
       "completion_flags": {}
     },
     {
-      "path": "evidence/component-update-admission-kernel/report.json",
-      "sha256": "e7096cdc4137d3aa3c3e73a11848b803fed9359c9f1b8e9e36d43f0a4becab52",
-      "status": "proved",
+      "path": "evidence/blitz-admitted-preedit-pending/report.json",
+      "sha256": "4cf9f9d7e4388f2ed79707c9454b1d1418ed605db2ac5bde94d0704f0de81985",
+      "status": "native_diagnostic_passed_acceptance_pending",
+      "recorded_sources": 7,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/Cargo.toml",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "experiments/blitz-host/src/view_slot.rs",
+        "src/input_identity.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-ancestry-artifact-admission/report.json",
+      "sha256": "84c5cf7971f5fd0008de047a11adcc7effafd6e92f53a79f8aee39224d7b5e4e",
+      "status": "engineering_guard_passed",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "scripts/check-blitz-proof-mapping.py",
+        "scripts/test-blitz-proof-mapping.py"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-ancestry-bounded-pending/report.json",
+      "sha256": "ca6a99f70801b731871f1c2d965e422b116e369ea090c834e82dfaf61635109c",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-ancestry-chain/report.json",
+      "sha256": "109518fd825b7a61af64a1961ead25fb92a1461f188cf0e6ff4144cb7939bbe3",
+      "status": "incomplete_kani_timeout_not_accepted",
+      "recorded_sources": 11,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "src/scene.rs",
+        "verification/native-activation/build.rs",
+        "verification/native-activation/fuzz/Cargo.toml",
+        "verification/native-activation/src/ancestry.rs",
+        "verification/native-activation/src/lib.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-ancestry-functional-pending/report.json",
+      "sha256": "27956ed61a0df943bae738ccf18c2bdf75f82797e8f4a78727ea522978799a82",
+      "status": "stage1_failed_not_accepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-ancestry-kani-direct-pending/report.json",
+      "sha256": "1024e55de5271658c0ec0c5f97f5390d6bb9b9c80882ee8d74a0755c4b82c737",
+      "status": "kani_timeout_not_accepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-ancestry-key-model-pending/report.json",
+      "sha256": "967b3d836028572e865f4beb19e30b533f953495842799807ac0b12767827322",
+      "status": "conditional_proof_not_accepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-ancestry-proof-capability/report.json",
+      "sha256": "fedeb4dbb96cf808e413125006bfd33aba1fff7832e2011fe098f2c711208baa",
+      "status": "stage1_failed_not_accepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-appearance-input-state-pending/report.json",
+      "sha256": "22ef5e4dbe5f189be097ab74bbe573ba1a22bc5cf8783393ab226e766a3dac8c",
+      "status": "native_integration_diagnostic_only",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-appearance-pending/report.json",
+      "sha256": "a5f7392319e705bd4876af17376dcb11442e21537e0633bfee3cf1854cf8731e",
+      "status": "native_diagnostic_passed_formal_acceptance_pending",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-appearance-state-pending/report.json",
+      "sha256": "bcba4bd854e06dbc68336706487f9e808171da4bd771f13226fc2a5713ae8dae",
+      "status": "native_diagnostic_passed_acceptance_pending",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "src/input_identity.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-archived-editor-ci/report.json",
+      "sha256": "e01f905bebf0c6d84dd12225a149c9cb9e918805c975c871c4ee7c3600804e73",
+      "status": "archived_not_run",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-button-activation-pending/report.json",
+      "sha256": "c0ac9aab473d341cd79684f6b9dc2189a113e8be21093c7ff1c41572afe28c6c",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_events.rs",
+        "experiments/blitz-host/src/native_view.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-button-disabled-pending/report.json",
+      "sha256": "cde6b18ce793e94ae354008d69f36b4ad4421fe811b1f34b0cb6757e056a1d06",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-button-enter-pending/report.json",
+      "sha256": "6ff3ec8a0933a0c803c6a7925ebb68cf76ca765f0003a8da19ea9ef7bf99b7f5",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-canonical-engine-migration/report.json",
+      "sha256": "b6e6a76ecdfb65b85deb7fb0bf37edcbdadf2a6a6943c13633cb72f1476e6723",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-capture-activation-pending/report.json",
+      "sha256": "7742dbd2358c3d4ea5067f3eab48489f58cdf7419b75b9ef205739485fa4908b",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_events.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "experiments/blitz-host/src/pointer_host.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-capture-admission-order-pending/report.json",
+      "sha256": "d60914c9b1191b239e4422135e5650a15c163818ae279f2bca2e2a139ef074d5",
+      "status": "candidate_fixed_not_accepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-capture-cancel-owner-pending/report.json",
+      "sha256": "368baba94517a7d3390b47ca509148e5a3b03d35bd669d5d6f51267c7b7b53b7",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_view.rs",
+        "experiments/blitz-host/src/pointer_host.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-capture-framework-path-pending/report.json",
+      "sha256": "30f4bc548861033e35179bf18da93efcc36706eb651192ed5f4278ea40071731",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-captured-target-pending/report.json",
+      "sha256": "d6af7800e445b862f77fb7945367cb453c68119e2bfe3532132ee75bf52e576a",
+      "status": "candidate_fixed_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_events.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "experiments/blitz-host/src/pointer_host.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-component-contract-pending/report.json",
+      "sha256": "7b9bbfec64919f0f77e7d0fd3b6d170fd3492a3ac7de70504a4ba9f66e549c91",
+      "status": "candidate_failed_native_pixel_regression",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/component_contract.rs",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-component-frame-focus-pending/report.json",
+      "sha256": "1e0d59a4bb6e3469380b05398ffa1f33bb1267e2353a11f004baea72c1d4d49d",
+      "status": "candidate_not_accepted",
       "recorded_sources": 1,
       "stale_or_missing_sources": [
-        "src/native_adapter/native_view.rs"
+        "experiments/blitz-host/src/native_view.rs"
       ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-component-frame-pending/report.json",
+      "sha256": "18843ef0179a0caca081f6c2763651b7edeb61ebfb1e9a540b7722455300d09c",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_view.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-component-rejection-pending/report.json",
+      "sha256": "4a581b3fa8e10a7c7ae5f39ee3066e466e68c6303c199efc4dbedc4d0b50c7fa",
+      "status": "native_diagnostic_passed_acceptance_pending",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "src/input_identity.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-component-sequence-pending/report.json",
+      "sha256": "b1a2e24e896710cd2e3df807fcfd6a707061c674a1de631ac7cd024d670c714c",
+      "status": "native_diagnostic_passed_acceptance_pending",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-component-updates-pending/report.json",
+      "sha256": "50eb92b2fe7edad2b50621cef0c1a54bc2a83914c8d4c795b810bbf7f89af3f7",
+      "status": "native_diagnostic_passed_acceptance_pending",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "src/input_identity.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-content-scroll-pending/report.json",
+      "sha256": "75ea842f12cb9a9b0f53aea2eda7f44a6648d4bda8c06072967208076a048a9d",
+      "status": "native_test_passed_acceptance_pending",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/src/native_view.rs",
+        "src/input_identity.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-cpu-view-pending/report.json",
+      "sha256": "bb8d5d592f56d65f08ccc8814e14879f0fb82f6513b9049fa5ac85e50a9ab710",
+      "status": "native_frame_diagnostic_succeeded_acceptance_pending",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-current-public-boundary-pending/report.json",
+      "sha256": "bc088e9589a51c2704f023c93d8a7ca60cf74a43344259eb74b340a0ca340dd7",
+      "status": "engineering_boundary_passed_not_implementation_acceptance",
+      "recorded_sources": 5,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/src/scene_events.rs",
+        "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-deactivation-hover-pending/report.json",
+      "sha256": "b1ebbcce341749606eba379a35a0622caa57b56c947ea7683995c1e16e98e74e",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/native_scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-deactivation-isolation-pending/report.json",
+      "sha256": "ea08c3f0f3ffb67771cc5f1b0cd1ff44c7a166fc7eb8e2609c6b6599a4b548e0",
+      "status": "diagnostic_only_not_implementation_acceptance",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-deactivation-prototype-pending/report.json",
+      "sha256": "3109a101ce9fcaeedc9843123772226975a5eb92e1f13d2439ed7ea3400e333e",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-dispatch-sequence-results-pending/report.json",
+      "sha256": "4485945a5d21dd39a2eba54e8ce6c8a363697f82d185102c037a358b5c2c674d",
+      "status": "native_diagnostic_passed_acceptance_pending",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-display-revision-pending/report.json",
+      "sha256": "cd13f78c31beae08605e37dab38d99ff137e08e9d0bf6062c9ad2b5856ea10d1",
+      "status": "native_diagnostic_passed_acceptance_pending",
+      "recorded_sources": 5,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/Cargo.toml",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "src/input_identity.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-display-tab-pending/report.json",
+      "sha256": "4fca9efbe7a17e3492de520be2379d2f12b7d703ff9b55447ebf0e1ac02fff86",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-existing-scene-pending/report.json",
+      "sha256": "8c7cac1f6c97013ada73a68e939c53da559371210b4785785dd1797612979e58",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 6,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_fonts.rs",
+        "experiments/blitz-host/src/native_scene.rs",
+        "src/scene.rs",
+        "src/semantics.rs",
+        "src/style.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-float-proof-capability/report.json",
+      "sha256": "abaf4ccfc4305684276756c95ca1a8df90219d17556ff38d556604470b0a2b36",
+      "status": "capability_probes_not_verified",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_view.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-focus-close-pending/report.json",
+      "sha256": "0a85345cb7976722f3a474f705cb7373820fea47fdf5375e045034f060d4bc75",
+      "status": "native_diagnostic_passed_acceptance_pending",
+      "recorded_sources": 6,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/Cargo.toml",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "src/input_identity.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-focus-close-pixels-pending/report.json",
+      "sha256": "6a3c455db4021a085324a67d19309ff4e64163eb73e4ad21ffe49b8de914a4b5",
+      "status": "native_pixel_diagnostic_passed_acceptance_pending",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "src/input_identity.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-focus-notifications-pending/report.json",
+      "sha256": "7bd2830f7611bb0f281bd726112f0bef13a257bfd85be0ce2fed8732c971886e",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_events.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "experiments/blitz-host/src/pointer_host.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-focused-keys-pending/report.json",
+      "sha256": "fae566fcf10df9e8a03ca15408343b388433f54e6edf690f56e8eee580ea5866",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_keys.rs",
+        "experiments/blitz-host/src/native_view.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-font-order-pending/report.json",
+      "sha256": "6f6d5db59e17bf7a1fe0eefcfd5dd3d53158083e42bc9b0b16a41d7bd4a37d2e",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 5,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/Cargo.toml",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_fonts.rs",
+        "experiments/blitz-host/src/native_view.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-frame-preflight-proof-pending/report.json",
+      "sha256": "aa7709b0756bcd0e518d2a8e6002a4aa76f8e11969b7112c70a94ee1165c21c9",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_view.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-frame-single-resolve-pending/report.json",
+      "sha256": "4800e5e5d3dd9bf3a725c64ed56018b89baee3d5330fcc86e58713cb772c280d",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_view.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-framework-events-pending/report.json",
+      "sha256": "c858d204448a3383af28d82aac1751be58268ade364f19bcfb0bee627c2b8ca2",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_events.rs",
+        "experiments/blitz-host/src/native_view.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-framework-update-contract-pending/report.json",
+      "sha256": "e335c9bf96e8e71a38008c43ecf0d363ceabfbc2e02c946997c8eb33af3165f1",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/update_contract.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-hidden-ancestry-proof-pending/report.json",
+      "sha256": "6c3c0d3edeaf38ea2a2745b56e52b771a005e59866831f7267ae3b8e3b7b6ba7",
+      "status": "stage1_complete_remaining_acceptance_pending",
+      "recorded_sources": 7,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-hidden-pointer-activation-pending/report.json",
+      "sha256": "7c59d9abf15ef5f499802ff31dc78732a9b3ded1b6b631a034371a0eeeb9a2c3",
+      "status": "correctness_fix_candidate_not_accepted",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/scene_events.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-hidden-pointer-focus-pending/report.json",
+      "sha256": "a709d85754cd64d45db7e0c30ee60032b265139b1dd5c47e9fd06be8774cf3ff",
+      "status": "diagnostic_only_candidate_not_accepted",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/scene_events.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-hidden-proof-mapping-audit/report.json",
+      "sha256": "ee94515d2d36de1cc3d60518d3140101e132ded9fc24cbb4abc565b66d8f7c31",
+      "status": "unspecified",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "scripts/check-blitz-proof-mapping.py",
+        "scripts/test-blitz-proof-mapping.py"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-hidden-tab-pending/report.json",
+      "sha256": "fd50f2b70a30c6117b485b58af9a02bfa593144c2268e4325e4ab570deb87193",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-host-capture-pending/report.json",
+      "sha256": "e1f2e946bbb8a96fcda1809a00cac2906ffcad7a6f3537b2069c5e291c1d34a6",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-host-retirement-pending/report.json",
+      "sha256": "8ce3da8ce96600ac25e3681cc7b691e42f842bdba4c7cb22eaae5554f499818c",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_view.rs",
+        "experiments/blitz-host/src/pointer_host.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-host-scale-bounds-pending/report.json",
+      "sha256": "af41df6408f59bdfd46ca049051fde85713eb6c219069c9f7bb36d50106661a8",
+      "status": "native_diagnostic_passed_acceptance_pending",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-host-scale-pending/report.json",
+      "sha256": "d116b341716a723f341acf5ba9c32049a71bdf65d026ff7e8a585fb75f7d6d2e",
+      "status": "native_diagnostic_passed_acceptance_pending",
+      "recorded_sources": 5,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/Cargo.toml",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "experiments/blitz-host/src/view_slot.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-host-software-surface-pending/report.json",
+      "sha256": "129f27beb5c1403d9419b694085a88120e8c4aaf39ab56e8c282ffb7920f5323",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_scene.rs",
+        "src/surface.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-idle-focus-owner-pending/report.json",
+      "sha256": "c7c40ddb31415deadef9f9f12672420e0259ccf62bf0e25b905ab8bdcf30a857",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/pointer_host.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-initial-tab-admission-pending/report.json",
+      "sha256": "bfab31aa3d46e1336a5063b9e14a2f054bc5c33efe0760d8334e3a4980462dd0",
+      "status": "diagnostic_only_not_implementation_acceptance",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-initial-tab-composition-pending/report.json",
+      "sha256": "f6e22a41a780d04a095e4b237fb50c4c04a1c865884f21861ef82c44e1e60208",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-initial-tab-pending/report.json",
+      "sha256": "37b905517181a7d5eb211d98f85e846309b11d77d0c896cf88cfda15c4f37e6c",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-initial-tab-prototype-pending/report.json",
+      "sha256": "df1eb053b19d3a5dbeac78a7b898588b98c32a433541432faea0bbcd8c738dc0",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-key-conversion-metadata-pending/report.json",
+      "sha256": "4f6cd63950cf9fc36e68f30ec20f91ba99a2f5678794eefe955a7ab9e9575999",
+      "status": "native_diagnostic_only_not_ordered_acceptance",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-key-modifiers-pending/report.json",
+      "sha256": "75b7c7502c18f6fd81ba38dd480a58a5d2f6fe7b6cbbcf354d1e07b409e3a66b",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/Cargo.toml",
+        "experiments/blitz-host/src/native_keys.rs",
+        "experiments/blitz-host/src/native_view.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-label-state-pending/report.json",
+      "sha256": "680482f0b134487f120145094ba5ba4cbbb9a5bc3ec36597243bd0f3fd1a1404",
+      "status": "native_diagnostic_passed_acceptance_pending",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "src/input_identity.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-lifecycle-public-boundary-pending/report.json",
+      "sha256": "46d03d5543c9d97b46cf934a76436a5a5422e0569adbe6bee60a8a0ba85968e0",
+      "status": "engineering_boundary_passed_not_implementation_acceptance",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/native_keys.rs",
+        "experiments/blitz-host/src/scene_events.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-live-press-frame-pending/report.json",
+      "sha256": "6a38f3db9173f42835c40bfd7b37f0be62664679d18ea2dbe2f2261133c8c583",
+      "status": "diagnostic_only_not_implementation_acceptance",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/src/scene_events.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-migration-pending/report.json",
+      "sha256": "3e80e10a711161034565f9c74f6e94c3509efe5f1fb0b11251e3eca3ab2c192e",
+      "status": "compile_check_passed_acceptance_pending",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-modifier-prototype-pending/report.json",
+      "sha256": "f696b38554e0b827595263cf805cb4f07ac06c9d0cf658d5dbd169895a5d906d",
+      "status": "candidate_prototype_not_accepted",
+      "recorded_sources": 5,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_events.rs",
+        "experiments/blitz-host/src/pointer_host.rs",
+        "experiments/blitz-host/src/scene_events.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-native-backend-submit-pending/report.json",
+      "sha256": "fe034c86f1c7d8e34d5587ac63b2b903a9757b75065e690c15907ff5606d0168",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 6,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/facade.rs",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_scene.rs",
+        "src/backend.rs",
+        "src/raster.rs",
+        "tests/native_blitz_engine.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-native-dependency-boundary/report.json",
+      "sha256": "49f24bf20f7ef7216bf673dfade3c098298fd980c1b3d887917cd2211bbae97f",
+      "status": "passed",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-native-encapsulation-pending/report.json",
+      "sha256": "5230dfb2599e1e6b50e5bc345621925a44b89e387358b3b91bb9f0569abbf459",
+      "status": "compile_transport_pending_vm_probe_timeout",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-native-frame-differential/report.json",
+      "sha256": "8e92f5cd80f4301dfc1685e48035cffd9356808ca8d2c4f13c3b0f2712f9edde",
+      "status": "diagnostic_only_not_accepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-native-source-migration/report.json",
+      "sha256": "5a265977980689fd48919cf3deb760272e646fe45359a5b3112cca822c24ed20",
+      "status": "source_migration_verified_candidate_not_accepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-native-view-pending/report.json",
+      "sha256": "bfa0eb4446682fea93f821c47f332c8f44879735d58063fef9d00d7a65e071cd",
+      "status": "display_update_compile_passed_cpu_extension_pending",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-nested-scroll-bounds-pending/report.json",
+      "sha256": "acfb4d478ce87f362dd09a4e2ad09a430d70f0df0406179257567162f8223c50",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-no-target-capture-pending/report.json",
+      "sha256": "0e4b27b09c85ea3ef790bd37787e7c86556aeba5e2b46e0767b8cbc956d8d5e8",
+      "status": "candidate_fixed_not_accepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-node-bounds-prototype-pending/report.json",
+      "sha256": "759434e002ba921f6cd3b9c6ff5dbd21266028ec92707f4f2d4bd4940d64948c",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-node-bounds-public-boundary-pending/report.json",
+      "sha256": "a0d969a97ee8a55fabb9f3c06857efc8dc12ff09d8a19b2148a6a90c01a85038",
+      "status": "engineering_boundary_passed_not_implementation_acceptance",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/native_scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-node-id-comparison-pending/report.json",
+      "sha256": "a08cdd790a21faccdd3256a7d749c8a00af0e0c927fba2ab9c03e9eaa3867a09",
+      "status": "stage1_functional_proof_passed_acceptance_pending",
+      "recorded_sources": 5,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-own-semantics-pending/report.json",
+      "sha256": "ea29b8c91afad442d56d7a83c5b3f0fb149c6bf6a9406d7db5b74729d5c4c929",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_semantics.rs",
+        "experiments/blitz-host/src/native_view.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-pointer-button-prototype-pending/report.json",
+      "sha256": "616faf54275960a230c744ea9c79264fce34de276803f41ccb1ea13574aa9c4a",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_keys.rs",
+        "experiments/blitz-host/src/scene_events.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-pointer-coordinates-pending/report.json",
+      "sha256": "759227cfca5c33fc4320f7da95d70730951fa642115a90fe310ceac02fa9b672",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_events.rs",
+        "experiments/blitz-host/src/native_view.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-pointer-events-pending/report.json",
+      "sha256": "463c61110107f19f1ecd9b17d6457188a3d1cb16e0a7c744270ad292f2afb11b",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-preedit-display-pending/report.json",
+      "sha256": "bb8b5e74684dde5b513071b9420504bd3a222f3e42f1e07e7c02a2bda5f29a07",
+      "status": "native_diagnostic_passed_acceptance_pending",
+      "recorded_sources": 5,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/Cargo.toml",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "experiments/blitz-host/src/view_slot.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-preedit-rebind-clear-pending/report.json",
+      "sha256": "c809a0aafae38ce6e8def463205287c9a04c373f1911270b9981d215b824c365",
+      "status": "native_rebind_cleanup_bug_fixed_acceptance_pending",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "src/composition_identity.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-preedit-serial-pending/report.json",
+      "sha256": "d7a9bf9d9df7d2344bd2ea1c55f20f4585375432e51ac3781156abfc22513d20",
+      "status": "native_serial_admission_candidate_passed_acceptance_pending",
+      "recorded_sources": 5,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "src/composition_identity.rs",
+        "src/input_identity.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-proof-artifact-admission/report.json",
+      "sha256": "4a8d72d38ab64be9d344029b2dfd151aaf52649edb8d879c124c4b2aac4a0bed",
+      "status": "engineering_guard_passed",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "scripts/check-blitz-proof-mapping.py",
+        "scripts/test-blitz-proof-mapping.py"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-proof-control-enforcement/report.json",
+      "sha256": "0aec6807511f8c5508873249a3611282c2925b149082e79799fbbc24a25d488a",
+      "status": "engineering_control_passed",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-proof-mapping-audit/report.json",
+      "sha256": "baaaba18c8db8ca08e0e3c58d12dd7ccf3371793fb4ef3b4cf1d85a5dc66364a",
+      "status": "unspecified",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-proof-mapping-public-audit/report.json",
+      "sha256": "63c17ae02a7c74c1fe2138355f6299b8cfd224593d5ac3beeb88e7c09d67cb80",
+      "status": "unspecified",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "scripts/check-blitz-proof-mapping.py",
+        "scripts/test-blitz-proof-mapping.py",
+        "scripts/verify-version.py"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-proof-negative-control-admission/report.json",
+      "sha256": "dde6d8dad820e077a77654e9f570684bcf7b4c67c019480b703b8adce132279f",
+      "status": "engineering_guard_passed",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "scripts/check-blitz-proof-mapping.py",
+        "scripts/test-blitz-proof-mapping.py"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-prototype-root-migration-pending/report.json",
+      "sha256": "54d92f1a13dc5f773e7cd61ac19a1d933d555ac2936a2b80a47238d25c9bfb9b",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 8,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/Cargo.toml",
+        "experiments/blitz-host/src/facade.rs",
+        "experiments/blitz-host/src/main.rs",
+        "scripts/check-blitz-native-dependencies.py",
+        "src/engine.rs",
+        "src/lib.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-public-capture-pending/report.json",
+      "sha256": "177ac99787edbf7c376894d14f369c4087636d4f6c30755d128e433d728bd0ec",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/native_events.rs",
+        "experiments/blitz-host/src/pointer_host.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-public-client-prototype-pending/report.json",
+      "sha256": "14812cefb0514fef7c39949dee602a6ea922a0e6ab9f34016c648147eee63931",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-public-focus-lifecycle-pending/report.json",
+      "sha256": "125470b83629d9fecdff007853b3cd0dfe25f92aee5fda30db3a9f3667e58258",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/scene_events.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-public-node-bounds-pending/report.json",
+      "sha256": "b2f8e095e953e6b4cb6eaf9883e8cd5f25b0771f05e247492619d7d4ac2c92be",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-public-pointer-pending/report.json",
+      "sha256": "d3bae6fa0d066106fe9242ece45475acc225cf63b05e3feabe2ec93df7ec9341",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 5,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/native_events.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "experiments/blitz-host/src/scene_events.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-public-prototype-pending/report.json",
+      "sha256": "01d931f198cf1781ad14f5c396a5ae2b497d6e28aad36593323abb869fd62665",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/main.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-public-scene-focus-query-pending/report.json",
+      "sha256": "356188081b6ca7d88339b43f061efa628d10ae614cb921de49ebbbf36af7b147",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-public-scene-identity-pending/report.json",
+      "sha256": "0da7101993a660bcd521c37ab19518d003b051c1f3be3c3d61f617c98584fd42",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-public-scene-key-pending/report.json",
+      "sha256": "41d968cae365cd6d7a503b1c065b76bfc96481947d53a131095e908ffb1751a8",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/src/scene_events.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-public-text-client-pending/report.json",
+      "sha256": "995a57758fabe6aa7caee892a749f6b1af363dcabf15b398182bd4fa47f4e8c6",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-public-text-focus-key-pending/report.json",
+      "sha256": "c6d816b5f476104656d84f6e15201ef420e7b95a220fcfb5d9b1f9b842b21d19",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/native_events.rs",
+        "experiments/blitz-host/src/native_keys.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-public-text-hit-pending/report.json",
+      "sha256": "c4000daa68779b9900e3d9902813e6789d9396fbe9c2bd2e74924637a9a75601",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-public-text-semantics-pending/report.json",
+      "sha256": "de93614f163003b44497915cf3446cd61bcbe9e7f87af2d7e23ea541edfb9514",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/native_semantics.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-public-text-viewport-pending/report.json",
+      "sha256": "fa4be457357f36f7666df9c2e5629eb1c3021c4061a707b4d8ac65461ecb61f8",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-public-type-boundary/report.json",
+      "sha256": "63fbee99346fd8537313a08f5fd4d4eb38d17bb34d7d80e1f02cccb9a356fc82",
+      "status": "engineering_boundary_check_passed_not_implementation_acceptance",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/Cargo.toml",
+        "experiments/blitz-host/src/lib.rs",
+        "scripts/check-blitz-public-types.py"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-public-update-frame-pending/report.json",
+      "sha256": "9ad71c2aebfeb09f15d9e8b34982fe180041d73dd46cdd536430f7e1dea81137",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/component_contract.rs",
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-release-delivery-pending/report.json",
+      "sha256": "233f72638b9c5afca9eb397fb2db9d0274a9f3c99ea1095d7134d9f963d4d4b3",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/pointer_host.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-reused-pressed-node-pending/report.json",
+      "sha256": "5eddfa2cd077627dc8ee76f3f4047459af16874f93eb6a948aaafde3f07160cd",
+      "status": "correctness_fix_candidate_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/src/scene_events.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-role-prototype-pending/report.json",
+      "sha256": "8581bc80b6ecde251fd60d5f7fc05de5912eb1bb6be001de2dafe9b83fe7f064",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-root-engine-entry-pending/report.json",
+      "sha256": "e21093afda334ca4c443fa0d1418713fc4c0714859931e575e7a3344f71e91cd",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 12,
+      "stale_or_missing_sources": [
+        "Cargo.lock",
+        "Cargo.toml",
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/src/facade.rs",
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/native_scene.rs",
+        "scripts/check-blitz-native-dependencies.py",
+        "scripts/test-blitz-proof-mapping.py",
+        "scripts/verify-version.py",
+        "src/engine.rs",
+        "src/lib.rs",
+        "tests/native_blitz_engine.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-root-hello-migration/report.json",
+      "sha256": "4c02d59751fb715df29e14f36fc56b479b27d223590c017d0b4b01753039b903",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-root-layout-lifecycle-pending/report.json",
+      "sha256": "cb718bd3cfb424c56f95141abe8cb885262e15b9ece4faccc46bccd489c68d75",
+      "status": "diagnostic_only_not_implementation_acceptance",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-root-pointer-migration/report.json",
+      "sha256": "e97d697f8097768d8a44657ec2203d2475fceca4b2913440ec41538ad147dbe4",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-root-window-migration/report.json",
+      "sha256": "7c3a7eccf77f6c1a91155b5ebc9438962e1deeb3ed5ef09f637c0c841730f4fe",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scene-activation-owner-pending/report.json",
+      "sha256": "3556347f0ce7d26b6484a0a39a83e3ebe5f33ae75b26fa0f710dfa902e723f2e",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/src/scene_events.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scene-cancel-prototype-pending/report.json",
+      "sha256": "ab44565063e2ead75a7be82e96d7df3d8a5be7ad0ad37f1e5da31c132db36148",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scene-cancelled-up-pending/report.json",
+      "sha256": "4a6079c825795343f9c4d9f2352d6b16989d1bcc154849879cba80474fcb1f3f",
+      "status": "correctness_fix_candidate_not_accepted",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scene-deactivation-pending/report.json",
+      "sha256": "06fc51bc1e1433e9d58d7ec31e494923b6f0dfe53720630148c885435a09b553",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scene-duplicate-up-pending/report.json",
+      "sha256": "cb5f63c0eb4644e4afde13baf14c6972ef9b1fd37e6c29a79c11bbc2a645fd75",
+      "status": "correctness_fix_candidate_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scene-events-pending/report.json",
+      "sha256": "3ee4f15977b265a9a16cacc980fcbcf591c55728a750922e5d21d11f0355fecd",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/src/scene_events.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scene-focus-events-pending/report.json",
+      "sha256": "1f47eab27a34d0c3f8ff13bf1025601f3423179232ff1b6e4a79ee6586c807cb",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/src/scene_events.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scene-focus-pending/report.json",
+      "sha256": "120384bda63f0b6c81a9901d2fc9b3274a1825765a6ffac8cc642ed19dcee059",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/src/scene_events.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scene-focus-visibility-pending/report.json",
+      "sha256": "f14620e8544de7b5641b71066d701dfefa43c5a80dbb9e6aae2f1eb765f02ab0",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scene-host-metrics-pending/report.json",
+      "sha256": "ed46efcc17e81e59e0940583f2d159e86c108f9dd2575bd0a258717c83597bcc",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scene-insert-index-pending/report.json",
+      "sha256": "9b6d8ca99c1de18038170a24f7d572d997d22222ed9b0cef8babe844b8f794c1",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scene-insert-pending/report.json",
+      "sha256": "127cd3a5cbee2f93ac46639a8e608cde168a7aaa7e535453b34a15bd3da45007",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scene-key-default-pending/report.json",
+      "sha256": "444cbd5c17d9763e1c792346f68610e7fdf4e2ff7e0f5168dffdc4d7c3dcf596",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 5,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/src/scene_events.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scene-mixed-frame-pending/report.json",
+      "sha256": "010ecc3c178d1f32263d6a0bca197907272eb06ddb5ccfb7e772ec7b7cb0c869",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scene-patches-pending/report.json",
+      "sha256": "d7a10d199a4f8607a746dff91f0eeb63749a3e88724719a2591cc034b5898cef",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scene-pointer-buttons-pending/report.json",
+      "sha256": "d2d0326165fc247b81a47754d526f306711f9fd043254633127e33f75fc5a585",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/scene_events.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scene-pointer-modifiers-pending/report.json",
+      "sha256": "ae3bef919cbcc07affdca682ec8ee226383cb26d555a2ff50a39351a28a4de58",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/src/scene_events.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scene-prototype-migration-pending/report.json",
+      "sha256": "68b20a686d479803806189c7fdfb28c45f4efbc4cc845a078c3404c8c0104c2a",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/src/scene_events.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scene-prototype-pending/report.json",
+      "sha256": "6946cdd652285576bbd0e7629fcb7251429c47468f69430b3454594173b2b508",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_fonts.rs",
+        "experiments/blitz-host/src/native_scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scene-remove-pending/report.json",
+      "sha256": "f27aab49959145088da9a93b2c00e40b168ac12c848bbd43a34916885cf39023",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scene-retirement-pending/report.json",
+      "sha256": "10af68a0d6c5a0ab598e77ccd6226fe31f95ee168e592484feeab7ac211f0256",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scene-semantic-action-pending/report.json",
+      "sha256": "4fd8458ee2157b6992bae52b0a21e428d6ac308269e78df90750d8213d2a145a",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/src/scene_events.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scene-semantic-hierarchy-pending/report.json",
+      "sha256": "7b2cdef30a1532e294a4a62fa992a7c263aa0055f43d80f6a42e7572d0486465",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/src/scene_events.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scene-semantics-pending/report.json",
+      "sha256": "998aae91e0fdd3266a4428642ee1b8ea120ee8af5e7b384d2ec0ee4438347b56",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "src/semantics.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scene-subtree-remove-pending/report.json",
+      "sha256": "d264a24a8768631a0630dc1a947745c9b53928421e99c8cdfd192b57baff932a",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scene-viewport-scroll-pending/report.json",
+      "sha256": "0a4a0072865d58c87e01c4156f0bdbeaf25f5a10c580f522218584d696535d1f",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scene-visibility-bounded-pending/report.json",
+      "sha256": "54c0eb37000eb989ce4500b13d56e2d34de7fbcaee46e1c3e2491c4c1e74af40",
+      "status": "stage1_complete_remaining_acceptance_pending",
+      "recorded_sources": 5,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scroll-bounds-recovery-pending/report.json",
+      "sha256": "1f23aab5442b9579dbca86f3e933a008d9e53c0f7529885f2f526be03b281e2f",
+      "status": "native_diagnostic_passed_not_acceptance",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scroll-dpi-hit-pending/report.json",
+      "sha256": "201b15c845c4fed41017ef91613d67330c204421d28b3b47441edc3f2ea4eb4b",
+      "status": "native_coordinate_test_passed_acceptance_pending",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/src/native_view.rs",
+        "src/input_identity.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scroll-hit-pending/report.json",
+      "sha256": "cb22511d78e300318ef1fbca79596f488b73dd3b34bb5841e473cbfb268eefc6",
+      "status": "native_coordinate_bug_fixed_acceptance_pending",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "src/input_identity.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-scroll-style-composition-pending/report.json",
+      "sha256": "2d2674f918c9f8617c183236289e3399ba4285db688a1c5d905b1debfce3be11",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-selection-clear-readback-pending/report.json",
+      "sha256": "75e1370962832c3d8608aefc9c7957d295eca357e79ddbccb6952af51713f415",
+      "status": "native_diagnostic_passed_acceptance_pending",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "src/input_identity.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-selection-display-pending/report.json",
+      "sha256": "afc9121b0f2bc511f94e725556c0039d3c0c7843969ceee01458b9a76244178a",
+      "status": "native_diagnostic_passed_acceptance_pending",
+      "recorded_sources": 5,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/Cargo.toml",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "src/input_identity.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-selection-pixels-pending/report.json",
+      "sha256": "2cd86b4daa3353ede8dfcf1cf929bf242896c7ed17a8782bc01a554d065ac73e",
+      "status": "native_pixel_diagnostic_passed_acceptance_pending",
+      "recorded_sources": 5,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/Cargo.toml",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "src/input_identity.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-selection-range-reuse-pending/report.json",
+      "sha256": "a1f1396a022a8507e25d80250cbe516aeb2373246ffee6b6a0a695adf3b268ec",
+      "status": "native_diagnostic_passed_acceptance_pending",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "src/composition_identity.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-selection-readback-pending/report.json",
+      "sha256": "160f276290480418cae5c27a85ac72f8d85a78f3c92c7105916c408234eceb3c",
+      "status": "native_diagnostic_passed_acceptance_pending",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "src/input_identity.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-semantic-action-pending/report.json",
+      "sha256": "f6f05470a5b9b5ab6b53c43884e56ac5d5365d794618f0c9511f179ee4c247ff",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_events.rs",
+        "experiments/blitz-host/src/native_semantics.rs",
+        "experiments/blitz-host/src/native_view.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-semantic-action-proof-pending/report.json",
+      "sha256": "f5655bb5230e90b22618bc8f3d0d195aa86f95c3775eddd705b6bbc1c1e85605",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_semantics.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "scripts/verify-version.py"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-semantic-boundary-pending/report.json",
+      "sha256": "62beaa5d6df5c8276faff04109f9988ce76687ccb94c9670abe1c69d388a8c62",
+      "status": "engineering_check_passed_not_implementation_acceptance",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/native_scene.rs",
+        "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-semantic-native-attributes-pending/report.json",
+      "sha256": "49ea8b8de6e2ff96446cfcb171b3a2c0407954685a4603d2cc2c14961d0725bb",
+      "status": "diagnostic_passed_not_implementation_acceptance",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-semantic-prototype-pending/report.json",
+      "sha256": "2ba7a5bf2dea63c8045b29728a4b25bc60a15a8b3b489ee0db65897dd1f81ba0",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-semantic-role-update-pending/report.json",
+      "sha256": "71c37b29965b8f593f319d571f1729f80fc6ded8f768d5322bf53a4abfb37612",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-semantic-topology-pending/report.json",
+      "sha256": "ec46b34def939ed3ff921ab0ce4d762ae262d40dcd1a8acc6c4bf00b1df1c5c3",
+      "status": "diagnostic_passed_candidate_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/tests/typed_facade.rs",
+        "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-sequence-exhaustion-pending/report.json",
+      "sha256": "10fb84659a034f11c5161c980839fa9777fbb7c1d317547e55bf55294d6afb01",
+      "status": "native_boundary_test_passed_acceptance_pending",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "src/input_identity.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-shared-key-conversion-pending/report.json",
+      "sha256": "f566d346087127c7218a637a550a941156fe298d94cc5318a9989c5ae9f1ee9f",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_keys.rs",
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/src/native_view.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-snapshot-preedit-pending/report.json",
+      "sha256": "1a10b1f1ba62409bb8554f2780393ed439d3b9cd42c3b1200061b9ffdde1960c",
+      "status": "native_transition_test_passed_acceptance_pending",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/src/native_view.rs",
+        "src/composition_identity.rs",
+        "src/input_identity.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-source-box-sizing-pending/report.json",
+      "sha256": "151a4eb6a01fcc44d6b9b3954af131eeff162c7c2ec0fd24cf687e14890521cc",
+      "status": "correctness_fix_candidate_not_accepted",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-source-root-viewport-pending/report.json",
+      "sha256": "23c917dfffe99265775cc1ae8871f85cfdd6b2e00b2a5943b60633cedeca64ee",
+      "status": "correctness_fix_candidate_not_accepted",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-source-scroll-pending/report.json",
+      "sha256": "79554518779b5cb73954ef210c8cdfaef11cd1813a5079911bae53cb2f175e73",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-source-semantics-pending/report.json",
+      "sha256": "47a952eace9a1febf324e329cbe62448dbd7732194d832026c65b1baa26ffe91",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/tests/typed_facade.rs",
+        "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-terminal-press-prototype-pending/report.json",
+      "sha256": "5e2e1645e42d1ce3c3408077525ab7c6c49aa397bf24620ca6be20d121620147",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-text-button-terminal-up-pending/report.json",
+      "sha256": "85e858a82d27c2abe12981856e118daab9358be7cad82e68f7b9180b3362f163",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_events.rs",
+        "experiments/blitz-host/src/native_view.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-text-cancel-press-identity-pending/report.json",
+      "sha256": "d9cd5ebeaec40a80a45e9f25360dd6f68f1680cfa06180f4951bf56bfd8fd595",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-text-capture-modifiers-pending/report.json",
+      "sha256": "2f7c515c2a84df98100fda8d61fd7bdd209d8a8afb924e91e55635d4bd45c8d3",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 5,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/native_events.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "experiments/blitz-host/src/pointer_host.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-text-hit-pending/report.json",
+      "sha256": "3bd1797569876c1a5daad18e89a2fd842389db5c769c0329ee4738f0ade3b8c1",
+      "status": "native_diagnostic_passed_acceptance_pending",
+      "recorded_sources": 5,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/Cargo.toml",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "src/input_identity.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-text-key-focus-pending/report.json",
+      "sha256": "e2be54d8ba0ad6ca6b93acec325ef52447a85f523898d8fdfc641a2e93900753",
+      "status": "hypothesis_rejected_no_production_change",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-text-terminal-up-routing-pending/report.json",
+      "sha256": "8260ff969b7de3c9c0aaa9343a3b11f4cd74686680d60fab5cd9977a45085203",
+      "status": "native_diagnostic_passed_not_acceptance",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_events.rs",
+        "experiments/blitz-host/src/native_view.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-two-application-pending/report.json",
+      "sha256": "af2abc61ab5f1415de8839d3330afff424978e5d074170e1ffd12928fab633f6",
+      "status": "native_isolation_test_passed_acceptance_pending",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "src/input_identity.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-typed-button-pending/report.json",
+      "sha256": "010406267cd3538e0fc1d3ee07d2980766d9443acd328edd78625062f80780b1",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-typed-flow-pending/report.json",
+      "sha256": "ab4e83b75d9ea923b3f362727ed3c34454a3037eb470328ba67680341f0e6df6",
+      "status": "native_diagnostic_passed_acceptance_pending",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/Cargo.toml",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-typed-library-pending/report.json",
+      "sha256": "9bce2ee4f9619ed46d46dc95766afa5d17b7f88f67e5bd78963092179a2e9a11",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 5,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.toml",
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/src/scene_events.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-unmapped-up-default-pending/report.json",
+      "sha256": "100d057279e93a0962b2f76af2214690c6e1f12c6c48f57f7ea536837ac965a3",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-update-focus-pending/report.json",
+      "sha256": "bc82de1a52cf7e4f5c73445486659aea5e5aeb95010a1e58945bec7776317125",
+      "status": "candidate_not_accepted",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_view.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-view-close-pending/report.json",
+      "sha256": "5e57a9f7849a5099a4698ec9e0c5fac74401e79223ea42f6e33c0c18d478b078",
+      "status": "native_diagnostic_passed_ordered_acceptance_pending",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-view-generation-pending/report.json",
+      "sha256": "7cbcd7275d311eb71205b3d7f47a9819266aa46fa3185a4bb69baef1bf8e34e9",
+      "status": "native_diagnostic_passed_acceptance_pending",
+      "recorded_sources": 6,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/Cargo.toml",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "src/input_identity.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/blitz-visual-frame-state-pending/report.json",
+      "sha256": "21bb437743f4b973449cbc5b592ca3bf6d0aa1b6ca44847d405482e664d3a8d4",
+      "status": "native_diagnostic_passed_not_acceptance",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/tests/typed_facade.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/bold-alias-kernel/report.json",
+      "sha256": "38f99ddf8be7630a02c15a6469c1a930512f53790eaeffbd9097febf84c80909",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/bounded-payload-kernel/report.json",
+      "sha256": "2924b18cc12538d83799db4a03d1a14f0d81f2dce29aa4516d0629dd9247ceee",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/byte-read-kernel/report.json",
+      "sha256": "92dd18f693c489fdf959adce22af88a2e74c5291ea89b7794b26911df5a4ff19",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/bytes-slot-kernel/report.json",
+      "sha256": "505505243bf8c59a289d4ce142ed1c79bb04c6012eccc680a2a647a6a6c962d2",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/canvas-import-kernel/report.json",
+      "sha256": "64296e654f7e9ea2d609da740013373142d0412038b77924f9d270aa7ac3df95",
+      "status": "proved",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/canvas-pixel-kernel/report.json",
+      "sha256": "c99afc423bdcbee55e8161ae402d1f84602ee603294a1863e7bcbf9260248310",
+      "status": "proved",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/capture-cancel-policy-chain/report.json",
+      "sha256": "6e1200d762d158520076fc07de0af218ef975dc39a2841574d16adc7ee4a3dee",
+      "status": "scoped_ordered_acceptance_complete",
+      "recorded_sources": 11,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/capture_policy.rs",
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "scripts/verify-version.py",
+        "src/input_identity.rs",
+        "verification/native-projection/build.rs",
+        "verification/native-projection/fuzz/Cargo.toml",
+        "verification/native-projection/src/lib.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/capture-cancel-policy-kernel/report.json",
+      "sha256": "76d6a7ac1e011b5ad1cf0e7e0df1a89f8d085d86a1c58bad712dfcd5be62cf9e",
+      "status": "proved",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/capture_policy.rs",
+        "src/input_identity.rs",
+        "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/capture-composition/report.json",
+      "sha256": "4b7856ccee7fed981de7f3dd05297fb475a6f6d33602ab59747ad498d29e3080",
+      "status": "additional_scoped_verus_proof_only",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/capture-direct-fixture/report.json",
+      "sha256": "b2b33bf8f40cf2c391c1a22f1ecd9456500bcf0c60619b6e13be722c41b4a486",
+      "status": "unaccepted_timeout",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/capture-harness-loop/report.json",
+      "sha256": "dd94f4a5cce3114abc7582947bdda2a1838e2b162b5216e7b2c7cc388a8a066f",
+      "status": "candidate_unaccepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/capture-query-arrays-uf/report.json",
+      "sha256": "97bf9b66b44bac269a6f0a09215ca524f38b9afbbc3a594dc1cf75e06295652b",
+      "status": "out_of_memory",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/capture-query-kernel/report.json",
+      "sha256": "06b39edb1298bad33dbc88857a88cd4ac1b75fcd78bba76b55ee19c28aad299b",
+      "status": "proved",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/capture-query-object8/report.json",
+      "sha256": "66fd981c95a8fb38e3ebbe99651da465da271e164acfd47605c1f7c86fdca057",
+      "status": "timeout",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/capture-query-smt/report.json",
+      "sha256": "13a01973399be5d68c1eae17f1a095e7fd19c55b4defa1cf34e7d0b6c0a720ff",
+      "status": "timeout",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/capture-query-unwind2/report.json",
+      "sha256": "aa8bddd4ef95238775935862c2a1f4cff63a0170fbf2732e38525e35cb2ba1f8",
+      "status": "tool_failure",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/capture-query-unwind33-stopped/report.json",
+      "sha256": "e5d0fa83c7e11d431be17b7c77fa78450d32f144289c383be548ef4edb91ec57",
+      "status": "unspecified",
+      "recorded_sources": 66,
+      "stale_or_missing_sources": [
+        "Cargo.lock",
+        "Cargo.toml",
+        "fuzz/Cargo.lock",
+        "fuzz/Cargo.toml",
+        "fuzz/fuzz_targets/read_boundary.rs",
+        "scripts/verify-ui.py",
+        "scripts/verify-version.py",
+        "src/backend.rs",
+        "src/desktop.rs",
+        "src/engine.rs",
+        "src/input.rs",
+        "src/keyboard.rs",
+        "src/lib.rs",
+        "src/raster.rs",
+        "src/scene.rs",
+        "src/semantics.rs",
+        "src/style.rs",
+        "src/surface.rs",
+        "tests/engine_smoke.rs",
+        "verification/read-boundary/build.rs",
+        "verification/read-boundary/src/lib.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/capture-shape-control/report.json",
+      "sha256": "13e5ceca4b6dc7d60de1d00298580061e3dc24f38b291e4e3594aec29d93e034",
+      "status": "unspecified",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/capture-slots-before-uniqueness/report.json",
+      "sha256": "eb3a223809b03c8d2f666af39c543ad81564f448d5b0c3392e9e3b5c13425cb1",
+      "status": "candidate_verus_only",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/capture-slots-candidate/report.json",
+      "sha256": "ae1dbf782e7a6e02e2e045845b76d24b99ee858fe92507c7fccd39dfdb3260bb",
+      "status": "candidate_verus_only",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/capture-slots-chain/report.json",
+      "sha256": "42747acdbe1f1f380d5694cbcd9f302215f5ae069e4371ac7158b6f39f1448c1",
+      "status": "candidate_unaccepted_kani_blocked",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/capture-slots-mem-replace-unsupported/report.json",
+      "sha256": "6a81dd0315c960fe9293cbd1b4fd8ead102823c6dbb1c8e6530f63f5d755c625",
+      "status": "unsupported",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/capture-slots-partitioned/report.json",
+      "sha256": "54c77aed48382726e50cbe46524736403b54647082ff9fb38b1e5cdc945bc6cf",
+      "status": "unaccepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/capture-slots-read-only-first/report.json",
+      "sha256": "6ce2f98d397e0041efa5bc0924239d5fd941f1be8920667b048ac2cda4180784",
+      "status": "candidate_verus_only",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/capture-slots-write-initial-unproved/report.json",
+      "sha256": "348edb8f664d6a860ed3a719b62621a2b527a938d10d736af875deb4a32b4aef",
+      "status": "unproved",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/color-construct-kernel/report.json",
+      "sha256": "5bbcac73540e5a7e1125bbe4d5250b60add270bfe616e8daa1d8e9f8a5aa7959",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/command-modifier-kernel/report.json",
+      "sha256": "f8ab74f0abd08c44795e87653b33f87cf252255c555e1f6a2390edfd6569670b",
+      "status": "proved",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/component-update-admission-kernel/report.json",
+      "sha256": "db803d7a06827a825ed0d853b3a6e8eb31a83b4dc6f377358051b3b07ceeb9f3",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
       "completion_flags": {}
     },
     {
@@ -116,6 +2424,7 @@
       "status": "scoped_ordered_acceptance_complete",
       "recorded_sources": 7,
       "stale_or_missing_sources": [
+        "scripts/verify-version.py",
         "src/native_adapter/facade.rs",
         "src/native_adapter/native_view.rs",
         "tests/native_component_update_contract.rs"
@@ -123,10 +2432,212 @@
       "completion_flags": {}
     },
     {
+      "path": "evidence/component-update-support-chain/report.json",
+      "sha256": "3820004298f3ba47aff54191b0ca362efe42086ca56211e41e07649bb1c0a849",
+      "status": "scoped_predicate_six_stage_evidence_recorded",
+      "recorded_sources": 8,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/component_contract.rs",
+        "verification/native-activation/build.rs",
+        "verification/native-activation/fuzz/Cargo.toml",
+        "verification/native-activation/fuzz/fuzz_targets/component_support.rs",
+        "verification/native-activation/src/lib.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/component-update-support-kernel/report.json",
+      "sha256": "adb35bead977909150da21d1d6ee172c839a5ef3356cb8a13a72a56bd011f383",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/component_contract.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/component-update-support-visibility-failure/report.json",
+      "sha256": "10b37dd68b0a3a298c88f4755f10dc29b1736c19d613cdb0ced522cf629185dc",
+      "status": "not_verified",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_view.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/composition-current-token/report.json",
+      "sha256": "71b6bc2476ea85834084e4aba748923dee0e98193e1809ebeb0d8528043bf59e",
+      "status": "proved",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "src/composition_identity.rs",
+        "src/input_identity.rs",
+        "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/composition-current-token-chain/report.json",
+      "sha256": "faeac21a875e84288289cbe8861e1587be29612279f371eae245e131aaa955c3",
+      "status": "scoped_read_only_token_chain_recorded",
+      "recorded_sources": 12,
+      "stale_or_missing_sources": [
+        "src/composition_identity.rs",
+        "src/input.rs",
+        "src/input_identity.rs",
+        "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/composition-offset-contract-audit/report.json",
+      "sha256": "32885c4c8cf429e2034cbe34d463b728f139c5aff12d02f4689c356a55d6d512",
+      "status": "integration_contract_conflict",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "docs/input-method-boundary.md",
+        "src/composition_identity.rs",
+        "src/desktop.rs",
+        "src/input.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/cpu-frame-bytes-chain/report.json",
+      "sha256": "f317dc8c637532e3107ab6055f67de09c09249fc912f03dbbc3012f153629c87",
+      "status": "scoped_ordered_acceptance_complete",
+      "recorded_sources": 9,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/cpu_budget.rs",
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "scripts/verify-version.py",
+        "verification/native-activation/fuzz/Cargo.toml",
+        "verification/native-activation/src/lib.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/cpu-frame-bytes-initial-proof-failure/report.json",
+      "sha256": "e1c07cc3b8f070a40652e3b73e8e1763cb54b7b689727814110a0a0efa8e0917",
+      "status": "not_verified",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/cpu_budget.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/cpu-frame-bytes-kernel/report.json",
+      "sha256": "bde1843d08f847b301f9ea125e12aeb9599405877c21a991b94e9b37716e5faf",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/cpu_budget.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/cursor-read-kernel/report.json",
+      "sha256": "4bd74a201efe43fe95da6bedd426ef1b7a918f35d1cbc7f23a5e1a34c892bc82",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/damage-rect-kernel/report.json",
+      "sha256": "ca9a46c9d0b1308bb2e986f3ab403520cf7107834dce19f2fd30809fd12fc457",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/damage-span-kernel/report.json",
+      "sha256": "473a1fadb162d38bbcbcdfb91b8f774b05456bdb5ee0b937dc3d48bcd0e07766",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/decode-range-64/report.json",
+      "sha256": "8b7360338dd0bf1f305ad68d5b58383c84386500070e506bb0e12bd8455076ac",
+      "status": "not_verified",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/decode-range-kernel/report.json",
+      "sha256": "fe9b0af140cf85f5404bfca3385fbcaf54be11745ec8ff08e3e46282390b7a04",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/desktop-ime-chain/report.json",
+      "sha256": "0dde45931b8a9fa87968195c789172d6443bc6c2602ef062edd5f48ea549c4f2",
+      "status": "acceptance_pending",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/desktop-ime-delegate/report.json",
+      "sha256": "63a24eb26d1e92aa1bd64d02d86216ff3249dcc1210ca45ce0acab49be3e0815",
+      "status": "proved",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "src/desktop.rs",
+        "src/input.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/desktop-ime-normalize/report.json",
+      "sha256": "48de489cb739521abbc479c2939a56e611f9af5556ef1a42bc005248f0388045",
+      "status": "proved",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "src/desktop.rs",
+        "src/input.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/desktop-pointer-kernel/report.json",
+      "sha256": "af473ae8e4d82602dc1b3ebb9244c9743c64a7a8b499a51b9a0c6a810a34c8bd",
+      "status": "proved",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/desktop-pointer-state-kernel/report.json",
+      "sha256": "d566f95547b6f02d0fc0c9e322b6cc66e8778f8413f8d7d626cbf3568c137fe1",
+      "status": "proved",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/editor-deps/report.json",
+      "sha256": "15839ea5912b13728b113b48efe825e057cac22af68d323693a211303a1d92a5",
+      "status": "unspecified",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
       "path": "evidence/final-checklist-audit/report.json",
-      "sha256": "4ecf362079b33c50e505cb0d43f49cfc7ec6157bca30bf56a9e70cb111512e8a",
+      "sha256": "c7995e874ecdb56194c04235eadf5fdfd0a380b4fdaa56a29336ec87b1cd2b55",
       "status": "complete",
-      "recorded_sources": 35,
+      "recorded_sources": 37,
       "stale_or_missing_sources": [],
       "completion_flags": {
         "checklist_item_1_complete": true,
@@ -147,9 +2658,126 @@
     },
     {
       "path": "evidence/final-closeout-audit/report.json",
-      "sha256": "07526137fad05d16c70ff1e31082ef2eabb2af861fc0bd62c7c4454bbe3e9a4e",
+      "sha256": "41adfb7e75536d9697020045b9ca50f64a92db357f3e35f73ff9f8189f387f05",
       "status": "unspecified",
       "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/focus-cleanup-kernel/report.json",
+      "sha256": "11dacdacf354a9a78d31bc380b6ff1d52333b6addd540217a7a51bd469e91a63",
+      "status": "proved",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/focus-eligibility/report.json",
+      "sha256": "0079c1f8f34d4f95e1a5b6b44b186e337a839ed8760d600e602e320fa51fcea6",
+      "status": "proved",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "src/scene.rs",
+        "src/semantics.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/focus-kani-initial-oom/report.json",
+      "sha256": "4df3cd30e10d9cc40fd109c24cd4d28b16b37a68d88d5ff9fd393c5ce795b167",
+      "status": "unspecified",
+      "recorded_sources": 66,
+      "stale_or_missing_sources": [
+        "Cargo.lock",
+        "Cargo.toml",
+        "fuzz/Cargo.lock",
+        "fuzz/Cargo.toml",
+        "fuzz/fuzz_targets/read_boundary.rs",
+        "scripts/verify-ui.py",
+        "scripts/verify-version.py",
+        "src/backend.rs",
+        "src/desktop.rs",
+        "src/engine.rs",
+        "src/input.rs",
+        "src/keyboard.rs",
+        "src/lib.rs",
+        "src/pointer.rs",
+        "src/raster.rs",
+        "src/scene.rs",
+        "src/semantics.rs",
+        "src/style.rs",
+        "src/surface.rs",
+        "tests/engine_smoke.rs",
+        "verification/read-boundary/build.rs",
+        "verification/read-boundary/src/lib.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/focus-select-initial-unproved/report.json",
+      "sha256": "d1b1a198d389b87f991710361c6fb6999b156e878be55317cd0ac0b31a9ae491",
+      "status": "not_verified",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "src/scene.rs",
+        "src/semantics.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/focus-select-kernel/report.json",
+      "sha256": "53889d0bc088d0e17d82d56a95f7988677f1d99bd77a50c5b76b8d185a1b9289",
+      "status": "proved",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/font-family-kernel/report.json",
+      "sha256": "b4e8e1cf3c83f50d639a0ec4d15642160746b6e03a78224eb7dd2fe43faaa1b3",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/font-order-kernel/report.json",
+      "sha256": "366a5bb4366436ae198c6c1ffb73d7caf14f2fcdfac6b7bab56501792bff2740",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/font-weight-kernel/report.json",
+      "sha256": "57d93c68accede8878dc68c00d1ae23ea0001fcf5338d6077e0aae8b0c7f87f1",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/frame-pace-kernel/report.json",
+      "sha256": "c8c56eda46e8b9cec3cd54ac7e2bb109d531a68fabd4bc95c2fed27b33233fb1",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/frame-reuse-kernel/report.json",
+      "sha256": "fd89f21bb369c75cc3236fd2f82d2032ea13e673cadcab5bb7531aed09d62e24",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/frame-tick-kernel/report.json",
+      "sha256": "cf6a1f83ad62e2b791f5d615e0550aea5fb2ee8ae5046cb9fab387114d8dd60e",
+      "status": "proved",
+      "recorded_sources": 1,
       "stale_or_missing_sources": [],
       "completion_flags": {}
     },
@@ -167,6 +2795,126 @@
       }
     },
     {
+      "path": "evidence/glyph-skew-kernel/report.json",
+      "sha256": "0e377543b43b8b29bcc47b5d7afa3ca73623c0699a559bf8d0d0a5aa6a530ef7",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/gpu-readback-kernel/report.json",
+      "sha256": "3d3a1fa3ab6e6b2bc4432cd80d8d9aebebe7ba8bc845a79e7ffa1c97774a4987",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/handle-kernel/report.json",
+      "sha256": "0cae2be17301b8e913590e4716a1cd5450dcf3bd107799cdf20d26bd5bc72da6",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/header-read-kernel/report.json",
+      "sha256": "b1bf2fb465e6fa8e9741263d29a98e6d4f48a46b0682dd35aa138fb383c94cbd",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/hidden-ancestry-chain/report.json",
+      "sha256": "fae93ebbf7270194e625e725684db3460fcac3a66faf27b45a90cfa036cd060c",
+      "status": "incomplete_kani_timeout",
+      "recorded_sources": 8,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "verification/native-projection/build.rs",
+        "verification/native-projection/fuzz/Cargo.toml",
+        "verification/native-projection/src/scene_close.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/hidden-ancestry-tight-unwind/report.json",
+      "sha256": "c28e04e737fbc6e853fc6d79e0aba15c47b01d4c5c81d38365990399cc68f16e",
+      "status": "exploratory_kani_passed_not_ordered_chain",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/hover-retire-kernel/report.json",
+      "sha256": "dff1b2b2acbddc7dd008761f0469158c8ae557b9ff454bca0d74857f50dcf9ae",
+      "status": "proved",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/hover-update-initial-unproved/report.json",
+      "sha256": "66e44bc58713fbbc137be31e6e00ac61f4bafedc4834dd1ac0335293dba32b5f",
+      "status": "not_verified",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "src/pointer.rs",
+        "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/hover-update-kernel/report.json",
+      "sha256": "ece2b9c44398e717b7bea431961179a38c37e7aaa3dabfea958cc337343e21ef",
+      "status": "proved",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ime-deps/report.json",
+      "sha256": "6488d28186c4b904767d5a78c8106a700b0d993f4f89f546e60ad5b93da915a5",
+      "status": "unspecified",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/input-lifecycle-chain/report.json",
+      "sha256": "37ba96f5dedb9d06841fa41d21eaad36c8df49929bd6cf1f0a55ef62ddfe70bd",
+      "status": "independent_scoped_slice_complete",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/input-lifecycle-dispatch/report.json",
+      "sha256": "9cd0966efb7efaa5072aa07d99de09f67ba7281139062cfdb592d1de6ee349e2",
+      "status": "proved",
+      "recorded_sources": 10,
+      "stale_or_missing_sources": [
+        "src/composition_identity.rs",
+        "src/desktop.rs",
+        "src/input.rs",
+        "src/input_identity.rs",
+        "src/keyboard.rs",
+        "src/scene.rs",
+        "src/semantics.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/input-retire-kernel/report.json",
+      "sha256": "9ec7a71f7a4f24872fde178843ad1d666042e97b003acb9fc027ff8fdcb13f6e",
+      "status": "proved",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
       "path": "evidence/item5-full-path-baseline/report.json",
       "sha256": "708ad98531e48f04fe62c6ac7f6d6ec778abb31890a3dd083500b600ac41fc43",
       "status": "item5_public_callers_complete_basic_proof_passed",
@@ -177,8 +2925,215 @@
       }
     },
     {
+      "path": "evidence/keyboard-admitted-chain/report.json",
+      "sha256": "3341fbff34f611dcb7fa424b657b4179ce3b894769bb543cee194e864f98934e",
+      "status": "scoped_slice_complete",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/keyboard-admitted-input/report.json",
+      "sha256": "5292dd5e4656e008a0e984e303f57938225758f092e1d027cb77f2952528e3e2",
+      "status": "proved",
+      "recorded_sources": 5,
+      "stale_or_missing_sources": [
+        "src/input_identity.rs",
+        "src/keyboard.rs",
+        "src/scene.rs",
+        "src/semantics.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/keyboard-focus-kernel/report.json",
+      "sha256": "91389987e6815cd3f0152a5091bdb756f60033c6efc6abafd437515623915dd4",
+      "status": "proved",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/keyboard-input-open-close/report.json",
+      "sha256": "ff5324becb7f8ec8f2fbb87a8c2ebacdff8ea51d9d70a651ed2550531e26f299",
+      "status": "proved",
+      "recorded_sources": 5,
+      "stale_or_missing_sources": [
+        "src/input_identity.rs",
+        "src/keyboard.rs",
+        "src/scene.rs",
+        "src/semantics.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/keyboard-input-transfer/report.json",
+      "sha256": "a4306f35985a54886670b6dd2d8c7533c847be36b77d06f286b107aec7eacb55",
+      "status": "proved",
+      "recorded_sources": 5,
+      "stale_or_missing_sources": [
+        "src/input_identity.rs",
+        "src/keyboard.rs",
+        "src/scene.rs",
+        "src/semantics.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/keyboard-open-close-chain/report.json",
+      "sha256": "f5af65e3a479d34c307c1f96993c215206b5864c0c0481d2b45b5c4836ed80d4",
+      "status": "scoped_slice_complete",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/keyboard-preedit-close/report.json",
+      "sha256": "28f2ca48673747835382e9172a13e3c834a91f59e6ca17f42a8dd21b1b91eaf6",
+      "status": "proved",
+      "recorded_sources": 10,
+      "stale_or_missing_sources": [
+        "src/composition_identity.rs",
+        "src/desktop.rs",
+        "src/input.rs",
+        "src/input_identity.rs",
+        "src/keyboard.rs",
+        "src/scene.rs",
+        "src/semantics.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/keyboard-preedit-close-chain/report.json",
+      "sha256": "35b9030fb04992f82ac332977f8e36e057da5791792771e6cac6da7937eb25a7",
+      "status": "independent_scoped_slice_complete",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/keyboard-transfer-chain/report.json",
+      "sha256": "513d5b3ca34c217ddb1229e479ff700b2f088e707cc65ddd0e894650202fc718",
+      "status": "scoped_slice_complete",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/local-text-frame-guard-pending/report.json",
+      "sha256": "8a9e51e93b210a6e256570f088c2e059cf3338137a4ec15a99dd608e5252667d",
+      "status": "implementation_hardened_acceptance_pending",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/local-text-frame-pending/report.json",
+      "sha256": "b7d2e452d7efbb46ae5875fbec57c3ab99092c830a69a2162f0b45c9baa3bfc0",
+      "status": "implementation_present_acceptance_pending",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/local-text-storage-chain/report.json",
+      "sha256": "5422264df39eb4c1c8cab7e54019385147c1c16d4da4dea95ca8600fd14bd5ec",
+      "status": "acceptance_pending_kani_timeout",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/local-text-storage-kernel/report.json",
+      "sha256": "27eeff9ad3ee804887ba9b83360dbcb5d868b2dda6427c162761aa069f072561",
+      "status": "proved",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [
+        "src/surface.rs",
+        "src/text_skia.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/native-activation-admission-kernel/report.json",
+      "sha256": "6801a15847286d2f9a85f08095b1a10c336aa6f665f813d6cff02e1d3becdb05",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_semantics.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/native-activation-chain/report.json",
+      "sha256": "b6850d69dedff2d7815d7c676b699ca6bf0e334335abd2f225836991a92307c5",
+      "status": "scoped_predicate_six_stage_evidence_recorded",
+      "recorded_sources": 8,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_semantics.rs",
+        "verification/native-activation/build.rs",
+        "verification/native-activation/fuzz/Cargo.toml",
+        "verification/native-activation/src/lib.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/native-backend-frame-chain/report.json",
+      "sha256": "b2dc28e1b0bf30d43e183b8e97bdce230a09069665e4bbe2c318f43113944b2e",
+      "status": "scoped_ordered_acceptance_complete",
+      "recorded_sources": 14,
+      "stale_or_missing_sources": [
+        "scripts/check-blitz-proof-mapping.py",
+        "scripts/verify-version.py",
+        "src/backend.rs",
+        "src/raster.rs",
+        "src/surface.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/native-backend-frame-import-kernel/report.json",
+      "sha256": "3c023e4b2b207722e8441d2ceb01e30a2318b8a9d31fe0ec4520d077098b14d4",
+      "status": "proved",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "src/backend.rs",
+        "src/raster.rs",
+        "src/surface.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/native-backend-submission-chain/report.json",
+      "sha256": "9a020c4e91572451eeab0010983c07cbd1d94d8dba66a5d249f44876ecf5e7d6",
+      "status": "scoped_ordered_acceptance_complete",
+      "recorded_sources": 12,
+      "stale_or_missing_sources": [
+        "source/actual.rs",
+        "src/backend.rs",
+        "src/native_adapter/native_scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/native-component-version-chain/report.json",
+      "sha256": "6626fc9385182265590a90bc112a7e2036a0b71b5bcc27f7d4b3b5677e9011d5",
+      "status": "scoped_getter_six_stage_evidence_recorded",
+      "recorded_sources": 13,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_view.rs",
+        "experiments/blitz-host/src/view_slot.rs",
+        "src/composition_identity.rs",
+        "src/input_identity.rs",
+        "verification/native-projection/build.rs",
+        "verification/native-projection/fuzz/Cargo.toml",
+        "verification/native-projection/src/lib.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
       "path": "evidence/native-component-version-kernel/report.json",
-      "sha256": "c4d90abf9769f66e565a249404418d7395e4e658550c9f8b3f8348e8b8ca1fd7",
+      "sha256": "c01a883753a60b196c2eb7d099ab4480760209484e938a0226c05554c95e7cb5",
       "status": "proved",
       "recorded_sources": 6,
       "stale_or_missing_sources": [
@@ -187,6 +3142,16 @@
         "src/native_adapter/native_view.rs",
         "src/native_adapter/view_slot.rs",
         "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/native-dpi-scale-admission-chain/report.json",
+      "sha256": "af8a3bf953361fa953da7335e31424fa1b2249585838d9072ad747f934c2157d",
+      "status": "scoped_ordered_acceptance_complete",
+      "recorded_sources": 10,
+      "stale_or_missing_sources": [
+        "src/native_adapter/native_scene.rs"
       ],
       "completion_flags": {}
     },
@@ -210,16 +3175,31 @@
       "status": "scoped_ordered_acceptance_complete",
       "recorded_sources": 9,
       "stale_or_missing_sources": [
+        "fuzz/fuzz_targets/read_boundary.rs",
         "scripts/verify-version.py",
         "src/native_adapter/glyph_skew.rs",
         "src/native_adapter/native_fonts.rs",
         "src/native_adapter/native_scene.rs",
         "src/native_adapter/native_view.rs",
-        "tests/native_font_synthesis.rs"
+        "tests/native_font_synthesis.rs",
+        "verification/read-boundary/build.rs",
+        "verification/read-boundary/src/lib.rs"
       ],
       "completion_flags": {
         "whole_checklist_item_3_complete": false
       }
+    },
+    {
+      "path": "evidence/native-frame-orchestration-chain/report.json",
+      "sha256": "7f3c8d49175e3777e4e89a7e546fc72bae3ab367db24406a386c5e4ec20fb393",
+      "status": "scoped_ordered_acceptance_complete",
+      "recorded_sources": 12,
+      "stale_or_missing_sources": [
+        "src/backend.rs",
+        "src/native_adapter/cpu_budget.rs",
+        "src/native_adapter/native_scene.rs"
+      ],
+      "completion_flags": {}
     },
     {
       "path": "evidence/native-gpu-host-target-pending/report.json",
@@ -237,8 +3217,35 @@
       }
     },
     {
+      "path": "evidence/native-headless-forwarding-chain/report.json",
+      "sha256": "c505e389334a8e2b03054f8f6ba4250f0c62f8d03347d59507773cc6f7a83b96",
+      "status": "scoped_ordered_acceptance_complete",
+      "recorded_sources": 11,
+      "stale_or_missing_sources": [
+        "source/actual.rs",
+        "src/backend.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/native-host-context-chain/report.json",
+      "sha256": "83a12beda40f1bae1c8cb9d507c2eb6dd9fa68cf7588f54fa2c5c87d8b0d7c98",
+      "status": "scoped_ordered_acceptance_complete",
+      "recorded_sources": 11,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_view.rs",
+        "experiments/blitz-host/src/view_slot.rs",
+        "scripts/verify-version.py",
+        "src/input_identity.rs",
+        "verification/native-projection/build.rs",
+        "verification/native-projection/fuzz/Cargo.toml",
+        "verification/native-projection/src/lib.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
       "path": "evidence/native-host-context-kernel/report.json",
-      "sha256": "8f9b35150c072dba26df9f416510aff26394ca3ba5442df11f42b624b63c40ca",
+      "sha256": "ab509be228b5cbfe0fe23895040b1d9d8e0326eb355cec4eded32be6fbd1061e",
       "status": "proved",
       "recorded_sources": 6,
       "stale_or_missing_sources": [
@@ -252,7 +3259,7 @@
     },
     {
       "path": "evidence/native-host-render-lifecycle/report.json",
-      "sha256": "8565434f7db5900ea3cb9a46bb11bb8ea3901b19ded056d9d2b65413efc220b5",
+      "sha256": "160c6183653bd7305fec418a917e1bcaa3297fbb30d7da6875113a6eda9de206",
       "status": "engineering_lifecycle_passed_hardware_and_ordered_proof_pending",
       "recorded_sources": 15,
       "stale_or_missing_sources": [
@@ -270,6 +3277,16 @@
       }
     },
     {
+      "path": "evidence/native-host-surface-orchestration-chain/report.json",
+      "sha256": "db9fecfef3b83e77e0e5d86626cd90368d6e3ee8d7f6ce60805b31fcdbaac116",
+      "status": "scoped_ordered_acceptance_complete",
+      "recorded_sources": 10,
+      "stale_or_missing_sources": [
+        "src/native_adapter/native_scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
       "path": "evidence/native-interaction-closure/report.json",
       "sha256": "d864bff249e13332504d71dd463ec64c9ec482bf00db197c8c6e05e2af320fef",
       "status": "interaction_external_service_closure_functional",
@@ -280,6 +3297,14 @@
         "src/native_adapter/facade.rs",
         "src/native_adapter/native_view.rs"
       ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/native-map-ordered-replay/report.json",
+      "sha256": "8ddeced531a008491ee2b0cc68a3a913785a568d4ef3d0f5ddc03325232f2bb4",
+      "status": "scoped_ordered_acceptance_complete",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
       "completion_flags": {}
     },
     {
@@ -304,10 +3329,152 @@
       "completion_flags": {}
     },
     {
+      "path": "evidence/native-subtree-ordered-replay/report.json",
+      "sha256": "0e058d160e5d70afe1ee32146fbbf8563586c5fda0b39f6449eeb96f6281b6cc",
+      "status": "incomplete_cbmc_memory_failure_with_outer_timeout",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/native-subtree-partition-candidate/report.json",
+      "sha256": "74dd1d2ddba60b5c8849056db82d80c3945d69081900aa0be455cc105f4a661b",
+      "status": "exploratory_partitions_not_accepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
       "path": "evidence/native-subtree-solver-capability/report.json",
       "sha256": "b7879d18a1388deabdd9e6715e0c1ebe0b7993f8b34b4609f8bed720f37670bb",
       "status": "incomplete_no_supported_backend_completed_within_fixed_vm_limits",
       "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/normalized-preedit-admission/report.json",
+      "sha256": "50b5e0ec250fb91c0aa15c96b1dec51d1c5a22ba769178ec60c2ae24a0e276ee",
+      "status": "proved",
+      "recorded_sources": 8,
+      "stale_or_missing_sources": [
+        "src/composition_identity.rs",
+        "src/desktop.rs",
+        "src/input.rs",
+        "src/input_identity.rs",
+        "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/normalized-preedit-chain/report.json",
+      "sha256": "5f5bab35253e0202534443af087736a5c64764a07bcdb311afc2a0dd41b96627",
+      "status": "independent_scoped_slice_complete",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/parley-adapter-pending/report.json",
+      "sha256": "2b52b7f08d472e66f61717fe30dd6b67830859782c66f130df7afbb2676f2e67",
+      "status": "compile_check_passed_acceptance_pending",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/parley-prepared-hit-pending/report.json",
+      "sha256": "ceb9f8de28b23184cb1c0725fa64ce117a9a15ca63e6a3a973bdd84541d284ee",
+      "status": "compile_check_passed_acceptance_pending",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/pixel-convert-kernel/report.json",
+      "sha256": "f90c6b0a39647b473489a82affd55476a1608620c72c1aeba8b44781bf969054",
+      "status": "proved",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/pixel-pack-kernel/report.json",
+      "sha256": "95d9ae21a62a666edcc5c0079ddccb138f0ae0cf0938b6b1e28661c285925aa6",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/pointer-map-feasibility/report.json",
+      "sha256": "ac368b0646e14b206cd0961ff428a3c7814a5ea8bd2c86437d3544c67a33ff4e",
+      "status": "unspecified",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/pointer-order-kernel/report.json",
+      "sha256": "6acffa06fccc48349a8c04bfdd9495f06b4228fa64078f2a461e5fd165b7d19b",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/preedit-lifecycle-chain/report.json",
+      "sha256": "18d469da5f4cf6a869e9952ec9d5f3e49cd1d0301993aaa875913ff5ff90e1da",
+      "status": "independent_scoped_slice_complete",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/preedit-lifecycle-dispatch/report.json",
+      "sha256": "a56df52285d7fe1ea627ed93ca22d5cc98fe0195ac8714dc866ae00f9c555ab8",
+      "status": "proved",
+      "recorded_sources": 10,
+      "stale_or_missing_sources": [
+        "src/composition_identity.rs",
+        "src/desktop.rs",
+        "src/input.rs",
+        "src/input_identity.rs",
+        "src/keyboard.rs",
+        "src/scene.rs",
+        "src/semantics.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/resource-gate-kernel/report.json",
+      "sha256": "216b61583854fa6417d3bdfac726e6fbe48850c324a0b71fac50197b806f4859",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/rime-smoke/report.json",
+      "sha256": "20de7b192e280bace3d02a7d8979ecd3ea527177370c92d4d59c664fa0602bc0",
+      "status": "unspecified",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/role-activation-kernel/report.json",
+      "sha256": "60271d5b8673571dd396a9d7fa5240d69849285444c57438ab08f586a20e9341",
+      "status": "proved",
+      "recorded_sources": 2,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/scalar-read-kernel/report.json",
+      "sha256": "12fdbe80468b187c3471e927ad65d29b81ebc3d15383852e899d9860bde3c429",
+      "status": "proved",
+      "recorded_sources": 1,
       "stale_or_missing_sources": [],
       "completion_flags": {}
     },
@@ -317,6 +3484,7 @@
       "status": "scoped_ordered_acceptance_complete",
       "recorded_sources": 6,
       "stale_or_missing_sources": [
+        "scripts/verify-version.py",
         "src/native_adapter/native_scene.rs",
         "tests/native_frame_transaction.rs"
       ],
@@ -326,30 +3494,75 @@
     },
     {
       "path": "evidence/scene-frame-completion-kernel/report.json",
-      "sha256": "a20dc7c2b046538e5e9a3a6289b2f4584280faf053c115e77b387fb99069fa77",
+      "sha256": "c4cfbe3f6fe062047d5bd14c0ebf5550b0b3ecd0d5e4c97b14cbd92db5a65ebc",
       "status": "proved",
       "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/scene-host-close-chain/report.json",
+      "sha256": "0a56c1aef79c41300ad20f0121a8a2b95cee91a0d2ff003ac786e9f1efd92b9a",
+      "status": "scoped_ordered_acceptance_complete",
+      "recorded_sources": 14,
       "stale_or_missing_sources": [
-        "src/native_adapter/native_scene.rs"
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/src/view_slot.rs",
+        "scripts/verify-version.py",
+        "src/scene.rs",
+        "verification/native-projection/build.rs",
+        "verification/native-projection/fuzz/Cargo.toml",
+        "verification/native-projection/src/lib.rs",
+        "verification/native-projection/src/scene_close.rs"
       ],
       "completion_flags": {}
     },
     {
       "path": "evidence/scene-host-close-kernel/report.json",
-      "sha256": "73187771d7d382496b43e588e3f485809f4247900730356714cb90c755794cb5",
+      "sha256": "351d7cf4c42f83aec67b1fff577cb7627af39f8b75c2a2edd1332008c1f90fa8",
       "status": "proved",
       "recorded_sources": 5,
       "stale_or_missing_sources": [
         "src/native_adapter/facade.rs",
         "src/native_adapter/native_scene.rs",
         "src/native_adapter/view_slot.rs",
+        "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/scene-host-identity-chain/report.json",
+      "sha256": "b58781edade779d86dd4b8c7ecd4ed8ec157d5be89775a9d2536787ed0e4422b",
+      "status": "scoped_ordered_acceptance_complete",
+      "recorded_sources": 7,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/native_scene.rs",
+        "scripts/check-blitz-proof-mapping.py",
+        "scripts/test-blitz-proof-mapping.py",
+        "scripts/verify-version.py",
+        "verification/native-projection/build.rs",
+        "verification/native-projection/src/scene_close.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/scene-host-identity-initial-visibility-failure/report.json",
+      "sha256": "32e6dcc9da596f900a2b90bcf9a9225db6745bffa0033858f55baea64be97e9e",
+      "status": "not_verified",
+      "recorded_sources": 5,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/src/view_slot.rs",
         "src/scene.rs"
       ],
       "completion_flags": {}
     },
     {
       "path": "evidence/scene-host-identity-kernel/report.json",
-      "sha256": "223ff985215ee7a59b9d62f1671ce281d45282bb110dc36e9bf40923bc052520",
+      "sha256": "5a3801018fe0c8eff718d16dcee7cc23f06661be280913741773e4d7165df0ed",
       "status": "proved",
       "recorded_sources": 5,
       "stale_or_missing_sources": [
@@ -361,8 +3574,35 @@
       "completion_flags": {}
     },
     {
+      "path": "evidence/scene-snapshot-identity-chain/report.json",
+      "sha256": "7e74fcd37a7eee185a6f40c7e3f662c644fcd54ef14f9efd0a363f7210457b39",
+      "status": "scoped_ordered_acceptance_complete",
+      "recorded_sources": 8,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "scripts/check-blitz-proof-mapping.py",
+        "scripts/test-blitz-proof-mapping.py",
+        "scripts/verify-version.py",
+        "verification/native-projection/build.rs",
+        "verification/native-projection/src/scene_close.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/scene-snapshot-identity-initial-wrapper-failure/report.json",
+      "sha256": "c728beb5990f974550f026e067e1b7ace45cbc4b059f0c064b35fcc69a6b24e9",
+      "status": "not_verified",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "experiments/blitz-host/src/view_slot.rs",
+        "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
       "path": "evidence/scene-snapshot-identity-kernel/report.json",
-      "sha256": "3d7ff6f581205f27d8fd4b17ea0b54d0069ecbd13bc48c1a510be0d3af419b99",
+      "sha256": "3ec59dfd75fc765111fc32ff8bf0aafd4f2e1fdb3fa0cae609f5b496f16bc953",
       "status": "proved",
       "recorded_sources": 4,
       "stale_or_missing_sources": [
@@ -373,14 +3613,26 @@
       "completion_flags": {}
     },
     {
+      "path": "evidence/scene-update-admission-chain/report.json",
+      "sha256": "16c6e3f097b15933212ccb18e6312135620e0662dcc6e3f9a7041315efe1acb1",
+      "status": "scoped_admission_six_stage_evidence_recorded",
+      "recorded_sources": 9,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "src/input_identity.rs",
+        "verification/native-activation/build.rs",
+        "verification/native-activation/fuzz/Cargo.toml",
+        "verification/native-activation/fuzz/fuzz_targets/scene_update.rs",
+        "verification/native-activation/src/lib.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
       "path": "evidence/scene-update-admission-kernel/report.json",
-      "sha256": "8146427158c1cf8627503e8263a93ffbb6ff5d83cdf9a09bde27c73c929d2173",
+      "sha256": "3173471be9912314f9aed6f66564801657d1b5a95e432528f1b49891c7b1dc2f",
       "status": "proved",
       "recorded_sources": 2,
-      "stale_or_missing_sources": [
-        "src/input_identity.rs",
-        "src/native_adapter/native_scene.rs"
-      ],
+      "stale_or_missing_sources": [],
       "completion_flags": {}
     },
     {
@@ -389,6 +3641,7 @@
       "status": "scoped_ordered_acceptance_complete",
       "recorded_sources": 7,
       "stale_or_missing_sources": [
+        "scripts/verify-version.py",
         "src/native_adapter/facade.rs",
         "src/native_adapter/native_scene.rs",
         "tests/native_update_contract.rs"
@@ -396,8 +3649,72 @@
       "completion_flags": {}
     },
     {
+      "path": "evidence/scene-visibility-chain/report.json",
+      "sha256": "e20e259ceaea88b6f40bc6b54e9c33361ab674f14340306beaea5c4d73073a63",
+      "status": "incomplete_kani_timeout_not_accepted",
+      "recorded_sources": 10,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "verification/native-projection/build.rs",
+        "verification/native-projection/fuzz/Cargo.toml",
+        "verification/native-projection/src/scene_close.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/scene-work-capacity-chain/report.json",
+      "sha256": "e9c543a1a864e13d28be359ce8a8c371ed80c5cef85a50d4d2a1089f81192e61",
+      "status": "scoped_predicate_six_stage_evidence_recorded",
+      "recorded_sources": 8,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "verification/native-activation/build.rs",
+        "verification/native-activation/fuzz/Cargo.toml",
+        "verification/native-activation/src/lib.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/scene-work-capacity-kernel/report.json",
+      "sha256": "4f55643de542defdd0742ffb95cb7c4bc989900948dc016cc8672a48ceae7528",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/semantic-role-native-class-chain/report.json",
+      "sha256": "2d7e0fcbcb44cc67c953f617013677e4d1c9f2bb0f9e25fe216dae15ac8dbbcd",
+      "status": "scoped_ordered_acceptance_complete",
+      "recorded_sources": 6,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "scripts/verify-version.py",
+        "verification/native-activation/build.rs",
+        "verification/native-activation/src/lib.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/semantic-role-tag-chain/report.json",
+      "sha256": "de51d0d8c232484f5a0751fea10c4db6a220dd940c06d155b0225692ace8b7b1",
+      "status": "superseded_source_changed",
+      "recorded_sources": 11,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "scripts/check-blitz-proof-mapping.py",
+        "scripts/test-blitz-proof-mapping.py",
+        "scripts/verify-version.py",
+        "verification/native-activation/build.rs",
+        "verification/native-activation/src/lib.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
       "path": "evidence/semantic-role-tag-kernel/report.json",
-      "sha256": "845df5a355509f0d1b7eb6251eda730e9ffc55d129b580097f233984010bc0ad",
+      "sha256": "c824d5da64c75c4af5d6d9e6b3911404f445a25180d955d55d09911b3a7d8a74",
       "status": "proved",
       "recorded_sources": 2,
       "stale_or_missing_sources": [
@@ -406,8 +3723,166 @@
       "completion_flags": {}
     },
     {
+      "path": "evidence/skia-cpu-probe/report.json",
+      "sha256": "5b1c0a027524c7e7285334caf1625be4880eb3c366ccbb9ce15bf28383541983",
+      "status": "passed_native_smoke_only",
+      "recorded_sources": 37,
+      "stale_or_missing_sources": [
+        "Cargo.lock",
+        "Cargo.toml",
+        "examples/hello.rs",
+        "examples/pointer.rs",
+        "examples/window.rs",
+        "experiments/skia-cpu-probe/Cargo.toml",
+        "src/backend.rs",
+        "src/desktop.rs",
+        "src/engine.rs",
+        "src/input.rs",
+        "src/keyboard.rs",
+        "src/lib.rs",
+        "src/pointer.rs",
+        "src/raster.rs",
+        "src/resource.rs",
+        "src/scene.rs",
+        "src/semantics.rs",
+        "src/style.rs",
+        "src/surface.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/skia-scene-text/report.json",
+      "sha256": "e1164e6efc34e743902cca4e4a86b2b645e76748455c41c21e4d3212a33e1670",
+      "status": "native_experiment_only_unaccepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/skia-text-index-probe/report.json",
+      "sha256": "5d5839d621dac977fa733121e01a6fe11c49e8dfe12a66b04b7468f2e305550a",
+      "status": "native_experiment_only_unaccepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/skia-text-paragraph/report.json",
+      "sha256": "c19ee5c552f038a5da492b4aa194a5e3c8b17fd18e81f091422178c9b7ef1a6b",
+      "status": "native_experiment_only_unaccepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/skia-text-paragraph-cjk/report.json",
+      "sha256": "c72bca8da4626757a58daa253ee66d58e67ce05c665652f58c097a3001dd96e1",
+      "status": "native_experiment_only_unaccepted",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/source-insert-index-chain/report.json",
+      "sha256": "5e67e1468944493aa0e48b576655961f6407572cd428fc5e4f3064f5199b935d",
+      "status": "scoped_index_six_stage_evidence_recorded",
+      "recorded_sources": 9,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/native_scene.rs",
+        "src/scene.rs",
+        "verification/native-activation/build.rs",
+        "verification/native-activation/fuzz/Cargo.toml",
+        "verification/native-activation/src/lib.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/source-insert-index-kernel/report.json",
+      "sha256": "5491418582d6ef829f685ce63d270055f8d0f63f3e47caed419c0890b7c78c6d",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [
+        "src/native_adapter/native_scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/surface-borrow-kernel/report.json",
+      "sha256": "c53e168182c9f2a7c17f3d3158e6a4e239d3ed8bef8ecff0add888e3ec75da77",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/surface-row-kernel/report.json",
+      "sha256": "8df0225bba371de073cfe1715ba07c90154a08cd662cd4a0758bc3674315b58f",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/surface-segment-kernel/report.json",
+      "sha256": "94907f955ae7c7df8f0500c67936804bfd70109a10aa69f0db07b38b98ac585c",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/surface-span-kernel/report.json",
+      "sha256": "179066ee33e17384968bc830fe47ebf8ddaf8bb8bb9378a560923216cf6a4821",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/surface-view-kernel/report.json",
+      "sha256": "18e3735cc221e56870c39ac626fa9423a2ac22408a8072f845bf3e3e7f9cb442",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/surface-write-kernel/report.json",
+      "sha256": "fbfefa1a814e94d9c825a851e4b59ebf3b0066415337125ec55100ae0efb324f",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/text-class-kernel/report.json",
+      "sha256": "9bd2e5f3ad60acb7aadd55e2b2cff2b463f630c8db85b733751c4474f1540b30",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/text-display-close-chain/report.json",
+      "sha256": "ec38acf3dce77837890c9134f24164114f6ae6753f310b998640c934c7f3e070",
+      "status": "scoped_ordered_acceptance_complete",
+      "recorded_sources": 13,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "experiments/blitz-host/src/view_slot.rs",
+        "scripts/verify-version.py",
+        "src/composition_identity.rs",
+        "src/input_identity.rs",
+        "verification/native-projection/build.rs",
+        "verification/native-projection/fuzz/Cargo.toml",
+        "verification/native-projection/src/lib.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
       "path": "evidence/text-display-close-kernel/report.json",
-      "sha256": "c5fd4e3011da4a8c9d3e203cc9760682d04e336b57a1285c77f20652a963fa29",
+      "sha256": "f43bd53d20c2e7f0696ddcfdec317151d3c8f7c4c530bedf0584b89fed111f7d",
       "status": "proved",
       "recorded_sources": 7,
       "stale_or_missing_sources": [
@@ -417,12 +3892,44 @@
         "src/native_adapter/native_view.rs",
         "src/native_adapter/view_slot.rs",
         "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/text-display-close-visibility-failure/report.json",
+      "sha256": "321fd51c70c7360eb6c12ac7830b137ea807a0eac8c8bf1929614f3a77ebe9ed",
+      "status": "not_verified",
+      "recorded_sources": 7,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "experiments/blitz-host/src/view_slot.rs",
+        "src/composition_identity.rs",
+        "src/input_identity.rs",
+        "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/text-display-version-chain/report.json",
+      "sha256": "46431e62e7c632b988ca7f3090c6df65f1aef90ea4d080f507b7b8e4c077a9ad",
+      "status": "scoped_ordered_acceptance_complete",
+      "recorded_sources": 12,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/lib.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "experiments/blitz-host/src/view_slot.rs",
+        "scripts/verify-version.py",
+        "src/input_identity.rs",
+        "verification/native-projection/build.rs",
+        "verification/native-projection/fuzz/Cargo.toml",
+        "verification/native-projection/src/lib.rs"
       ],
       "completion_flags": {}
     },
     {
       "path": "evidence/text-display-version-kernel/report.json",
-      "sha256": "31c21ed47d5ad4f848f327958f30afe73ad067df62fa802283e5f33ab99a509c",
+      "sha256": "77c04a16a752910faa2d4318174ceb3739e44ff8c49ab63abd39d8907cbaf000",
       "status": "proved",
       "recorded_sources": 7,
       "stale_or_missing_sources": [
@@ -436,8 +3943,459 @@
       "completion_flags": {}
     },
     {
+      "path": "evidence/text-offset-kernel/report.json",
+      "sha256": "32c8f9011f4f11f8006c3fbe04e322060e94d368980d5a034f104ab6ae1ee305",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/text-range-kernel/report.json",
+      "sha256": "2c76bc21f101a5e370f45b87e6298f439b7e990c669785d5289be1fca7d69053",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/transaction-gate-kernel/report.json",
+      "sha256": "45ea39578d3fb46d27bcb711e0a9768055ad11a824939baa290f75971ff1858b",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-composition-chain/report.json",
+      "sha256": "0dc016245a1a2e80705615d3b3090c744310e30ea3187086e61202eafacfe649",
+      "status": "scoped_slice_complete",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-composition-identity/report.json",
+      "sha256": "ee5eb97e3e5f79d34af749793276a9b2733eb1a0e32b0cae5cf70ff91989ceb2",
+      "status": "proved",
+      "recorded_sources": 4,
+      "stale_or_missing_sources": [
+        "src/composition_identity.rs",
+        "src/input_identity.rs",
+        "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-composition-range/report.json",
+      "sha256": "8d7552a1ceea35936e7ec3cc15caea8dbfb7a1ed5886c5193f2604215be5bbcc",
+      "status": "proved",
+      "recorded_sources": 5,
+      "stale_or_missing_sources": [
+        "src/composition_identity.rs",
+        "src/input.rs",
+        "src/input_identity.rs",
+        "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-composition-range-chain/report.json",
+      "sha256": "855289cbf47dd2c41d52f8e73f9d3b6cede1d88f634f50dfb3a69144c18ffc0a",
+      "status": "scoped_slice_complete",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-input-admission/report.json",
+      "sha256": "d55b7e08805053dab65ff0662815df0abff0c3230e21dab6842dcc0fb04ead2b",
+      "status": "proved",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "src/input_identity.rs",
+        "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-input-binding/report.json",
+      "sha256": "f6940979ee99c3a8bbe922d4e6b1fbd80eae25bb21fa8cea35f21c15b0d24842",
+      "status": "proved",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "src/input_identity.rs",
+        "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-input-binding-chain/report.json",
+      "sha256": "9d031572ddf96e61c8b2a946a20892b6302ecc81b2f4a61d3173231278b13141",
+      "status": "scoped_slice_complete",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-input-identity-chain/report.json",
+      "sha256": "47bf84a17fec566bbcd4e8a43b70add81597f07bd6c19402831886a4ab6ac652",
+      "status": "scoped_slice_complete",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-input-payload/report.json",
+      "sha256": "fbd631f4b32a03494bba33843354668d955c0df3b041f047b2b69aaf3b565c2a",
+      "status": "proved",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "src/input_identity.rs",
+        "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-input-payload-chain/report.json",
+      "sha256": "0235a3d3d7354f07ada2e5b92b6b067c3cdca662f1cc326ac8f5736bec0bfc53",
+      "status": "scoped_slice_complete",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-input-payload-current-chain/report.json",
+      "sha256": "460a69a1321b20d4283f53672821d496e51fa03a91e5bc959dbdae9c456510a9",
+      "status": "scoped_borrowed_payload_current_source_chain_complete",
+      "recorded_sources": 10,
+      "stale_or_missing_sources": [
+        "src/input_identity.rs",
+        "src/scene.rs",
+        "verification/input-identity/build.rs",
+        "verification/input-identity/src/lib.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-input-replace/report.json",
+      "sha256": "98675edc7de889a26b7dc0d45a613a7c1f73fadacb6bcc3bb1150d5f0b03ef92",
+      "status": "proved",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "src/input_identity.rs",
+        "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-input-replace-chain/report.json",
+      "sha256": "ec4cc4198f27ae82fcc5d786a01e332ced075d0214209e7bb957070e58e50246",
+      "status": "scoped_slice_complete",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-preedit-admission/report.json",
+      "sha256": "eca0bec71eb6c217bb295b084d93101c9e94738a06b777f296aa66548675ed70",
+      "status": "proved",
+      "recorded_sources": 5,
+      "stale_or_missing_sources": [
+        "src/composition_identity.rs",
+        "src/input.rs",
+        "src/input_identity.rs",
+        "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-preedit-cancel/report.json",
+      "sha256": "89dd3e6713248a4a01a07dd1c36a018e7d9656a53c1959ba9edf925c502fa807",
+      "status": "proved",
+      "recorded_sources": 8,
+      "stale_or_missing_sources": [
+        "src/composition_identity.rs",
+        "src/desktop.rs",
+        "src/input.rs",
+        "src/input_identity.rs",
+        "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-preedit-cancel-chain/report.json",
+      "sha256": "23fd265f7318ea28c7893e96817b09082c0e9cf38f6092ad4bc773d19a11d9bd",
+      "status": "independent_scoped_slice_complete",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-preedit-chain/report.json",
+      "sha256": "b19f5c184165c98af0eb8e95a59c6482435b9311fcae56b093e9383eaa2dcd4e",
+      "status": "scoped_slice_complete",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-preedit-view/report.json",
+      "sha256": "7e23b49fb603e60f24607c2b553f457195cefb643f218eea9192a14e0e2a709a",
+      "status": "proved",
+      "recorded_sources": 8,
+      "stale_or_missing_sources": [
+        "src/composition_identity.rs",
+        "src/desktop.rs",
+        "src/input.rs",
+        "src/input_identity.rs",
+        "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-preedit-view-chain/report.json",
+      "sha256": "6605a580655ba224c01f69107075fd38574b4b0d02f7d1eceea22bd5abd529cf",
+      "status": "independent_scoped_slice_complete",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-range-current-chain/report.json",
+      "sha256": "7eadd950b0833c41b0f765982221ba01594a151abc15cce5ffea412254b6d8b8",
+      "status": "scoped_current_range_evidence_recorded",
+      "recorded_sources": 12,
+      "stale_or_missing_sources": [
+        "src/composition_identity.rs",
+        "src/input.rs",
+        "src/input_identity.rs",
+        "src/scene.rs",
+        "verification/input-identity/build.rs",
+        "verification/input-identity/src/lib.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-snapshot-admission-chain/report.json",
+      "sha256": "e8fd3ec9593bd6845179e550ebae0af9223e44107bb6fc9e994820dccd8de1d6",
+      "status": "scoped_snapshot_admission_chain_complete",
+      "recorded_sources": 13,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "src/input_identity.rs",
+        "src/scene.rs",
+        "verification/input-identity/build.rs",
+        "verification/input-identity/src/lib.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-snapshot-admission-kernel/report.json",
+      "sha256": "b0ee95e9b1aa6838da7f9d096c0642d6fdd1981e6f4527d3a1456d1d2a1a0deb",
+      "status": "proved",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "src/input_identity.rs",
+        "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-update-next-chain/report.json",
+      "sha256": "de0d67c742ce9d7224d000040c75de0c2486e91a63beb781b38085a87f84bcba",
+      "status": "scoped_next_update_version_chain_complete",
+      "recorded_sources": 11,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "src/input_identity.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-update-next-kernel/report.json",
+      "sha256": "aded020d7f12b9eec28dfaa220ca8102323c5c5c7f4b8205a476874f13f88b73",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [
+        "src/input_identity.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-view-owner-chain/report.json",
+      "sha256": "2e014558ca9d7e66f219895fa1f50bb319234c7ebb952c4668778240c982e852",
+      "status": "scoped_owner_predicate_chain_complete",
+      "recorded_sources": 13,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/Cargo.lock",
+        "experiments/blitz-host/src/main.rs",
+        "experiments/blitz-host/src/native_view.rs",
+        "src/input_identity.rs",
+        "src/scene.rs",
+        "verification/input-identity/build.rs",
+        "verification/input-identity/src/lib.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-view-owner-kernel/report.json",
+      "sha256": "bd6a2ba576eae6873143e6ade867bb04f0b8bf9b70937f3cc68e88c368c3c82f",
+      "status": "proved",
+      "recorded_sources": 3,
+      "stale_or_missing_sources": [
+        "src/input_identity.rs",
+        "src/scene.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-view-read-borrow-chain/report.json",
+      "sha256": "5b2191a2665eb257e8ba230200a4e427f89e1df7be6ab996f34df778186d6e6e",
+      "status": "scoped_read_value_and_logical_lifecycle_chain_complete",
+      "recorded_sources": 7,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/view_slot.rs",
+        "verification/view-slot/src/lib.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-view-read-borrow-kernel/report.json",
+      "sha256": "5d4d4ecdb8581d5f7721a9c64e11c40972ec3445c2f0e732303c6a0bcaf2cfb8",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/view_slot.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-view-slot-chain/report.json",
+      "sha256": "e44d2ee74af4c473e7ac45815356c56a87ed3dff7111bdef224e3894455a8048",
+      "status": "scoped_logical_lifecycle_chain_complete",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-view-slot-initial-proof-failure/report.json",
+      "sha256": "4ad82c8345ad0d4155511375a011fa2de163700df06d2c5d8d7e5bdd7b22a49d",
+      "status": "not_verified",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/view_slot.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-view-slot-kernel/report.json",
+      "sha256": "20b7c7b0e3a535ccc806931be1c69b0554deb6f896845e128b1a66eb7809bae4",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/view_slot.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-view-slot-opaque-proof-failure/report.json",
+      "sha256": "deb9c427c863b90e900cf8152185370ac9a48d74572e4fff359f5dc467f4dbf9",
+      "status": "not_verified",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/view_slot.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-view-write-borrow-chain/report.json",
+      "sha256": "a375c6342572b21dda3380512ee76088c8e8f5f63eb47a95b9fc5c8cf79d1d99",
+      "status": "scoped_mutable_borrow_value_chain_complete",
+      "recorded_sources": 7,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/view_slot.rs",
+        "verification/view-slot/src/lib.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-view-write-borrow-initial-annotation-failure/report.json",
+      "sha256": "857d8ee8f0c0ca33d24d458eb52866cdcb1fb9bc9bb272e9100fc79886c3de99",
+      "status": "not_verified",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/view_slot.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-view-write-borrow-kernel/report.json",
+      "sha256": "d318efaf684eff0ebb8b4d807f5ea21b02a35643f81274aaa9ced6b82201afff",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [
+        "experiments/blitz-host/src/view_slot.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/validation-chain/report.json",
+      "sha256": "701f9824226d32f6a2cf334756e0ed330d967b64af4276d7e88c4171c10cae7c",
+      "status": "unspecified",
+      "recorded_sources": 234,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/validation-chain-interrupted-resource-oracle/report.json",
+      "sha256": "d36191cb93d7075158c0e385f47c9fbf14354bda6754f92292653a2a52f81282",
+      "status": "unspecified",
+      "recorded_sources": 65,
+      "stale_or_missing_sources": [
+        "Cargo.lock",
+        "Cargo.toml",
+        "fuzz/Cargo.lock",
+        "fuzz/Cargo.toml",
+        "fuzz/fuzz_targets/read_boundary.rs",
+        "scripts/verify-ui.py",
+        "scripts/verify-version.py",
+        "src/backend.rs",
+        "src/desktop.rs",
+        "src/engine.rs",
+        "src/input.rs",
+        "src/keyboard.rs",
+        "src/lib.rs",
+        "src/pointer.rs",
+        "src/raster.rs",
+        "src/resource.rs",
+        "src/scene.rs",
+        "src/semantics.rs",
+        "src/style.rs",
+        "src/surface.rs",
+        "src/text.rs",
+        "tests/engine_smoke.rs",
+        "tests/resource_gate.rs",
+        "verification/read-boundary/build.rs",
+        "verification/read-boundary/src/lib.rs"
+      ],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/version-kernel/report.json",
+      "sha256": "4e74a818ab2c1be2c440e3c02370e5c60beb62f544862e33ccf7ceff40c376de",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
       "path": "evidence/window-xvfb-presentation/report.json",
-      "sha256": "93fad2b123f1686a465756d2074614622bddc1397cb0e171c75907a56e62061e",
+      "sha256": "af6647a36862860bb6f32da3d3987286c84199bf4c7c45a649884cfcf05ea653",
       "status": "software_x11_cpu_and_texture_view_passed_hardware_lifecycle_pending",
       "recorded_sources": 0,
       "stale_or_missing_sources": [],
@@ -449,8 +4407,8 @@
     }
   ],
   "evidence_index_summary": {
-    "reports": 29,
-    "with_stale_or_missing_recorded_sources": 22,
+    "reports": 396,
+    "with_stale_or_missing_recorded_sources": 241,
     "with_explicit_completion": 10
   },
   "checklist": {
@@ -532,7 +4490,7 @@
           {
             "path": "verification/read-boundary/src/lib.rs",
             "exists": true,
-            "sha256": "a2d0dcec0045138aaf2cdc8fcf7d3b301a92ad975c0547cbb83516198fa8412d"
+            "sha256": "030dbb7551aae913ad9b1c3b92cc154637ea995c9c91da950d757c8677cdf3dd"
           }
         ],
         "evidence": [
@@ -625,10 +4583,28 @@
               },
               {
                 "field": "sources",
+                "path": "src/desktop.rs",
+                "exists": true,
+                "expected_sha256": "298bea8e2dc8c62581025782419a948c3e5715bc494f0e174591aa8f1644bb28",
+                "actual_sha256": "298bea8e2dc8c62581025782419a948c3e5715bc494f0e174591aa8f1644bb28",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
                 "path": "src/engine.rs",
                 "exists": true,
                 "expected_sha256": "453869dfd4f651a16cde03ac81d49db857793f18bfcaa620cf67c51f330f9efe",
                 "actual_sha256": "453869dfd4f651a16cde03ac81d49db857793f18bfcaa620cf67c51f330f9efe",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/handle.rs",
+                "exists": true,
+                "expected_sha256": "d39bb2d620de2e406f76c7431fae90935923ec8e29a53a069a14c196d7350eca",
+                "actual_sha256": "d39bb2d620de2e406f76c7431fae90935923ec8e29a53a069a14c196d7350eca",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -1052,10 +5028,28 @@
               },
               {
                 "field": "sources",
+                "path": "src/desktop.rs",
+                "exists": true,
+                "expected_sha256": "298bea8e2dc8c62581025782419a948c3e5715bc494f0e174591aa8f1644bb28",
+                "actual_sha256": "298bea8e2dc8c62581025782419a948c3e5715bc494f0e174591aa8f1644bb28",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
                 "path": "src/engine.rs",
                 "exists": true,
                 "expected_sha256": "453869dfd4f651a16cde03ac81d49db857793f18bfcaa620cf67c51f330f9efe",
                 "actual_sha256": "453869dfd4f651a16cde03ac81d49db857793f18bfcaa620cf67c51f330f9efe",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/handle.rs",
+                "exists": true,
+                "expected_sha256": "d39bb2d620de2e406f76c7431fae90935923ec8e29a53a069a14c196d7350eca",
+                "actual_sha256": "d39bb2d620de2e406f76c7431fae90935923ec8e29a53a069a14c196d7350eca",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -1494,10 +5488,28 @@
               },
               {
                 "field": "sources",
+                "path": "src/desktop.rs",
+                "exists": true,
+                "expected_sha256": "298bea8e2dc8c62581025782419a948c3e5715bc494f0e174591aa8f1644bb28",
+                "actual_sha256": "298bea8e2dc8c62581025782419a948c3e5715bc494f0e174591aa8f1644bb28",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
                 "path": "src/engine.rs",
                 "exists": true,
                 "expected_sha256": "453869dfd4f651a16cde03ac81d49db857793f18bfcaa620cf67c51f330f9efe",
                 "actual_sha256": "453869dfd4f651a16cde03ac81d49db857793f18bfcaa620cf67c51f330f9efe",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/handle.rs",
+                "exists": true,
+                "expected_sha256": "d39bb2d620de2e406f76c7431fae90935923ec8e29a53a069a14c196d7350eca",
+                "actual_sha256": "d39bb2d620de2e406f76c7431fae90935923ec8e29a53a069a14c196d7350eca",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -1788,7 +5800,7 @@
           {
             "path": "src/desktop.rs",
             "exists": true,
-            "sha256": "c3902a9dccd2e4e0152e21b5cd1063fe8f40b996cef6f7c4077b557594b7ace7"
+            "sha256": "298bea8e2dc8c62581025782419a948c3e5715bc494f0e174591aa8f1644bb28"
           },
           {
             "path": "src/native_adapter/access_kit.rs",
@@ -1951,10 +5963,28 @@
               },
               {
                 "field": "sources",
+                "path": "src/desktop.rs",
+                "exists": true,
+                "expected_sha256": "298bea8e2dc8c62581025782419a948c3e5715bc494f0e174591aa8f1644bb28",
+                "actual_sha256": "298bea8e2dc8c62581025782419a948c3e5715bc494f0e174591aa8f1644bb28",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
                 "path": "src/engine.rs",
                 "exists": true,
                 "expected_sha256": "453869dfd4f651a16cde03ac81d49db857793f18bfcaa620cf67c51f330f9efe",
                 "actual_sha256": "453869dfd4f651a16cde03ac81d49db857793f18bfcaa620cf67c51f330f9efe",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/handle.rs",
+                "exists": true,
+                "expected_sha256": "d39bb2d620de2e406f76c7431fae90935923ec8e29a53a069a14c196d7350eca",
+                "actual_sha256": "d39bb2d620de2e406f76c7431fae90935923ec8e29a53a069a14c196d7350eca",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -2216,7 +6246,7 @@
           {
             "path": "src/lib.rs",
             "exists": true,
-            "sha256": "974b815a6c9c3ea4457cf10a3c2f1298f03dab0a4e6d2b9027aaf5eaea907221"
+            "sha256": "3188552c1bbc981526d55aafea83e0d1f99281ca972a789473ae1660f1f47ab0"
           },
           {
             "path": "src/engine.rs",
@@ -2364,10 +6394,28 @@
               },
               {
                 "field": "sources",
+                "path": "src/desktop.rs",
+                "exists": true,
+                "expected_sha256": "298bea8e2dc8c62581025782419a948c3e5715bc494f0e174591aa8f1644bb28",
+                "actual_sha256": "298bea8e2dc8c62581025782419a948c3e5715bc494f0e174591aa8f1644bb28",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
                 "path": "src/engine.rs",
                 "exists": true,
                 "expected_sha256": "453869dfd4f651a16cde03ac81d49db857793f18bfcaa620cf67c51f330f9efe",
                 "actual_sha256": "453869dfd4f651a16cde03ac81d49db857793f18bfcaa620cf67c51f330f9efe",
+                "status": "current",
+                "report": "evidence/final-checklist-audit/report.json"
+              },
+              {
+                "field": "sources",
+                "path": "src/handle.rs",
+                "exists": true,
+                "expected_sha256": "d39bb2d620de2e406f76c7431fae90935923ec8e29a53a069a14c196d7350eca",
+                "actual_sha256": "d39bb2d620de2e406f76c7431fae90935923ec8e29a53a069a14c196d7350eca",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -2918,7 +6966,7 @@
     "completion_claimed": false,
     "static_audit_complete": true,
     "final_report_covers_head": true,
-    "final_report_basis": "68b8605fa6b06505dfda4094aa0e3c085bf1e9c6",
+    "final_report_basis": "6610bbfc7f299c41ebaeac98d25db9730cc52bf4",
     "material_paths_changed_since_final_report_basis": 0,
     "missing_required_sources": 0,
     "missing_required_evidence": 0,
@@ -2928,26 +6976,17 @@
   },
   "baseline_regression": {
     "status": "passed",
-    "started_at": "2026-11-02T19:13:38.674506+00:00",
-    "finished_at": "2026-11-02T19:13:49.399785+00:00",
+    "started_at": "2026-11-03T10:22:23.209573+00:00",
+    "finished_at": "2026-11-03T10:23:14.092212+00:00",
     "command": [
       "<repo>/scripts/verify-in-vm.sh",
       "env",
-      "JASPER_UI_TEST_FONT=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-      "JASPER_UI_TEST_LATIN_FONT=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-      "JASPER_UI_TEST_CJK_FONT=<home>/work/ui-fixtures/NotoSansCJK-Regular.ttc",
-      "JASPER_UI_TEST_BOLD_FONT=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-      "JASPER_UI_TEST_ITALIC_FONT=/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Oblique.ttf",
-      "CLOSEOUT_RUN_NATIVE_INTEGRATION=1",
-      "CLOSEOUT_RUN_GPU=1",
-      "CARGO_PROFILE_DEV_DEBUG=0",
-      "CARGO_PROFILE_TEST_DEBUG=0",
       "bash",
       "scripts/closeout-baseline.sh"
     ],
     "returncode": 0,
     "log": "evidence/final-closeout-audit/baseline.log",
-    "log_sha256": "84226a578af95b44153e39a1a51e7177dc85349904591c6ae153d02451d9fd55"
+    "log_sha256": "2a24e02c0b5790a1ea4a3547e5c893d23834d3f01e2aaefd5e6fe8c2773591e9"
   },
   "final_gate": {
     "ready": true,
