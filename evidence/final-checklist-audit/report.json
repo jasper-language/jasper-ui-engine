@@ -49,7 +49,7 @@
     "scripts/audit-closeout.py": "3b93b12e36c6362619be0df660bf2affdd70d83473ac4efff94b671d1a2b1d7c",
     "scripts/closeout-baseline.sh": "324530f8c5033ff29ae0e1f245c756c0d47c3da32d6cf30666ec15ec19d9bc8e",
     "src/desktop.rs": "298bea8e2dc8c62581025782419a948c3e5715bc494f0e174591aa8f1644bb28",
-    "src/handle.rs": "d39bb2d620de2e406f76c7431fae90935923ec8e29a53a069a14c196d7350eca"
+    "src/handle.rs": "f623079e05ca9787f4f2a05359c52ea8784107e8c83ff999e27cfce316cff88e"
   },
   "commits": [
     "468a2eebece386b52f3751413ce7e720a2016b11 item 2 formal Engine frame sequence",
@@ -59,7 +59,8 @@
     "e0c2d37 item 6 source snapshot, completion standard and closeout gate",
     "72f491d0d97f0ba4ca3f73d278bed869eade4539 integrate all prior item branch refs",
     "68b8605fa6b06505dfda4094aa0e3c085bf1e9c6 item 6 completed closeout evidence",
-    "6610bbfc7f299c41ebaeac98d25db9730cc52bf4 rebind final audit to UI34/UI35 (clock-free desktop pointer state; generation handle table)"
+    "6610bbfc7f299c41ebaeac98d25db9730cc52bf4 rebind final audit to UI34/UI35 (clock-free desktop pointer state; generation handle table)",
+    "9f68783a8bd6a1987c67550f9969c322bc6f32a6 rebind final audit to UI36 (handle status; fallible handle storage growth)"
   ],
   "items": {
     "1_public_contracts": {
