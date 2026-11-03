@@ -2,8 +2,8 @@
 
 This report is an audit snapshot, not a delivery acceptance record.
 
-- branch: `main`
-- commit: `d96fac8612041bf38a754a982fafc35f81c3f6e3`
+- branch: `dev/ui36-handle-fallible`
+- commit: `59311fe722b067814854212c41cbfec35c99303e`
 - explicit item 1-5 completions: 5/5
 - final report materially covers HEAD: `true`
 - missing required evidence: 0
