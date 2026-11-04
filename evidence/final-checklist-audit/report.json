@@ -13,7 +13,7 @@
   "checklist_item_5_complete": true,
   "checklist_item_6_complete": true,
   "sources": {
-    "src/scene.rs": "ec429d376674ce5b060e2ed45da46dea901d54907caddc3e94f48e8d16f01a4c",
+    "src/scene.rs": "4f9969e164cc16068aa865794eeaf1a400b463ba9dc89b429d15ff580be941bf",
     "src/batch.rs": "7fa1d6ed36340deb93096434eb33842947c47eb5b804852565de527b20d2cce1",
     "src/input_identity.rs": "953b0982be297777cc3e2c3f3a02f697df71d83c2d3e5bc21202baa06250aa0d",
     "src/engine.rs": "453869dfd4f651a16cde03ac81d49db857793f18bfcaa620cf67c51f330f9efe",
@@ -46,7 +46,7 @@
     "tests/native_interaction_closure.rs": "ed6fc7345b46656e27bedfa59b9c8240427954eb7888b50299bf5d5bd3bd2d79",
     "tests/native_accesskit_bridge.rs": "a252859061116da97dac80f37d5b1721275a92c558cb6d6655fb39b679d6228d",
     "tests/native_gpu_host_view.rs": "5cabaaf2091c3e10de8def043b7d902a61ed37831dcdaf97d366461860422fc9",
-    "scripts/audit-closeout.py": "f56e9e7e5d50e95b8c59e44265f810bd66ab49400da4d71cacf0853198d50638",
+    "scripts/audit-closeout.py": "778619acbad2150ede9367b610599b10773deea3bdf6ae78aa1ec399ca5fc729",
     "scripts/closeout-baseline.sh": "324530f8c5033ff29ae0e1f245c756c0d47c3da32d6cf30666ec15ec19d9bc8e",
     "src/desktop.rs": "298bea8e2dc8c62581025782419a948c3e5715bc494f0e174591aa8f1644bb28",
     "src/handle.rs": "f623079e05ca9787f4f2a05359c52ea8784107e8c83ff999e27cfce316cff88e"
@@ -67,7 +67,8 @@
     "f97d19b4dc12337b87bc1e1f5bc1d5b74d5fdc71 rebind final audit to CP-02 reachability probe correction (no source change)",
     "03af023e9ee89d1d94dc1f646c4199e85c8747e3 rebind final audit to UI38 batch stage (stage_scene_batch fold; behavior preserved)",
     "ab36fa6ee767a32901766c29abe0a7ae15da2948 rebind final audit to UI38 test formatting (no behavior change)",
-    "150d05de95d04fcfad019ca4ffcf60f23334ed6c rebind final audit to UI38 interaction restore (restore_candidate_interaction replay; behavior preserved)"
+    "150d05de95d04fcfad019ca4ffcf60f23334ed6c rebind final audit to UI38 interaction restore (restore_candidate_interaction replay; behavior preserved)",
+    "07149b641e6f8c10896c8ff52d04edd5e2a816d9 rebind final audit to UI38 node removal (remove_node indexed loops; behavior preserved)"
   ],
   "items": {
     "1_public_contracts": {
