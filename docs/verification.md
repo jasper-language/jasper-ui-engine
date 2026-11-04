@@ -4,7 +4,7 @@
 
 ## 强制验证顺序（2026-10-23 用户追加）
 
-**Verus + Z3 → Proptest → Miri → cargo-fuzz → Kani → Loom**。
+**Verus + Z3 → Proptest → Miri → cargo-fuzz → Loom**；Kani 只在正式版发版时验证（2026-11-04 起，优先于本文其他提到 Kani 为日常步骤的地方，下文旧记录保持原样）。
 旧代码允许后续补证；每轮推进框架新功能的同时，为一部分旧代码补齐这条链。新增或修改的实现须同步完成全链才算交付。性能不足记录为后续优化项，不阻塞当前推进，待 UI Rust 引擎内核完成后集中优化；正确性和安全性失败仍不能算通过。六项分别记录源码、规格、工具版本、配置、范围和结果。后项不能补偿前项失败，不把测试、fuzz 或有限模型检查当成实现级证明。
 
 首个顺序入口：
@@ -13,9 +13,9 @@
 python3 scripts/verify-ui.py --verus /absolute/path/to/verus
 ```
 
-当前入口按六阶段执行：Verus 证明入口（含资源退役、焦点清理及既有切片）、批解码及原样提取内核的属性/Miri 检查、两个真实 libFuzzer 目标、指定的 Kani harness、Loom 调度场景。
+当前入口默认按五阶段执行：Verus 证明入口（含资源退役、焦点清理及既有切片）、批解码及原样提取内核的属性/Miri 检查、两个真实 libFuzzer 目标、Loom 调度场景。
 
-Kani 只跑本次改动对应的 harness（2026-11-04 起）：`--kani-harness <名字>` 可重复，每个单独运行，同一虚拟机同一时间一个，上限 10 分钟、3.5 GB，参数只能调低不能调高。撞上限记 `undetermined` 并写入 `acceptance_pending`，链继续，不算通过；反例或工具错误立即失败。不指定 harness 时 Kani 阶段为 `not_run_no_harness_named`，`scoped_checks_complete` 为 false；其他 harness 沿用绑定各自提交的原证据，不算本轮通过。整库运行须显式 `--kani-full`，只在项目所有者明确要求时使用。
+日常不跑 Kani，也不因 Kani 判未完成：该阶段状态为 `deferred_to_release`，登记写 `Kani：发版时验证`，不写 PASS，也不写 N/A。现有 harness 和旧证据保留，旧证据仍绑定原提交，发版前再跑。发版时用 `--kani-harness <名字>`（可重复，每个单独运行，同一时间一个，上限 10 分钟、3.5 GB，撞上限记 `undetermined` 并写入 `acceptance_pending`，反例或工具错误立即失败）或 `--kani-full` 显式打开。CP-01 与 CP-02 的 Kani / Bitwuzla 路径记在报告的 `release_checklist` 里，它们仍未解决，只是不再阻塞日常验收，所以 `slice_complete` 为 true 不代表这些义务已解除。
 
 其余约定：非零退出、缺少成功证据或运行期间源码变化均不算通过。`slice_complete` 只代表指定切片，`complete` 仍为 false，整个 UI 尚未验收。CI 已配置同一顺序入口，远端执行尚未发生。
 

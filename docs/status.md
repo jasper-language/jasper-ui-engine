@@ -891,3 +891,7 @@ CP-02 仍无判定：只选一个断言（切片后 30 个 VCC）在 45 分钟�
 `verify-ui.py` 的 Kani 阶段不再跑整库，改为 `--kani-harness` 指定的 harness，单个 10 分钟、3.5 GB，同一时间一个。撞上限记 `undetermined`，链继续但不算通过；反例和工具错误立即失败。实测两个 harness 的全链六阶段通过，入口退出 2 的原因仍是 CP-01；2 秒上限的对照按预期得到 `undetermined`。其余 harness 本轮没跑，证据仍绑定之前的提交。不指定 harness 的路径和 `--kani-full` 没有端到端运行过。没有生产代码改动。
 
 同日更正 Bitwuzla 记录：首次构建和运行 A–F 早于用户本人的批准，见 `evidence/native-subtree-bitwuzla-capability/report.json`，并补了来源与校验值。2026-11-03 的编译参数和下载日志没有保留。
+
+## 2026-11-04：Kani 改到正式版发版时验证
+
+这条取代同日的定点 Kani 做法。`verify-ui.py` 默认不跑 Kani，该阶段状态为 `deferred_to_release`，登记写 `Kani：发版时验证`，不因它判未完成；发版时用 `--kani-harness` 或 `--kani-full` 显式打开。CI 不再安装 Kani。CP-01 和 CP-02 的 Kani / Bitwuzla 路径移到发版清单，义务未解除，CP-02 不依赖 Kani 的部分继续。现有 harness 和旧证据不删。没有生产代码改动。

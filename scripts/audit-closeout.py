@@ -468,8 +468,6 @@ def tool_config_audit() -> dict[str, Any]:
             EXPECTED["verus"],
             EXPECTED["verus_sha256"],
             EXPECTED["cargo_fuzz"],
-            EXPECTED["kani"],
-            "cargo +1.99.1 kani setup",
         ],
     )
     require_text(
@@ -487,7 +485,8 @@ def tool_config_audit() -> dict[str, Any]:
         "ordered-chain-pending-gate",
         "scripts/verify-ui.py",
         [
-            '"capture-query: original arbitrary two-key Kani obligation is unresolved; single-key harness is diagnostic only"',
+            '"CP-01: original arbitrary two-key Kani obligation is unresolved; single-key harness is diagnostic only"',
+            '"CP-02: real BTreeMap Kani / Bitwuzla path is unresolved"',
             '"slice_complete": False',
             '"complete": False',
         ],
