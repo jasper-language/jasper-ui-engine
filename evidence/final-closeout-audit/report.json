@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "kind": "jasper-ui-closeout-audit",
-  "generated_at": "2026-11-04T11:49:10.109360+00:00",
+  "generated_at": "2026-11-04T12:14:56.715128+00:00",
   "claim": "audit only; no checklist completion or whole-engine acceptance is claimed",
   "git": {
-    "branch": "dev/ui38-batch-commit",
-    "commit": "28f52f2be68b8293ca03083fa9690d8d3177ea2b",
+    "branch": "dev/ui-kani-targeted",
+    "commit": "fb0ac28ba0cf9cbd81747c1d8c5e9d188353a98b",
     "dirty_paths": []
   },
   "final_audit": {
@@ -15,7 +15,7 @@
     "recorded_status": "complete",
     "recorded_completed_items": 6,
     "covers_head": true,
-    "basis_commit": "8155fd6466738ddfc967f5db93276ae6bb150ba5",
+    "basis_commit": "037c2d5fe5977655712f2a573e563a7ab8419d00",
     "material_changed_since_basis": [],
     "references": [
       {
@@ -79,11 +79,11 @@
   },
   "audit_inputs": {
     "scripts/audit-closeout.py": "ae11359c2781df17d02357e14f14b9bd4a229fa03f8113097afddfe0e8ede47f",
-    "scripts/closeout-baseline.sh": "324530f8c5033ff29ae0e1f245c756c0d47c3da32d6cf30666ec15ec19d9bc8e",
+    "scripts/closeout-baseline.sh": "398de616d2ab22cca1f120839c55a7df0b4cdd97c9520b949f5bece26d948c6d",
     "scripts/test-audit-closeout.py": "34fa073556b494d37030b4d0372260030a205ec2dfd38bf47022c01dea546e3a",
     "docs/claude-closeout-proof-backlog.md": "df29fceac8200ce380977b242c30954028e768b430ac0d09dab2c648c920e7a0",
     "docs/closeout.md": "a25c5809261e484384943ffcdfa715f519b74919733b8df82462ebfa560666a6",
-    "scripts/verify-ui.py": "00dd1a493a13d188e2c51b3b0e014f605804443b655017098a6252f5495ec444",
+    "scripts/verify-ui.py": "7326844b55c13a671e7a07573839e58cf77ddd515e65094ecfc780dc6e11b1e4",
     "scripts/verify-in-vm.sh": "cc88cbb9afde9788d8154b4bb8501e975ffef039c96e452e355836e50ac4c3ba",
     ".github/workflows/ci.yml": "eeae3e2da1889165faffa3ec1471a9f4db6b3606cb2087e09260bd6a0c85d5b1",
     "Cargo.toml": "a78eb3be5b5b5c6da54a716d20c33baaec37563515026960bc90e296188ddd65",
@@ -2635,7 +2635,7 @@
     },
     {
       "path": "evidence/final-checklist-audit/report.json",
-      "sha256": "f07d1dad49b28fb3807fd7359679e6bd9f855e72e180e6167f4bc1c565e1feb7",
+      "sha256": "c0e5c87776faf27227761e1426561f0419bbe4ada4b9d6403985bbeeaa640ab8",
       "status": "complete",
       "recorded_sources": 37,
       "stale_or_missing_sources": [],
@@ -2658,7 +2658,7 @@
     },
     {
       "path": "evidence/final-closeout-audit/report.json",
-      "sha256": "dfe39b79a33d06a28cc350a6a19cdf5d063bce32c12279bcf1b19600b84425ff",
+      "sha256": "4050a2194eaf3f0bd0695adab2cc00dd6406aad58985efe755e19cce58cb0cf5",
       "status": "unspecified",
       "recorded_sources": 0,
       "stale_or_missing_sources": [],
@@ -2923,6 +2923,14 @@
       "completion_flags": {
         "checklist_item_5_complete": true
       }
+    },
+    {
+      "path": "evidence/kani-targeted-policy/report.json",
+      "sha256": "8a4e4a619a209f6752ff1c4d0b38ecbd973d7c54c3a0a29b31899f4bcb949d56",
+      "status": "limits_exercised_not_a_proof",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
     },
     {
       "path": "evidence/keyboard-admitted-chain/report.json",
@@ -3322,7 +3330,7 @@
     },
     {
       "path": "evidence/native-subtree-bitwuzla-capability/report.json",
-      "sha256": "c656e68ed6c9361321ba9d23c3f7bb8fb0f06bad018fd82b2ab38ea56cf58ffa",
+      "sha256": "d85b7e7a58d708daca05c56d804de9f047bbfac6a6aa88dfb8f6e4d1b7a5f523",
       "status": "incomplete_not_passed",
       "recorded_sources": 0,
       "stale_or_missing_sources": [],
@@ -4489,9 +4497,9 @@
     },
     {
       "path": "evidence/validation-chain/report.json",
-      "sha256": "7a7bfac700d180d4474f59768550a83ea49375882a328000c4a9406563c8258c",
+      "sha256": "01b307b6d5fc5e9f514208a97be81168a6b03855557c2881809bcb2980ca8cbf",
       "status": "unspecified",
-      "recorded_sources": 236,
+      "recorded_sources": 238,
       "stale_or_missing_sources": [],
       "completion_flags": {}
     },
@@ -4551,7 +4559,7 @@
     }
   ],
   "evidence_index_summary": {
-    "reports": 414,
+    "reports": 415,
     "with_stale_or_missing_recorded_sources": 241,
     "with_explicit_completion": 10
   },
@@ -4702,8 +4710,8 @@
                 "field": "sources",
                 "path": "scripts/closeout-baseline.sh",
                 "exists": true,
-                "expected_sha256": "324530f8c5033ff29ae0e1f245c756c0d47c3da32d6cf30666ec15ec19d9bc8e",
-                "actual_sha256": "324530f8c5033ff29ae0e1f245c756c0d47c3da32d6cf30666ec15ec19d9bc8e",
+                "expected_sha256": "398de616d2ab22cca1f120839c55a7df0b4cdd97c9520b949f5bece26d948c6d",
+                "actual_sha256": "398de616d2ab22cca1f120839c55a7df0b4cdd97c9520b949f5bece26d948c6d",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -5147,8 +5155,8 @@
                 "field": "sources",
                 "path": "scripts/closeout-baseline.sh",
                 "exists": true,
-                "expected_sha256": "324530f8c5033ff29ae0e1f245c756c0d47c3da32d6cf30666ec15ec19d9bc8e",
-                "actual_sha256": "324530f8c5033ff29ae0e1f245c756c0d47c3da32d6cf30666ec15ec19d9bc8e",
+                "expected_sha256": "398de616d2ab22cca1f120839c55a7df0b4cdd97c9520b949f5bece26d948c6d",
+                "actual_sha256": "398de616d2ab22cca1f120839c55a7df0b4cdd97c9520b949f5bece26d948c6d",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -5607,8 +5615,8 @@
                 "field": "sources",
                 "path": "scripts/closeout-baseline.sh",
                 "exists": true,
-                "expected_sha256": "324530f8c5033ff29ae0e1f245c756c0d47c3da32d6cf30666ec15ec19d9bc8e",
-                "actual_sha256": "324530f8c5033ff29ae0e1f245c756c0d47c3da32d6cf30666ec15ec19d9bc8e",
+                "expected_sha256": "398de616d2ab22cca1f120839c55a7df0b4cdd97c9520b949f5bece26d948c6d",
+                "actual_sha256": "398de616d2ab22cca1f120839c55a7df0b4cdd97c9520b949f5bece26d948c6d",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -6082,8 +6090,8 @@
                 "field": "sources",
                 "path": "scripts/closeout-baseline.sh",
                 "exists": true,
-                "expected_sha256": "324530f8c5033ff29ae0e1f245c756c0d47c3da32d6cf30666ec15ec19d9bc8e",
-                "actual_sha256": "324530f8c5033ff29ae0e1f245c756c0d47c3da32d6cf30666ec15ec19d9bc8e",
+                "expected_sha256": "398de616d2ab22cca1f120839c55a7df0b4cdd97c9520b949f5bece26d948c6d",
+                "actual_sha256": "398de616d2ab22cca1f120839c55a7df0b4cdd97c9520b949f5bece26d948c6d",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -6513,8 +6521,8 @@
                 "field": "sources",
                 "path": "scripts/closeout-baseline.sh",
                 "exists": true,
-                "expected_sha256": "324530f8c5033ff29ae0e1f245c756c0d47c3da32d6cf30666ec15ec19d9bc8e",
-                "actual_sha256": "324530f8c5033ff29ae0e1f245c756c0d47c3da32d6cf30666ec15ec19d9bc8e",
+                "expected_sha256": "398de616d2ab22cca1f120839c55a7df0b4cdd97c9520b949f5bece26d948c6d",
+                "actual_sha256": "398de616d2ab22cca1f120839c55a7df0b4cdd97c9520b949f5bece26d948c6d",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -7174,7 +7182,7 @@
     "completion_claimed": false,
     "static_audit_complete": true,
     "final_report_covers_head": true,
-    "final_report_basis": "8155fd6466738ddfc967f5db93276ae6bb150ba5",
+    "final_report_basis": "037c2d5fe5977655712f2a573e563a7ab8419d00",
     "material_paths_changed_since_final_report_basis": 0,
     "missing_required_sources": 0,
     "missing_required_evidence": 0,
@@ -7184,17 +7192,17 @@
   },
   "baseline_regression": {
     "status": "passed",
-    "started_at": "2026-11-04T11:47:33.410109+00:00",
-    "finished_at": "2026-11-04T11:49:09.839768+00:00",
+    "started_at": "2026-11-04T12:14:42.235721+00:00",
+    "finished_at": "2026-11-04T12:14:56.438525+00:00",
     "command": [
-      "<repo>/scripts/verify-in-vm.sh",
+      "/home/auth/Documents/jasper/jasper-ui-engine/scripts/verify-in-vm.sh",
       "env",
       "bash",
       "scripts/closeout-baseline.sh"
     ],
     "returncode": 0,
     "log": "evidence/final-closeout-audit/baseline.log",
-    "log_sha256": "517506968e817abedc2fafd56f8deba8b21ee8b0e676e9da9ebe8ce9a5583a91"
+    "log_sha256": "2a6f5161b2e75a530bdf4fadce038c6e6b3b696c414d027ef2c8028a54236d0b"
   },
   "final_gate": {
     "ready": true,
