@@ -1316,6 +1316,90 @@ impl NativeScene {
         self.frame_dirty = false;
         Some((pixels, damage))
     }
+    /// A source-visible node's device-pixel box, for sizing plugin paint output.
+    /// 源可见节点的设备像素框，用于确定插件绘制输出的尺寸。
+    pub(crate) fn node_pixel_box_from_host(
+        &self,
+        caller: u64,
+        version: u64,
+        id: NodeId,
+    ) -> Option<jasper_ui_engine::ui_plugin_gate::UiNodePixelBox> {
+        let bounds = self.node_bounds_from_host(caller, version, id)?;
+        let scale = self.document.as_ref()?.viewport().scale_f64();
+        jasper_ui_engine::ui_plugin_gate::node_pixel_box(
+            bounds.x(),
+            bounds.y(),
+            bounds.width(),
+            bounds.height(),
+            scale,
+        )
+    }
+    /// One frame with plugin layers above the scene. Every layer is admitted before any painting,
+    /// and the result is not a view frame: frame cache, damage base and dirty flag stay untouched.
+    /// 场景之上带插件层的一帧。所有层在绘制前全部准入；结果不是视图帧：帧缓存、损伤基准与脏标记都不变。
+    #[cfg(feature = "cpu-pending")]
+    pub(crate) fn render_cpu_with_paint_layers(
+        &mut self,
+        caller: u64,
+        version: u64,
+        layers: &[jasper_ui_engine::ui_plugin_gate::UiPaintLayer<'_>],
+        max_bytes: usize,
+    ) -> Option<Vec<u8>> {
+        use anyrender::PaintScene;
+        use jasper_ui_engine::ui_plugin_gate::validate_paint_commands;
+        use peniko::kurbo::{Affine, Rect};
+        let mut admitted = Vec::with_capacity(layers.len());
+        for layer in layers {
+            let node = self.node_pixel_box_from_host(caller, version, layer.node)?;
+            validate_paint_commands(layer.commands, node.width, node.height).ok()?;
+            admitted.push((node, layer.commands));
+        }
+        if caller != self.owner || version != self.scene_version {
+            return None;
+        }
+        let document = self.document.as_mut()?;
+        let (width, height) = document.viewport().window_size;
+        let bytes = crate::cpu_budget::cpu_frame_bytes(width, height, max_bytes)?;
+        let scale = document.viewport().scale_f64();
+        let pixels = anyrender::render_to_buffer::<anyrender_vello_cpu::VelloCpuImageRenderer, _>(
+            |scene| {
+                blitz_paint::paint_scene(
+                    &mut crate::glyph_skew::UprightSyntheticItalic {
+                        scene: &mut *scene,
+                        bold_aliases: &self.bold_aliases,
+                    },
+                    document,
+                    scale,
+                    width,
+                    height,
+                    0,
+                    0,
+                );
+                for (node, commands) in &admitted {
+                    for command in commands.iter() {
+                        let left = f64::from(node.x) + f64::from(command.x);
+                        let top = f64::from(node.y) + f64::from(command.y);
+                        let [red, green, blue, alpha] = command.rgba;
+                        scene.fill(
+                            peniko::Fill::NonZero,
+                            Affine::IDENTITY,
+                            peniko::Color::from_rgba8(red, green, blue, alpha),
+                            None,
+                            &Rect::new(
+                                left,
+                                top,
+                                left + f64::from(command.width),
+                                top + f64::from(command.height),
+                            ),
+                        );
+                    }
+                }
+            },
+            width,
+            height,
+        );
+        (pixels.len() == bytes).then_some(pixels)
+    }
     /// Some(true) while a possible visible change is not yet painted; None for a foreign
     /// caller or retired view. Hosts skip render calls while this is Some(false).
     /// 存在尚未绘制的可能可见变化时为 Some(true)；非归属调用方或已退役视图为 None。

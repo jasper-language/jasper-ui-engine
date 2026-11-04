@@ -80,6 +80,51 @@
 - 场景版本冲突策略：拒绝 vs 合并。
 - 零拷贝的适用场景与安全边界。
 - 无障碍批的跨线程顺序。
-- ABI 与 `.jaso` 模块/宿主能力的对齐。
+- ABI 与 `.jaso` 模块/宿主能力的对齐：本节之外的 `ui.*` 已按第 10 节单独定义，是否提升为公共 ABI 尚未决定。
 
 实现前先冻结本草案，并建立 ABI 一致性测试与模糊测试。
+
+## 10. UI 宿主命名空间 `ui.*`（版本化，已实现第 1 版）
+
+**`ui.*` 是 UI 宿主命名空间，独立版本化，不属于上文 Native ABI v1 核心。** 证明清单（`claude-closeout-proof-backlog.md` 的 CP 系列）闭合后，才决定是否提升为公共 ABI；在此之前第 1–9 节仍是草案，本节不代表它们已冻结。本节不改变 `.jaso` 二进制格式与装载器语义（格式与错误码见 jasper-os 仓库 `jaso/SPEC.md`，format 1），`ui.*` 只是该规范第 11 节允许的命名空间键，由本引擎解释。
+
+实现：`src/ui_plugin_gate.rs`（纯准入规则，始终编译）与 `src/ui_plugin_host.rs`（可选特性 `ui-plugin-pending`，复用 jasper-os 的 `jaso` crate，不复制解析器）。
+
+### 10.1 清单键
+
+| 键 | 取值 | 含义 |
+|---|---|---|
+| `ui.abi` | `1` | 本命名空间版本；语义变化必须升版本，未知版本拒绝 |
+| `ui.kind` | `paint-node` | 插件种类：为一个场景节点产出绘制命令；其他种类拒绝 |
+| `ui.paint` | 导出名 | 绘制入口；必须在 `core.exports` 中，不得是 `jaso_init` / `jaso_start` / `jaso_stop` |
+
+能力名：`core.requires` 必须请求 `ui.paint`。这是请求，由调用方授予；未授予报 `capability.denied`，未请求报清单错误。v1 不解释的其他 `ui.*` 键被忽略。
+
+### 10.2 平台与种类
+
+Native、`core.stage = runtime`，平台记录 `target = host`、`abi = c.v1`、`float_abi = hard`。目前只有 unix x86_64 宿主能映射代码，其他宿主明确报 `UnsupportedHost`（其他指令集需要指令缓存维护，尚无测试）。Managed、Hybrid 与 build/boot 文件报 `UnsupportedModule`。
+
+### 10.3 入口
+
+```c
+int32_t paint(const UiPaintRequestV1 *request, UiPaintCommandV1 *out, uint32_t capacity);
+
+struct UiPaintRequestV1 { uint32_t version /* = 1 */, size /* = 16 */, node_width, node_height; };
+struct UiPaintCommandV1 { uint32_t kind /* 1 = 填充矩形 */, x, y, width, height;
+                          uint8_t rgba[4]; uint32_t reserved[2] /* = 0 */; };   /* 32 字节 */
+```
+
+- 坐标与节点尺寸都是节点局部设备像素；`capacity` 当前为 64。
+- 返回值是写入的命令数，负值或大于 `capacity` 表示失败。
+- 命令必须非空且完全落在节点内，**越界拒绝，不裁剪**。任何一条违规，整份输出被拒绝，不部分绘制。
+- 模块经 `jaso.host.v1` 表（`log` / `alloc` / `dealloc`）使用宿主能力，不按名字导入符号。
+
+### 10.4 装载、生命周期与绘制
+
+- L1 按 `.jaso` 规范第 12.2 节执行：结构 → 信任 → 平台 → 运行时 → 依赖 → 能力 → 绑定，本引擎在此之后检查 `ui.*`，然后映射、重定位、设置 W^X 权限、`jaso_init`、`jaso_start`。失败不留映射，也不进模块表。
+- `stop` 已实现；已停止的插件不再被调用，名字不复用。卸载请求答复「推迟」（`plugin`）或「拒绝」（`system`），模块保持映射。`UiPluginHost` 析构是宿主收尾，不是卸载请求。
+- `SceneHostView::render_cpu_with_paint_layers` 把已校验命令画进同一 anyrender 场景，**位于整个场景之上**，不是树内 z 序。它不是视图帧：不读写帧缓存，不改变损伤基准和脏标记。GPU 路径尚未接通。
+
+### 10.5 信任边界
+
+插件在宿主进程内运行，**没有隔离**：信任只来自调用方给出的签名策略，能力是装载时比对的声明，不是沙箱。恶意或有缺陷的已签名插件可以破坏整个进程。入口崩溃、不返回或写坏内存都不在本节保证之内；命令校验只约束它经入口交回的内容。

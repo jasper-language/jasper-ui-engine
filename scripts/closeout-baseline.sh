@@ -20,6 +20,7 @@ run cargo fmt --all -- --check
 run cargo check --locked --all-targets
 run cargo check --locked --features native-engine-cpu --all-targets
 run cargo check --locked --features native-engine-cpu,gpu-pending --all-targets
+run cargo check --locked --features native-engine-cpu,ui-plugin-pack --all-targets
 run cargo test --locked
 
 if [[ -n "${JASPER_UI_TEST_FONT:-}" ]]; then
@@ -41,6 +42,7 @@ if [[ "${CLOSEOUT_RUN_NATIVE_INTEGRATION:-0}" == "1" ]]; then
         --test native_item5_journey \
         --test native_interaction_closure \
         --test native_accesskit_bridge
+    run cargo test --locked --features native-engine-cpu,ui-plugin-pack --test ui_plugin_acceptance
 fi
 
 if [[ "${CLOSEOUT_RUN_GPU:-0}" == "1" ]]; then

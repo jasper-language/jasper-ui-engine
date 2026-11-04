@@ -1,0 +1,13 @@
+verification results:: 3 verified, 1 errors
+error: postcondition not satisfied
+  --> <repo>/evidence/surface-render-gate-kernel/negative_ignore_generation.rs:33:13
+   |
+33 |   ...nsures result == (caller == surface_gate_model(self).0 && surface_gate_model(self).1 && generation == surface_gate_model(self).2),
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+34 |   ...eal(surface_gate_model);
+35 | / ...   caller == self.owner
+36 | | ...       && matches!(self.state, SurfaceState::Active)
+   | |_______________________________________________________- at the end of the function body
+
+error: aborting due to 1 previous error
+

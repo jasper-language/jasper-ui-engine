@@ -1,0 +1,28 @@
+verification results:: 0 verified, 1 errors
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+ --> <repo>/evidence/ui-plugin-count-kernel/negative_admit_over_capacity.rs:6:1
+  |
+6 | pub fn paint_count_admits(returned: i32, capacity: u32) -> (result: Option<u32>)
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: postcondition not satisfied
+  --> <repo>/evidence/ui-plugin-count-kernel/negative_admit_over_capacity.rs:7:13
+   |
+ 7 |       ensures match result {
+   |  _____________^
+ 8 | |         Some(count) => returned >= 0 && count as int == returned as int && count <= capacity,
+ 9 | |         None => returned < 0 || returned as int > capacity as int,
+10 | |     },
+   | |_____^ failed this postcondition
+...
+19 |       Some(count)
+   |       ----------- at the end of the function body
+
+error: possible arithmetic underflow/overflow
+  --> <repo>/evidence/ui-plugin-count-kernel/negative_admit_over_capacity.rs:16:16
+   |
+16 |     if count > capacity + 1 {
+   |                ^^^^^^^^^^^^
+
+error: aborting due to 2 previous errors
+

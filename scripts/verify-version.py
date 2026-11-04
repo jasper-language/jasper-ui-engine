@@ -740,6 +740,69 @@ pub closed spec fn surface_view_model(view: &Rgba8SurfaceView) -> (Seq<u8>, u32,
         "mutations": [("render-twice-per-period", "Some(last) => last >= tick,", "Some(last) => last > tick,"),
                       ("wake-when-clean", "        return Some(FramePace::Idle);", "        return Some(FramePace::RenderNow(now));")],
     },
+    "ui-plugin-rect": {
+        "source": "src/ui_plugin_gate.rs", "marker": "UI PLUGIN RECT", "property": "UI-PLUGIN-RECT-001",
+        "signature": "pub fn paint_rect_admits(x: u32, y: u32, width: u32, height: u32, node_width: u32, node_height: u32) -> bool {",
+        "contract": """pub fn paint_rect_admits(x: u32, y: u32, width: u32, height: u32, node_width: u32, node_height: u32) -> (result: bool)
+    ensures result == (width > 0 && height > 0
+        && x as int + width as int <= node_width as int
+        && y as int + height as int <= node_height as int),
+{""",
+        "function_count": 1, "depends": [], "evidence": "ui-plugin-rect-kernel",
+        "scope": "plugin fill admission against node extent over all u32 inputs; not the paint output itself, blending or rasterization",
+        "mutations": [("admit-empty", "    width > 0\n        && height > 0\n        && ", "    "),
+                      ("off-by-one-x", "x <= node_width - width", "x <= node_width - width + 1")],
+    },
+    "ui-plugin-count": {
+        "source": "src/ui_plugin_gate.rs", "marker": "UI PLUGIN COUNT", "property": "UI-PLUGIN-COUNT-001",
+        "signature": "pub fn paint_count_admits(returned: i32, capacity: u32) -> Option<u32> {",
+        "contract": """pub fn paint_count_admits(returned: i32, capacity: u32) -> (result: Option<u32>)
+    ensures match result {
+        Some(count) => returned >= 0 && count as int == returned as int && count <= capacity,
+        None => returned < 0 || returned as int > capacity as int,
+    },
+{""",
+        "function_count": 1, "depends": [], "evidence": "ui-plugin-count-kernel",
+        "scope": "entry return value to command count over all i32/u32 inputs; a plugin's truthfulness about buffer contents is not assumed, contents are validated separately",
+        "mutations": [("admit-negative", "    if returned < 0 {\n        return None;\n    }\n", ""),
+                      ("admit-over-capacity", "if count > capacity {", "if count > capacity + 1 {")],
+    },
+    "ui-plugin-reloc": {
+        "source": "src/ui_plugin_gate.rs", "marker": "UI PLUGIN RELOC", "property": "UI-PLUGIN-RELOC-001",
+        "signature": "pub fn relocation_value(base: u64, offset: u32, addend: u64, image_size: u32) -> Option<u64> {",
+        "contract": """pub fn relocation_value(base: u64, offset: u32, addend: u64, image_size: u32) -> (result: Option<u64>)
+    ensures match result {
+        Some(value) => offset as int + 8 <= image_size as int && addend <= image_size as u64
+            && value as int == base as int + addend as int,
+        None => offset as int + 8 > image_size as int || addend > image_size as u64
+            || base as int + addend as int > u64::MAX as int,
+    },
+{""",
+        "function_count": 1, "depends": [], "evidence": "ui-plugin-reloc-kernel",
+        "scope": "base-plus-addend site and value bounds over all inputs; not the mmap, mprotect or the raw write that follows, which are outside Verus and Miri",
+        "mutations": [("site-past-image", "offset > image_size - 8", "offset > image_size"),
+                      ("target-past-image", "addend > image_size as u64 || ", "")],
+    },
+    "surface-state-type": {"source": "src/surface_lifecycle.rs", "marker": "SURFACE STATE", "suffix": "TYPE", "signature": None, "depends": [], "internal_only": True},
+    "surface-lifecycle-storage-type": {"source": "src/surface_lifecycle.rs", "marker": "SURFACE LIFECYCLE STORAGE", "suffix": "TYPE", "signature": None, "depends": ["surface-state-type"], "internal_only": True},
+    "surface-render-gate": {
+        "source": "src/surface_lifecycle.rs", "marker": "SURFACE RENDER GATE", "property": "UI-SURFACE-RENDER-GATE-001",
+        "signature": "pub fn render_allowed(&self, caller: u64, generation: u64) -> bool {",
+        "spec_prelude": """pub closed spec fn surface_gate_model(s: &SurfaceLifecycle) -> (u64, bool, u64) {
+    (s.owner, s.state is Active, s.generation)
+}""",
+        "contract": """pub fn render_allowed(&self, caller: u64, generation: u64) -> (result: bool)
+    ensures result == (caller == surface_gate_model(self).0 && surface_gate_model(self).1 && generation == surface_gate_model(self).2),
+{ reveal(surface_gate_model);""",
+        "extra_annotations": [
+            ("pub(crate) fn active_for_owner(&self, caller: u64) -> bool {", "pub(crate) fn active_for_owner(&self, caller: u64) -> (result: bool) ensures result == (caller == surface_gate_model(self).0 && surface_gate_model(self).1), { reveal(surface_gate_model);"),
+        ],
+        "function_count": 2, "depends": ["surface-lifecycle-storage-type"], "evidence": "surface-render-gate-kernel",
+        "scope": "render admission decided by exact owner, active state and generation; not lifecycle transitions, generation monotonicity or host resource replacement",
+        "mutations": [("ignore-state", "\n            && matches!(self.state, SurfaceState::Active)", ""),
+                      ("ignore-generation", "\n            && self.generation == generation", ""),
+                      ("foreign-active", "caller == self.owner && matches!(self.state, SurfaceState::Active)", "matches!(self.state, SurfaceState::Active)")],
+    },
     "font-weight": {
         "source": "src/native_adapter/native_fonts.rs", "marker": "FONT WEIGHT", "property": "UI-FONT-WEIGHT-001",
         "signature": "pub fn font_weight_admits(weight: u16) -> bool {",

@@ -26,6 +26,8 @@
 | `vello` / `vello_cpu` | GPU/CPU 2D 渲染候选 | 以 crate 为准（通常 Apache-2.0/MIT） | API 成熟度、功能兼容表、回退 |
 | `parley` | 富文本排版/测量 | 以 crate 为准 | 字体回退、CJK/emoji/RTL、线程 |
 | `accesskit` | 原生无障碍桥 | MIT / Apache-2.0 | 平台支持、语义树 |
+| `jaso`（jasper-os，锁定提交） | `.jaso` 读取、信任、模块表；可选 `ui-plugin-pending` | Apache-2.0 | 格式 beta 期间可能升号 |
+| `libc` | 插件映像 `mmap` / `mprotect`；可选 `ui-plugin-pending` | MIT / Apache-2.0 | 仅 unix |
 | `image` | 位图解码 | MIT / Apache-2.0 | 编码器范围、内存上限 |
 | `resvg` / `usvg` | 静态 SVG | **MPL-2.0** | 与 Apache-2.0 兼容评审、NOTICE、文件级 copyleft |
 

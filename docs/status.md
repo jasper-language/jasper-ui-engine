@@ -27,6 +27,7 @@
 | 桌面输入映射 | `desktop.rs`、`desktop` | winit 鼠标/键盘/滚轮/IME/焦点规范化；映射与路由不等于完整编辑器 |
 | 桌面窗口/软件呈现 | `examples/window.rs` | winit + softbuffer 原生 CPU 窗口；指针、滚轮、命令键、IME 显示与焦点恢复已接公共入口，点击触发版本化视觉更新；真实外部服务/系统无障碍/合成器仍未验收 |
 | GPU 选择与枚举 | `graphics.rs`、`gpu_wgpu.rs`、`gpu` | 策略、回退说明与真实适配器枚举；旧引擎无 GPU 绘制管线或 device-lost 恢复 |
+| `.jaso` UI 插件宿主 | `ui_plugin_gate.rs`、`ui_plugin_host.rs`、`ui-plugin-pending`、`tests/ui_plugin_acceptance.rs` | `ui.*` 第 1 版（UI 宿主命名空间，不属于 Native ABI v1 核心）：真实编译的原生插件经 L1 装入并画进一帧 CPU 无头画面，错误平台/缺能力/篡改等被拒；仅 unix x86_64，进程内无隔离，层在整个场景之上，GPU 路径未接通（见 `abi.md` 第 10 节） |
 | 原生 GPU 无头渲染 | `native_adapter/gpu_render.rs`、`gpu-pending` | Vello hybrid 于 wgpu 离屏渲染并读回，仅在软件 Vulkan（llvmpipe）实测；无窗口呈现、device-lost 恢复、GPU 损伤或真实硬件验收（见 UI10 节） |
 | 流水线 | `engine.rs` | 每帧完整布局/绘制/编码/提交/呈现，无完整增量失效与调度 |
 | 最小宿主接口 | `platform.rs` | 尺寸/缩放/重绘/光标；不等于完整 UiHost 或已可用的系统内置服务 |
@@ -895,3 +896,5 @@ CP-02 仍无判定：只选一个断言（切片后 30 个 VCC）在 45 分钟�
 ## 2026-11-04：Kani 改到正式版发版时验证
 
 这条取代同日的定点 Kani 做法。`verify-ui.py` 默认不跑 Kani，该阶段状态为 `deferred_to_release`，登记写 `Kani：发版时验证`，不因它判未完成；发版时用 `--kani-harness` 或 `--kani-full` 显式打开。CI 不再安装 Kani。CP-01 和 CP-02 的 Kani / Bitwuzla 路径移到发版清单，义务未解除，CP-02 不依赖 Kani 的部分继续。现有 harness 和旧证据不删。没有生产代码改动。
+
+2026-11-04 `.jaso` UI 插件（JB-U1）：`ui.*` 第 1 版写入 `abi.md` 第 10 节，明确为 UI 宿主命名空间，不属于 Native ABI v1 核心。真实编译的原生插件经 L1 装入并画进一帧 CPU 无头画面，负向用例见 `verification.md`。未完成：GPU 路径、树内 z 序、x86_64 Linux 以外的宿主、进程隔离。`ui.*` 是否提升为公共 ABI 待 CP 系列闭合后决定。

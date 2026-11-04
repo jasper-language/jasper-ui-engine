@@ -1,0 +1,11 @@
+verification results:: 3 verified, 1 errors
+error: postcondition not satisfied
+  --> <repo>/evidence/surface-render-gate-kernel/negative_foreign_active.rs:43:82
+   |
+43 | ...ub(crate) fn active_for_owner(&self, caller: u64) -> (result: bool) ensures result == (caller == surface_gate_model(self).0 && surface_gate_model(self).1), {...
+   |                                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+44 | ...   matches!(self.state, SurfaceState::Active)
+   |       ------------------------------------------ at the end of the function body
+
+error: aborting due to 1 previous error
+

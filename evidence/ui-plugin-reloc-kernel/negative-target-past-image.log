@@ -1,0 +1,18 @@
+verification results:: 0 verified, 1 errors
+error: postcondition not satisfied
+  --> <repo>/evidence/ui-plugin-reloc-kernel/negative_target_past_image.rs:7:13
+   |
+ 7 |       ensures match result {
+   |  _____________^
+ 8 | |         Some(value) => offset as int + 8 <= image_size as int && addend <= image_size as u64
+ 9 | |             && value as int == base as int + addend as int,
+10 | |         None => offset as int + 8 > image_size as int || addend > image_size as u64
+11 | |             || base as int + addend as int > u64::MAX as int,
+12 | |     },
+   | |_____^ failed this postcondition
+...
+20 |       Some(base + addend)
+   |       ------------------- at the end of the function body
+
+error: aborting due to 1 previous error
+

@@ -9,7 +9,8 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
-jasper-ui-engine = { path = "..", default-features = false }
+jasper-ui-engine = { path = "..", default-features = false, features = ["ui-plugin-pack"] }
+jaso = { git = "https://github.com/jasper-language/jasper-os", rev = "0f1e5c1b70dea503bceee33a745c2c6f312a9824", features = ["pack"] }
 jasper-ui-read-verification = { path = "../verification/read-boundary" }
 jasper-ui-host-surface-verification = { path = "../verification/host-surface" }
 
@@ -30,6 +31,13 @@ bench = false
 [[bin]]
 name = "host_surface"
 path = "fuzz_targets/host_surface.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "ui_plugin_gate"
+path = "fuzz_targets/ui_plugin_gate.rs"
 test = false
 doc = false
 bench = false

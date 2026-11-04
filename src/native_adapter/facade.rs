@@ -788,6 +788,19 @@ impl SceneHostView {
     pub fn frame_pace(&self,owner:u64,presented:Option<u64>,origin:u64,interval:u64,now:u64)->Option<FramePace> {
         crate::frame_schedule::frame_pace(self.inner.needs_frame(owner)?,presented,origin,interval,now)
     }
+    /// Device-pixel box of a source-visible node; the size a `paint-node` plugin paints into.
+    /// 源可见节点的设备像素框；`paint-node` 插件绘制的目标尺寸。
+    pub fn node_pixel_box(&self,owner:u64,version:u64,node:NodeId)->Option<crate::ui_plugin_gate::UiNodePixelBox> {
+        self.inner.node_pixel_box_from_host(owner,version,node)
+    }
+    /// One RGBA8 frame with validated plugin layers above the scene. None when any layer leaves
+    /// its node or names a node without bounds; no partial frame. Frame cache and damage are untouched.
+    /// 场景之上带已校验插件层的一帧 RGBA8。任一层超出节点或节点无边界时为 None，不产出部分帧；
+    /// 帧缓存与损伤不受影响。
+    #[cfg(feature="cpu-pending")]
+    pub fn render_cpu_with_paint_layers(&mut self,owner:u64,version:u64,layers:&[crate::ui_plugin_gate::UiPaintLayer<'_>],budget:usize)->Option<Vec<u8>> {
+        self.inner.render_cpu_with_paint_layers(owner,version,layers,budget)
+    }
     #[cfg(feature="cpu-pending")]
     pub fn render_to_surface(&mut self,owner:u64,version:u64,bytes:&mut [u8],stride:usize,budget:usize)->bool {
         self.inner.render_to_host_surface(owner,version,bytes,stride,budget)

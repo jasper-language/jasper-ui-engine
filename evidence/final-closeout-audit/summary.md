@@ -2,8 +2,8 @@
 
 This report is an audit snapshot, not a delivery acceptance record.
 
-- branch: `dev/ui-kani-release-only`
-- commit: `0041338a2df3ebfc806293116bd93ddce544912a`
+- branch: `dev/ui-jaso-plugin`
+- commit: `90711502eb971ba0813d9611f154d3677dcf2f09`
 - explicit item 1-5 completions: 5/5
 - final report materially covers HEAD: `true`
 - missing required evidence: 0
@@ -11,7 +11,7 @@ This report is an audit snapshot, not a delivery acceptance record.
 - stale/missing recorded source hashes: 0
 - branch refs included: `included`
 - tool configuration: `passed`
-- evidence reports indexed: 415
+- evidence reports indexed: 419
 
 ## Checklist readings
 

@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "kind": "jasper-ui-closeout-audit",
-  "generated_at": "2026-11-04T12:25:00.037802+00:00",
+  "generated_at": "2026-11-04T17:04:47.757329+00:00",
   "claim": "audit only; no checklist completion or whole-engine acceptance is claimed",
   "git": {
-    "branch": "dev/ui-kani-release-only",
-    "commit": "0041338a2df3ebfc806293116bd93ddce544912a",
+    "branch": "dev/ui-jaso-plugin",
+    "commit": "90711502eb971ba0813d9611f154d3677dcf2f09",
     "dirty_paths": []
   },
   "final_audit": {
@@ -15,7 +15,7 @@
     "recorded_status": "complete",
     "recorded_completed_items": 6,
     "covers_head": true,
-    "basis_commit": "f53fc78b072dbe335c32e37e447963159bad7811",
+    "basis_commit": "09dc4438d6b680ffed22b9584143283d0ae87888",
     "material_changed_since_basis": [],
     "references": [
       {
@@ -79,20 +79,20 @@
   },
   "audit_inputs": {
     "scripts/audit-closeout.py": "2c5afa2a005cdd54c9c70ef51409699b3e01188be1560ef48a8dd9c01d5480f9",
-    "scripts/closeout-baseline.sh": "398de616d2ab22cca1f120839c55a7df0b4cdd97c9520b949f5bece26d948c6d",
+    "scripts/closeout-baseline.sh": "795348ae338977f144bbadfae72c7e729f2c0d88f20c344cd08b56f8b0abbba4",
     "scripts/test-audit-closeout.py": "34fa073556b494d37030b4d0372260030a205ec2dfd38bf47022c01dea546e3a",
     "docs/claude-closeout-proof-backlog.md": "8248671b13cf87f1fcd8610714b6e40d364201939b77366fb72826d1afc82b65",
     "docs/closeout.md": "a25c5809261e484384943ffcdfa715f519b74919733b8df82462ebfa560666a6",
-    "scripts/verify-ui.py": "f61fcdce369475900b2562193953389649de0bbc9cead49859e6844d9491fc52",
+    "scripts/verify-ui.py": "bc196f3c27d83e23d69d044e3ab99a9c8f81b6cc508f5a710ff4095fb9db20f5",
     "scripts/verify-in-vm.sh": "cc88cbb9afde9788d8154b4bb8501e975ffef039c96e452e355836e50ac4c3ba",
     ".github/workflows/ci.yml": "bf0529c8601c8a0d57ca6ea2d22c7aeb41a7855ebbd54d20518497f10e5427d0",
-    "Cargo.toml": "a78eb3be5b5b5c6da54a716d20c33baaec37563515026960bc90e296188ddd65",
-    "Cargo.lock": "5b95b93dc20406ae8fa6e7e8c43bd23803450c7f34c021b19d3de3f05f4fe296"
+    "Cargo.toml": "5b9dbf1d93861ef79376fa701decf112e64f6297a34d1a6732867a367c88f83b",
+    "Cargo.lock": "7f5d2a1a2dd065f2175182e0775a3eb22c47dda25666f463916b850585774425"
   },
   "evidence_index": [
     {
       "path": "evidence/access-actions-kernel/report.json",
-      "sha256": "7203adf641506699bbe10d573291b7c29e9c4073b48854c21414e8af0daa6840",
+      "sha256": "b51c30575979cc708a3d5876a0e7c677221ba9b5ba0b0ea7db9fc12f85b7ba43",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -100,7 +100,7 @@
     },
     {
       "path": "evidence/access-change-kernel/report.json",
-      "sha256": "885c0cd72cced16f1257a7f06b6a731febebd505d9078c19df3bb8481ed9489b",
+      "sha256": "26798b1d16d249d64559159ad3c468473f1542f8af0961f620d2714e6dd8463c",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -108,7 +108,7 @@
     },
     {
       "path": "evidence/access-request-kernel/report.json",
-      "sha256": "2ca26de4e738feabe12ab17277789005255e71e6324c56f342ba7dce73a4bb7b",
+      "sha256": "ea0405ff473e2d5b4087be2f740e4a205db0693293e81199827e186e097e8f16",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2161,7 +2161,7 @@
     },
     {
       "path": "evidence/bold-alias-kernel/report.json",
-      "sha256": "3834a1e05689324b7282f2191f3174ec5d05d292b862e8d44519219a2643c507",
+      "sha256": "cffd5da032ea4f3c92413e4bd6daac361ff4a8e2f42a753756647d32a3d135ee",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2169,7 +2169,7 @@
     },
     {
       "path": "evidence/bounded-payload-kernel/report.json",
-      "sha256": "9788d7577a6c149a5787ad76e5116f4968fc553322276b837dacb6b22b35b2cb",
+      "sha256": "78480c9c50ffb096afc74be4f0a88954fab7bf57e1dfc15fc12a4438d5aa96cc",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2177,7 +2177,7 @@
     },
     {
       "path": "evidence/byte-read-kernel/report.json",
-      "sha256": "a74b395b728b7ba786534e820c4e7332cea0fd35d9aaaaf2672c64e663058bc8",
+      "sha256": "dec120f54c9adced3db3d8147a413a81933dc50100531ba74d9ec93744f2a7e5",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2185,7 +2185,7 @@
     },
     {
       "path": "evidence/bytes-slot-kernel/report.json",
-      "sha256": "67850a54e3b89f7efe0042cf0c85b7b7e4977998f6ff46aac90a87dada239747",
+      "sha256": "2d4b148d488f777b8684fd39b66d3e4ffd8cdae230df20107550bd2b54d8b43f",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2193,7 +2193,7 @@
     },
     {
       "path": "evidence/canvas-import-kernel/report.json",
-      "sha256": "f94d47f193bd0b9dabb63a9855488da3e68686a19918143dcc974920cfa645c4",
+      "sha256": "9c1793424a31a6a569c3f597df6a99edeccd415b62361c8007f29441724c1ab6",
       "status": "proved",
       "recorded_sources": 3,
       "stale_or_missing_sources": [],
@@ -2201,7 +2201,7 @@
     },
     {
       "path": "evidence/canvas-pixel-kernel/report.json",
-      "sha256": "253cef004d6df66c6a69256a7a2b3f4f33d48f2f2058bf8b9c1a545a958a8f02",
+      "sha256": "ee06181cdc0bb6f02c4e7a99f23d9cd9183cdc205387fe7246b061aefd86ea41",
       "status": "proved",
       "recorded_sources": 4,
       "stale_or_missing_sources": [],
@@ -2270,7 +2270,7 @@
     },
     {
       "path": "evidence/capture-query-kernel/report.json",
-      "sha256": "ddb7272dd1305817a404f0aab6650ee1fa92a7a84097b891ac2a6a2e7ffe18e4",
+      "sha256": "7e3d84b94c321ee353abadcf1f207d534574430f76d3bc20b48f79ff0183d893",
       "status": "proved",
       "recorded_sources": 4,
       "stale_or_missing_sources": [],
@@ -2396,7 +2396,7 @@
     },
     {
       "path": "evidence/color-construct-kernel/report.json",
-      "sha256": "1f73b38cc846f6e08820ce980e5184e0025e7150fdb7f729a9742fd8f0a69e65",
+      "sha256": "4b7e179088a1f66f0d28946144f00076c81f1b1fec3219bb73ac04f1738d1e8f",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2404,7 +2404,7 @@
     },
     {
       "path": "evidence/command-modifier-kernel/report.json",
-      "sha256": "6983809ecf7e6d52968ad3e7ba041036c5209a8aedfac1ebd9f5b4ab501361cf",
+      "sha256": "f2c3077b89f70e9ab8b276d4012fe3b45dc450805ea260e37c631c71f0615c7f",
       "status": "proved",
       "recorded_sources": 2,
       "stale_or_missing_sources": [],
@@ -2412,7 +2412,7 @@
     },
     {
       "path": "evidence/component-update-admission-kernel/report.json",
-      "sha256": "8247b66fda195d8591e2e0412ab641904944c377f38ec1bfadd79809de1ae210",
+      "sha256": "2070ea10205244e375d5013600b096df9057c9926ce2cb62c36bdfad88dc5224",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2541,7 +2541,7 @@
     },
     {
       "path": "evidence/cursor-read-kernel/report.json",
-      "sha256": "170dd889b01dc9db1b2c115d825efaa80d623255e07a37a3f8a1193c5be57f9b",
+      "sha256": "e32b5cda078a61b66ff03c101e0f88f31b092e8982001a3cf4f9a648ba4a3680",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2549,7 +2549,7 @@
     },
     {
       "path": "evidence/damage-rect-kernel/report.json",
-      "sha256": "04527fbad31fa44b45f250df8e81767ad34bdfab1d300ac57e4c9652647eed00",
+      "sha256": "f1b6e26ad898ef14424568f94bd79cce2ec8f45b63636299909d579080b49a51",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2557,7 +2557,7 @@
     },
     {
       "path": "evidence/damage-span-kernel/report.json",
-      "sha256": "7d1159de665e0ba172b23e022e4323314ef5d98d578194f644f39eb014c4b995",
+      "sha256": "b1d54e455dc23ea472b4c49a9c0e1f7cc92386c9dba08e2f1daf69187ae81767",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2573,7 +2573,7 @@
     },
     {
       "path": "evidence/decode-range-kernel/report.json",
-      "sha256": "8dda57e1f6be8194e92d250f540f571c7f5f72c336c4010720944d2379600333",
+      "sha256": "316970a18f3c97753191b8fb699158ffb9ad3455ad5f8da4ddfe6f4682220bac",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2611,7 +2611,7 @@
     },
     {
       "path": "evidence/desktop-pointer-kernel/report.json",
-      "sha256": "1a1bea0146d5404c2c890725faa927b467b42a3f0759b81ca8cc6e372a4b873b",
+      "sha256": "4fa072dd94e0d19ae2741c58af63679346721f7185eafd715d12ef50833e5552",
       "status": "proved",
       "recorded_sources": 3,
       "stale_or_missing_sources": [],
@@ -2619,7 +2619,7 @@
     },
     {
       "path": "evidence/desktop-pointer-state-kernel/report.json",
-      "sha256": "c00b2bf0a25bf90337ef514ffcf973cc42960198dd769a69c64d0a8686c2484b",
+      "sha256": "3f4a928044b2604310e28d281381894edbe981eb74bd22c706e5fb06868dac8b",
       "status": "proved",
       "recorded_sources": 3,
       "stale_or_missing_sources": [],
@@ -2635,7 +2635,7 @@
     },
     {
       "path": "evidence/final-checklist-audit/report.json",
-      "sha256": "7cdb8115996c607e3dcfa4260e70458422903b49da70cb9e448310b0acd5497f",
+      "sha256": "b847cb507307c80b82775ef2eb1e5efeb166d8a5d5327a4781128fe680f2bc19",
       "status": "complete",
       "recorded_sources": 37,
       "stale_or_missing_sources": [],
@@ -2658,7 +2658,7 @@
     },
     {
       "path": "evidence/final-closeout-audit/report.json",
-      "sha256": "64afebbda17ead5198a2680fe1d565c3c22f71b9e47a450f06e8a74f607bf5fb",
+      "sha256": "c78c2b9098fb1e60c7ec125a58d936ec5b4ffe173ce519359c6370c3f0236fc4",
       "status": "unspecified",
       "recorded_sources": 0,
       "stale_or_missing_sources": [],
@@ -2666,7 +2666,7 @@
     },
     {
       "path": "evidence/focus-cleanup-kernel/report.json",
-      "sha256": "7ed042fb1a27723f134afac624fb412142a8b165497da46d237c36400890f8c0",
+      "sha256": "9b9856bf4526918ac354615fa44024aae85c41827bb3c7f6cfd26755cf685473",
       "status": "proved",
       "recorded_sources": 2,
       "stale_or_missing_sources": [],
@@ -2727,7 +2727,7 @@
     },
     {
       "path": "evidence/focus-select-kernel/report.json",
-      "sha256": "62ad38e4e526aa7f8a364f6bfae8c06d372acabf07a7da3ef72e4c9608cd0430",
+      "sha256": "8257e782cc5a6653f9aa9427ae45d850ebd31d21e3f2ce9279fdec832134df20",
       "status": "proved",
       "recorded_sources": 2,
       "stale_or_missing_sources": [],
@@ -2735,7 +2735,7 @@
     },
     {
       "path": "evidence/font-family-kernel/report.json",
-      "sha256": "4a1bd92bdc849f2a0e153820288f1d45354e018b48b048917c04265805497ad7",
+      "sha256": "0864fedc2e4fb540f1babae10d48c8621bde3805ee51a5fea0d48661991fd501",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2743,7 +2743,7 @@
     },
     {
       "path": "evidence/font-order-kernel/report.json",
-      "sha256": "fe74b915ffa85bf87b6e741eb4b3e1da9c5f5c1a82a99f6d6d901391c6548d14",
+      "sha256": "8c217083626dc62d01ece59712174668e408c4350be2ed72d60a8ca2280407d9",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2751,7 +2751,7 @@
     },
     {
       "path": "evidence/font-weight-kernel/report.json",
-      "sha256": "8d4163e77cecb628b4b1c2f5f2513258841ee8f337448546dcc0cf2795ea42ce",
+      "sha256": "fe7020c4249c7efae7bab7d042ea1dd4cfde27806a71dafe5d05cbaee7df619c",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2759,7 +2759,7 @@
     },
     {
       "path": "evidence/frame-pace-kernel/report.json",
-      "sha256": "2bf347a51537473dd54196f29cbd3e1aed9ee395a5090b7c8fae8ea1d5341dc6",
+      "sha256": "84585ffa29115285352dec775bb87ecffe5cdf8699703cafb97d14a621705252",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2767,7 +2767,7 @@
     },
     {
       "path": "evidence/frame-reuse-kernel/report.json",
-      "sha256": "8e02aa04bb3de8a37f5bdcf70064da8f2f48ab4cee8bcf957ca4b7f239f28b9b",
+      "sha256": "817a86cc693103712dcbea6f0574220c4a52d3ed32b376fb3dd6f00ca1067a1b",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2775,7 +2775,7 @@
     },
     {
       "path": "evidence/frame-tick-kernel/report.json",
-      "sha256": "3e550ec26e24b8310683ca24b554ce728a75a9dca94945be1b859d54bb22c3ca",
+      "sha256": "dcaa7067a91f917e558a1d80f6cf6be4c48e48455de000f1e2128b57ba9b30db",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2796,7 +2796,7 @@
     },
     {
       "path": "evidence/glyph-skew-kernel/report.json",
-      "sha256": "d2893a38fcdb08d639453269ee744c8e6bb568854605eff8f9b5f13ab153f60b",
+      "sha256": "b52eb8fd4a226a64b8578c9a58f3b8a46515aac4bd54f2510575380b8f9ea913",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2804,7 +2804,7 @@
     },
     {
       "path": "evidence/gpu-readback-kernel/report.json",
-      "sha256": "36e2dd55101c584867ab4a498329703192182008e420449c9feda020c77ee131",
+      "sha256": "9733886a18e66e9189bba7c7a360d860b5ab8ff1e88efb99c0f92a6f72e9b88b",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2812,7 +2812,7 @@
     },
     {
       "path": "evidence/handle-kernel/report.json",
-      "sha256": "4a77ba5deecce244d25520a059c764656803e7d56f33dcab26dba514568c8f08",
+      "sha256": "f254bf0c01a847a0dc42de106399586b578933ef041abb9a362f01e321dcd013",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2820,7 +2820,7 @@
     },
     {
       "path": "evidence/header-read-kernel/report.json",
-      "sha256": "a0daaf9fcc971cf5719092c7cdf0dcb01781db195a7e2bc113aa89858a719326",
+      "sha256": "3066df3a9af292ad232a92e742732df2c6b3322cf3c60623bc5f3f8728ead2a7",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2849,7 +2849,7 @@
     },
     {
       "path": "evidence/hover-retire-kernel/report.json",
-      "sha256": "91a3da4e66e5516ba24bc5fe0a1bb5e3a8f155a0c0ca3bfac74631730de79ede",
+      "sha256": "84014d1ae79ebd339a6c372607f4b59c7c932c7c0930cbad1ba9e5c13e83a183",
       "status": "proved",
       "recorded_sources": 3,
       "stale_or_missing_sources": [],
@@ -2868,7 +2868,7 @@
     },
     {
       "path": "evidence/hover-update-kernel/report.json",
-      "sha256": "fd84638c6ffdd742ceffca836d5978bde3aa8c915419999585dc5bb09890ba63",
+      "sha256": "0d84e9c9447372bdc181a13926c1bb4441b71600d79515df02511f1fc8080dd6",
       "status": "proved",
       "recorded_sources": 2,
       "stale_or_missing_sources": [],
@@ -2908,7 +2908,7 @@
     },
     {
       "path": "evidence/input-retire-kernel/report.json",
-      "sha256": "94713891d0a63246b7038557efbd5c2f725027e3d455ba26585341cdaec33508",
+      "sha256": "9078250d51576f6a35e92b880c0c7540dc921312b01b2fa348e36ca5b073841c",
       "status": "proved",
       "recorded_sources": 4,
       "stale_or_missing_sources": [],
@@ -2955,7 +2955,7 @@
     },
     {
       "path": "evidence/keyboard-focus-kernel/report.json",
-      "sha256": "1bf523e789ede33647ec8b71ac2a6615a75af5cb1bb6f157428a06b947e5c59e",
+      "sha256": "509ff309f09e70a3e692ae5046ac9340b5fa475f3297db7d4c5e27db42e2bbbd",
       "status": "proved",
       "recorded_sources": 3,
       "stale_or_missing_sources": [],
@@ -3169,6 +3169,7 @@
       "status": "engineering_scope_passes_full_formal_transaction_pending",
       "recorded_sources": 9,
       "stale_or_missing_sources": [
+        "Cargo.toml",
         "src/native_adapter/native_scene.rs",
         "tests/native_frame_damage.rs",
         "tests/native_frame_schedule.rs"
@@ -3273,6 +3274,8 @@
       "stale_or_missing_sources": [
         "examples/gpu_window.rs",
         "examples/window.rs",
+        "fuzz/Cargo.lock",
+        "fuzz/Cargo.toml",
         "scripts/capture-window-xvfb.sh",
         "src/host_capabilities.rs",
         "src/native_adapter/render_host.rs",
@@ -3416,7 +3419,7 @@
     },
     {
       "path": "evidence/pixel-convert-kernel/report.json",
-      "sha256": "6ff0640fae7cd460cb4dfa4407885eecf12d9389481a36fad43e73ca89df5f9a",
+      "sha256": "b23abdcab99a7649f49ce3ae38875fab8576aa8d25305e8cb15f775d8a1c5f9a",
       "status": "proved",
       "recorded_sources": 2,
       "stale_or_missing_sources": [],
@@ -3424,7 +3427,7 @@
     },
     {
       "path": "evidence/pixel-pack-kernel/report.json",
-      "sha256": "2cb570c9075398361f57e1a666375296b89593d7c1650891de6a738e60478dd1",
+      "sha256": "4d519d599a75e6e7be46ab6a5deaec5fcc0de2c594056c65cd43c1bf58e86436",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3440,7 +3443,7 @@
     },
     {
       "path": "evidence/pointer-order-kernel/report.json",
-      "sha256": "e38795ac8df0d00461f37185b918d2e301e0ae6347f507ffbf3d6fd9fde74be7",
+      "sha256": "0a3f0b7176a86d074c9e2af13511d1b4fcae5e68fd327445618e56eccd9045dd",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3472,7 +3475,7 @@
     },
     {
       "path": "evidence/resource-gate-kernel/report.json",
-      "sha256": "c81cd423053e2c3af2b39595b90f1cc60983d8eeb1ad9a2093fe4116aa951991",
+      "sha256": "4fe16dfa48663009fb6e0ee2afff21fc5b7c31e56e9e714433cdac7e7ccdca54",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3488,7 +3491,7 @@
     },
     {
       "path": "evidence/role-activation-kernel/report.json",
-      "sha256": "1eae1e2b005d9f3b30d0592b418be16869d0249f2cb4120971040fbab8780f92",
+      "sha256": "d1e8dea7bac8357a9de8a69f9075b106d07173289af3d60f97c61605f9857ca5",
       "status": "proved",
       "recorded_sources": 2,
       "stale_or_missing_sources": [],
@@ -3496,7 +3499,7 @@
     },
     {
       "path": "evidence/scalar-read-kernel/report.json",
-      "sha256": "0829ca587dcee562c13456af5abfa521a13d2307bda51b3691ba271c8627b419",
+      "sha256": "8447c3722e58a7c1a47177888746103a05fc4ecf53ef178f2b6486660e9c2db6",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3512,7 +3515,7 @@
     },
     {
       "path": "evidence/scene-batch-commit-kernel/report.json",
-      "sha256": "c91153a9d12fcd3a57368e376c98f6e55a3f3d991b3f9b79ebd25b7cafd2c237",
+      "sha256": "92958fa7f3bf1ad5cd66edb858f7bacd03ae02bbf18e9931dca000bef6365b05",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3528,7 +3531,7 @@
     },
     {
       "path": "evidence/scene-batch-stage-kernel/report.json",
-      "sha256": "e4ac286a49fa58e4f6eb21192985fe81781c9afdc57928e18a011ec9be7bc40d",
+      "sha256": "ded6f4183cf704e9762e2716449c33aa93422a9d0ffd116987afa3d8eda2730b",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3550,7 +3553,7 @@
     },
     {
       "path": "evidence/scene-frame-completion-kernel/report.json",
-      "sha256": "0ee2e7dff8e850b2dfda2052bd77e39e002672c472764800cba4529b646ba3c2",
+      "sha256": "2c4d0e7ed186e8c58c9409d11c6b09ebdd1597954eb67a341b784b8c7998c9c3",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3566,7 +3569,7 @@
     },
     {
       "path": "evidence/scene-frame-order-kernel/report.json",
-      "sha256": "238bf4856a9f408c309052367078e7bcb1562bd9dfae4d933291a0d8d61c4d05",
+      "sha256": "984dedf6843cad032a3d43093d7ad3dd8ad3679309037866933da1500adeb95a",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3655,7 +3658,7 @@
     },
     {
       "path": "evidence/scene-interaction-restore-kernel/report.json",
-      "sha256": "dc31150f1f7d0a93d87e2cbe8acac2e629679d7ee62951db6203dede70a553a0",
+      "sha256": "8b743dec2237e3db61a4986fb5ead9fed96b633cbd8147246471f6a45edff199",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3671,7 +3674,7 @@
     },
     {
       "path": "evidence/scene-node-find-kernel/report.json",
-      "sha256": "9206deb3b79ce6f8e99d26ffee2173c9d5431250413ba307496d715286f58f77",
+      "sha256": "7e3e1e5fa5a3285101d86a43ae585f5423bbda9e326d8d40b01e70cfa8141d02",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3687,7 +3690,7 @@
     },
     {
       "path": "evidence/scene-node-remove-kernel/report.json",
-      "sha256": "3afb09a8ef0e8c70c3a4f4971cdb10416c1f442fe5c077ac81f61173cfa95372",
+      "sha256": "c0aad2f59651674a68eff8051a6f76bf914d1170985a0114472ef840a95d152e",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3703,7 +3706,7 @@
     },
     {
       "path": "evidence/scene-patch-kernel/report.json",
-      "sha256": "3b341ee154f008d241aa3f2897be7707eec970f9a98456c82702158d021c08a0",
+      "sha256": "92c2c2cc8c4683dfa1f47261ff2747c9666cc93cb047706e0ade313cf6c74f6e",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3758,7 +3761,7 @@
     },
     {
       "path": "evidence/scene-unique-ids-kernel/report.json",
-      "sha256": "63005c6ec18ad1987c5256ffcba68549d86ebb40384fffbd82f2a454c4ce5be5",
+      "sha256": "a08dec9a8f0faa393995a155bca72ccc4dae1a41f8e1d3104e9e35d901de827e",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3781,7 +3784,7 @@
     },
     {
       "path": "evidence/scene-update-admission-kernel/report.json",
-      "sha256": "0d15870313c93d4251c9e6a164393ed11c7b083acce4f6d70bf001cbe90f28bd",
+      "sha256": "f64c69d9848b29949e192eef3bf9597a8c24b89c8b9c9bef11df4c1f6e67d764",
       "status": "proved",
       "recorded_sources": 2,
       "stale_or_missing_sources": [],
@@ -3960,7 +3963,15 @@
     },
     {
       "path": "evidence/surface-borrow-kernel/report.json",
-      "sha256": "58fe7fc8c727ea79986b757177dfca03d3e9763e3c67945a4ba2e3e08714713c",
+      "sha256": "b823f0e80a47358eb274114ee02ff2d0207e07d1bca06e481a8cf49a8b7668d5",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/surface-render-gate-kernel/report.json",
+      "sha256": "eb7bc4424ded41664fec6b7bfd11d15eec6b80e958f1639eafb7c719ba310adc",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3968,7 +3979,7 @@
     },
     {
       "path": "evidence/surface-row-kernel/report.json",
-      "sha256": "6ccd160186887e63efc57f2050a469933faf6bea665d92dd557a43497915e575",
+      "sha256": "cba4b654c1e35bd0e2fc63f822da21e465e006141bd1b79c8e67871fe238f11a",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3976,7 +3987,7 @@
     },
     {
       "path": "evidence/surface-segment-kernel/report.json",
-      "sha256": "70733b0e6974bab7cb2d6bae5a6141c265b6cf0b09395e15038a7f87e4f763a3",
+      "sha256": "ea1e6ae41d488b63c83179f792b69d18a1e07097d439bc818dd2962167871039",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3984,7 +3995,7 @@
     },
     {
       "path": "evidence/surface-span-kernel/report.json",
-      "sha256": "398c7aff32d2beff5c05f4e383151facc20ceafb7c08d10505dbc585f3bc3976",
+      "sha256": "7a2fedb34d830a72b41cbca63610f7bc6282a80768ba00d637e06cdac3ac83b5",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3992,7 +4003,7 @@
     },
     {
       "path": "evidence/surface-view-kernel/report.json",
-      "sha256": "8394b34db4df39797606f06d276a9d5e2e82f2c4f251839ff0510bce0a69d8fc",
+      "sha256": "1a16e0afaaf96341c8558c9abdfa0c2a6b1ac6bb197632e236270613a7bc214c",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -4000,7 +4011,7 @@
     },
     {
       "path": "evidence/surface-write-kernel/report.json",
-      "sha256": "86dae17b8b0aa866a7c0eafdae12b326955f848563dcb3e5d483faec2522459a",
+      "sha256": "2b8fc63cf82bd39b88e9a66105e7a44925042288be2dcc6136d2715814a8ceb1",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -4008,7 +4019,7 @@
     },
     {
       "path": "evidence/text-class-kernel/report.json",
-      "sha256": "5b736bce44337b3c9b41480739e5eb5e31f5f9e0afb580b1006fa96fee44c6e6",
+      "sha256": "4a1178add8e4f9ecdb2c58e8e60aa3c943ad167d770f5900d0e28d191739b302",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -4096,7 +4107,7 @@
     },
     {
       "path": "evidence/text-offset-kernel/report.json",
-      "sha256": "e8759262b7791adc5c06e954b255029ce669d37de64f06a37907d341b0056b3f",
+      "sha256": "f11e0e298426afc32ef0e9bac2ae017f06a802594fda0b9e0537c2d013f37bd4",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -4104,7 +4115,7 @@
     },
     {
       "path": "evidence/text-range-kernel/report.json",
-      "sha256": "6f90677e384aa5888cbb78fd670fbe0cb0333f1090c45695fa6dce50611129a1",
+      "sha256": "8d887a9321305589f848e9acab079571b6ffa17bb2281c16b39adc9ac25afe78",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -4112,7 +4123,7 @@
     },
     {
       "path": "evidence/transaction-gate-kernel/report.json",
-      "sha256": "7f556c0f679f12de0fbebc427cb0761e6ab4dd4b7c2a8aa18ae47c5f252176bc",
+      "sha256": "4bc9dd0ba67345efbda74a400577ddeb4360b0efe015d5329e898be180d4d8c0",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -4245,6 +4256,30 @@
       "sha256": "ec4cc4198f27ae82fcc5d786a01e332ced075d0214209e7bb957070e58e50246",
       "status": "scoped_slice_complete",
       "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-plugin-count-kernel/report.json",
+      "sha256": "4c203dce952c6407205b29ebf2893ae95d2aeba586f1f63b4153b8a7946d4843",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-plugin-rect-kernel/report.json",
+      "sha256": "691aef3e41b6c4b00b7c08f55b04148eb083508bc6928a4611e6fb9a9155e707",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/ui-plugin-reloc-kernel/report.json",
+      "sha256": "d7c679dd870ed0753232fdfd036d304fdc7f2f77b3dccce8a6113b955e32b34a",
+      "status": "proved",
+      "recorded_sources": 1,
       "stale_or_missing_sources": [],
       "completion_flags": {}
     },
@@ -4497,9 +4532,9 @@
     },
     {
       "path": "evidence/validation-chain/report.json",
-      "sha256": "b8b24e270ae29721514e4063c61e0989df237194400431ec7d03e33c5214ecd4",
+      "sha256": "14c8feead1f60d9186895aa1e55f0c0e59fecbba61ddc2710a8d308c411e6e14",
       "status": "unspecified",
-      "recorded_sources": 238,
+      "recorded_sources": 245,
       "stale_or_missing_sources": [],
       "completion_flags": {}
     },
@@ -4539,7 +4574,7 @@
     },
     {
       "path": "evidence/version-kernel/report.json",
-      "sha256": "9bc3ead3122098e4cd96e5ba492bc0fc9936bc2b3a4cf3d534eb725c1ca29dab",
+      "sha256": "b554ce998f978dd60507704b927c626c0cff3a120bbdf9759fdab73206b3cfbe",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -4559,7 +4594,7 @@
     }
   ],
   "evidence_index_summary": {
-    "reports": 415,
+    "reports": 419,
     "with_stale_or_missing_recorded_sources": 241,
     "with_explicit_completion": 10
   },
@@ -4602,7 +4637,7 @@
           {
             "path": "src/native_adapter/native_scene.rs",
             "exists": true,
-            "sha256": "1538ef0d6261eae062a109585c4d15333f8a26f64af41942a86d1924cf183010"
+            "sha256": "071092371c3d5c70594bc66d4b03cee651491bc1ad1a93ab4c0d7ac35e323ea4"
           },
           {
             "path": "src/native_adapter/native_view.rs",
@@ -4710,8 +4745,8 @@
                 "field": "sources",
                 "path": "scripts/closeout-baseline.sh",
                 "exists": true,
-                "expected_sha256": "398de616d2ab22cca1f120839c55a7df0b4cdd97c9520b949f5bece26d948c6d",
-                "actual_sha256": "398de616d2ab22cca1f120839c55a7df0b4cdd97c9520b949f5bece26d948c6d",
+                "expected_sha256": "795348ae338977f144bbadfae72c7e729f2c0d88f20c344cd08b56f8b0abbba4",
+                "actual_sha256": "795348ae338977f144bbadfae72c7e729f2c0d88f20c344cd08b56f8b0abbba4",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -4818,8 +4853,8 @@
                 "field": "sources",
                 "path": "src/native_adapter/facade.rs",
                 "exists": true,
-                "expected_sha256": "011e2727b5a87e7213889bfda8e34cdb511b9b954532a67150c0b85f49796473",
-                "actual_sha256": "011e2727b5a87e7213889bfda8e34cdb511b9b954532a67150c0b85f49796473",
+                "expected_sha256": "161a346a0f75737964b2ce017b6fe6693c07895a6e7af8b857df56616b6b4538",
+                "actual_sha256": "161a346a0f75737964b2ce017b6fe6693c07895a6e7af8b857df56616b6b4538",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -4863,8 +4898,8 @@
                 "field": "sources",
                 "path": "src/native_adapter/native_scene.rs",
                 "exists": true,
-                "expected_sha256": "1538ef0d6261eae062a109585c4d15333f8a26f64af41942a86d1924cf183010",
-                "actual_sha256": "1538ef0d6261eae062a109585c4d15333f8a26f64af41942a86d1924cf183010",
+                "expected_sha256": "071092371c3d5c70594bc66d4b03cee651491bc1ad1a93ab4c0d7ac35e323ea4",
+                "actual_sha256": "071092371c3d5c70594bc66d4b03cee651491bc1ad1a93ab4c0d7ac35e323ea4",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -4926,8 +4961,8 @@
                 "field": "sources",
                 "path": "src/surface_lifecycle.rs",
                 "exists": true,
-                "expected_sha256": "b1b28abdc456d77c35b229b34fb2e201a4dc5f2a9eae045a61a209dc6d166d2d",
-                "actual_sha256": "b1b28abdc456d77c35b229b34fb2e201a4dc5f2a9eae045a61a209dc6d166d2d",
+                "expected_sha256": "1c9ffecb5ca8cda1dee857ecddc95cf81a57ad08e1de01f1c22d03f76e0354fd",
+                "actual_sha256": "1c9ffecb5ca8cda1dee857ecddc95cf81a57ad08e1de01f1c22d03f76e0354fd",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -5027,7 +5062,7 @@
           {
             "path": "src/native_adapter/native_scene.rs",
             "exists": true,
-            "sha256": "1538ef0d6261eae062a109585c4d15333f8a26f64af41942a86d1924cf183010"
+            "sha256": "071092371c3d5c70594bc66d4b03cee651491bc1ad1a93ab4c0d7ac35e323ea4"
           },
           {
             "path": "src/native_adapter/native_view.rs",
@@ -5042,7 +5077,7 @@
           {
             "path": "src/native_adapter/facade.rs",
             "exists": true,
-            "sha256": "011e2727b5a87e7213889bfda8e34cdb511b9b954532a67150c0b85f49796473"
+            "sha256": "161a346a0f75737964b2ce017b6fe6693c07895a6e7af8b857df56616b6b4538"
           },
           {
             "path": "src/native_adapter/render_host.rs",
@@ -5155,8 +5190,8 @@
                 "field": "sources",
                 "path": "scripts/closeout-baseline.sh",
                 "exists": true,
-                "expected_sha256": "398de616d2ab22cca1f120839c55a7df0b4cdd97c9520b949f5bece26d948c6d",
-                "actual_sha256": "398de616d2ab22cca1f120839c55a7df0b4cdd97c9520b949f5bece26d948c6d",
+                "expected_sha256": "795348ae338977f144bbadfae72c7e729f2c0d88f20c344cd08b56f8b0abbba4",
+                "actual_sha256": "795348ae338977f144bbadfae72c7e729f2c0d88f20c344cd08b56f8b0abbba4",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -5263,8 +5298,8 @@
                 "field": "sources",
                 "path": "src/native_adapter/facade.rs",
                 "exists": true,
-                "expected_sha256": "011e2727b5a87e7213889bfda8e34cdb511b9b954532a67150c0b85f49796473",
-                "actual_sha256": "011e2727b5a87e7213889bfda8e34cdb511b9b954532a67150c0b85f49796473",
+                "expected_sha256": "161a346a0f75737964b2ce017b6fe6693c07895a6e7af8b857df56616b6b4538",
+                "actual_sha256": "161a346a0f75737964b2ce017b6fe6693c07895a6e7af8b857df56616b6b4538",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -5308,8 +5343,8 @@
                 "field": "sources",
                 "path": "src/native_adapter/native_scene.rs",
                 "exists": true,
-                "expected_sha256": "1538ef0d6261eae062a109585c4d15333f8a26f64af41942a86d1924cf183010",
-                "actual_sha256": "1538ef0d6261eae062a109585c4d15333f8a26f64af41942a86d1924cf183010",
+                "expected_sha256": "071092371c3d5c70594bc66d4b03cee651491bc1ad1a93ab4c0d7ac35e323ea4",
+                "actual_sha256": "071092371c3d5c70594bc66d4b03cee651491bc1ad1a93ab4c0d7ac35e323ea4",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -5371,8 +5406,8 @@
                 "field": "sources",
                 "path": "src/surface_lifecycle.rs",
                 "exists": true,
-                "expected_sha256": "b1b28abdc456d77c35b229b34fb2e201a4dc5f2a9eae045a61a209dc6d166d2d",
-                "actual_sha256": "b1b28abdc456d77c35b229b34fb2e201a4dc5f2a9eae045a61a209dc6d166d2d",
+                "expected_sha256": "1c9ffecb5ca8cda1dee857ecddc95cf81a57ad08e1de01f1c22d03f76e0354fd",
+                "actual_sha256": "1c9ffecb5ca8cda1dee857ecddc95cf81a57ad08e1de01f1c22d03f76e0354fd",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -5482,12 +5517,12 @@
           {
             "path": "src/native_adapter/native_scene.rs",
             "exists": true,
-            "sha256": "1538ef0d6261eae062a109585c4d15333f8a26f64af41942a86d1924cf183010"
+            "sha256": "071092371c3d5c70594bc66d4b03cee651491bc1ad1a93ab4c0d7ac35e323ea4"
           },
           {
             "path": "src/native_adapter/facade.rs",
             "exists": true,
-            "sha256": "011e2727b5a87e7213889bfda8e34cdb511b9b954532a67150c0b85f49796473"
+            "sha256": "161a346a0f75737964b2ce017b6fe6693c07895a6e7af8b857df56616b6b4538"
           },
           {
             "path": "src/native_adapter/render_host.rs",
@@ -5497,7 +5532,7 @@
           {
             "path": "src/surface_lifecycle.rs",
             "exists": true,
-            "sha256": "b1b28abdc456d77c35b229b34fb2e201a4dc5f2a9eae045a61a209dc6d166d2d"
+            "sha256": "1c9ffecb5ca8cda1dee857ecddc95cf81a57ad08e1de01f1c22d03f76e0354fd"
           },
           {
             "path": "src/host_capabilities.rs",
@@ -5615,8 +5650,8 @@
                 "field": "sources",
                 "path": "scripts/closeout-baseline.sh",
                 "exists": true,
-                "expected_sha256": "398de616d2ab22cca1f120839c55a7df0b4cdd97c9520b949f5bece26d948c6d",
-                "actual_sha256": "398de616d2ab22cca1f120839c55a7df0b4cdd97c9520b949f5bece26d948c6d",
+                "expected_sha256": "795348ae338977f144bbadfae72c7e729f2c0d88f20c344cd08b56f8b0abbba4",
+                "actual_sha256": "795348ae338977f144bbadfae72c7e729f2c0d88f20c344cd08b56f8b0abbba4",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -5723,8 +5758,8 @@
                 "field": "sources",
                 "path": "src/native_adapter/facade.rs",
                 "exists": true,
-                "expected_sha256": "011e2727b5a87e7213889bfda8e34cdb511b9b954532a67150c0b85f49796473",
-                "actual_sha256": "011e2727b5a87e7213889bfda8e34cdb511b9b954532a67150c0b85f49796473",
+                "expected_sha256": "161a346a0f75737964b2ce017b6fe6693c07895a6e7af8b857df56616b6b4538",
+                "actual_sha256": "161a346a0f75737964b2ce017b6fe6693c07895a6e7af8b857df56616b6b4538",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -5768,8 +5803,8 @@
                 "field": "sources",
                 "path": "src/native_adapter/native_scene.rs",
                 "exists": true,
-                "expected_sha256": "1538ef0d6261eae062a109585c4d15333f8a26f64af41942a86d1924cf183010",
-                "actual_sha256": "1538ef0d6261eae062a109585c4d15333f8a26f64af41942a86d1924cf183010",
+                "expected_sha256": "071092371c3d5c70594bc66d4b03cee651491bc1ad1a93ab4c0d7ac35e323ea4",
+                "actual_sha256": "071092371c3d5c70594bc66d4b03cee651491bc1ad1a93ab4c0d7ac35e323ea4",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -5831,8 +5866,8 @@
                 "field": "sources",
                 "path": "src/surface_lifecycle.rs",
                 "exists": true,
-                "expected_sha256": "b1b28abdc456d77c35b229b34fb2e201a4dc5f2a9eae045a61a209dc6d166d2d",
-                "actual_sha256": "b1b28abdc456d77c35b229b34fb2e201a4dc5f2a9eae045a61a209dc6d166d2d",
+                "expected_sha256": "1c9ffecb5ca8cda1dee857ecddc95cf81a57ad08e1de01f1c22d03f76e0354fd",
+                "actual_sha256": "1c9ffecb5ca8cda1dee857ecddc95cf81a57ad08e1de01f1c22d03f76e0354fd",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -5992,7 +6027,7 @@
           {
             "path": "src/native_adapter/facade.rs",
             "exists": true,
-            "sha256": "011e2727b5a87e7213889bfda8e34cdb511b9b954532a67150c0b85f49796473"
+            "sha256": "161a346a0f75737964b2ce017b6fe6693c07895a6e7af8b857df56616b6b4538"
           },
           {
             "path": "tests/native_interaction_closure.rs",
@@ -6090,8 +6125,8 @@
                 "field": "sources",
                 "path": "scripts/closeout-baseline.sh",
                 "exists": true,
-                "expected_sha256": "398de616d2ab22cca1f120839c55a7df0b4cdd97c9520b949f5bece26d948c6d",
-                "actual_sha256": "398de616d2ab22cca1f120839c55a7df0b4cdd97c9520b949f5bece26d948c6d",
+                "expected_sha256": "795348ae338977f144bbadfae72c7e729f2c0d88f20c344cd08b56f8b0abbba4",
+                "actual_sha256": "795348ae338977f144bbadfae72c7e729f2c0d88f20c344cd08b56f8b0abbba4",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -6198,8 +6233,8 @@
                 "field": "sources",
                 "path": "src/native_adapter/facade.rs",
                 "exists": true,
-                "expected_sha256": "011e2727b5a87e7213889bfda8e34cdb511b9b954532a67150c0b85f49796473",
-                "actual_sha256": "011e2727b5a87e7213889bfda8e34cdb511b9b954532a67150c0b85f49796473",
+                "expected_sha256": "161a346a0f75737964b2ce017b6fe6693c07895a6e7af8b857df56616b6b4538",
+                "actual_sha256": "161a346a0f75737964b2ce017b6fe6693c07895a6e7af8b857df56616b6b4538",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -6243,8 +6278,8 @@
                 "field": "sources",
                 "path": "src/native_adapter/native_scene.rs",
                 "exists": true,
-                "expected_sha256": "1538ef0d6261eae062a109585c4d15333f8a26f64af41942a86d1924cf183010",
-                "actual_sha256": "1538ef0d6261eae062a109585c4d15333f8a26f64af41942a86d1924cf183010",
+                "expected_sha256": "071092371c3d5c70594bc66d4b03cee651491bc1ad1a93ab4c0d7ac35e323ea4",
+                "actual_sha256": "071092371c3d5c70594bc66d4b03cee651491bc1ad1a93ab4c0d7ac35e323ea4",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -6306,8 +6341,8 @@
                 "field": "sources",
                 "path": "src/surface_lifecycle.rs",
                 "exists": true,
-                "expected_sha256": "b1b28abdc456d77c35b229b34fb2e201a4dc5f2a9eae045a61a209dc6d166d2d",
-                "actual_sha256": "b1b28abdc456d77c35b229b34fb2e201a4dc5f2a9eae045a61a209dc6d166d2d",
+                "expected_sha256": "1c9ffecb5ca8cda1dee857ecddc95cf81a57ad08e1de01f1c22d03f76e0354fd",
+                "actual_sha256": "1c9ffecb5ca8cda1dee857ecddc95cf81a57ad08e1de01f1c22d03f76e0354fd",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -6398,7 +6433,7 @@
           {
             "path": "src/lib.rs",
             "exists": true,
-            "sha256": "3188552c1bbc981526d55aafea83e0d1f99281ca972a789473ae1660f1f47ab0"
+            "sha256": "f6584bcae6f0dd6dcbcdcff2dc0e0f5bddc59a99ba9c91dced598aa9ae62037c"
           },
           {
             "path": "src/engine.rs",
@@ -6521,8 +6556,8 @@
                 "field": "sources",
                 "path": "scripts/closeout-baseline.sh",
                 "exists": true,
-                "expected_sha256": "398de616d2ab22cca1f120839c55a7df0b4cdd97c9520b949f5bece26d948c6d",
-                "actual_sha256": "398de616d2ab22cca1f120839c55a7df0b4cdd97c9520b949f5bece26d948c6d",
+                "expected_sha256": "795348ae338977f144bbadfae72c7e729f2c0d88f20c344cd08b56f8b0abbba4",
+                "actual_sha256": "795348ae338977f144bbadfae72c7e729f2c0d88f20c344cd08b56f8b0abbba4",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -6629,8 +6664,8 @@
                 "field": "sources",
                 "path": "src/native_adapter/facade.rs",
                 "exists": true,
-                "expected_sha256": "011e2727b5a87e7213889bfda8e34cdb511b9b954532a67150c0b85f49796473",
-                "actual_sha256": "011e2727b5a87e7213889bfda8e34cdb511b9b954532a67150c0b85f49796473",
+                "expected_sha256": "161a346a0f75737964b2ce017b6fe6693c07895a6e7af8b857df56616b6b4538",
+                "actual_sha256": "161a346a0f75737964b2ce017b6fe6693c07895a6e7af8b857df56616b6b4538",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -6674,8 +6709,8 @@
                 "field": "sources",
                 "path": "src/native_adapter/native_scene.rs",
                 "exists": true,
-                "expected_sha256": "1538ef0d6261eae062a109585c4d15333f8a26f64af41942a86d1924cf183010",
-                "actual_sha256": "1538ef0d6261eae062a109585c4d15333f8a26f64af41942a86d1924cf183010",
+                "expected_sha256": "071092371c3d5c70594bc66d4b03cee651491bc1ad1a93ab4c0d7ac35e323ea4",
+                "actual_sha256": "071092371c3d5c70594bc66d4b03cee651491bc1ad1a93ab4c0d7ac35e323ea4",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -6737,8 +6772,8 @@
                 "field": "sources",
                 "path": "src/surface_lifecycle.rs",
                 "exists": true,
-                "expected_sha256": "b1b28abdc456d77c35b229b34fb2e201a4dc5f2a9eae045a61a209dc6d166d2d",
-                "actual_sha256": "b1b28abdc456d77c35b229b34fb2e201a4dc5f2a9eae045a61a209dc6d166d2d",
+                "expected_sha256": "1c9ffecb5ca8cda1dee857ecddc95cf81a57ad08e1de01f1c22d03f76e0354fd",
+                "actual_sha256": "1c9ffecb5ca8cda1dee857ecddc95cf81a57ad08e1de01f1c22d03f76e0354fd",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -7182,7 +7217,7 @@
     "completion_claimed": false,
     "static_audit_complete": true,
     "final_report_covers_head": true,
-    "final_report_basis": "f53fc78b072dbe335c32e37e447963159bad7811",
+    "final_report_basis": "09dc4438d6b680ffed22b9584143283d0ae87888",
     "material_paths_changed_since_final_report_basis": 0,
     "missing_required_sources": 0,
     "missing_required_evidence": 0,
@@ -7191,22 +7226,14 @@
     "unresolved_item_blockers": 0
   },
   "baseline_regression": {
-    "status": "passed",
-    "started_at": "2026-11-04T12:24:47.506951+00:00",
-    "finished_at": "2026-11-04T12:24:59.756898+00:00",
-    "command": [
-      "<repo>/scripts/verify-in-vm.sh",
-      "env",
-      "bash",
-      "scripts/closeout-baseline.sh"
-    ],
-    "returncode": 0,
-    "log": "evidence/final-closeout-audit/baseline.log",
-    "log_sha256": "59f3ad5905fd6ca96ecd00c300c21c17a08cac094b2ff7581596a4d613a96d1c"
+    "status": "not_run",
+    "reason": "use --run-baseline after work is integrated; heavy checks stay inside the VM"
   },
   "final_gate": {
-    "ready": true,
-    "failures": [],
+    "ready": false,
+    "failures": [
+      "VM baseline regression did not pass"
+    ],
     "note": "Default audits may be incomplete; --require-ready enforces this exact list."
   }
 }

@@ -3,14 +3,14 @@
   "status": "proved",
   "scope": "Exact production replay over an arbitrary candidate whose writes obey the trait contract: success is exactly viewport, each carried identity still admitted, hover, one resolve, then pointer and frame cache adoption, with no write of an unadmitted identity; None only follows a failed write. NativeScene's trait implementation, the assumption that its writes leave the admission gates unchanged, and everything Blitz does in those writes are outside the proof.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "1538ef0d6261eae062a109585c4d15333f8a26f64af41942a86d1924cf183010",
+  "source_sha256": "071092371c3d5c70594bc66d4b03cee651491bc1ad1a93ab4c0d7ac35e323ea4",
   "sources": {
-    "src/native_adapter/native_scene.rs": "1538ef0d6261eae062a109585c4d15333f8a26f64af41942a86d1924cf183010"
+    "src/native_adapter/native_scene.rs": "071092371c3d5c70594bc66d4b03cee651491bc1ad1a93ab4c0d7ac35e323ea4"
   },
   "kernel_sha256": "7381377f7f41938cb31df7c93b71a813d7164fe05e67e519ff3bc7e55dff8a90",
   "dependencies": {},
   "proof_sha256": "5bdb8f98ff016a19ea0236086eceb838f3b27e02ef33817fcea1858cdd75dfaa",
-  "runner_sha256": "2be7bd54c9a8b010ae0264edf12fd5c9f96229a4daffd634f43a3be490205e49",
+  "runner_sha256": "b30e967f51b5f7223108f8a11f194911c4eff35cf20392a3eb615b97d1e0cdba",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/verus/verus",

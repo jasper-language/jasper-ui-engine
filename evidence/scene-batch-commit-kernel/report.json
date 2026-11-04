@@ -18,7 +18,7 @@
     "transaction-gate": "21915020f6995629cb4636e14afa3038ec6220e0f9ce860043561009a5069536"
   },
   "proof_sha256": "86ece46c6b209fd9d7a8eb915820e2f944423b43e9901c0a429ac9093f18fb18",
-  "runner_sha256": "2be7bd54c9a8b010ae0264edf12fd5c9f96229a4daffd634f43a3be490205e49",
+  "runner_sha256": "b30e967f51b5f7223108f8a11f194911c4eff35cf20392a3eb615b97d1e0cdba",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/verus/verus",

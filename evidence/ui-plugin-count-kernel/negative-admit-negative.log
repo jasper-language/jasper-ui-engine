@@ -1,0 +1,22 @@
+verification results:: 0 verified, 1 errors
+error: postcondition not satisfied
+  --> <repo>/evidence/ui-plugin-count-kernel/negative_admit_negative.rs:7:13
+   |
+ 7 |       ensures match result {
+   |  _____________^
+ 8 | |         Some(count) => returned >= 0 && count as int == returned as int && count <= capacity,
+ 9 | |         None => returned < 0 || returned as int > capacity as int,
+10 | |     },
+   | |_____^ failed this postcondition
+...
+16 |       Some(count)
+   |       ----------- at the end of the function body
+
+note: recommendation not met: value may be out of range of the target type (use `#[verifier::truncate]` on the cast to silence this warning)
+  --> <repo>/evidence/ui-plugin-count-kernel/negative_admit_negative.rs:12:17
+   |
+12 |     let count = returned as u32;
+   |                 ^^^^^^^^
+
+error: aborting due to 1 previous error
+

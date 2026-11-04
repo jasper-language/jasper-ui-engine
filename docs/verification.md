@@ -1112,3 +1112,25 @@ Kani 未得出结论的形状（都在链外，已撤下；构建机与其他构
 测试范围：默认 160/0，`cpu-pending` 240/0。`gpu-pending` 只跑了库测试 186/0 和 `native_gpu_render` 3/0，在单独的无调试信息目录里；带调试信息的全量运行因构建机磁盘写满没有完成。
 
 假设与未覆盖：闭包只拿共享引用所以不能写活动场景，依赖 `Scene` 没有内部可变性（靠阅读）；`apply_batch_at` 本身不在证明内，它传入的是不是这两个闭包靠阅读；生产闭包的行为不在此性质内（`Scene::validate` 的遍历见 UI-SCENE-UNIQUE-IDS-001，折叠见 UI-SCENE-BATCH-STAGE-001，`Scene::clone` 未证明）；陈旧、耗尽、空批路径上暂存不运行只经测试，证明里没有陈述；闭包内 panic、被替换场景的析构、分配失败、栈使用与开销；成功的 `Insert` 之后身份仍唯一没有陈述；UI-TXN-ATOMIC-001 仍是 not_verified。证据：`evidence/scene-batch-commit-kernel/`、`evidence/scene-batch-commit-chain/report.json`。
+
+## UI-PLUGIN-RECT/COUNT/RELOC-001、UI-SURFACE-RENDER-GATE-001：`ui.*` 插件准入与补链（2026-11-04）
+
+`src/ui_plugin_gate.rs` 的纯规则与 `src/ui_plugin_host.rs` 的 L1 宿主（范围见 `abi.md` 第 10 节）。同轮为现有 `SurfaceLifecycle::render_allowed` / `active_for_owner` 补链；两个方法的 `==` 比较改写为 `matches!`，行为不变（靠阅读与属性测试）。
+
+| 阶段 | 范围 | 结果 |
+|---|---|---|
+| Verus/Z3 | 任意输入：`paint_rect_admits` 充要条件（非空且用宽算术落在节点内）；`paint_count_admits` 接受当且仅当 `0 <= 返回值 <= 容量` 且数值不变；`relocation_value` 接受时写入位置与目标都在映像内且值为基址加加数，拒绝时确有一项越界或溢出；渲染门取决于归属者、活动状态与代数 | 三条规则各 1 verified/0 errors，渲染门 4 verified/0 errors（含派生与依赖）；9 个错误实现反例全部被拒 |
+| Proptest | `tests/ui_plugin_gate.rs`：四条规则对照宽算术模型；`admit_paint_output` 对任意命令序列；`node_pixel_box` 边缘偏差不超过半像素；随机生命周期序列上的渲染门对照独立模型 | 13 项通过（7 条属性各 256 例，`PROPTEST_RNG_SEED=12345`） |
+| Miri | 同文件的 6 个单元用例，不含 `mmap` 与插件调用 | 通过。**映射、重定位写入、W^X 与调用插件代码不在 Miri 内**：见下 |
+| cargo-fuzz | 新目标 `ui_plugin_gate`：命令校验、重定位、像素框、清单门，以及真实 `admit`（只到映射之前）：原始输入、任意改动后修好摘要的已签名文件（**被准入的文件其签名覆盖内容必须未改动**）、开发模式下的未签名文件 | 28730 次（`read_boundary` 12363、`batch_decode` 863853），无崩溃 |
+| Kani | | Kani：发版时验证 |
+| Loom | N/A：`UiPluginHost` 含裸指针，不是 `Send`/`Sync`；门内没有共享状态与同步原语；`HOST_TABLE` 是不可变静态量 | 不计 PASS；链中既有 Loom 场景通过，与本切片无关 |
+
+真实路径测试（测试证据，不是证明），`tests/ui_plugin_acceptance.rs` 9 项通过：测试用 `rustc` 真实编译 `tests/fixtures/ui_plugin_paint.rs`（无 libc，含重定位指针表、可写数据、`jaso_init`/`jaso_start`/`jaso_stop`、经宿主表的日志与分配），经 `jaso::pack` 打包签名，由 `UiPluginHost` 映射并调用，命令经 `render_cpu_with_paint_layers` 画进一帧，5 个像素断言确认颜色取自重定位过的表、绘制顺序、节点边界外仍是场景。负向：错误平台（报 `Target` 字段）、缺能力、未请求能力、改字节（`format.digest`）、改字节并修好摘要（`signature.invalid`）、命名空间外、未签名（强制模式拒绝，开发模式放行并审计）、六种 `ui.*` 键错误、三种恶意绘制输出整份拒绝、`jaso_init` 返回非 0 不留模块、`stop` 后不再调用、卸载答复推迟且不复用名字。
+
+假设与未覆盖：`jaso` crate 由 jasper-os 自己的验证链负责，此处按第三方边界对待；`map_image` 的裸写、`mmap`/`mprotect`、`transmute` 与跨 FFI 调用只有上面的真实路径测试，没有证明也没有 Miri；`load_inner` 的步骤顺序靠阅读与测试；没有对 `ui_plugin_host.rs` 做手动变异；只在 x86_64 Linux 测试；插件进程内运行无隔离，见 `abi.md` 第 10.5 节；层绘制的混合与光栅由 Vello 负责；`render_cpu_with_paint_layers` 的拒绝路径有测试，无证明。
+
+## 发版清单补充
+
+`ui_plugin_gate` 的三个内核加入发版 Kani 时的候选 harness，现在未编写，`Kani：发版时验证`。
+

@@ -62,6 +62,9 @@ pub mod surface_lifecycle;
 pub mod text;
 #[cfg(feature = "real-text")]
 pub mod text_cosmic;
+pub mod ui_plugin_gate;
+#[cfg(feature = "ui-plugin-pending")]
+pub mod ui_plugin_host;
 
 pub use backend::{BackendError, RenderBackend};
 pub use batch::{BatchError, UiBatch};

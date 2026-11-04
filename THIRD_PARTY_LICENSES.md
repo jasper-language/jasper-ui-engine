@@ -74,6 +74,15 @@ pinned exactly (`=x.y.z`, or a fixed git revision for Blitz).
 | fontique | =0.12.0 | Apache-2.0 OR MIT | https://github.com/linebender/parley |
 | keyboard-types | =0.8.3 | MIT OR Apache-2.0 | https://github.com/rust-windowing/keyboard-types |
 | accesskit | =0.25.2 | MIT OR Apache-2.0 | https://github.com/AccessKit/accesskit |
+| jaso (jasper-os, git rev 0f1e5c1) | 0.1.0 | Apache-2.0 | https://github.com/jasper-language/jasper-os |
+| libc | =0.2.191 | MIT OR Apache-2.0 | https://github.com/rust-lang/libc |
+| sha2 (via jaso) | =0.11.1 | MIT OR Apache-2.0 | https://github.com/RustCrypto/hashes |
+| ed25519-dalek (via jaso) | =3.0.0 | BSD-3-Clause | https://github.com/dalek-cryptography/curve25519-dalek |
+| curve25519-dalek, curve25519-dalek-derive (via jaso) | 5.0.0, 0.1.1 (locked) | BSD-3-Clause | https://github.com/dalek-cryptography/curve25519-dalek |
+| ed25519, signature, digest, crypto-common, block-buffer (via jaso) | 3.0.0, 3.0.0, 0.11.3, 0.2.2, 0.12.1 (locked) | Apache-2.0 OR MIT | https://github.com/RustCrypto |
+| hybrid-array (via jaso) | 0.4.15 (locked) | MIT OR Apache-2.0 | https://github.com/RustCrypto/hybrid-array |
+| fiat-crypto (via jaso) | 0.3.0 (locked) | MIT OR Apache-2.0 OR BSD-1-Clause | https://github.com/mit-plv/fiat-crypto |
+| subtle (via jaso) | 2.6.1 (locked) | BSD-3-Clause | https://github.com/dalek-cryptography/subtle |
 | uuid (via accesskit) | 1.29.0 (locked) | Apache-2.0 OR MIT | https://github.com/uuid-rs/uuid |
 | proptest (dev only) | =1.12.0 | MIT OR Apache-2.0 | https://github.com/proptest-rs/proptest |
 | accesskit_consumer (dev only) | =0.39.2 | MIT OR Apache-2.0 | https://github.com/AccessKit/accesskit |

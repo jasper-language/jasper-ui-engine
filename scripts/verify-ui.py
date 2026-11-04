@@ -80,6 +80,8 @@ for file, markers in [
     ("src/native_adapter/glyph_skew.rs", ["GLYPH SKEW KERNEL"]),
     ("src/native_adapter/native_scene.rs", ["SCENE UPDATE ERROR TYPE KERNEL", "SCENE FRAME COMPLETION KERNEL", "SCENE FRAME ORDER KERNEL", "SCENE INTERACTION RESTORE KERNEL"]),
     ("src/resource.rs", ["RESOURCE GATE KERNEL", "BYTES SLOT KERNEL"]),
+    ("src/ui_plugin_gate.rs", ["UI PLUGIN RECT KERNEL", "UI PLUGIN COUNT KERNEL", "UI PLUGIN RELOC KERNEL"]),
+    ("src/surface_lifecycle.rs", ["SURFACE STATE TYPE", "SURFACE LIFECYCLE STORAGE TYPE", "SURFACE RENDER GATE KERNEL"]),
     ("src/input.rs", ["MODIFIERS TYPE", "KEY PHASE TYPE", "KEY EVENT TYPE", "POINTER ID TYPE", "POINTER ORDER KERNEL", "POINTER KIND TYPES", "POINTER EVENT TYPE", "POINTER TRACKER TYPE"]),
     ("src/semantics.rs", ["ROLE TYPE", "FOCUS STORAGE TYPE", "FOCUS CLEANUP KERNEL", "FOCUS ERROR TYPE", "FOCUS SELECT KERNEL"]),
     ("src/keyboard.rs", ["ROLE ACTIVATION KERNEL", "COMMAND MODIFIER KERNEL", "KEYBOARD STORAGE TYPE", "KEYBOARD FOCUS KERNEL", "INPUT RETIRE KERNEL"]),
@@ -97,14 +99,15 @@ for file, markers in [
 (out / "production.rs").write_text("".join(regions))
 report["production_regions_sha256"] = hashlib.sha256((out / "production.rs").read_bytes()).hexdigest()
 manifest = "verification/read-boundary/Cargo.toml"
+FUZZ_TARGETS = ["read_boundary", "batch_decode", "ui_plugin_gate"]
 corpora = out / "corpora"
-for target in ["read_boundary", "batch_decode"]:
+for target in FUZZ_TARGETS:
     (corpora / target).mkdir(parents=True, exist_ok=True)
     (out / "fuzz-artifacts" / target).mkdir(parents=True, exist_ok=True)
     for seed in (ROOT / "fuzz/seeds" / target).iterdir():
         shutil.copyfile(seed, corpora / target / seed.name)
 kernels = ["version", "decode-range", "transaction-gate", "byte-read", "cursor-read",
-           "scalar-read", "header-read", "bounded-payload", "surface-row", "surface-span", "surface-borrow", "surface-write", "surface-segment", "surface-view", "pixel-pack", "pixel-convert", "canvas-import", "canvas-pixel", "color-construct", "desktop-pointer", "desktop-pointer-state", "handle", "font-order", "font-weight", "font-family", "bold-alias", "glyph-skew", "frame-reuse", "damage-span", "damage-rect", "frame-tick", "frame-pace", "text-offset", "text-range", "access-actions", "access-change", "access-request", "gpu-readback", "resource-gate", "role-activation", "bytes-slot", "command-modifier", "text-class", "focus-cleanup", "keyboard-focus", "focus-select", "input-retire", "hover-update", "hover-retire", "pointer-order", "capture-query", "scene-update-admission", "scene-frame-completion", "scene-frame-order", "scene-batch-stage", "scene-node-remove", "scene-node-find", "scene-patch", "scene-unique-ids", "scene-batch-commit", "scene-interaction-restore", "component-update-admission"]
+           "scalar-read", "header-read", "bounded-payload", "surface-row", "surface-span", "surface-borrow", "surface-write", "surface-segment", "surface-view", "pixel-pack", "pixel-convert", "canvas-import", "canvas-pixel", "color-construct", "desktop-pointer", "desktop-pointer-state", "handle", "font-order", "font-weight", "font-family", "bold-alias", "glyph-skew", "frame-reuse", "damage-span", "damage-rect", "frame-tick", "frame-pace", "text-offset", "text-range", "access-actions", "access-change", "access-request", "gpu-readback", "resource-gate", "role-activation", "bytes-slot", "command-modifier", "text-class", "focus-cleanup", "keyboard-focus", "focus-select", "input-retire", "hover-update", "hover-retire", "pointer-order", "capture-query", "scene-update-admission", "scene-frame-completion", "scene-frame-order", "scene-batch-stage", "scene-node-remove", "scene-node-find", "scene-patch", "scene-unique-ids", "scene-batch-commit", "scene-interaction-restore", "component-update-admission", "ui-plugin-rect", "ui-plugin-count", "ui-plugin-reloc", "surface-render-gate"]
 if a.kani_full:
     # Sequential whole-library run keeps the shared lock and memory ceiling; the per-harness clock does not apply.
     # 整库顺序运行保留共享锁与内存上限；单 harness 时钟不适用。
@@ -123,6 +126,7 @@ stages = [
                   ["cargo", "test", "--locked", "--test", "resource_gate"],
                   ["cargo", "test", "--locked", "--test", "bytes_slot"],
                   ["cargo", "test", "--locked", "--test", "scene_batch_transaction"],
+                  ["cargo", "test", "--locked", "--test", "ui_plugin_gate"],
                   ["cargo", "test", "--locked", "--manifest-path", manifest, "properties::"],
                   ["cargo", "test", "--locked", "--features", "desktop", "--lib", "desktop::tests"]]),
     ("Miri", [["cargo", "+" + a.nightly, "miri", "--version"], ["cargo", "+" + a.nightly, "miri", "test", "--locked", "--no-default-features", "--test", "batch_memory"],
@@ -132,11 +136,12 @@ stages = [
                ["cargo", "+" + a.nightly, "miri", "test", "--locked", "--no-default-features", "--test", "bytes_slot"],
                ["cargo", "+" + a.nightly, "miri", "test", "--locked", "--no-default-features", "--test", "handle_table"],
                ["cargo", "+" + a.nightly, "miri", "test", "--locked", "--no-default-features", "--test", "handle_alloc_failure"],
-               ["cargo", "+" + a.nightly, "miri", "test", "--locked", "--no-default-features", "--test", "scene_batch_transaction"]]),
+               ["cargo", "+" + a.nightly, "miri", "test", "--locked", "--no-default-features", "--test", "scene_batch_transaction"],
+               ["cargo", "+" + a.nightly, "miri", "test", "--locked", "--no-default-features", "--test", "ui_plugin_gate"]]),
     ("cargo-fuzz", [["cargo", "fuzz", "--version"]] + [
         ["cargo", "+" + a.nightly, "fuzz", "run", target, str(corpora / target), "--",
          "-max_total_time=" + str(a.fuzz_seconds), "-max_len=4096", "-rss_limit_mb=1024",
-         "-timeout=5", "-seed=12345", "-artifact_prefix=" + str(out / "fuzz-artifacts" / target) + "/"] for target in ["read_boundary", "batch_decode"]]),
+         "-timeout=5", "-seed=12345", "-artifact_prefix=" + str(out / "fuzz-artifacts" / target) + "/"] for target in FUZZ_TARGETS]),
     ("Kani", [["cargo", "kani", "--version"]] + kani_commands),
     ("Loom", [["cargo", "test", "--locked", "--manifest-path", manifest,
                "schedules::shared_immutable_buffer_independent_cursors", "--", "--exact"]]),
@@ -166,7 +171,7 @@ for stage in report["stages"]:
         # Retain the actual starting corpus, not only the checked-in seeds.
         # 保存实际初始语料，而不仅是仓库种子；崩溃输入同样落到 evidence。
         stage["initial_corpus"] = {}
-        for target in ["read_boundary", "batch_decode"]:
+        for target in FUZZ_TARGETS:
             snapshot = out / "initial-corpus" / target
             if snapshot.exists():
                 shutil.rmtree(snapshot)
@@ -253,7 +258,7 @@ for stage in report["stages"]:
     matched = all(output.count(token) >= count for token, count in required.get(stage["name"], []))
     if stage["name"] == "cargo-fuzz":
         stage["completed_runs"] = [int(n) for n in re.findall(r"Done (\d+) runs in", output)]
-        matched = len(stage["completed_runs"]) == 2 and all(n > 0 for n in stage["completed_runs"])
+        matched = len(stage["completed_runs"]) == len(FUZZ_TARGETS) and all(n > 0 for n in stage["completed_runs"])
     if not matched:
         stage.update(status="failed", reason="missing non-vacuous completion evidence")
         save()

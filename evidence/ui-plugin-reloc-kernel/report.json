@@ -1,0 +1,47 @@
+{
+  "property": "UI-PLUGIN-RELOC-001",
+  "status": "proved",
+  "scope": "base-plus-addend site and value bounds over all inputs; not the mmap, mprotect or the raw write that follows, which are outside Verus and Miri",
+  "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
+  "source_sha256": "22c0b32ead751c28b9b8853eb4eef7c8fc89652517af917ecb3c3422a45d4ab3",
+  "sources": {
+    "src/ui_plugin_gate.rs": "22c0b32ead751c28b9b8853eb4eef7c8fc89652517af917ecb3c3422a45d4ab3"
+  },
+  "kernel_sha256": "c0180ed6de9edc0cae736553bc23a73f9ab2e02c2d10560fd75156468ffbfaf9",
+  "dependencies": {},
+  "proof_sha256": "4f3116252ee57a34c8ac3c78e8355f361ecffc8d3f9f323966588b458c81d831",
+  "runner_sha256": "b30e967f51b5f7223108f8a11f194911c4eff35cf20392a3eb615b97d1e0cdba",
+  "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
+  "command": [
+    "<home>/verus/verus",
+    "--crate-type",
+    "lib",
+    "<repo>/evidence/ui-plugin-reloc-kernel/kernel.rs"
+  ],
+  "exit_code": 0,
+  "solver": {
+    "path": "<home>/verus/z3",
+    "version": "Z3 version 4.16.0 - 64 bit\n",
+    "explicit_override": null
+  },
+  "verified_obligations": 1,
+  "negative_controls": [
+    {
+      "name": "site-past-image",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "target-past-image",
+      "rejected": true,
+      "exit_code": 1
+    }
+  ],
+  "negative_control_rejected": true,
+  "trust_boundary": [
+    "Verus/vstd and SMT solver",
+    "Rust/Verus integer, references and slice semantics",
+    "signature annotation/extraction script",
+    "Rust compiler and target execution"
+  ]
+}

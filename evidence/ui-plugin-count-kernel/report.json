@@ -1,0 +1,47 @@
+{
+  "property": "UI-PLUGIN-COUNT-001",
+  "status": "proved",
+  "scope": "entry return value to command count over all i32/u32 inputs; a plugin's truthfulness about buffer contents is not assumed, contents are validated separately",
+  "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
+  "source_sha256": "22c0b32ead751c28b9b8853eb4eef7c8fc89652517af917ecb3c3422a45d4ab3",
+  "sources": {
+    "src/ui_plugin_gate.rs": "22c0b32ead751c28b9b8853eb4eef7c8fc89652517af917ecb3c3422a45d4ab3"
+  },
+  "kernel_sha256": "0b118cecc78be9111aded521a58e9a5199b1a8f9bb660ed81b2a7b606c0ea929",
+  "dependencies": {},
+  "proof_sha256": "4f6110816705eb556afc9a858c3ffccf5cbb7bfed5aba6066e09bb94e69830a9",
+  "runner_sha256": "b30e967f51b5f7223108f8a11f194911c4eff35cf20392a3eb615b97d1e0cdba",
+  "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
+  "command": [
+    "<home>/verus/verus",
+    "--crate-type",
+    "lib",
+    "<repo>/evidence/ui-plugin-count-kernel/kernel.rs"
+  ],
+  "exit_code": 0,
+  "solver": {
+    "path": "<home>/verus/z3",
+    "version": "Z3 version 4.16.0 - 64 bit\n",
+    "explicit_override": null
+  },
+  "verified_obligations": 1,
+  "negative_controls": [
+    {
+      "name": "admit-negative",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "admit-over-capacity",
+      "rejected": true,
+      "exit_code": 1
+    }
+  ],
+  "negative_control_rejected": true,
+  "trust_boundary": [
+    "Verus/vstd and SMT solver",
+    "Rust/Verus integer, references and slice semantics",
+    "signature annotation/extraction script",
+    "Rust compiler and target execution"
+  ]
+}

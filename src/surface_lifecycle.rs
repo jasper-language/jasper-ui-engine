@@ -6,6 +6,7 @@
 //! 原生 Surface、纹理、设备与 present 都归宿主；本状态机只拒绝尺寸变化、暂停、恢复或
 //! 退休后的迟到回调。
 
+// BEGIN VERIFIED SURFACE STATE TYPE
 /// Logical presentation-surface state. A suspended surface may be resumed; a retired one
 /// never can.
 /// 逻辑呈现 Surface 状态。暂停状态可恢复；退休状态永不恢复。
@@ -15,6 +16,7 @@ pub enum SurfaceState {
     Suspended,
     Retired,
 }
+// END VERIFIED SURFACE STATE TYPE
 
 /// Current extent and generation visible to the owning host.
 /// 所属宿主可见的当前尺寸与代数。
@@ -49,6 +51,7 @@ impl std::fmt::Display for SurfaceLifecycleError {
 
 impl std::error::Error for SurfaceLifecycleError {}
 
+// BEGIN VERIFIED SURFACE LIFECYCLE STORAGE TYPE
 /// One host-owned surface generation. It contains no native handle and performs no I/O.
 /// 一个宿主持有的 Surface 代数；不含原生句柄，也不执行 I/O。
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -59,6 +62,7 @@ pub struct SurfaceLifecycle {
     width: u32,
     height: u32,
 }
+// END VERIFIED SURFACE LIFECYCLE STORAGE TYPE
 
 impl SurfaceLifecycle {
     /// Initial active host surface generation.
@@ -84,20 +88,28 @@ impl SurfaceLifecycle {
             height: self.height,
         })
     }
+}
 
+// BEGIN VERIFIED SURFACE RENDER GATE KERNEL
+impl SurfaceLifecycle {
     /// True only for the exact live generation of the owning host.
     /// 仅当宿主身份与当前活动代数精确匹配时为真。
     pub fn render_allowed(&self, caller: u64, generation: u64) -> bool {
-        caller == self.owner && self.state == SurfaceState::Active && self.generation == generation
+        caller == self.owner
+            && matches!(self.state, SurfaceState::Active)
+            && self.generation == generation
     }
 
     /// True while the owning host may submit work without carrying an epoch. Public rendering
     /// entry points use this compatibility view; generation-checked entry points are preferred.
     /// 所属宿主无需携带代数即可提交工作时的兼容视图；优先使用携带代数的渲染入口。
     pub(crate) fn active_for_owner(&self, caller: u64) -> bool {
-        caller == self.owner && self.state == SurfaceState::Active
+        caller == self.owner && matches!(self.state, SurfaceState::Active)
     }
+}
+// END VERIFIED SURFACE RENDER GATE KERNEL
 
+impl SurfaceLifecycle {
     /// Replace the host extent. The old generation immediately becomes stale.
     /// 替换宿主尺寸；旧代数立即失效。
     pub fn reconfigure(
