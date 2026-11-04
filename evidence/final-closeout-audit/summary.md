@@ -3,12 +3,12 @@
 This report is an audit snapshot, not a delivery acceptance record.
 
 - branch: `dev/ui38-patch-identities`
-- commit: `0e6a434a296bcec90a6ec940cf81feba6b9c8441`
+- commit: `d8e1bbdcec8c9d6eb33c5caf44dc6574eb0c05bd`
 - explicit item 1-5 completions: 5/5
-- final report materially covers HEAD: `false`
+- final report materially covers HEAD: `true`
 - missing required evidence: 0
 - missing final-report references: 0
-- stale/missing recorded source hashes: 10
+- stale/missing recorded source hashes: 0
 - branch refs included: `included`
 - tool configuration: `passed`
 - evidence reports indexed: 421
@@ -29,8 +29,7 @@ None.
 
 ## Stale or missing source correspondence
 
-- `scripts/audit-closeout.py` in `evidence/final-checklist-audit/report.json`: `stale`
-- `src/scene.rs` in `evidence/final-checklist-audit/report.json`: `stale`
+None.
 
 Run `python3 scripts/audit-closeout.py --require-ready` only after items 2-5
 have been integrated and their evidence has been regenerated.
