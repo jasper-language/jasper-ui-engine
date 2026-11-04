@@ -2,8 +2,8 @@
 
 This report is an audit snapshot, not a delivery acceptance record.
 
-- branch: `dev/ui38-scene-patch`
-- commit: `a3294c3ab4aaa204aa28a9545252f05a62f604e7`
+- branch: `dev/ui38-batch-commit`
+- commit: `28f52f2be68b8293ca03083fa9690d8d3177ea2b`
 - explicit item 1-5 completions: 5/5
 - final report materially covers HEAD: `true`
 - missing required evidence: 0
@@ -11,7 +11,7 @@ This report is an audit snapshot, not a delivery acceptance record.
 - stale/missing recorded source hashes: 0
 - branch refs included: `included`
 - tool configuration: `passed`
-- evidence reports indexed: 410
+- evidence reports indexed: 414
 
 ## Checklist readings
 
