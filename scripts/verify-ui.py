@@ -13,14 +13,27 @@ from pathlib import Path
 import subprocess
 import sys
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import kani_policy
+
 ROOT = Path(__file__).resolve().parents[1]
 p = argparse.ArgumentParser(description=__doc__)
 p.add_argument("--verus", required=True)
 p.add_argument("--nightly", default="nightly-2026-10-17")
 p.add_argument("--fuzz-seconds", type=int, default=20)
+kani_scope = p.add_mutually_exclusive_group()
+kani_scope.add_argument("--kani-harness", action="append", default=[], metavar="NAME",
+                        help="harness for this change; repeat for more, never the whole library by default")
+kani_scope.add_argument("--kani-full", action="store_true", help="whole-library Kani, only on an explicit owner request")
+p.add_argument("--kani-seconds", type=int, default=kani_policy.MAX_SECONDS)
+p.add_argument("--kani-vmem-kb", type=int, default=kani_policy.MAX_VMEM_KB)
 a = p.parse_args()
 if a.fuzz_seconds < 1:
     p.error("--fuzz-seconds must be positive")
+if not 1 <= a.kani_seconds <= kani_policy.MAX_SECONDS or not 1 <= a.kani_vmem_kb <= kani_policy.MAX_VMEM_KB:
+    p.error("Kani limits may be lowered but never raised")
+if len(set(a.kani_harness)) != len(a.kani_harness) or not all(map(kani_policy.valid_harness_name, a.kani_harness)):
+    p.error("--kani-harness names must be valid and distinct")
 os.chdir(ROOT)
 out = ROOT / "evidence" / "validation-chain"
 out.mkdir(parents=True, exist_ok=True)
@@ -43,6 +56,7 @@ def save():
 save()
 for old_log in ["Verus-Z3.log", "Proptest.log", "Miri.log", "cargo-fuzz.log", "Kani.log", "Loom.log", "kani-source-map.json"]:
     (out / old_log).unlink(missing_ok=True)
+shutil.rmtree(out / "kani-harness-logs", ignore_errors=True)
 # Archive the exact same production regions consumed by the verification crate.
 # 归档验证 crate 使用的同一生产区域，便于独立核对提取映射。
 regions = []
@@ -87,6 +101,16 @@ for target in ["read_boundary", "batch_decode"]:
         shutil.copyfile(seed, corpora / target / seed.name)
 kernels = ["version", "decode-range", "transaction-gate", "byte-read", "cursor-read",
            "scalar-read", "header-read", "bounded-payload", "surface-row", "surface-span", "surface-borrow", "surface-write", "surface-segment", "surface-view", "pixel-pack", "pixel-convert", "canvas-import", "canvas-pixel", "color-construct", "desktop-pointer", "desktop-pointer-state", "handle", "font-order", "font-weight", "font-family", "bold-alias", "glyph-skew", "frame-reuse", "damage-span", "damage-rect", "frame-tick", "frame-pace", "text-offset", "text-range", "access-actions", "access-change", "access-request", "gpu-readback", "resource-gate", "role-activation", "bytes-slot", "command-modifier", "text-class", "focus-cleanup", "keyboard-focus", "focus-select", "input-retire", "hover-update", "hover-retire", "pointer-order", "capture-query", "scene-update-admission", "scene-frame-completion", "scene-frame-order", "scene-batch-stage", "scene-node-remove", "scene-node-find", "scene-patch", "scene-unique-ids", "scene-batch-commit", "scene-interaction-restore", "component-update-admission"]
+if a.kani_full:
+    # Sequential whole-library run keeps the shared lock and memory ceiling; the per-harness clock does not apply.
+    # 整库顺序运行保留共享锁与内存上限；单 harness 时钟不适用。
+    kani_commands = [["flock", kani_policy.LOCK, "bash", "-c", 'ulimit -v "$1"; shift; "$@"', "kani-limit",
+                      str(a.kani_vmem_kb), "cargo", "kani", "--manifest-path", manifest]]
+else:
+    kani_commands = [kani_policy.command(manifest, harness, a.kani_seconds, a.kani_vmem_kb) for harness in a.kani_harness]
+report["kani_scope"] = {"mode": "full" if a.kani_full else "targeted" if a.kani_harness else "none",
+                        "harnesses": a.kani_harness, "seconds": a.kani_seconds, "vmem_kb": a.kani_vmem_kb,
+                        "other_harnesses": "not run here; prior evidence stays bound to its own commit"}
 stages = [
     ("Verus+Z3", [[sys.executable, "scripts/verify-version.py", "--kernel", k, "--verus", a.verus] for k in kernels]),
     ("Proptest", [["cargo", "--version"], ["cargo", "test", "--locked", "--test", "batch_properties"],
@@ -108,8 +132,7 @@ stages = [
         ["cargo", "+" + a.nightly, "fuzz", "run", target, str(corpora / target), "--",
          "-max_total_time=" + str(a.fuzz_seconds), "-max_len=4096", "-rss_limit_mb=1024",
          "-timeout=5", "-seed=12345", "-artifact_prefix=" + str(out / "fuzz-artifacts" / target) + "/"] for target in ["read_boundary", "batch_decode"]]),
-    ("Kani", [["cargo", "kani", "--version"],
-              ["cargo", "kani", "--manifest-path", manifest]]),
+    ("Kani", [["cargo", "kani", "--version"]] + kani_commands),
     ("Loom", [["cargo", "test", "--locked", "--manifest-path", manifest,
                "schedules::shared_immutable_buffer_independent_cursors", "--", "--exact"]]),
 ]
@@ -154,6 +177,46 @@ for stage in report["stages"]:
         stage["environment"] = {"CARGO_TARGET_DIR": str(ROOT / "target/ui-kani" / fingerprint)}
         environment.update(stage["environment"])
         save()
+    if stage["name"] == "Kani" and not a.kani_full:
+        # One result per named harness; a limit is recorded and the chain continues, a counterexample stops it.
+        # 每个指定 harness 单独记结果；撞上限登记后继续，反例则停止。
+        stage["harness_results"] = {}
+        harness_logs = out / "kani-harness-logs"
+        harness_logs.mkdir()
+        with (out / "Kani.log").open("w") as log:
+            subprocess.run(["cargo", "kani", "--version"], stdout=log, stderr=subprocess.STDOUT, env=environment, check=False)
+        for harness, command in zip(a.kani_harness, kani_commands):
+            harness_log = harness_logs / (harness.replace(":", "_") + ".log")
+            try:
+                done = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, errors="replace", timeout=10800, env=environment)
+                harness_log.write_text(done.stdout)
+                status, reason = kani_policy.classify(done.returncode, done.stdout)
+            except (OSError, subprocess.TimeoutExpired) as exc:
+                status, reason = "failed", str(exc)
+            stage["harness_results"][harness] = {"status": status, "reason": reason, "command": command}
+            if harness_log.is_file():
+                stage["harness_results"][harness]["log_sha256"] = hashlib.sha256(harness_log.read_bytes()).hexdigest()
+            save()
+            print("Kani " + harness + ": " + status + " (" + reason + ")", flush=True)
+            if status == "failed":
+                stage.update(status="failed", reason=harness + ": " + reason)
+                save()
+                sys.exit(1)
+        undetermined = [name for name, result in stage["harness_results"].items() if result["status"] == "undetermined"]
+        report["acceptance_pending"].extend("Kani undetermined: " + name + " (" + stage["harness_results"][name]["reason"] + ")" for name in undetermined)
+        if any(result["status"] == "passed" for result in stage["harness_results"].values()):
+            generated = list(Path(stage["environment"]["CARGO_TARGET_DIR"]).glob("**/out/production.rs"))
+            if not generated or any(hashlib.sha256(path.read_bytes()).hexdigest() != report["production_regions_sha256"] for path in generated):
+                stage.update(status="failed", reason="generated Kani production body mismatch")
+                save()
+                sys.exit(1)
+            stage["generated_production_sha256"] = report["production_regions_sha256"]
+        stage["log_sha256"] = hashlib.sha256((out / "Kani.log").read_bytes()).hexdigest()
+        stage["finished_at"] = datetime.now(timezone.utc).isoformat()
+        stage["status"] = "undetermined" if undetermined else "passed_scoped_checks" if a.kani_harness else "not_run_no_harness_named"
+        save()
+        print("Kani: " + stage["status"], flush=True)
+        continue
     with (out / (stage["name"].replace("+", "-") + ".log")).open("w") as log:
         try:
             for command in stage["commands"]:
@@ -203,7 +266,7 @@ if changed:
     sys.exit(1)
 # Scoped diagnostic success must not override an unresolved required obligation.
 # 受限诊断成功不能覆盖尚未完成的强制验证义务。
-report["scoped_checks_complete"] = True
+report["scoped_checks_complete"] = all(stage["status"] == "passed_scoped_checks" for stage in report["stages"])
 report["slice_complete"] = not report["acceptance_pending"]
 report["finished_at"] = datetime.now(timezone.utc).isoformat()
 # Deliberately no whole-engine completion claim from this initial slice.

@@ -6,7 +6,7 @@
   "checks_disabled": false,
   "substituted_map": false,
   "drop_skipped": false,
-  "authorization": "User approved building Bitwuzla 0.8.2 in the isolated build VM on 2026-11-03.",
+  "authorization": "Corrected 2026-11-04. The earlier text (user approved on 2026-11-03) overstated the basis. On 2026-11-03 the build and runs A to F relied on a relayed cross-session message saying the user had agreed; a later relay the same day said this could not count as approval and asked for no download or build, and this repository's record did not reflect that. The user's own approval was given on 2026-11-04 in the coordinating session, in the words 'Bitwuzla 0.8.2 批准', and approval of its build dependencies (CaDiCaL, GMP, symfpu, m4) was given the same day. Both post-date the build. Use is limited to CP-02, not extended to other dependencies or versions, and later runs are bound by the 10 minute / 3.5 GB Kani limits.",
   "tool_versions": {
     "bitwuzla": "0.8.2",
     "bitwuzla_commit": "61bdc637a291c27597fc04263328ecd29d36cc12",
@@ -115,5 +115,40 @@
       "load": "shared build VM, load 3-6, ran alongside the six-stage chain",
       "meaning": "Slicing cut the query to 30 VCCs but the solver still gave no answer in 45 minutes. The assertion neither passed nor failed. Even a pass would cover that one property only, not the sub-obligation."
     }
-  ]
+  ],
+  "provenance": {
+    "checked_on": "2026-11-04",
+    "bitwuzla_source": {
+      "origin": "official upstream repository, tag refs/tags/0.8.2",
+      "commit": "61bdc637a291c27597fc04263328ecd29d36cc12",
+      "check": "git ls-remote of the official tag and git rev-parse HEAD of the VM source tree give this same commit"
+    },
+    "built_binary": {
+      "path": "tools directory in the build VM, bin/bitwuzla",
+      "sha256": "9070f45a8fbb343bc807c0c44ecd8cb1d664645d5840c0db2d9ea24ac40efde5"
+    },
+    "dependencies": {
+      "cadical": {
+        "version": "2.1.2",
+        "url": "https://github.com/arminbiere/cadical/archive/rel-2.1.2.tar.gz",
+        "wrap_source_hash_sha256": "292c2bb8d712d6d05fce3d3df63b922b8fa45e03974a79f7bae5bf68c284f131"
+      },
+      "gmp": {
+        "version": "6.3.0",
+        "url": "https://ftp.gnu.org/gnu/gmp/gmp-6.3.0.tar.xz",
+        "wrap_source_hash_sha256": "a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898"
+      },
+      "symfpu": {
+        "url": "https://github.com/martin-cs/symfpu.git",
+        "revision": "22d993d880f66b2e470c3928e0e61bdf61419702"
+      },
+      "m4": {
+        "version": "1.4.21-1",
+        "package": "m4_1.4.21-1_amd64.deb",
+        "sha256": "1890e37e38fd64bc10630e508f4a013a76bddbe05be2ed89e68df28463712b55",
+        "use": "build only, unpacked into a tools directory"
+      }
+    },
+    "not_recorded": "Compile flags and download logs of the 2026-11-03 build were not kept here; these values were read back from the VM on 2026-11-04. Meson verifies wrap source hashes at fetch time, but the downloaded archives themselves were not re-hashed today."
+  }
 }
