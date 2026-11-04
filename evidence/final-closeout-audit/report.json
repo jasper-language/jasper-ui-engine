@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "kind": "jasper-ui-closeout-audit",
-  "generated_at": "2026-11-04T17:04:47.757329+00:00",
+  "generated_at": "2026-11-04T17:06:18.954982+00:00",
   "claim": "audit only; no checklist completion or whole-engine acceptance is claimed",
   "git": {
     "branch": "dev/ui-jaso-plugin",
-    "commit": "90711502eb971ba0813d9611f154d3677dcf2f09",
+    "commit": "899de66ff88f29fb705c6ce5993db68403a86a6c",
     "dirty_paths": []
   },
   "final_audit": {
@@ -15,7 +15,7 @@
     "recorded_status": "complete",
     "recorded_completed_items": 6,
     "covers_head": true,
-    "basis_commit": "09dc4438d6b680ffed22b9584143283d0ae87888",
+    "basis_commit": "663b043a0fd2f00eaf9d1ba17b680fcb012d27f4",
     "material_changed_since_basis": [],
     "references": [
       {
@@ -2635,7 +2635,7 @@
     },
     {
       "path": "evidence/final-checklist-audit/report.json",
-      "sha256": "b847cb507307c80b82775ef2eb1e5efeb166d8a5d5327a4781128fe680f2bc19",
+      "sha256": "83045aeb5fdd9776172389ebf27eb8160072962dd5b1aaa060f3bb2bb0185acd",
       "status": "complete",
       "recorded_sources": 37,
       "stale_or_missing_sources": [],
@@ -2658,7 +2658,7 @@
     },
     {
       "path": "evidence/final-closeout-audit/report.json",
-      "sha256": "c78c2b9098fb1e60c7ec125a58d936ec5b4ffe173ce519359c6370c3f0236fc4",
+      "sha256": "3939851b1b5e1276a5aee65d6f7c0a18d1d72bdcedabaaea0b322b7c564d274b",
       "status": "unspecified",
       "recorded_sources": 0,
       "stale_or_missing_sources": [],
@@ -7217,7 +7217,7 @@
     "completion_claimed": false,
     "static_audit_complete": true,
     "final_report_covers_head": true,
-    "final_report_basis": "09dc4438d6b680ffed22b9584143283d0ae87888",
+    "final_report_basis": "663b043a0fd2f00eaf9d1ba17b680fcb012d27f4",
     "material_paths_changed_since_final_report_basis": 0,
     "missing_required_sources": 0,
     "missing_required_evidence": 0,
@@ -7226,14 +7226,22 @@
     "unresolved_item_blockers": 0
   },
   "baseline_regression": {
-    "status": "not_run",
-    "reason": "use --run-baseline after work is integrated; heavy checks stay inside the VM"
+    "status": "passed",
+    "started_at": "2026-11-04T17:05:58.424680+00:00",
+    "finished_at": "2026-11-04T17:06:18.583589+00:00",
+    "command": [
+      "<repo>/scripts/verify-in-vm.sh",
+      "env",
+      "bash",
+      "scripts/closeout-baseline.sh"
+    ],
+    "returncode": 0,
+    "log": "evidence/final-closeout-audit/baseline.log",
+    "log_sha256": "f5f08b1c7e95e27c795c61b7fb355bac4893eb6ca17100c530c4634c1b630593"
   },
   "final_gate": {
-    "ready": false,
-    "failures": [
-      "VM baseline regression did not pass"
-    ],
+    "ready": true,
+    "failures": [],
     "note": "Default audits may be incomplete; --require-ready enforces this exact list."
   }
 }
