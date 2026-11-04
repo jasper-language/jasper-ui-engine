@@ -1,0 +1,14 @@
+verification results:: 57 verified, 1 errors (partial verification with `--verify-*`)
+note: verifying root module
+
+error: precondition not satisfied
+    --> <repo>/evidence/scene-batch-unique-kernel/negative_step_with_a_used_set.rs:1273:19
+     |
+1058 |         requires old(ids).seen()==Set::<NodeId>::empty(),
+     |                  --------------------------------------- failed precondition
+...
+1273 |     let applied = apply_checked_patch(&mut staged.root, clone_scene_patch(patch), &mut ids);
+     |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: aborting due to 1 previous error
+

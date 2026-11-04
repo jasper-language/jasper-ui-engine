@@ -13,7 +13,7 @@
     "scene-frame-completion": "c294b6e76b86280d9c03562858f4cbb62c1f6cb8f6716eaf6a8097defd0d0c2c"
   },
   "proof_sha256": "bd74a290e68ba4a105ab5f6ff46c63560ca04d6e7e98a42facde79f973f74828",
-  "runner_sha256": "996049d8efd47a35f5c14bb27a9cccbdbd4307e2c7845160aa1482f9043a896f",
+  "runner_sha256": "d502de70ee7889dd359226a34a649a2061cf08a2096419e0ebb2e47a0e0ca99d",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/verus/verus",

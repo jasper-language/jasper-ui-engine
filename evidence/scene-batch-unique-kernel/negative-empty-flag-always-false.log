@@ -1,0 +1,19 @@
+verification results:: 57 verified, 1 errors (partial verification with `--verify-*`)
+note: verifying root module
+
+error: postcondition not satisfied
+    --> <repo>/evidence/scene-batch-unique-kernel/negative_empty_flag_always_false.rs:1291:13
+     |
+1291 |       ensures batch_unique(*old(scene),*final(scene),expected_version,patches@,result),
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+1292 | / {
+1293 | |     let ghost o=*scene;
+1294 | |     let stage=|active: &Scene| -> (staged:Result<Scene,SceneError>)
+1295 | |         ensures staged_fold(*active,patches@,staged),
+...    |
+1331 | |     result
+1332 | | }
+     | |_- at the end of the function body
+
+error: aborting due to 1 previous error
+

@@ -1207,6 +1207,83 @@ pub fn assert_scene_checked_patch_bytes(spec: &[(u8, u8)], root: u8, id: u8, op:
     assert_scene_checked_patch(tree, patch);
 }
 
+/// The real batch path with the real set, against a fold written out here: the admission comes from
+/// an independent preorder, the write from the tree patch, and identities are read back off the result.
+/// 真实批次路径配真实集合，对照这里写出的折叠：准入来自独立前序，写入来自树补丁，身份从结果上重新读取。
+pub fn assert_scene_batch_unique(tree: Node, patches: Vec<ScenePatch>, version: u64, expected: u64) {
+    assert!(tree.clone() == tree && patches.clone() == patches);
+    let order_of = |node: &Node| {
+        let mut order = Vec::new();
+        preorder_oracle(node, &mut order);
+        order
+    };
+    let first_repeat = |order: &[u64]| (0..order.len()).find(|&at| order[..at].contains(&order[at])).map(|at| NodeId(order[at]));
+    let before = Scene { root: tree.clone(), version };
+    let mut scene = before.clone();
+    let result = apply_unique_batch::<BTreeSet<NodeId>>(&mut scene, expected, &patches);
+    let want = if expected != version {
+        Err(SceneError::StaleVersion { expected, actual: version })
+    } else if patches.is_empty() {
+        first_repeat(&order_of(&tree)).map_or(Ok(tree.clone()), |id| Err(SceneError::DuplicateNode(id)))
+    } else if version == u64::MAX {
+        Err(SceneError::VersionExhausted)
+    } else if let Some(id) = first_repeat(&order_of(&tree)) {
+        Err(SceneError::DuplicateNode(id))
+    } else {
+        patches.iter().try_fold(tree.clone(), |mut model, patch| {
+            if let ScenePatch::Insert { node, .. } = patch {
+                let order = [order_of(&model), order_of(node)].concat();
+                if let Some(id) = first_repeat(&order) {
+                    return Err(SceneError::DuplicateNode(id));
+                }
+            }
+            apply_tree_patch(&mut model, patch.clone())?;
+            assert!(no_repeat(&order_of(&model)), "a step left a repeat");
+            Ok(model)
+        })
+    };
+    match want {
+        Ok(model) => {
+            assert_eq!(result, Ok(()));
+            let advanced = if patches.is_empty() { version } else { version + 1 };
+            assert!(scene.root == model && scene.version == advanced);
+            assert!(no_repeat(&order_of(&scene.root)));
+        }
+        Err(error) => {
+            assert_eq!(result, Err(error));
+            assert_eq!(scene, before);
+        }
+    }
+}
+
+pub fn assert_scene_batch_unique_bytes(spec: &[(u8, u8)], root: u8, ops: &[u8], flags: u8) {
+    let mut room = spec.len();
+    let mut pairs = spec.iter();
+    let mut tree = removal_tree(root as u64 % 8, &mut pairs, &mut room);
+    vary_kinds(&mut tree);
+    if flags & 1 != 0 {
+        let mut next = 0;
+        renumber_nodes(&mut tree, &mut next);
+    }
+    let mut patches = Vec::new();
+    for (at, step) in ops.chunks_exact(3).take(4).enumerate() {
+        let mut inserted = removal_tree(step[1] as u64 % 8, &mut pairs, &mut room);
+        // Fresh numbering lets later patches see earlier insertions; the same numbers make them collide.
+        // 重新编号让后面的补丁看到前面的插入；相同编号让它们相撞。
+        let mut next = if flags & 2 != 0 { 100 + 20 * at as u64 } else { 100 };
+        renumber_nodes(&mut inserted, &mut next);
+        let id = if step[2] & 1 != 0 { NodeId(100) } else { NodeId(step[1] as u64 % 8) };
+        patches.push(match step[0] % 4 {
+            0 | 1 => ScenePatch::Insert { parent: id, index: step[2] as usize % 6, node: inserted },
+            2 => ScenePatch::UpdateText { id, text: "new".into() },
+            _ => ScenePatch::Remove { id },
+        });
+    }
+    let version = if flags & 4 != 0 { u64::MAX } else { root as u64 };
+    let expected = if flags & 8 != 0 { version.wrapping_add(1) } else { version };
+    assert_scene_batch_unique(tree, patches, version, expected);
+}
+
 pub fn assert_scene_node_find_bytes(spec: &[(u8, u8)], root: u8, id: u8) {
     let mut room = spec.len();
     let tree = removal_tree(root as u64 % 8, &mut spec.iter(), &mut room);
@@ -3439,6 +3516,10 @@ mod properties {
             assert_scene_batch_commit_bytes(&spec, root, staged, version, offset, flags);
         }
         #[test]
+        fn scene_batch_unique_property(spec in prop::collection::vec(any::<(u8, u8)>(), 0..24), root in any::<u8>(), ops in prop::collection::vec(any::<u8>(), 0..15), flags in any::<u8>()) {
+            assert_scene_batch_unique_bytes(&spec, root, &ops, flags);
+        }
+        #[test]
         fn scene_checked_patch_property(spec in prop::collection::vec(any::<(u8, u8)>(), 0..24), root in any::<u8>(), id in any::<u8>(), op in any::<u8>(), index in any::<u8>(), flags in any::<u8>()) {
             assert_scene_checked_patch_bytes(&spec, root, id, op, index, flags);
         }
@@ -3854,6 +3935,9 @@ mod memory {
             assert_scene_unique_ids_bytes(&[(1, 2), (2, 0), (3, 0), (2, 1), (3, 0)], version as u8, 3, 5);
             for (op, flags) in [(0, 3), (0, 0), (2, 1), (6, 1), (6, 0), (4, 1)] {
                 assert_scene_checked_patch_bytes(&[(1, 2), (2, 0), (3, 0), (4, 1), (5, 0)], version as u8, 1, op, 1, flags);
+            }
+            for flags in [0, 1, 3, 5, 9] {
+                assert_scene_batch_unique_bytes(&[(1, 2), (2, 0), (3, 0), (4, 1), (5, 0), (6, 0)], version as u8, &[0, 1, 0, 0, 1, 1, 2, 1, 1, 3, 1, 1], flags);
             }
             assert_scene_unique_ids_bytes(&[(1, 0), (1, 0)], version as u8, version as u8, version as u8);
             assert_scene_node_find_bytes(&[(1, 2), (2, 0), (3, 0), (2, 1), (3, 0)], version as u8, 3);

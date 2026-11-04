@@ -13,7 +13,7 @@
     "surface-lifecycle-storage-type": "4a7da0410b341e6e1a90ab045b1a2546174a2be360fe477659691075e6301e6c"
   },
   "proof_sha256": "d6a41fc8f5e170d1d312841914f409cd2511d4f4c045c9d1c7ffe35a847df537",
-  "runner_sha256": "996049d8efd47a35f5c14bb27a9cccbdbd4307e2c7845160aa1482f9043a896f",
+  "runner_sha256": "d502de70ee7889dd359226a34a649a2061cf08a2096419e0ebb2e47a0e0ca99d",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/verus/verus",

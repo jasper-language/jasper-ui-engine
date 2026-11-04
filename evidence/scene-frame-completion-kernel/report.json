@@ -12,7 +12,7 @@
     "scene-update-error-type": "256606b123f0efa48b755744e08ea821890120a43d4fcfbb60cb9c74f24a8875"
   },
   "proof_sha256": "0552292c208851decf5f7bcf3f9d7749c8c2e88ed7c1507bf7d1f30feb3017eb",
-  "runner_sha256": "996049d8efd47a35f5c14bb27a9cccbdbd4307e2c7845160aa1482f9043a896f",
+  "runner_sha256": "d502de70ee7889dd359226a34a649a2061cf08a2096419e0ebb2e47a0e0ca99d",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/verus/verus",

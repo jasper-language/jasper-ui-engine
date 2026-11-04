@@ -1,0 +1,19 @@
+verification results:: 57 verified, 1 errors (partial verification with `--verify-*`)
+note: verifying root module
+
+error: postcondition not satisfied
+    --> <repo>/evidence/scene-batch-unique-kernel/negative_step_swallows_the_failure.rs:1266:13
+     |
+1266 |       ensures result is Ok ==> detached_step(staged,*patch,result->Ok_0),
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+1273 | /     match applied {
+1274 | |         Ok(()) => Ok(staged),
+1275 | |         Err(error) => {
+1276 | |             Ok(staged)
+1277 | |         }
+1278 | |     }
+     | |_____- at the end of the function body
+
+error: aborting due to 1 previous error
+

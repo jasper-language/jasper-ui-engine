@@ -1,0 +1,45 @@
+verification results:: 57 verified, 1 errors (partial verification with `--verify-*`)
+note: verifying root module
+
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+    --> <repo>/evidence/scene-batch-unique-kernel/negative_stage_skips_the_patches.rs:1286:1
+     |
+1286 | / fn apply_unique_batch<T: EmptyIdentitySet>(
+1287 | |     scene: &mut Scene,
+1288 | |     expected_version: u64,
+1289 | |     patches: &[ScenePatch],
+1290 | | ) -> (result:Result<(), SceneError>)
+     | |___________________________________^
+
+note: recommendation not met: cannot prove that there exists values that satisfy the condition of the choose expression
+    --> <repo>/evidence/scene-batch-unique-kernel/negative_stage_skips_the_patches.rs:1301:52
+     |
+1301 |                   let trace=choose|trace:Seq<Scene>| #[trigger] batch_stage_trace(apply_detached_patch::<T>,*active,patches@,trace)
+     |  ____________________________________________________^
+1302 | |                     && trace.len()==patches@.len()+1 && trace.last()==end;
+     | |_________________________________________________________________________^
+
+error: assertion failed
+    --> <repo>/evidence/scene-batch-unique-kernel/negative_stage_skips_the_patches.rs:1304:28
+     |
+1304 |                     assert(call_ensures(apply_detached_patch::<T>,(trace[i],&patches@[i]),Ok::<Scene,SceneError>(trace[i+1])));
+     |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ assertion failed
+
+note: recommendation not met
+    --> <repo>/evidence/scene-batch-unique-kernel/negative_stage_skips_the_patches.rs:1304:68
+     |
+1304 |                     assert(call_ensures(apply_detached_patch::<T>,(trace[i],&patches@[i]),Ok::<Scene,SceneError>(trace[i+1])));
+     |                                                                    ^^^^^^^^
+     |
+    --> seq.rs:980:12
+     |
+     = note: recommendation not met
+
+error: assertion failed
+    --> <repo>/evidence/scene-batch-unique-kernel/negative_stage_skips_the_patches.rs:1306:24
+     |
+1306 |                 assert(unique_fold(*active,patches@,trace));
+     |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ assertion failed
+
+error: aborting due to 2 previous errors
+

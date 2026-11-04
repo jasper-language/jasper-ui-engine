@@ -3318,6 +3318,214 @@ spec fn batch_committed<V:FnOnce(&Scene)->Result<(),SceneError>,S:FnOnce(&Scene)
 }
 
 
+KERNELS["scene-batch-unique"] = {
+    "source":"src/scene.rs", "marker":"SCENE BATCH UNIQUE",
+    "property":"UI-SCENE-BATCH-UNIQUE-001",
+    "spec_prelude":r"""// The derived clones are trusted to give back the same value; tests compare them, nothing proves it.
+// 派生的克隆被信任为返回相同的值；只由测试比较，没有证明。
+#[verifier::external_body]
+fn clone_scene_patch(patch:&ScenePatch)->(copy:ScenePatch) ensures copy==*patch { unimplemented!() }
+#[verifier::external_body]
+fn clone_scene(scene:&Scene)->(copy:Scene) ensures copy==*scene { unimplemented!() }
+// One staging step: the checked patch on the tree, the version untouched.
+// 一步暂存：树上的受检补丁，版本不动。
+spec fn detached_step(o:Scene,patch:ScenePatch,n:Scene)->bool {
+    n.version==o.version && patch_checked(o.root,n.root,patch,Ok::<(),SceneError>(()))
+}
+// trace runs from start through one step per patch, in order.
+// trace 从 start 出发，每个补丁按序一步。
+spec fn unique_fold(start:Scene,patches:Seq<ScenePatch>,trace:Seq<Scene>)->bool {
+    trace.len()==patches.len()+1 && trace[0]==start
+        && forall|i:int| #![trigger trace[i]] 0<=i<patches.len() ==> detached_step(trace[i],patches[i],trace[i+1])
+}
+spec fn fold_distinct(trace:Seq<Scene>)->bool {
+    forall|i:int| #![trigger trace[i]] 0<=i<trace.len() ==> ids_distinct(preorder_ids(trace[i].root))
+}
+spec fn staged_fold(active:Scene,patches:Seq<ScenePatch>,result:Result<Scene,SceneError>)->bool {
+    match result {
+        Ok(end)=>exists|trace:Seq<Scene>| #[trigger] unique_fold(active,patches,trace) && trace.last()==end,
+        Err(_)=>true,
+    }
+}
+// What one call leaves behind, by the order the production path decides in.
+// 一次调用留下的结果，按生产路径的判定顺序写出。
+spec fn batch_unique(o:Scene,n:Scene,expected:u64,patches:Seq<ScenePatch>,result:Result<(),SceneError>)->bool {
+    if expected!=o.version { result==Err::<(),SceneError>(SceneError::StaleVersion{expected:expected,actual:o.version}) && n==o }
+    else if !ids_distinct(preorder_ids(o.root)) { result is Err && n==o }
+    else if patches.len()==0 { result is Ok && n==o }
+    else if o.version==u64::MAX { result==Err::<(),SceneError>(SceneError::VersionExhausted) && n==o }
+    else {
+        match result {
+            Err(_)=>n==o,
+            Ok(_)=>n.version==o.version+1 && ids_distinct(preorder_ids(n.root))
+                && exists|trace:Seq<Scene>| #[trigger] unique_fold(o,patches,trace) && fold_distinct(trace) && trace.last().root==n.root,
+        }
+    }
+}
+proof fn lemma_step_keeps_distinct(o:Node,n:Node,patch:ScenePatch)
+    requires patch_checked(o,n,patch,Ok::<(),SceneError>(())), ids_distinct(preorder_ids(o)),
+    ensures ids_distinct(preorder_ids(n)),
+{
+    if let ScenePatch::Insert{node,..}=patch {
+        if !ids_distinct(preorder_ids(o)+preorder_ids(node)) {
+            let d=choose|d:NodeId| #![trigger (preorder_ids(o)+preorder_ids(node)).contains(d)] (preorder_ids(o)+preorder_ids(node)).contains(d) && Ok::<(),SceneError>(())==patch_err(SceneError::DuplicateNode(d));
+            assert(false);
+        }
+    }
+}
+proof fn lemma_fold_distinct_at(start:Scene,patches:Seq<ScenePatch>,trace:Seq<Scene>,i:int)
+    requires unique_fold(start,patches,trace), ids_distinct(preorder_ids(start.root)), 0<=i<trace.len(),
+    ensures ids_distinct(preorder_ids(trace[i].root)),
+    decreases i,
+{
+    if i>0 {
+        lemma_fold_distinct_at(start,patches,trace,i-1);
+        assert(detached_step(trace[i-1],patches[i-1],trace[i-1+1]));
+        assert(i-1+1==i);
+        lemma_step_keeps_distinct(trace[i-1].root,trace[i].root,patches[i-1]);
+    }
+}
+proof fn lemma_fold_distinct(start:Scene,patches:Seq<ScenePatch>,trace:Seq<Scene>)
+    requires unique_fold(start,patches,trace), ids_distinct(preorder_ids(start.root)),
+    ensures fold_distinct(trace),
+{
+    assert forall|i:int| #![trigger trace[i]] 0<=i<trace.len() implies ids_distinct(preorder_ids(trace[i].root)) by {
+        lemma_fold_distinct_at(start,patches,trace,i);
+    }
+}
+""",
+    "signature":"""trait EmptyIdentitySet: IdentitySet {
+    fn empty() -> Self;""",
+    "contract":"""trait EmptyIdentitySet: IdentitySet {
+    fn empty()->(fresh:Self)
+        ensures fresh.seen()==Set::<NodeId>::empty();""",
+    "extra_annotations":[
+        ("""fn validate_scene_ids<T: EmptyIdentitySet>(scene: &Scene) -> Result<(), SceneError> {
+    let mut ids = T::empty();
+    collect_unique_ids(&scene.root, &mut ids)
+}""","""fn validate_scene_ids<T: EmptyIdentitySet>(scene: &Scene) -> (result:Result<(), SceneError>)
+    ensures (result is Ok)==ids_distinct(preorder_ids(scene.root)),
+{
+    let mut ids = T::empty();
+    let result = collect_unique_ids(&scene.root, &mut ids);
+    proof {
+        let s=preorder_ids(scene.root);
+        if let Err(SceneError::DuplicateNode(d))=result {
+            let k=choose|k:int| #![trigger s[k]] 0<=k<s.len() && s[k]==d && unrepeated(Set::<NodeId>::empty(),s.take(k))
+                && (Set::<NodeId>::empty().contains(d) || s.take(k).contains(d));
+            let i=choose|i:int| 0<=i<s.take(k).len() && s.take(k)[i]==d;
+            assert(s[i]==d && s[k]==d && i<k);
+        }
+    }
+    result
+}"""),
+        ("""fn apply_detached_patch<T: EmptyIdentitySet>(
+    mut staged: Scene,
+    patch: &ScenePatch,
+) -> Result<Scene, SceneError> {
+    let mut ids = T::empty();
+    match apply_checked_patch(&mut staged.root, patch.clone(), &mut ids) {
+        Ok(()) => Ok(staged),
+        Err(error) => Err(error),
+    }
+}""","""fn apply_detached_patch<T: EmptyIdentitySet>(
+    staged: Scene,
+    patch: &ScenePatch,
+) -> (result:Result<Scene, SceneError>)
+    ensures result is Ok ==> detached_step(staged,*patch,result->Ok_0),
+        result is Err ==> exists|n:Node| #[trigger] patch_checked(staged.root,n,*patch,Err::<(),SceneError>(result->Err_0)),
+{
+    let mut staged = staged;
+    let ghost o = staged;
+    let mut ids = T::empty();
+    let applied = apply_checked_patch(&mut staged.root, clone_scene_patch(patch), &mut ids);
+    match applied {
+        Ok(()) => Ok(staged),
+        Err(error) => {
+            let result=Err::<Scene,SceneError>(error);
+            assert(patch_checked(o.root,staged.root,*patch,Err::<(),SceneError>(result->Err_0)));
+            result
+        }
+    }
+}"""),
+        ("""fn apply_unique_batch<T: EmptyIdentitySet>(
+    scene: &mut Scene,
+    expected_version: u64,
+    patches: &[ScenePatch],
+) -> Result<(), SceneError> {
+    commit_scene_batch(
+        scene,
+        expected_version,
+        patches.is_empty(),
+        validate_scene_ids::<T>,
+        |active: &Scene| stage_scene_batch(active.clone(), patches, apply_detached_patch::<T>),
+    )
+}""","""fn apply_unique_batch<T: EmptyIdentitySet>(
+    scene: &mut Scene,
+    expected_version: u64,
+    patches: &[ScenePatch],
+) -> (result:Result<(), SceneError>)
+    ensures batch_unique(*old(scene),*final(scene),expected_version,patches@,result),
+{
+    let ghost o=*scene;
+    let stage=|active: &Scene| -> (staged:Result<Scene,SceneError>)
+        ensures staged_fold(*active,patches@,staged),
+    {
+        let staged=stage_scene_batch(clone_scene(active), patches, apply_detached_patch::<T>);
+        proof {
+            if staged is Ok {
+                let end=staged->Ok_0;
+                let trace=choose|trace:Seq<Scene>| #[trigger] batch_stage_trace(apply_detached_patch::<T>,*active,patches@,trace)
+                    && trace.len()==patches@.len()+1 && trace.last()==end;
+                assert forall|i:int| #![trigger trace[i]] 0<=i<patches@.len() implies detached_step(trace[i],patches@[i],trace[i+1]) by {
+                    assert(call_ensures(apply_detached_patch::<T>,(trace[i],&patches@[i]),Ok::<Scene,SceneError>(trace[i+1])));
+                }
+                assert(unique_fold(*active,patches@,trace));
+            }
+        }
+        staged
+    };
+    let ghost stage_spec=stage;
+    let result=commit_scene_batch(
+        scene,
+        expected_version,
+        patches.is_empty(),
+        validate_scene_ids::<T>,
+        stage,
+    );
+    proof {
+        if expected_version==o.version && ids_distinct(preorder_ids(o.root)) && patches@.len()!=0 && o.version!=u64::MAX && result is Ok {
+            let v=choose|v:u64| #[trigger] stage_spec.ensures((&o,),Ok::<Scene,SceneError>(Scene{root:scene.root,version:v}));
+            let end=Scene{root:scene.root,version:v};
+            assert(staged_fold(o,patches@,Ok::<Scene,SceneError>(end)));
+            let trace=choose|trace:Seq<Scene>| #[trigger] unique_fold(o,patches@,trace) && trace.last()==end;
+            lemma_fold_distinct(o,patches@,trace);
+            assert(trace[trace.len()-1]==trace.last());
+            assert(ids_distinct(preorder_ids(scene.root)));
+            assert(unique_fold(o,patches@,trace) && fold_distinct(trace) && trace.last().root==scene.root);
+        }
+    }
+    result
+}"""),
+    ],
+    "depends":["scene-checked-patch","scene-batch-stage","scene-batch-commit"], "evidence":"scene-batch-unique-kernel", "function_count":3,
+    "timeout":600, "negative_options":["--verify-root"],
+    "scope":"Exact production batch path on the real Node, NodeKind, ScenePatch, SceneError and Scene declarations with Canvas, Style, Semantics and Point replaced by opaque values the kernel cannot read, over any set obeying the IdentitySet contract and starting empty, for any scene, version and patch sequence. A stale batch reports staleness; a tree that already repeats is refused; an empty batch on a tree free of repeats succeeds with the scene unchanged; an exhausted version is refused; every failure leaves the scene equal to what it was. A successful non-empty batch advances the version once and its tree repeats no identity, and the tree is the end of a trace with one checked step per patch in order, every state of which repeats nothing. The derived clones of Scene and ScenePatch are assumed to return the same value; tests compare them. Not covered: that BTreeSet obeys the contract (tested), panic, allocation failure, stack use and cost.",
+    # All mutations sit in the three functions of this kernel; the positive run has verified the dependencies.
+    # 反例都在本内核的三个函数内，依赖已由正例验证。
+    "mutations":[("validate-accepts-all","    let result = collect_unique_ids(&scene.root, &mut ids);\n","    let result = Ok::<(),SceneError>(());\n"),
+                 ("step-swallows-the-failure","            let result=Err::<Scene,SceneError>(error);\n            assert(patch_checked(o.root,staged.root,*patch,Err::<(),SceneError>(result->Err_0)));\n            result","            Ok(staged)"),
+                 ("step-drops-the-patch","    let applied = apply_checked_patch(&mut staged.root, clone_scene_patch(patch), &mut ids);","    let applied = Ok::<(),SceneError>(());"),
+                 ("step-changes-the-version","        Ok(()) => Ok(staged),\n        Err(error) => {\n            let result=","        Ok(()) => { staged.version = 0; Ok(staged) }\n        Err(error) => {\n            let result="),
+                 ("commit-without-the-check","        validate_scene_ids::<T>,\n        stage,","        |_active:&Scene| -> (checked:Result<(),SceneError>) ensures checked is Ok { Ok(()) },\n        stage,"),
+                 ("empty-flag-always-false","        patches.is_empty(),\n        validate_scene_ids::<T>,","        false,\n        validate_scene_ids::<T>,")],
+    # Skipping the patches leaves the proof no trace to read, so the proof's own step assertion refuses it.
+    # 跳过补丁时证明读不到轨迹，由证明中的逐步断言拒绝。
+    "refused_mutations":[("stage-skips-the-patches","        let staged=stage_scene_batch(clone_scene(active), patches, apply_detached_patch::<T>);","        let staged=Ok::<Scene,SceneError>(clone_scene(active));","assertion failed"),
+                         ("step-with-a-used-set","    let mut ids = T::empty();\n    let applied","    let mut ids = T::empty();\n    let _used = ids.admit(staged.root.id);\n    let applied","precondition not satisfied")],
+}
+
+
 KERNELS["source-insert-index"] = {
     "source":"src/native_adapter/native_scene.rs", "marker":"SOURCE INSERT INDEX",
     "property":"UI-SOURCE-INSERT-INDEX-001",

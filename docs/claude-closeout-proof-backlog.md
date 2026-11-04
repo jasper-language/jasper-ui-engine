@@ -34,7 +34,9 @@
 
 2026-11-04 闭合 UI-SCENE-CHECKED-PATCH-001：`apply_checked_patch`（`apply_one` 的函数体）在真实 `Node`、`NodeKind`、`ScenePatch`、`SceneError` 声明上的组合（`Canvas`、`Style`、`Semantics`、`Point` 在证明中是内核读不到的值）。对任意树、任意补丁和从空开始、遵守 `IdentitySet` 契约的任意集合：`Insert` 在树后接子树的前序身份有重复时报 `DuplicateNode` 且不写，否则按 UI-SCENE-PATCH-001 写入，成功后前序身份无重复，且恰为旧序列在一个位置放入子树的序列；其他补丁不做检查，序列不变，或成功的 `Remove` 恰好取走一棵带该身份的子树，原本无重复的树仍无重复。反例被拒，见 `evidence/scene-checked-patch-chain/report.json`。真实 `BTreeSet` 满足契约只经测试，`apply_one` 传入空集合靠阅读，Kani：发版时验证。
 
-仍未覆盖：跨整批的身份唯一（`validate` 加折叠的组合没有陈述）、`Scene` 的克隆、候选构造本身、`NativeScene` 的 `RestoreCandidate` 实现满足契约（含写入不改变准入判定）、`*self = candidate` 析构旧视图时的 panic、活动文档读取路径上第三方内部可变性的影响。
+2026-11-04 闭合 UI-SCENE-BATCH-UNIQUE-001：`apply_unique_batch`（`apply_batch_at` 的主体）在真实 `Scene`、`Node`、`NodeKind`、`ScenePatch`、`SceneError` 声明上的整批组合。对任意场景、版本、补丁序列和从空开始、遵守 `IdentitySet` 契约的任意集合：已有重复的树不接受任何批次；成功的非空批次版本加一，结果树无重复，且是逐补丁受检写入的轨迹终点，轨迹上每个状态都无重复；任何失败都让场景保持原值。反例被拒，见 `evidence/scene-batch-unique-chain/report.json`。派生克隆返回相同的值是证明中的假设，只经测试；真实 `BTreeSet` 满足契约只经测试；Kani：发版时验证。
+
+仍未覆盖：`Scene` 克隆的实现（整批证明只假设它返回相同的值）、候选构造本身、`NativeScene` 的 `RestoreCandidate` 实现满足契约（含写入不改变准入判定）、`*self = candidate` 析构旧视图时的 panic、活动文档读取路径上第三方内部可变性的影响。
 
 ### CP-04
 

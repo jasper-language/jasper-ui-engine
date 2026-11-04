@@ -133,7 +133,7 @@ impl Scene {
     /// Rechecks identity uniqueness, including direct edits to the public root.
     /// 重新检查身份唯一性，覆盖对公开 root 的直接修改。
     pub fn validate(&self) -> Result<(), SceneError> {
-        collect_unique_ids(&self.root, &mut BTreeSet::new())
+        validate_scene_ids::<BTreeSet<NodeId>>(self)
     }
 
     /// Monotonic version; incremented exactly once per successful patch/batch.
@@ -165,24 +165,13 @@ impl Scene {
         expected_version: u64,
         patches: &[ScenePatch],
     ) -> Result<(), SceneError> {
-        commit_scene_batch(
-            self,
-            expected_version,
-            patches.is_empty(),
-            Self::validate,
-            |active: &Scene| stage_scene_batch(active.clone(), patches, Self::apply_detached),
-        )
+        apply_unique_batch::<BTreeSet<NodeId>>(self, expected_version, patches)
     }
 
-    /// A plain function with no receiver, so staging cannot reach the active scene.
-    /// 无接收者的普通函数，暂存阶段无法触及活动场景。
-    fn apply_detached(mut staged: Scene, patch: &ScenePatch) -> Result<Scene, SceneError> {
-        staged.apply_one(patch.clone())?;
-        Ok(staged)
-    }
-
+    #[cfg(test)]
     fn apply_one(&mut self, patch: ScenePatch) -> Result<(), SceneError> {
-        apply_checked_patch(&mut self.root, patch, &mut BTreeSet::new())
+        *self = apply_detached_patch::<BTreeSet<NodeId>>(self.clone(), &patch)?;
+        Ok(())
     }
 }
 
@@ -347,6 +336,12 @@ impl IdentitySet for BTreeSet<NodeId> {
         self.insert(id)
     }
 }
+
+impl EmptyIdentitySet for BTreeSet<NodeId> {
+    fn empty() -> Self {
+        BTreeSet::new()
+    }
+}
 // END VERIFIED SCENE IDENTITY SET INSTANCE
 
 // BEGIN VERIFIED SCENE UNIQUE IDS KERNEL
@@ -409,6 +404,51 @@ fn apply_checked_patch<T: IdentitySet>(
     apply_tree_patch(root, patch)
 }
 // END VERIFIED SCENE CHECKED PATCH KERNEL
+
+// BEGIN VERIFIED SCENE BATCH UNIQUE KERNEL
+/// A set that can start empty, so each check begins from nothing.
+/// 可从空开始的集合，每次检查都从零开始。
+trait EmptyIdentitySet: IdentitySet {
+    fn empty() -> Self;
+}
+
+/// Rechecks the whole tree from an empty set.
+/// 从空集合开始重查全树。
+fn validate_scene_ids<T: EmptyIdentitySet>(scene: &Scene) -> Result<(), SceneError> {
+    let mut ids = T::empty();
+    collect_unique_ids(&scene.root, &mut ids)
+}
+
+/// A plain function with no receiver, so staging cannot reach the active scene.
+/// 无接收者的普通函数，暂存阶段无法触及活动场景。
+fn apply_detached_patch<T: EmptyIdentitySet>(
+    mut staged: Scene,
+    patch: &ScenePatch,
+) -> Result<Scene, SceneError> {
+    let mut ids = T::empty();
+    match apply_checked_patch(&mut staged.root, patch.clone(), &mut ids) {
+        Ok(()) => Ok(staged),
+        Err(error) => Err(error),
+    }
+}
+
+/// The whole batch: the tree is checked first, each patch keeps it free of repeats, and only a
+/// complete fold replaces the active scene.
+/// 整批：先查全树，每个补丁都保持无重复，只有完整折叠才替换活动场景。
+fn apply_unique_batch<T: EmptyIdentitySet>(
+    scene: &mut Scene,
+    expected_version: u64,
+    patches: &[ScenePatch],
+) -> Result<(), SceneError> {
+    commit_scene_batch(
+        scene,
+        expected_version,
+        patches.is_empty(),
+        validate_scene_ids::<T>,
+        |active: &Scene| stage_scene_batch(active.clone(), patches, apply_detached_patch::<T>),
+    )
+}
+// END VERIFIED SCENE BATCH UNIQUE KERNEL
 
 // BEGIN VERIFIED SCENE PATCH KERNEL
 /// Applies one patch to the tree. The tree is the only state reached; a failed patch may be left
@@ -630,6 +670,53 @@ mod tests {
             }),
             Ok(())
         );
+    }
+
+    #[test]
+    fn batch_keeps_identities_unique_from_the_first_patch_to_the_last() {
+        let leaf = |value: u64| Node::container(NodeId(value));
+        let insert = |node: Node| ScenePatch::Insert {
+            parent: NodeId(1),
+            index: 0,
+            node,
+        };
+        // A later patch collides with an earlier one in the same batch: nothing is kept.
+        // 后面的补丁与同批前面的补丁相撞：什么都不留。
+        let mut scene = Scene::new(leaf(1));
+        let before = scene.clone();
+        assert_eq!(
+            scene.apply_batch(&[insert(leaf(2)), insert(leaf(3).child(leaf(2)))]),
+            Err(SceneError::DuplicateNode(NodeId(2)))
+        );
+        assert_eq!(scene, before);
+        // A removal frees the identity for the next patch in the same batch.
+        // 移除让同批下一个补丁可以使用该身份。
+        scene
+            .apply_batch(&[
+                insert(leaf(2)),
+                ScenePatch::Remove { id: NodeId(2) },
+                insert(leaf(2)),
+            ])
+            .unwrap();
+        assert_eq!(scene.root.children.len(), 1);
+        assert_eq!(scene.version(), before.version() + 1);
+        assert_eq!(scene.validate(), Ok(()));
+        // A tree that already repeats takes no batch, not even one without an insertion.
+        // 已有重复的树不接受任何批次，不含插入的批次也不接受。
+        let mut repeating = Scene::new(leaf(1).child(leaf(1)));
+        let before = repeating.clone();
+        assert_eq!(
+            repeating.apply_batch(&[ScenePatch::SetScroll {
+                id: NodeId(1),
+                offset: Point::new(1.0, 2.0),
+            }]),
+            Err(SceneError::DuplicateNode(NodeId(1)))
+        );
+        assert_eq!(
+            repeating.apply_batch(&[]),
+            Err(SceneError::DuplicateNode(NodeId(1)))
+        );
+        assert_eq!(repeating, before);
     }
 
     #[test]

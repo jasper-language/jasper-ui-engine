@@ -1,0 +1,143 @@
+{
+  "property": "UI-SCENE-BATCH-UNIQUE-001",
+  "backlog_item": "CP-03",
+  "status": "subproperty_scoped_checks_passed",
+  "cp03_closed": false,
+  "production": {
+    "file": "src/scene.rs",
+    "functions": [
+      "validate_scene_ids",
+      "apply_detached_patch",
+      "apply_unique_batch"
+    ],
+    "file_sha256": "05d5de1f8763acb66df5749bebf5613f79ebc4af0415280a76f5cd6316439a36",
+    "kernel_sha256": "cbb34c00ada82500559bae7abfed4177eeb3c6ea99083625e3c00faff61814d0",
+    "caller": "Scene::validate, Scene::apply_batch_at"
+  },
+  "specification": "For any scene, expected version and patch sequence, with a set obeying the IdentitySet contract and starting empty. A stale batch reports staleness. A tree that already repeats takes no batch. An empty batch on a tree free of repeats succeeds with the scene unchanged. An exhausted version is refused. Every failure leaves the scene equal to what it was. A successful non-empty batch advances the version once and its tree repeats nothing, and the tree is the end of a trace with one checked step per patch in order (UI-SCENE-CHECKED-PATCH-001), every state of which repeats nothing.",
+  "assumptions": [
+    "The derived clones of Scene and ScenePatch return the same value: an external_body assumption in the proof, compared by Proptest, not proved.",
+    "The real BTreeSet obeys the IdentitySet and EmptyIdentitySet contracts: tested, not proved.",
+    "Scene::apply_batch_at and Scene::validate instantiate these functions with BTreeSet<NodeId>: by reading."
+  ],
+  "tools": {
+    "verus": "Verus",
+    "z3": "Z3 version 4.16.0 - 64 bit",
+    "nightly": "nightly-2026-10-17"
+  },
+  "config": {
+    "entry": "python3 scripts/verify-ui.py --verus <verus>",
+    "fuzz_seconds": 20,
+    "proptest_cases": 256,
+    "proptest_seed": "12345",
+    "verus_time_limit_seconds": 600,
+    "negative_controls_scope": "--verify-root"
+  },
+  "stages": {
+    "Verus+Z3": {
+      "result": "passed",
+      "verified": 58,
+      "errors": 0,
+      "negative_controls": [
+        {
+          "name": "validate-accepts-all",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "step-swallows-the-failure",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "step-drops-the-patch",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "step-changes-the-version",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "commit-without-the-check",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "empty-flag-always-false",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "stage-skips-the-patches",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "step-with-a-used-set",
+          "rejected": true,
+          "exit_code": 1
+        }
+      ],
+      "model_note": "Canvas, Style, Semantics and Point are replaced in the proof by value types the kernel cannot read. The proof copy adds ghost lets, asserts and named results, names the staging closure, and replaces the two clone calls with the assumed functions. The count includes the re-verified dependencies. Skipping the patches is refused by an assertion in the proof, a used set by the callee's precondition, the other six by postconditions."
+    },
+    "Proptest": {
+      "result": "passed",
+      "harness": [
+        "properties::scene_batch_unique_property"
+      ],
+      "includes": "Trees up to 24 nodes and up to 4 patches (Insert, UpdateText, Remove), flags for fresh numbering, an exhausted version and a stale version, with the real BTreeSet, against a fold written out in the harness: admission from an independent preorder, writes from the tree patch, identities read back after every step. Also compares the clones of the tree and the patches."
+    },
+    "Miri": {
+      "result": "passed",
+      "harness": [
+        "memory boundaries with five flag combinations and four patches on one fixed shape"
+      ],
+      "note": "Stand-in field types, no user Drop and no panic injection"
+    },
+    "cargo-fuzz": {
+      "result": "passed",
+      "target": "read_boundary",
+      "completed_runs": [
+        10572,
+        1342818,
+        34518
+      ],
+      "note": "Only read_boundary reaches this kernel; the runs are read_boundary, batch_decode and ui_plugin_gate, in that order. The run shared the build machine with other builds."
+    },
+    "Kani": {
+      "result": "Kani：发版时验证",
+      "harness": {},
+      "note": "No harness was added and none ran."
+    },
+    "Loom": {
+      "result": "N/A",
+      "reason": "The kernel has no shared state or synchronization primitive; the scene and the set are held by exclusive reference or moved.",
+      "counted_as_pass": false
+    }
+  },
+  "real_path_test": {
+    "test": "scene::tests::batch_keeps_identities_unique_from_the_first_patch_to_the_last",
+    "class": "tested, not proved",
+    "mutation_checked": "Seven manual mutations in a copy of the tree, one run each of scene::tests: validation accepts all, step swallows the failure, step drops the patch, step uses a seeded set, commit without validation, patches skipped all fail this test and others; the empty flag forced false fails version_exhaustion_rejects_updates_without_changing_scene and not this test."
+  },
+  "behavior_change_note": "The bodies of validate and apply_batch_at moved into generic functions, and apply_detached became apply_detached_patch; apply_one remains only for tests. The checks, errors and writes should be unchanged; that equivalence with the old text is argued by reading and tests, not proved.",
+  "chain_notes": [
+    "The batch full run on 342ae26 first failed 33 tests because the run set too few font variables; rerun with all five injected fonts it passed 351 with 0 failures. That run predates this slice."
+  ],
+  "uncovered": [
+    "The implementations of the derived clones, assumed to return the same value",
+    "That BTreeSet obeys the contracts, and that the public methods instantiate with it",
+    "Panic, allocation failure, stack use and cost, including re-checking a whole tree per Insert",
+    "Candidate construction, NativeScene's RestoreCandidate implementation, drop of the old view",
+    "UI-TXN-ATOMIC-001 stays not_verified as a whole-transaction property"
+  ],
+  "chain": {
+    "entry_exit_code": 0,
+    "complete": false,
+    "slice_complete": true,
+    "reason": "complete stays false because the CP-01 and CP-02 Kani and Bitwuzla paths are on the release checklist; they are not discharged"
+  },
+  "completion_claimed": false
+}

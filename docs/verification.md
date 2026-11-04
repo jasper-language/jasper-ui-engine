@@ -1132,6 +1132,25 @@ Kani 未得出结论的形状（都在链外，已撤下；构建机与其他构
 
 假设与未覆盖：真实 `BTreeSet` 满足契约只经测试；`apply_one` 传入空集合靠阅读；非 `Insert` 补丁保持唯一要求补丁前已唯一，这个前提来自批次开头的 `validate`，跨整批的组合没有陈述；`Scene::clone`、panic、分配失败、栈使用与开销（每次插入重查全树）；UI-TXN-ATOMIC-001 仍是 not_verified。证据：`evidence/scene-checked-patch-kernel/`、`evidence/scene-checked-patch-chain/report.json`。
 
+## UI-SCENE-BATCH-UNIQUE-001：跨整批的身份唯一（2026-11-04，CP-03 子性质）
+
+`apply_batch_at` 的主体移入 `apply_unique_batch`，`validate` 的主体移入 `validate_scene_ids`，`apply_detached` 改为 `apply_detached_patch`，集合类型都是类型参数，新增 `EmptyIdentitySet` 只提供“从空开始”。`apply_one` 只留给测试。检查、错误和写入应当不变（等价靠阅读和测试，未证明）。
+
+| 阶段 | 范围 | 结果 |
+|---|---|---|
+| Verus/Z3 | 真实 `Node`、`NodeKind`、`ScenePatch`、`SceneError`、`Scene` 声明上任意场景、任意期望版本、任意补丁序列，遵守 `IdentitySet` 契约且从空开始的任意集合。陈旧批次报陈旧；已有重复的树被拒绝；无重复的树上空批成功且场景不变；版本耗尽被拒绝；任何失败都让场景保持原值。成功的非空批次版本加一，结果树无重复，且结果树是一条轨迹的终点：每个补丁按序一步受检补丁，轨迹上每个状态都无重复 | 58 verified/0 errors（含重新验证的依赖）。8 个反例被拒：校验全放行、暂存吞掉失败、丢弃补丁、改版本、提交不校验、空批标志恒假由后置条件拒绝；暂存跳过补丁由证明中的断言拒绝；使用非空集合由前置条件拒绝 |
+| Proptest | 至多 24 节点的树、至多 4 个补丁（插入、更新文本、移除），标志控制重新编号、耗尽版本和陈旧版本，配真实 `BTreeSet`，对照本地写出的折叠：准入来自独立前序，写入来自树补丁，每步后身份无重复 | 256 例通过 |
+| Miri | 一个固定形状上五种标志组合、四个补丁 | 通过 |
+| cargo-fuzz | `read_boundary` | 10572 次（与其他构建同跑；`batch_decode` 1342818 次、`ui_plugin_gate` 34518 次不触及此内核） |
+| Kani | 发版时验证。没有新增 harness，也没有运行 | 未运行 |
+| Loom | N/A：内核无共享状态与同步原语，场景与集合都经独占引用或移动 | 不计 PASS；未添加替代运行 |
+
+真实路径测试（测试证据，不是证明）：`scene::tests::batch_keeps_identities_unique_from_the_first_patch_to_the_last`，七个手动变异（校验全放行、暂存吞掉失败、丢弃补丁、用非空集合、提交不校验、跳过补丁、空批标志恒假）各跑一次 `scene::tests`，都有测试失败；前六个使该测试失败，最后一个由 `version_exhaustion_rejects_updates_without_changing_scene` 抓到。
+
+假设：`Scene` 与 `ScenePatch` 的派生克隆返回相同的值。这是证明中的 `external_body` 假设，由 Proptest 的相等比较检查，字段类型在证明中不可读，没有证明。真实 `BTreeSet` 满足契约只经测试。
+
+未覆盖：`Scene::apply_batch_at` 传入 `BTreeSet` 这一层靠阅读；panic、分配失败、栈使用与开销（每次插入重查全树）；候选构造、`NativeScene` 的 `RestoreCandidate` 实现；UI-TXN-ATOMIC-001 仍是 not_verified。证据：`evidence/scene-batch-unique-kernel/`、`evidence/scene-batch-unique-chain/report.json`。
+
 ## UI-PLUGIN-RECT/COUNT/RELOC-001、UI-SURFACE-RENDER-GATE-001：`ui.*` 插件准入与补链（2026-11-04）
 
 `src/ui_plugin_gate.rs` 的纯规则与 `src/ui_plugin_host.rs` 的 L1 宿主（范围见 `abi.md` 第 10 节）。同轮为现有 `SurfaceLifecycle::render_allowed` / `active_for_owner` 补链；两个方法的 `==` 比较改写为 `matches!`，行为不变（靠阅读与属性测试）。

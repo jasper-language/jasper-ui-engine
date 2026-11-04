@@ -1,0 +1,14 @@
+verification results:: 57 verified, 1 errors (partial verification with `--verify-*`)
+note: verifying root module
+
+error: postcondition not satisfied
+    --> <repo>/evidence/scene-batch-unique-kernel/negative_validate_accepts_all.rs:1244:13
+     |
+1244 |     ensures (result is Ok)==ids_distinct(preorder_ids(scene.root)),
+     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+1257 |     result
+     |     ------ at the end of the function body
+
+error: aborting due to 1 previous error
+

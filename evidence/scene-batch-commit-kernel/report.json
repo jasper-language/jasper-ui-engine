@@ -3,9 +3,9 @@
   "status": "proved",
   "scope": "Exact production commit on the real Scene, Node and SceneError declarations with the non-tree field types replaced by opaque values the kernel cannot read, over arbitrary check and staging closures that see only a shared reference. A stale batch, an exhausted version, a failed check and a failed staging each report their own error and leave the scene equal to what it was; an empty batch reports the check's result and leaves it equal; staging may only be called after a successful check; a success leaves the staged tree and the old version plus one, whatever version the staged value carried. That staging does not run on the stale, exhausted and empty paths is not stated here and is tested. Not covered: the production closures (Scene::validate, Scene::clone, the fold over apply_detached), drop of the replaced scene, allocation failure and panic.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "6d2d8d9bfe6eec311a29d2ba0c6163d0bb263fea3f874b9710b7ff990a81ae3e",
+  "source_sha256": "05d5de1f8763acb66df5749bebf5613f79ebc4af0415280a76f5cd6316439a36",
   "sources": {
-    "src/scene.rs": "6d2d8d9bfe6eec311a29d2ba0c6163d0bb263fea3f874b9710b7ff990a81ae3e"
+    "src/scene.rs": "05d5de1f8763acb66df5749bebf5613f79ebc4af0415280a76f5cd6316439a36"
   },
   "kernel_sha256": "94bb7446c06ca86796853a134f620e18a46e2cde89611b97e25bd6d376b3ca94",
   "dependencies": {
@@ -18,7 +18,7 @@
     "transaction-gate": "21915020f6995629cb4636e14afa3038ec6220e0f9ce860043561009a5069536"
   },
   "proof_sha256": "86ece46c6b209fd9d7a8eb915820e2f944423b43e9901c0a429ac9093f18fb18",
-  "runner_sha256": "996049d8efd47a35f5c14bb27a9cccbdbd4307e2c7845160aa1482f9043a896f",
+  "runner_sha256": "d502de70ee7889dd359226a34a649a2061cf08a2096419e0ebb2e47a0e0ca99d",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/verus/verus",
