@@ -7195,14 +7195,14 @@
     "started_at": "2026-11-04T12:14:42.235721+00:00",
     "finished_at": "2026-11-04T12:14:56.438525+00:00",
     "command": [
-      "/home/auth/Documents/jasper/jasper-ui-engine/scripts/verify-in-vm.sh",
+      "<repo>/scripts/verify-in-vm.sh",
       "env",
       "bash",
       "scripts/closeout-baseline.sh"
     ],
     "returncode": 0,
     "log": "evidence/final-closeout-audit/baseline.log",
-    "log_sha256": "2a6f5161b2e75a530bdf4fadce038c6e6b3b696c414d027ef2c8028a54236d0b"
+    "log_sha256": "a3b90fbd22975766d60845c326de1d683d26699610f8f55b5b54994205a48ec5"
   },
   "final_gate": {
     "ready": true,

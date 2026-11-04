@@ -1,0 +1,121 @@
+{
+  "status": "limits_exercised_not_a_proof",
+  "date": "2026-11-04",
+  "purpose": "Check that scripts/kani_policy.py really selects one harness and tells limits apart from counterexamples on real Kani 0.68.0 output.",
+  "tool": {
+    "kani": "0.68.0",
+    "cbmc": "6.11.0"
+  },
+  "runs": [
+    {
+      "case": "named harness, default limits",
+      "harness": "scene_batch_commit",
+      "seconds": 600,
+      "vmem_kb": 3500000,
+      "exit": 0,
+      "classified": "passed",
+      "wall_seconds": 12.7
+    },
+    {
+      "case": "small harness, default limits",
+      "harness": "all_usize_endpoints",
+      "seconds": 600,
+      "vmem_kb": 3500000,
+      "exit": 0,
+      "classified": "passed",
+      "wall_seconds": 1.4
+    },
+    {
+      "case": "unknown harness name",
+      "harness": "no_such_harness_xyz",
+      "exit": 1,
+      "classified": "failed",
+      "note": "Kani refuses: Failed to match the following harness(es)"
+    },
+    {
+      "case": "time limit",
+      "harness": "scene_batch_commit",
+      "seconds": 2,
+      "vmem_kb": 3500000,
+      "exit": 124,
+      "classified": "undetermined: time limit"
+    },
+    {
+      "case": "memory limit reached in CBMC",
+      "harness": "scene_batch_commit",
+      "seconds": 600,
+      "vmem_kb": 250000,
+      "exit": 1,
+      "classified": "undetermined: memory limit"
+    },
+    {
+      "case": "memory limit too low to start rustc",
+      "harness": "scene_batch_commit",
+      "seconds": 600,
+      "vmem_kb": 120000,
+      "exit": 1,
+      "classified": "failed: command exit 1",
+      "note": "Conservative: blocks instead of being recorded as undetermined. Far below the real 3.5 GB limit."
+    },
+    {
+      "case": "real counterexample in a throwaway crate",
+      "harness": "bad",
+      "seconds": 600,
+      "vmem_kb": 3500000,
+      "exit": 1,
+      "classified": "failed: counterexample"
+    }
+  ],
+  "limits_of_this_evidence": [
+    "The small all_usize_endpoints runs at low limits passed because they finish within them; they did not exercise the limits and are not listed as controls.",
+    "Cached 120 MB and 60 MB runs printed VERIFICATION FAILED without a recognised memory message; the classifier now reports that as failed without a reported check, which blocks. The exact CBMC text was not captured.",
+    "The real 3.5 GB limit itself was not reached by any harness here.",
+    "The no-harness path (not_run_no_harness_named) and --kani-full were not run end to end."
+  ],
+  "end_to_end": [
+    {
+      "case": "ordered chain with two named harnesses",
+      "command": "python3 scripts/verify-ui.py --verus <verus> --kani-harness scene_batch_commit --kani-harness all_usize_endpoints",
+      "exit": 2,
+      "exit_reason": "CP-01 stays pending, as before",
+      "stages": {
+        "Verus+Z3": "passed_scoped_checks",
+        "Proptest": "passed_scoped_checks",
+        "Miri": "passed_scoped_checks",
+        "cargo-fuzz": "passed_scoped_checks",
+        "Kani": "passed_scoped_checks",
+        "Loom": "passed_scoped_checks"
+      },
+      "scoped_checks_complete": true,
+      "complete": false,
+      "harness_results": {
+        "scene_batch_commit": {
+          "status": "passed",
+          "log_sha256": "623f15cb53c046ccbf62b5b7055d76e2290ab09963814c2b712a949576f01bcc"
+        },
+        "all_usize_endpoints": {
+          "status": "passed",
+          "log_sha256": "ee47cc11f656dbce932d951693e03a4ca3473c87398e4c3b4904fa935d61e305"
+        }
+      },
+      "fuzz_runs": [
+        18276,
+        1301718
+      ],
+      "verify_ui_sha256": "7326844b55c13a671e7a07573839e58cf77ddd515e65094ecfc780dc6e11b1e4",
+      "kani_policy_sha256": "16e234a35a5a51b89ed4cdf06c7a124e399282af5d5c70c7ef2ceecd43e30949",
+      "started_at": "2026-11-04T11:55:47.780651+00:00",
+      "kani_finished_at": "2026-11-04T12:07:10.958721+00:00",
+      "note": "The 70 other harnesses were not run; their evidence stays bound to the earlier commit."
+    },
+    {
+      "case": "same chain with a 2 s Kani limit",
+      "command": "python3 scripts/verify-ui.py --verus <verus> --fuzz-seconds 1 --kani-seconds 2 --kani-harness scene_batch_commit",
+      "exit": 2,
+      "kani_stage": "undetermined",
+      "loom_stage": "passed_scoped_checks",
+      "scoped_checks_complete": false,
+      "acceptance_pending_added": "Kani undetermined: scene_batch_commit (time limit)"
+    }
+  ]
+}

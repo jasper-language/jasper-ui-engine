@@ -1,4 +1,4 @@
-$ /home/auth/Documents/jasper/jasper-ui-engine/scripts/verify-in-vm.sh env bash scripts/closeout-baseline.sh
+$ <repo>/scripts/verify-in-vm.sh env bash scripts/closeout-baseline.sh
 
 $ python3 scripts/check-blitz-native-dependencies.py
 {
@@ -27,7 +27,7 @@ OK
 $ cargo fmt --all -- --check
 
 $ cargo check --locked --all-targets
-    Checking jasper-ui-engine v0.1.0 (/home/jasper/work/jasper-ui-engine)
+    Checking jasper-ui-engine v0.1.0 (<repo>)
 warning: function `submit_native_frame` is never used
   --> src/backend.rs:49:15
    |
@@ -53,7 +53,7 @@ warning: `jasper-ui-engine` (lib test) generated 2 warnings (2 duplicates)
     Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.40s
 
 $ cargo check --locked --features native-engine-cpu --all-targets
-    Checking jasper-ui-engine v0.1.0 (/home/jasper/work/jasper-ui-engine)
+    Checking jasper-ui-engine v0.1.0 (<repo>)
 warning: field `families` is never read
    --> src/native_adapter/native_scene.rs:161:5
     |
@@ -213,7 +213,7 @@ warning: `jasper-ui-engine` (lib test) generated 6 warnings (4 duplicates) (run 
     Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.17s
 
 $ cargo check --locked --features native-engine-cpu\,gpu-pending --all-targets
-    Checking jasper-ui-engine v0.1.0 (/home/jasper/work/jasper-ui-engine)
+    Checking jasper-ui-engine v0.1.0 (<repo>)
 warning: field `families` is never read
    --> src/native_adapter/native_scene.rs:161:5
     |
@@ -394,7 +394,7 @@ warning: methods `active_for_owner` and `retire_current` are never used
     |                   ^^^^^^^^^^^^^^
 
 warning: `jasper-ui-engine` (lib) generated 2 warnings
-   Compiling jasper-ui-engine v0.1.0 (/home/jasper/work/jasper-ui-engine)
+   Compiling jasper-ui-engine v0.1.0 (<repo>)
 warning: `jasper-ui-engine` (lib test) generated 2 warnings (2 duplicates)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 3.69s
      Running unittests src/lib.rs (target/debug/build/jasper-ui-engine/d0e267747f8fc5ce/out/jasper_ui_engine-d0e267747f8fc5ce)
