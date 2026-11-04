@@ -1,0 +1,12 @@
+verification results:: 11 verified, 1 errors
+error: precondition not satisfied
+   --> <repo>/evidence/scene-unique-ids-kernel/negative_skip_identity_check.rs:205:13
+    |
+ 85 |     requires unrepeated(start,visited), records(pre,start,visited), !pre.contains(id), after==pre.insert(id),
+    |                                                                     ----------------- failed precondition
+...
+205 |             lemma_visit_fresh(ids.seen(),pre,start,visited,node.id);
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: aborting due to 1 previous error
+

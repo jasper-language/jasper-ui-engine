@@ -1,0 +1,97 @@
+{
+  "property": "UI-SCENE-UNIQUE-IDS-001",
+  "status": "proved",
+  "scope": "Exact production traversal and insertion check on the real Node and SceneError declarations with the non-tree field types replaced by opaque values the kernel cannot read, over any set obeying the IdentitySet contract. Against the preorder identity sequence of the tree (for the insertion check, the tree followed by the inserted subtree): Ok holds only when no identity repeats and none was already in the set, and leaves exactly the old set plus the sequence; DuplicateNode(d) names the first position where an identity repeats, with the prefix before it unrepeated and the set exactly the old set plus that prefix; no other error occurs. The BTreeSet instance of the contract, an empty starting set in the callers, allocation failure, stack use and cost are excluded.",
+  "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
+  "source_sha256": "91c619d6c85effe69158698edfb71f37d58d038dd8e34955471d4ffca541fa92",
+  "sources": {
+    "src/scene.rs": "91c619d6c85effe69158698edfb71f37d58d038dd8e34955471d4ffca541fa92"
+  },
+  "kernel_sha256": "53e14531454a64931cb421b76cc60fa852c042aadea3f24a829087e708d9bbac",
+  "dependencies": {
+    "node-id-type": "39ff7bd8c3c5c51e025059e0f104105a839165e2cb4a455f094a2d2bb9cfffad",
+    "scene-node-kind-type": "15662ba19978b1271632b776e224c3307e0955852bb2e44b8c7533452a83f313",
+    "scene-node-type": "5cd4fff573ded959d547838b4447ec6383241e3ce53bef409cf839882fcf018b",
+    "scene-error-type": "2139dbdcdd29d341ab1184f217b263e52cfa2d04cde0f17021af1ff002d1051f"
+  },
+  "proof_sha256": "f30f9150f4c04b990ec8f857226827194e9a1ed2c5a9e0f464655fe69644a9d6",
+  "runner_sha256": "d7b6e604bd68b91eb6fc88db1bb4aeb297917cbc41b83e2afab55dc855c4f21f",
+  "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
+  "command": [
+    "<home>/verus/verus",
+    "--crate-type",
+    "lib",
+    "<repo>/evidence/scene-unique-ids-kernel/kernel.rs"
+  ],
+  "exit_code": 0,
+  "solver": {
+    "path": "<home>/verus/z3",
+    "version": "Z3 version 4.16.0 - 64 bit\n",
+    "explicit_override": null
+  },
+  "verified_obligations": 12,
+  "negative_controls": [
+    {
+      "name": "report-the-root-not-the-repeat",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "wrong-error-variant",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "stop-before-the-children",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "insert-check-ignores-tree-failure",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "skip-identity-check",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "second-set-is-fresh-ok",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "visit-children-reversed",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "skip-one-child",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "push-a-child-twice",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "visit-the-node-twice",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "drop-the-stack-tail",
+      "rejected": true,
+      "exit_code": 1
+    }
+  ],
+  "negative_control_rejected": true,
+  "trust_boundary": [
+    "Verus/vstd and SMT solver",
+    "Rust/Verus integer, references and slice semantics",
+    "signature annotation/extraction script",
+    "Rust compiler and target execution"
+  ]
+}

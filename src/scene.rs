@@ -194,9 +194,7 @@ impl Scene {
             // Validate all descendants before any insertion or follow-up patch
             // can observe ambiguous identities. The set is local to staging.
             // 插入前检查全部后代，避免后续补丁观察到歧义身份；集合仅在暂存阶段使用。
-            let mut ids = BTreeSet::new();
-            collect_unique_ids(&self.root, &mut ids)?;
-            collect_unique_ids(node, &mut ids)?;
+            check_insert_identities(&self.root, node, &mut BTreeSet::new())?;
         }
         apply_tree_patch(&mut self.root, patch)
     }
@@ -315,18 +313,57 @@ fn stage_scene_batch<S, P, E>(
 }
 // END VERIFIED SCENE BATCH STAGE KERNEL
 
+// BEGIN VERIFIED SCENE IDENTITY SET INSTANCE
+// Extracted so the harnesses run the real set; that it obeys the contract is tested, not proved.
+// 提取出来让验证运行真实集合；它是否满足契约只经测试，未证明。
+impl IdentitySet for BTreeSet<NodeId> {
+    fn admit(&mut self, id: NodeId) -> bool {
+        self.insert(id)
+    }
+}
+// END VERIFIED SCENE IDENTITY SET INSTANCE
+
+// BEGIN VERIFIED SCENE UNIQUE IDS KERNEL
+/// What the identity traversal needs from its set: records an identity and reports whether it was new.
+/// 身份遍历对集合的全部要求：记录一个身份，并报告它此前是否未出现。
+trait IdentitySet {
+    fn admit(&mut self, id: NodeId) -> bool;
+}
+
 /// Traverses iteratively so identity validation itself does not recurse.
 /// 迭代遍历，身份校验本身不递归；不代表后续布局/克隆已具备深度资源限制。
-fn collect_unique_ids(root: &Node, ids: &mut BTreeSet<NodeId>) -> Result<(), SceneError> {
-    let mut pending = vec![root];
-    while let Some(node) = pending.pop() {
-        if !ids.insert(node.id) {
+fn collect_unique_ids<T: IdentitySet>(root: &Node, ids: &mut T) -> Result<(), SceneError> {
+    let mut pending = Vec::new();
+    pending.push(root);
+    loop {
+        let node = match pending.pop() {
+            Some(node) => node,
+            None => return Ok(()),
+        };
+        if !ids.admit(node.id) {
             return Err(SceneError::DuplicateNode(node.id));
         }
-        pending.extend(node.children.iter().rev());
+        let mut index = node.children.len();
+        while index > 0 {
+            index -= 1;
+            pending.push(&node.children[index]);
+        }
     }
-    Ok(())
 }
+
+/// The identity check for an insertion: the tree first, then the inserted subtree, in one set.
+/// 插入的身份检查：先查树，再查待插入子树，共用一个集合。
+fn check_insert_identities<T: IdentitySet>(
+    root: &Node,
+    inserted: &Node,
+    ids: &mut T,
+) -> Result<(), SceneError> {
+    match collect_unique_ids(root, ids) {
+        Ok(()) => collect_unique_ids(inserted, ids),
+        Err(error) => Err(error),
+    }
+}
+// END VERIFIED SCENE UNIQUE IDS KERNEL
 
 // BEGIN VERIFIED SCENE PATCH KERNEL
 /// Applies one patch to the tree. The tree is the only state reached; a failed patch may be left
@@ -470,6 +507,82 @@ mod tests {
 
     fn id(value: u64) -> NodeId {
         NodeId(value)
+    }
+
+    #[test]
+    fn identity_checks_report_the_first_repeat_in_preorder() {
+        let leaf = |id: u64, children: Vec<Node>| {
+            let mut node = Node::new(NodeId(id), NodeKind::Rect);
+            node.children = children;
+            node
+        };
+        // Preorder 1 2 3 4: the repeat of 3 at position 4 comes first only if children go in order.
+        // 前序 1 2 3 4：只有子节点按序遍历，位置靠前的重复才会先被报告。
+        let distinct = leaf(1, vec![leaf(2, vec![leaf(3, vec![])]), leaf(4, vec![])]);
+        let mut ids = BTreeSet::new();
+        assert_eq!(collect_unique_ids(&distinct, &mut ids), Ok(()));
+        assert_eq!(
+            ids.iter().map(|id| id.0).collect::<Vec<_>>(),
+            vec![1, 2, 3, 4]
+        );
+
+        let repeats = leaf(
+            1,
+            vec![
+                leaf(2, vec![leaf(5, vec![])]),
+                leaf(5, vec![leaf(2, vec![])]),
+            ],
+        );
+        let mut ids = BTreeSet::new();
+        assert_eq!(
+            collect_unique_ids(&repeats, &mut ids),
+            Err(SceneError::DuplicateNode(NodeId(5)))
+        );
+        assert_eq!(ids.iter().map(|id| id.0).collect::<Vec<_>>(), vec![1, 2, 5]);
+
+        let root_repeated = leaf(7, vec![leaf(7, vec![])]);
+        assert_eq!(
+            collect_unique_ids(&root_repeated, &mut BTreeSet::new()),
+            Err(SceneError::DuplicateNode(NodeId(7)))
+        );
+
+        // The tree is checked first, so its repeat wins over one between tree and subtree.
+        // 先查树，所以树内重复优先于树与子树之间的重复。
+        let inserted = leaf(1, vec![leaf(9, vec![])]);
+        assert_eq!(
+            check_insert_identities(&repeats, &inserted, &mut BTreeSet::new()),
+            Err(SceneError::DuplicateNode(NodeId(5)))
+        );
+        assert_eq!(
+            check_insert_identities(&distinct, &inserted, &mut BTreeSet::new()),
+            Err(SceneError::DuplicateNode(NodeId(1)))
+        );
+        let self_repeating = leaf(8, vec![leaf(8, vec![])]);
+        assert_eq!(
+            check_insert_identities(&distinct, &self_repeating, &mut BTreeSet::new()),
+            Err(SceneError::DuplicateNode(NodeId(8)))
+        );
+        let mut ids = BTreeSet::new();
+        assert_eq!(
+            check_insert_identities(&distinct, &leaf(8, vec![leaf(9, vec![])]), &mut ids),
+            Ok(())
+        );
+        assert_eq!(ids.len(), 6);
+
+        // A refused insertion reaches the patch before anything is written.
+        // 被拒绝的插入在任何写入之前返回。
+        let mut scene = Scene::new(distinct.clone());
+        let version = scene.version();
+        assert_eq!(
+            scene.apply(ScenePatch::Insert {
+                parent: NodeId(1),
+                index: 0,
+                node: leaf(4, vec![])
+            }),
+            Err(SceneError::DuplicateNode(NodeId(4)))
+        );
+        assert_eq!(scene.root, distinct);
+        assert_eq!(scene.version(), version);
     }
 
     #[test]

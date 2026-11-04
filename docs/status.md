@@ -877,3 +877,7 @@ CP-02 仍无判定：只选一个断言（切片后 30 个 VCC）在 45 分钟�
 ## 2026-11-04：单个补丁对树的写入（CP-03 子性质）
 
 `apply_one` 拆出 `apply_tree_patch`，七个分支的写入与错误有 Verus 全域证明，范围见 `verification.md` 的 UI-SCENE-PATCH-001。`Insert` 分支在 Kani 上每种形状都超时、无判定，只有 Verus 与测试。`Insert` 前的身份检查、版本赋值与整体替换仍未证明。
+
+## 2026-11-04：插入前的身份检查（CP-03 子性质）
+
+`collect_unique_ids` 改为对 `IdentitySet` 泛型，`apply_one` 的两次调用收进 `check_insert_identities`。遍历的判定有 Verus 全域证明，范围见 `verification.md` 的 UI-SCENE-UNIQUE-IDS-001。真实 `BTreeSet` 满足契约只经测试。版本赋值与整体替换仍未证明。

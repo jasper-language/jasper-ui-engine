@@ -1,0 +1,31 @@
+verification results:: 11 verified, 1 errors
+note: while loop: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+   --> <repo>/evidence/scene-unique-ids-kernel/negative_skip_one_child.rs:211:9
+    |
+211 |         while index > 0
+    |         ^^^^^^^^^^^^^^^
+
+note: recommendation not met
+   --> <repo>/evidence/scene-unique-ids-kernel/negative_skip_one_child.rs:223:24
+    |
+223 |                 assert(pending@.drop_last()=~=prior);
+    |                        ^^^^^^^^^^^^^^^^^^^^
+    |
+   --> seq_lib.rs:726:12
+    |
+    = note: recommendation not met
+
+error: assertion failed
+   --> <repo>/evidence/scene-unique-ids-kernel/negative_skip_one_child.rs:223:24
+    |
+223 |                 assert(pending@.drop_last()=~=prior);
+    |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ assertion failed
+
+error: assertion failed
+   --> <repo>/evidence/scene-unique-ids-kernel/negative_skip_one_child.rs:225:24
+    |
+225 |                 assert(pending_ids(pending@)=~=children_ids(*node,index as int)+rest_ids);
+    |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ assertion failed
+
+error: aborting due to 2 previous errors
+

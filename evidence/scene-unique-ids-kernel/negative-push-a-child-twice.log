@@ -1,0 +1,9 @@
+verification results:: 11 verified, 1 errors
+error: assertion failed
+   --> <repo>/evidence/scene-unique-ids-kernel/negative_push_a_child_twice.rs:224:24
+    |
+224 |                 assert(pending@.drop_last()=~=prior);
+    |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ assertion failed
+
+error: aborting due to 1 previous error
+

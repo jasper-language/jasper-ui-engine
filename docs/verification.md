@@ -1062,3 +1062,28 @@ Kani 未得出结论的形状（都在链外单跑一次，已撤下；构建机
 真实路径测试（测试证据，不是证明）：`scene::tests::apply_tree_patch_writes_only_what_each_patch_names` 用真实类型覆盖七种补丁的未命中、越界与精确下标、滚动写入、文本写入、两种种类拒绝、根拒绝和移除下标 0。六个手动变异（越界钳到 0、文本接受其他种类、画布报错误的拒绝、跳过根检查、滚动未命中报成功、插入未命中报成功）都使它失败（各一次，未入 Verus 反例表），其中四个在 `scene` 单元测试里只有这个新测试抓到。
 
 未覆盖：`apply_one` 在 `Insert` 前的身份检查（`collect_unique_ids` 用 `BTreeSet`）及其错误优先级；`apply_batch_at` 中版本赋值与整体替换；`Scene` 的克隆与校验；旧值和被移除子树的析构；递归深度与栈使用。规格不假设也不推出身份唯一性。证据：`evidence/scene-patch-kernel/`、`evidence/scene-patch-chain/report.json`。
+
+## UI-SCENE-UNIQUE-IDS-001：插入前的身份检查（2026-11-04，CP-03 子性质）
+
+`collect_unique_ids` 改为对新 trait `IdentitySet` 泛型；`vec![root]` 改为 `new` 加 `push`，`while let` 改为 `loop` 加 `match`，反向 `extend` 改为下标递减循环。`apply_one` 的两次调用收进 `check_insert_identities`。访问顺序、集合内容和错误应当不变（等价靠阅读和测试，未证明）。
+
+| 阶段 | 范围 | 结果 |
+|---|---|---|
+| Verus/Z3 | 真实 `Node`、`SceneError` 声明上任意树与遵守 `IdentitySet` 契约的任意集合，相对前序身份序列（插入检查是树后接子树）：`Ok` 只在无重复且都不在起始集合时出现，集合恰为起始加序列；`DuplicateNode(d)` 指名首个重复位置，其前缀无重复，`d` 在起始集合或前缀中，集合恰为起始加前缀；不产生其他错误 | 12 verified/0 errors（含依赖）。11 个反例被拒：4 个在后置条件，2 个在引理前置条件，5 个在中间断言 |
+| Proptest | 至多 24 节点的任意树、同一规格生成的子树、可选的预置身份；用记录询问顺序的包装调用生产 `BTreeSet` 实例，对照独立递归前序和线性扫描 | 256 例通过 |
+| Miri | 两棵固定树 | 通过 |
+| cargo-fuzz | `read_boundary` | 19348 次（与其他构建同跑；`batch_decode` 1356428 次不触及此内核） |
+| Kani | **只有两槽替身集合和最小形状，不含生产 `BTreeSet`**：`scene_unique_ids_pair` 根加一个子节点；`scene_insert_identities` 树一个节点加待插入一个节点；身份任意，unwind 3 | 616、594 checks / 0 failed（5、7 unreachable） |
+| Loom | N/A：内核无共享状态与同步原语，集合经 `&mut` 独占 | 不计 PASS；未添加替代运行 |
+
+Kani 未得出结论的形状（都在链外，已撤下；构建机与其他构建同跑）：
+
+- 生产 `BTreeSet`、单节点、一次插入、身份任意：约 1170 秒无判定（Convert SSA 用时 627 秒，之后的阶段未结束，常驻 5.5 GiB，生成 25376 个 VCC），为不影响其他构建人工终止。
+- 同一形状加 4.5 GiB 地址空间限制：11 秒结束且没有验证结果，确切原因未查，不计入。
+- 生产 `BTreeSet`、根加一个子节点：未运行，单次插入没有判定后撤下。
+
+链的运行记录：第一次全链的 Kani 阶段撞到单命令 3600 秒上限，完成 58/69、没有失败，与其他构建同跑（`handle_allocator_path` 单项 1980 秒）。这次不计入。`scripts/verify-ui.py` 的上限改为 10800 秒后重跑全链，上表是重跑的数字。入口退出码仍为 2，因为 CP-01 未解决。
+
+真实路径测试（测试证据，不是证明）：`scene::tests::identity_checks_report_the_first_repeat_in_preorder` 用真实类型和真实 `BTreeSet` 覆盖无重复、深处重复、根与子节点重复、树内重复优先于树与子树之间的重复、子树内重复，以及被拒绝的 `Insert` 不改树和版本。六个手动变异（子节点正序入栈、先查子树、去掉 `Insert` 检查、`admit` 恒报新、树与子树用两个集合、跳过子树）都使 `scene` 单元测试失败（各一次，未入 Verus 反例表）。
+
+假设与未覆盖：`BTreeSet` 满足 `IdentitySet` 契约、调用方从空集合开始（都未证明）；身份检查与 `apply_tree_patch` 的组合，也就是成功的 `Insert` 之后身份仍唯一，没有陈述；`apply_batch_at` 中版本赋值与整体替换；`Scene` 的克隆；析构、分配失败、栈使用与开销。证据：`evidence/scene-unique-ids-kernel/`、`evidence/scene-unique-ids-chain/report.json`。

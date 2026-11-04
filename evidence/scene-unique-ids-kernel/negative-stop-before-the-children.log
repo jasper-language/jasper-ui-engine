@@ -1,0 +1,22 @@
+verification results:: 10 verified, 1 errors
+warning: unreachable statement
+   --> <repo>/evidence/scene-unique-ids-kernel/negative_stop_before_the_children.rs:210:9
+    |
+209 |         return Ok(());
+    |         ------------- any code following this expression is unreachable
+210 |         let mut index = node.children.len();
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unreachable statement
+    |
+    = note: `#[warn(unreachable_code)]` (part of `#[warn(unused)]`) on by default
+
+error: postcondition not satisfied
+   --> <repo>/evidence/scene-unique-ids-kernel/negative_stop_before_the_children.rs:152:17
+    |
+152 |         ensures identity_verdict(result,old(ids).seen(),final(ids).seen(),preorder_ids(*root)),
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+209 |         return Ok(());
+    |         ------------- at this exit
+
+error: aborting due to 1 previous error; 1 warning emitted
+

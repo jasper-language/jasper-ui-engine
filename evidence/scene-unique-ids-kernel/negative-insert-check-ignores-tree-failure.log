@@ -1,0 +1,28 @@
+verification results:: 11 verified, 1 errors
+warning: unreachable statement
+   --> <repo>/evidence/scene-unique-ids-kernel/negative_insert_check_ignores_tree_failure.rs:273:19
+    |
+272 |               return Ok(());
+    |               ------------- any code following this expression is unreachable
+273 |               proof {
+    |  ___________________^
+274 | |                 if let SceneError::DuplicateNode(d)=error {
+275 | |                     let k=choose|k:int| #![trigger a[k]] 0<=k<a.len() && a[k]==d && unrepeated(start,a.take(k))
+276 | |                         && (start.contains(d) || a.take(k).contains(d)) && records(ids.seen(),start,a.take(k));
+...   |
+281 | |             }
+    | |_____________^ unreachable statement
+    |
+    = note: `#[warn(unreachable_code)]` (part of `#[warn(unused)]`) on by default
+
+error: postcondition not satisfied
+   --> <repo>/evidence/scene-unique-ids-kernel/negative_insert_check_ignores_tree_failure.rs:238:17
+    |
+238 |         ensures identity_verdict(result,old(ids).seen(),final(ids).seen(),preorder_ids(*root)+preorder_ids(*inserted)),
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+272 |             return Ok(());
+    |             ------------- at this exit
+
+error: aborting due to 1 previous error; 1 warning emitted
+

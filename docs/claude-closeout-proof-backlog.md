@@ -26,6 +26,8 @@
 
 2026-11-04 闭合 UI-SCENE-PATCH-001：`apply_tree_patch` 在真实 `Node`、`NodeKind`、`ScenePatch`、`SceneError` 声明上的七个分支（`Canvas`、`Style`、`Semantics`、`Point` 在证明中是内核读不到的值）。对任意树与任意补丁，未命中、种类拒绝与根拒绝报对应错误且不写；命中只改补丁所指的字段，`Insert` 按钳制后的下标放置，`Remove` 移除首个匹配。反例被拒，见 `evidence/scene-patch-chain/report.json`。Kani 只查了三个分支的最小形状，`Insert` 分支每种形状都超时、无判定。
 
+2026-11-04 闭合 UI-SCENE-UNIQUE-IDS-001：`collect_unique_ids` 与 `check_insert_identities` 在真实 `Node`、`SceneError` 声明上的判定（其余字段类型在证明中是内核读不到的值）。对任意树和遵守 `IdentitySet` 契约的任意集合：相对前序身份序列（插入检查是树后接子树），`Ok` 只在无重复且都不在起始集合时出现，集合恰为起始加序列；`DuplicateNode(d)` 指名首个重复位置，其前缀无重复，集合恰为起始加该前缀；不出现其他错误。反例被拒，见 `evidence/scene-unique-ids-chain/report.json`。真实 `BTreeSet` 满足契约只经测试，Kani 上真实集合即使单节点也没有判定。
+
 仍未覆盖：`apply_one` 在 `Insert` 前的身份检查、`Scene` 的克隆与身份校验、`apply_batch_at` 中版本赋值与整体替换两条语句的实现级规格、候选构造本身、`NativeScene` 的 `RestoreCandidate` 实现满足契约（含写入不改变准入判定）、`*self = candidate` 析构旧视图时的 panic、活动文档读取路径上第三方内部可变性的影响。
 
 ### CP-04

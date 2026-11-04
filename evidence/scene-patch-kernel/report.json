@@ -3,9 +3,9 @@
   "status": "proved",
   "scope": "Exact production match over every real ScenePatch variant, on the real Node, NodeKind, ScenePatch and SceneError declarations with Canvas, Style, Semantics and Point replaced by opaque values the kernel cannot read: an update of an absent identity reports NodeNotFound and leaves the tree; a hit rewrites exactly the named field of the node find_node_mut lends and nothing else; UpdateText and SetCanvas write only a node of the matching kind and otherwise report the refusal with the node unchanged; Insert places the node under the first match at the index clamped to the child count; Remove refuses the root, removes the first match otherwise, and reports NodeNotFound with the tree structurally the same on a miss. Not proved: the identity check apply_one runs before Insert, apply_batch_at's version write and swap, Scene clone, destructors, recursion depth.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "c00c2bd2cd98845c8e5a2dabedf50c0835b31c25ad462156092d35db6554a62f",
+  "source_sha256": "91c619d6c85effe69158698edfb71f37d58d038dd8e34955471d4ffca541fa92",
   "sources": {
-    "src/scene.rs": "c00c2bd2cd98845c8e5a2dabedf50c0835b31c25ad462156092d35db6554a62f"
+    "src/scene.rs": "91c619d6c85effe69158698edfb71f37d58d038dd8e34955471d4ffca541fa92"
   },
   "kernel_sha256": "f2bcaf5f6d470182f2eca98a8d185b10fe457e2895ebb4004fd22ba83258f444",
   "dependencies": {
@@ -18,7 +18,7 @@
     "scene-node-remove": "e98e2b1c9a3a0e57bcb8f8464d976ac0316807148cb696c7abd25905564cb483"
   },
   "proof_sha256": "a256383596fdd8751f3c4bb0893aed932b166ce554f93516f1fe659a9174768f",
-  "runner_sha256": "91e87ced4987242d98eb9f10cbf34d8319a5dce50cd1615cf45792fecb66d4aa",
+  "runner_sha256": "d7b6e604bd68b91eb6fc88db1bb4aeb297917cbc41b83e2afab55dc855c4f21f",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/verus/verus",

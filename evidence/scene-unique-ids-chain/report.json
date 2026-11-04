@@ -1,0 +1,183 @@
+{
+  "property": "UI-SCENE-UNIQUE-IDS-001",
+  "backlog_item": "CP-03",
+  "status": "subproperty_scoped_checks_passed",
+  "cp03_closed": false,
+  "production": {
+    "file": "src/scene.rs",
+    "functions": [
+      "collect_unique_ids",
+      "check_insert_identities"
+    ],
+    "file_sha256": "91c619d6c85effe69158698edfb71f37d58d038dd8e34955471d4ffca541fa92",
+    "kernel_sha256": "53e14531454a64931cb421b76cc60fa852c042aadea3f24a829087e708d9bbac",
+    "caller": "Scene::validate and Scene::apply_one before an Insert"
+  },
+  "specification": "For any tree and any set obeying the IdentitySet contract, against the preorder identity sequence (for the insertion check, the tree followed by the inserted subtree): Ok holds only when no identity repeats and none was already in the set, and the set is then exactly the old set plus the sequence. DuplicateNode(d) names the first repeating position k: the prefix before k is unrepeated, d is in the old set or in that prefix, and the set is exactly the old set plus the prefix. No other error is produced.",
+  "assumptions": [
+    "The IdentitySet contract: admit reports whether the identity was absent and adds it. The BTreeSet instance of this contract is tested, not proved.",
+    "Callers pass an empty set; that is by reading, the specification is stated for any starting set."
+  ],
+  "tools": {
+    "verus": "Version: 0.2026.10.18.7d82994",
+    "z3": "Z3 version 4.16.0 - 64 bit",
+    "kani": "0.68.0",
+    "cbmc": "6.11.0",
+    "nightly": "nightly-2026-10-17"
+  },
+  "config": {
+    "entry": "python3 scripts/verify-ui.py --verus <verus>",
+    "fuzz_seconds": 20,
+    "proptest_cases": 256,
+    "proptest_seed": "12345"
+  },
+  "stages": {
+    "Verus+Z3": {
+      "result": "passed",
+      "verified": 12,
+      "errors": 0,
+      "negative_controls": [
+        {
+          "name": "report-the-root-not-the-repeat",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "wrong-error-variant",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "stop-before-the-children",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "insert-check-ignores-tree-failure",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "skip-identity-check",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "second-set-is-fresh-ok",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "visit-children-reversed",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "skip-one-child",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "push-a-child-twice",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "visit-the-node-twice",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "drop-the-stack-tail",
+          "rejected": true,
+          "exit_code": 1
+        }
+      ],
+      "model_note": "Canvas, Style, Semantics and Point are replaced in the proof by value types the kernel cannot read. In the proof copy the Ok arm of check_insert_identities binds the second call to a local so a proof block can follow it; the call is the same."
+    },
+    "Proptest": {
+      "result": "passed",
+      "harness": [
+        "properties::scene_unique_ids_property"
+      ],
+      "includes": "Arbitrary trees up to 24 nodes, an inserted subtree from the same spec and an optional seeded identity, with the production BTreeSet instance wrapped to record the order asked, against an independent recursive preorder and a linear scan for the first repeat. Identities are in a small domain so repeats occur."
+    },
+    "Miri": {
+      "result": "passed",
+      "harness": [
+        "memory boundaries with two fixed trees"
+      ],
+      "note": "Stand-in field types, no user Drop and no panic injection"
+    },
+    "cargo-fuzz": {
+      "result": "passed",
+      "target": "read_boundary",
+      "completed_runs": [
+        19348,
+        1356428
+      ],
+      "note": "The two counts are read_boundary and batch_decode, and only read_boundary reaches this kernel. The run shared the build machine with other builds."
+    },
+    "Kani": {
+      "result": "passed_with_a_stand_in_set_and_smallest_shapes_only",
+      "harness": {
+        "kani_checks::scene_unique_ids_pair": {
+          "shape": "root and one child, arbitrary identities, two-slot set",
+          "checks": 616,
+          "failed": 0,
+          "unreachable": 5
+        },
+        "kani_checks::scene_insert_identities": {
+          "shape": "one tree node and one inserted node, arbitrary identities, two-slot set",
+          "checks": 594,
+          "failed": 0,
+          "unreachable": 7
+        }
+      },
+      "chain_harnesses_successful": 69,
+      "not_concluded": [
+        {
+          "shape": "Production BTreeSet, one node, one insertion, arbitrary identity",
+          "result": "no verdict at about 1170 s: Convert SSA had taken 627 s and the later stage had not ended, 5.5 GiB resident, stopped by hand so it would not disturb other builds; 25376 VCC generated"
+        },
+        {
+          "shape": "Same under a 4.5 GiB address-space limit",
+          "result": "no verdict: the run ended in 11 s without a verification result; the exact cause was not read and it is not counted"
+        },
+        {
+          "shape": "Production BTreeSet, root and one child, two insertions",
+          "result": "not run: the harness was removed after the one-insertion shape had no verdict"
+        }
+      ],
+      "note": "Neither result covers the production set. BTreeSet is reached only by Proptest, Miri, fuzzing and unit tests."
+    },
+    "Loom": {
+      "result": "N/A",
+      "reason": "The kernel holds no shared state and no synchronization primitive; the set is taken by &mut and the tree by shared reference with no interior mutability in the fields read.",
+      "substitute_evidence": "None added: the compiler's borrow rule is the argument. It is not a concurrency proof."
+    }
+  },
+  "real_path_test": {
+    "test": "scene::tests::identity_checks_report_the_first_repeat_in_preorder",
+    "class": "tested, not proved",
+    "mutation_checked": "Six manual mutations, one run each, not in the Verus control table: children pushed in forward order, subtree checked before the tree, Insert check removed, admit always reporting new, separate sets for tree and subtree, subtree skipped. Each failed the new unit test or another scene unit test."
+  },
+  "behavior_change_note": "collect_unique_ids became generic over IdentitySet. vec![root] became new and push, while let became loop with match, and extend over reversed children became a descending index loop. The two calls in apply_one moved into check_insert_identities. The visiting order, the sets and the errors should be unchanged; that equivalence with the old text is argued by reading and tests, not proved. The BTreeSet is still created at the same point, per check.",
+  "chain_notes": [
+    "The first chain run stopped the Kani stage at the 3600-second per-command limit with 58 of 69 harnesses done and none failed, while other builds shared the machine (kani_checks::handle_allocator_path took 1980 s). That run is not counted. The limit in scripts/verify-ui.py was raised to 10800 seconds and the whole chain was rerun; the numbers here are from the rerun."
+  ],
+  "uncovered": [
+    "That BTreeSet obeys the IdentitySet contract, and that callers start from an empty set",
+    "Version write and swap in apply_batch_at; Scene clone",
+    "The composition of the identity check with apply_tree_patch: no statement that a successful Insert leaves a tree with unique identities",
+    "Destructors, allocation failure, recursion depth elsewhere, stack use and cost",
+    "UI-TXN-ATOMIC-001 stays not_verified as a whole-transaction property"
+  ],
+  "chain": {
+    "entry_exit_code": 2,
+    "complete": false,
+    "slice_complete": false,
+    "reason": "capture-query two-key Kani obligation (CP-01) is unresolved; every stage reports passed_scoped_checks"
+  },
+  "completion_claimed": false
+}

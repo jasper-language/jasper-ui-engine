@@ -1,5 +1,7 @@
 //! Verification-only adapter around exact production byte-reader bodies.
 //! 验证专用适配层；运行体从生产源码原样提取，不进入 UI 发行依赖。
+use std::collections::BTreeSet;
+
 include!(concat!(env!("OUT_DIR"), "/production.rs"));
 
 pub fn endpoint(total: usize, pos: usize, len: usize) -> Option<usize> {
@@ -1045,6 +1047,72 @@ pub fn assert_scene_node_find(tree: Node, id: u64) {
         None => assert!(path.is_none()),
     }
     assert_eq!(actual, expected);
+}
+
+fn preorder_oracle(node: &Node, order: &mut Vec<u64>) {
+    order.push(node.id.0);
+    for child in &node.children {
+        preorder_oracle(child, order);
+    }
+}
+
+/// A set that also keeps the order of what it was asked, to expose the traversal.
+/// 同时保留询问顺序的集合，用来暴露遍历顺序。
+struct AskedInOrder {
+    set: BTreeSet<NodeId>,
+    asked: Vec<u64>,
+}
+
+impl IdentitySet for AskedInOrder {
+    fn admit(&mut self, id: NodeId) -> bool {
+        self.asked.push(id.0);
+        self.set.admit(id)
+    }
+}
+
+/// Checks one verdict against a linear scan over the oracle's order: the first repeat, the identities
+/// asked exactly up to it, and the set left behind.
+/// 用对规格序列的线性扫描核对判定：首个重复、恰好问到它为止的身份、留下的集合。
+fn check_identity_verdict(result: Result<(), SceneError>, ids: AskedInOrder, start: &[u64], order: &[u64]) {
+    let repeat = (0..order.len()).find(|&at| start.contains(&order[at]) || order[..at].contains(&order[at]));
+    match repeat {
+        Some(at) => {
+            assert_eq!(result, Err(SceneError::DuplicateNode(NodeId(order[at]))));
+            assert_eq!(ids.asked, &order[..=at]);
+        }
+        None => {
+            assert_eq!(result, Ok(()));
+            assert_eq!(ids.asked, order);
+        }
+    }
+    let reached = repeat.map_or(order.len(), |at| at + 1);
+    let mut expected: Vec<u64> = start.iter().chain(&order[..reached]).copied().collect();
+    expected.sort_unstable();
+    expected.dedup();
+    assert_eq!(ids.set.iter().map(|id| id.0).collect::<Vec<_>>(), expected);
+}
+
+/// The real traversal and insertion check with the real set against an independent recursive preorder.
+/// 真实遍历与插入检查，配真实集合，对照独立的递归前序规格。
+pub fn assert_scene_unique_ids(tree: &Node, inserted: &Node, start: &[u64]) {
+    let seeded = || AskedInOrder { set: start.iter().map(|&id| NodeId(id)).collect(), asked: Vec::new() };
+    let mut order = Vec::new();
+    preorder_oracle(tree, &mut order);
+    let mut ids = seeded();
+    let result = collect_unique_ids(tree, &mut ids);
+    check_identity_verdict(result, ids, start, &order);
+    preorder_oracle(inserted, &mut order);
+    let mut ids = seeded();
+    let result = check_insert_identities(tree, inserted, &mut ids);
+    check_identity_verdict(result, ids, start, &order);
+}
+
+pub fn assert_scene_unique_ids_bytes(spec: &[(u8, u8)], root: u8, inserted_root: u8, start: u8) {
+    let mut room = spec.len();
+    let mut pairs = spec.iter();
+    let tree = removal_tree(root as u64 % 16, &mut pairs, &mut room);
+    let inserted = removal_tree(inserted_root as u64 % 16, &mut pairs, &mut room);
+    assert_scene_unique_ids(&tree, &inserted, &[start as u64 % 16][..(start % 2) as usize]);
 }
 
 pub fn assert_scene_node_find_bytes(spec: &[(u8, u8)], root: u8, id: u8) {
@@ -2601,6 +2669,51 @@ mod kani_checks {
         assert_scene_node_remove_shape(kani::any(), &[(child, None)], kani::any());
     }
 
+    /// Two slots and no loop, not the production BTreeSet: a harness on the real set found no verdict.
+    /// 两个槽、无循环，不是生产用的 BTreeSet：真实集合的 harness 没有判定。
+    #[derive(Default)]
+    struct TwoIdentities(Option<u64>, Option<u64>);
+
+    impl IdentitySet for TwoIdentities {
+        fn admit(&mut self, id: NodeId) -> bool {
+            if self.0 == Some(id.0) || self.1 == Some(id.0) {
+                return false;
+            }
+            if self.0.is_none() {
+                self.0 = Some(id.0);
+            } else {
+                assert!(self.1.is_none());
+                self.1 = Some(id.0);
+            }
+            true
+        }
+    }
+
+    // Root plus one child over the two-slot set: Ok exactly when they differ, and the repeat is named.
+    // 根加一个子节点，配两槽集合：恰在两者不同时 Ok，否则指名重复者。
+    #[kani::proof]
+    #[kani::unwind(3)]
+    fn scene_unique_ids_pair() {
+        let (root, child): (u64, u64) = (kani::any(), kani::any());
+        let tree = removal_leaf(root, vec![removal_leaf(child, Vec::new())]);
+        let mut ids = TwoIdentities::default();
+        let expected = if root == child { Err(SceneError::DuplicateNode(NodeId(child))) } else { Ok(()) };
+        assert!(collect_unique_ids(&tree, &mut ids) == expected);
+    }
+
+    // One node in the tree and one inserted, sharing the set.
+    // 树一个节点、待插入一个节点，共用集合。
+    #[kani::proof]
+    #[kani::unwind(3)]
+    fn scene_insert_identities() {
+        let (root, inserted): (u64, u64) = (kani::any(), kani::any());
+        let tree = removal_leaf(root, Vec::new());
+        let node = removal_leaf(inserted, Vec::new());
+        let mut ids = TwoIdentities::default();
+        let expected = if root == inserted { Err(SceneError::DuplicateNode(NodeId(inserted))) } else { Ok(()) };
+        assert!(check_insert_identities(&tree, &node, &mut ids) == expected);
+    }
+
     // The same smallest shape as the removal: root plus one childless child, any identities.
     // 与移除相同的最小形状：根加一个无子节点的子节点，身份任意。
     #[kani::proof]
@@ -3166,6 +3279,10 @@ mod properties {
             assert_scene_patch_bytes(&spec, root, id, op, index);
         }
         #[test]
+        fn scene_unique_ids_property(spec in prop::collection::vec(any::<(u8, u8)>(), 0..24), root in any::<u8>(), inserted in any::<u8>(), start in any::<u8>()) {
+            assert_scene_unique_ids_bytes(&spec, root, inserted, start);
+        }
+        #[test]
         fn scene_node_find_property(spec in prop::collection::vec(any::<(u8, u8)>(), 0..24), root in any::<u8>(), id in any::<u8>()) {
             assert_scene_node_find_bytes(&spec, root, id);
             let at = |i: usize| spec.get(i).map_or(0, |pair| pair.0 as u64 % 6);
@@ -3567,6 +3684,8 @@ mod memory {
             assert_scene_node_remove_bytes(&[(1, 2), (2, 0), (3, 0), (2, 1), (3, 0)], version as u8, 3);
             assert_scene_node_remove_bytes(&[(1, 0), (2, 0)], version as u8, version as u8);
             assert_scene_node_remove_shape(1, &[(2, Some(3)), (4, Some(5))], version % 7);
+            assert_scene_unique_ids_bytes(&[(1, 2), (2, 0), (3, 0), (2, 1), (3, 0)], version as u8, 3, 5);
+            assert_scene_unique_ids_bytes(&[(1, 0), (1, 0)], version as u8, version as u8, version as u8);
             assert_scene_node_find_bytes(&[(1, 2), (2, 0), (3, 0), (2, 1), (3, 0)], version as u8, 3);
             assert_scene_node_find_bytes(&[(1, 0), (2, 0)], version as u8, version as u8);
             assert_scene_node_find_shape(1, &[(2, Some(3)), (4, Some(5))], version % 7);

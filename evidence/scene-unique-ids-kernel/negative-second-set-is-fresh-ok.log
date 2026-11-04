@@ -1,0 +1,27 @@
+verification results:: 11 verified, 1 errors
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+   --> <repo>/evidence/scene-unique-ids-kernel/negative_second_set_is_fresh_ok.rs:237:1
+    |
+237 | fn check_insert_identities<T: IdentitySet>(root:&Node,inserted:&Node,ids:&mut T)->(result:Result<(), SceneError>)
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: precondition not satisfied
+   --> <repo>/evidence/scene-unique-ids-kernel/negative_second_set_is_fresh_ok.rs:251:25
+    |
+ 69 |     requires unrepeated(start,a), records(mid,start,a), unrepeated(mid,b),
+    |                                                         ----------------- failed precondition
+...
+251 |                         lemma_unrepeated_chain(mid,start,a,b);
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: precondition not satisfied
+   --> <repo>/evidence/scene-unique-ids-kernel/negative_second_set_is_fresh_ok.rs:252:25
+    |
+ 60 |     requires records(mid,start,a), records(after,mid,b),
+    |                                    -------------------- failed precondition
+...
+252 |                         lemma_records_chain(ids.seen(),mid,start,a,b);
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: aborting due to 2 previous errors
+
