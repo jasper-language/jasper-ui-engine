@@ -600,7 +600,13 @@ mod tests {
         assert_eq!(full, scene(u64::MAX));
 
         assert_eq!(
-            commit_scene_batch(&mut active, 5, true, |_| Err(duplicate.clone()), never_stage),
+            commit_scene_batch(
+                &mut active,
+                5,
+                true,
+                |_| Err(duplicate.clone()),
+                never_stage
+            ),
             Err(duplicate.clone())
         );
         assert_eq!(active, scene(5));
@@ -610,14 +616,24 @@ mod tests {
         );
         assert_eq!(active, scene(5));
         assert_eq!(
-            commit_scene_batch(&mut active, 5, false, |_| Err(duplicate.clone()), never_stage),
+            commit_scene_batch(
+                &mut active,
+                5,
+                false,
+                |_| Err(duplicate.clone()),
+                never_stage
+            ),
             Err(duplicate.clone())
         );
         assert_eq!(active, scene(5));
         assert_eq!(
-            commit_scene_batch(&mut active, 5, false, |_| Ok(()), |_| {
-                Err(SceneError::NodeNotFound(NodeId(3)))
-            }),
+            commit_scene_batch(
+                &mut active,
+                5,
+                false,
+                |_| Ok(()),
+                |_| { Err(SceneError::NodeNotFound(NodeId(3))) }
+            ),
             Err(SceneError::NodeNotFound(NodeId(3)))
         );
         assert_eq!(active, scene(5));

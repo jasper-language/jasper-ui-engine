@@ -3,9 +3,9 @@
   "status": "proved",
   "scope": "Exact production lookups on the real Node declaration with its four non-tree field types replaced by opaque values the kernel cannot read. Both report a miss exactly when neither the node nor any descendant has the identity. A read hit returns the first preorder match. A mutable hit lends that same node, and the tree at the end of the loan is the old tree with exactly that node replaced by whatever the loan left there; every node on the path keeps its other fields and child count and every other child is unchanged. A mutable miss leaves the tree unchanged. Scene identity uniqueness, the apply_one arms that use the reference, recursion depth, stack use and the rescanning cost are excluded.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "545044f4d85b138361f93820a2d4def4ae2e1b6bb7415893d98eda2b75a041e2",
+  "source_sha256": "34e7cd9c24afe41b3020b904be99de5a7229011fe32991db412a7c15e2e4ac60",
   "sources": {
-    "src/scene.rs": "545044f4d85b138361f93820a2d4def4ae2e1b6bb7415893d98eda2b75a041e2"
+    "src/scene.rs": "34e7cd9c24afe41b3020b904be99de5a7229011fe32991db412a7c15e2e4ac60"
   },
   "kernel_sha256": "b74b778af544687350673b5791f817007560bb7babf2f9ee62b2fdc7f0b6b57d",
   "dependencies": {

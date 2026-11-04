@@ -3,9 +3,9 @@
   "status": "proved",
   "scope": "Exact production traversal and insertion check on the real Node and SceneError declarations with the non-tree field types replaced by opaque values the kernel cannot read, over any set obeying the IdentitySet contract. Against the preorder identity sequence of the tree (for the insertion check, the tree followed by the inserted subtree): Ok holds only when no identity repeats and none was already in the set, and leaves exactly the old set plus the sequence; DuplicateNode(d) names the first position where an identity repeats, with the prefix before it unrepeated and the set exactly the old set plus that prefix; no other error occurs. The BTreeSet instance of the contract, an empty starting set in the callers, allocation failure, stack use and cost are excluded.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "545044f4d85b138361f93820a2d4def4ae2e1b6bb7415893d98eda2b75a041e2",
+  "source_sha256": "34e7cd9c24afe41b3020b904be99de5a7229011fe32991db412a7c15e2e4ac60",
   "sources": {
-    "src/scene.rs": "545044f4d85b138361f93820a2d4def4ae2e1b6bb7415893d98eda2b75a041e2"
+    "src/scene.rs": "34e7cd9c24afe41b3020b904be99de5a7229011fe32991db412a7c15e2e4ac60"
   },
   "kernel_sha256": "53e14531454a64931cb421b76cc60fa852c042aadea3f24a829087e708d9bbac",
   "dependencies": {
