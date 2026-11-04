@@ -898,3 +898,7 @@ CP-02 仍无判定：只选一个断言（切片后 30 个 VCC）在 45 分钟�
 这条取代同日的定点 Kani 做法。`verify-ui.py` 默认不跑 Kani，该阶段状态为 `deferred_to_release`，登记写 `Kani：发版时验证`，不因它判未完成；发版时用 `--kani-harness` 或 `--kani-full` 显式打开。CI 不再安装 Kani。CP-01 和 CP-02 的 Kani / Bitwuzla 路径移到发版清单，义务未解除，CP-02 不依赖 Kani 的部分继续。现有 harness 和旧证据不删。没有生产代码改动。
 
 2026-11-04 `.jaso` UI 插件（JB-U1）：`ui.*` 第 1 版写入 `abi.md` 第 10 节，明确为 UI 宿主命名空间，不属于 Native ABI v1 核心。真实编译的原生插件经 L1 装入并画进一帧 CPU 无头画面，负向用例见 `verification.md`。未完成：GPU 路径、树内 z 序、x86_64 Linux 以外的宿主、进程隔离。`ui.*` 是否提升为公共 ABI 待 CP 系列闭合后决定。
+
+## 2026-11-04：补丁后的身份唯一（CP-03 子性质）
+
+`apply_one` 的函数体移入 `apply_checked_patch`。插入只有在树后接子树无重复时才被准入，成功后全树身份无重复；其他补丁不做检查，原本无重复的树仍无重复。这些有 Verus 全域证明，范围见 `verification.md` 的 UI-SCENE-CHECKED-PATCH-001。真实 `BTreeSet` 满足契约只经测试，跨整批的组合没有陈述，整事务性质 UI-TXN-ATOMIC-001 仍是 not_verified。定点通过，等批次全量。

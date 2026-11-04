@@ -1115,6 +1115,98 @@ pub fn assert_scene_unique_ids_bytes(spec: &[(u8, u8)], root: u8, inserted_root:
     assert_scene_unique_ids(&tree, &inserted, &[start as u64 % 16][..(start % 2) as usize]);
 }
 
+fn renumber_nodes(node: &mut Node, next: &mut u64) {
+    node.id = NodeId(*next);
+    *next += 1;
+    node.children.iter_mut().for_each(|child| renumber_nodes(child, next));
+}
+
+fn no_repeat(ids: &[u64]) -> bool {
+    ids.iter().enumerate().all(|(at, id)| !ids[..at].contains(id))
+}
+
+// Whether whole is rest with part put in at one position; checked by trying every position.
+// whole 是否是在 rest 的某个位置放入 part 的结果；逐个位置尝试。
+fn is_spliced(whole: &[u64], part: &[u64], rest: &[u64]) -> bool {
+    whole.len() == part.len() + rest.len()
+        && (0..=rest.len()).any(|at| {
+            whole[..at] == rest[..at] && whole[at..at + part.len()] == *part && whole[at + part.len()..] == rest[at..]
+        })
+}
+
+/// The real composition with the real set: an independent preorder decides the admission, the
+/// patch oracle decides the write, and identities are read back off the result.
+/// 真实组合配真实集合：独立的前序决定准入，补丁规格决定写入，身份从结果上重新读取。
+pub fn assert_scene_checked_patch(tree: Node, patch: ScenePatch) {
+    let mut before = Vec::new();
+    preorder_oracle(&tree, &mut before);
+    let mut actual = tree.clone();
+    let result = apply_checked_patch(&mut actual, patch.clone(), &mut std::collections::BTreeSet::new());
+    let mut after = Vec::new();
+    preorder_oracle(&actual, &mut after);
+    if let ScenePatch::Insert { node, .. } = &patch {
+        let mut part = Vec::new();
+        preorder_oracle(node, &mut part);
+        let order = [before.as_slice(), part.as_slice()].concat();
+        if let Some(at) = (0..order.len()).find(|&at| order[..at].contains(&order[at])) {
+            assert_eq!(result, Err(SceneError::DuplicateNode(NodeId(order[at]))));
+            assert_eq!(actual, tree);
+            return;
+        }
+        if result.is_ok() {
+            assert!(no_repeat(&after) && is_spliced(&after, &part, &before));
+        } else {
+            assert_eq!(after, before);
+        }
+    } else {
+        match &patch {
+            ScenePatch::Remove { id } if result.is_ok() => {
+                let taken = before.len() - after.len();
+                assert!(taken > 0);
+                let at = (0..=after.len()).find(|&at| {
+                    before[at] == id.0 && is_spliced(&before, &before[at..at + taken], &after)
+                });
+                assert!(at.is_some());
+            }
+            _ => assert_eq!(after, before),
+        }
+        if no_repeat(&before) {
+            assert!(no_repeat(&after));
+        }
+    }
+    let (expected, want) = patch_oracle(&tree, &patch);
+    assert_eq!(result, want);
+    assert_eq!(actual, expected);
+}
+
+pub fn assert_scene_checked_patch_bytes(spec: &[(u8, u8)], root: u8, id: u8, op: u8, index: u8, flags: u8) {
+    let mut room = spec.len();
+    let mut pairs = spec.iter();
+    let mut tree = removal_tree(root as u64 % 8, &mut pairs, &mut room);
+    let mut inserted = removal_tree(id as u64 % 8, &mut pairs, &mut room);
+    vary_kinds(&mut tree);
+    // Fresh numbering reaches the admitted paths; repeated identities reach the refusals.
+    // 重新编号走准入路径；重复身份走拒绝路径。
+    if flags & 1 != 0 {
+        let mut next = 0;
+        renumber_nodes(&mut tree, &mut next);
+    }
+    if flags & 2 != 0 {
+        let mut next = 100;
+        renumber_nodes(&mut inserted, &mut next);
+    }
+    let id = NodeId(id as u64 % 8);
+    let patch = match op % 7 {
+        0 | 1 => ScenePatch::Insert { parent: id, index: index as usize % 6, node: inserted },
+        2 => ScenePatch::UpdateStyle { id, style: Style(250) },
+        3 => ScenePatch::SetScroll { id, offset: Point { x: -1.5, y: -2.5 } },
+        4 => ScenePatch::UpdateText { id, text: "new".into() },
+        5 => ScenePatch::SetCanvas { id, canvas: tagged_canvas(252) },
+        _ => ScenePatch::Remove { id },
+    };
+    assert_scene_checked_patch(tree, patch);
+}
+
 pub fn assert_scene_node_find_bytes(spec: &[(u8, u8)], root: u8, id: u8) {
     let mut room = spec.len();
     let tree = removal_tree(root as u64 % 8, &mut spec.iter(), &mut room);
@@ -3347,6 +3439,10 @@ mod properties {
             assert_scene_batch_commit_bytes(&spec, root, staged, version, offset, flags);
         }
         #[test]
+        fn scene_checked_patch_property(spec in prop::collection::vec(any::<(u8, u8)>(), 0..24), root in any::<u8>(), id in any::<u8>(), op in any::<u8>(), index in any::<u8>(), flags in any::<u8>()) {
+            assert_scene_checked_patch_bytes(&spec, root, id, op, index, flags);
+        }
+        #[test]
         fn scene_unique_ids_property(spec in prop::collection::vec(any::<(u8, u8)>(), 0..24), root in any::<u8>(), inserted in any::<u8>(), start in any::<u8>()) {
             assert_scene_unique_ids_bytes(&spec, root, inserted, start);
         }
@@ -3756,6 +3852,9 @@ mod memory {
                 assert_scene_batch_commit_bytes(&[(1, 2), (2, 0), (3, 0)], version as u8, 3, version, 1, flags);
             }
             assert_scene_unique_ids_bytes(&[(1, 2), (2, 0), (3, 0), (2, 1), (3, 0)], version as u8, 3, 5);
+            for (op, flags) in [(0, 3), (0, 0), (2, 1), (6, 1), (6, 0), (4, 1)] {
+                assert_scene_checked_patch_bytes(&[(1, 2), (2, 0), (3, 0), (4, 1), (5, 0)], version as u8, 1, op, 1, flags);
+            }
             assert_scene_unique_ids_bytes(&[(1, 0), (1, 0)], version as u8, version as u8, version as u8);
             assert_scene_node_find_bytes(&[(1, 2), (2, 0), (3, 0), (2, 1), (3, 0)], version as u8, 3);
             assert_scene_node_find_bytes(&[(1, 0), (2, 0)], version as u8, version as u8);

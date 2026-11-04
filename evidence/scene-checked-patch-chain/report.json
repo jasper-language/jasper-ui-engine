@@ -1,0 +1,137 @@
+{
+  "property": "UI-SCENE-CHECKED-PATCH-001",
+  "backlog_item": "CP-03",
+  "status": "subproperty_scoped_checks_passed",
+  "cp03_closed": false,
+  "production": {
+    "file": "src/scene.rs",
+    "functions": [
+      "apply_checked_patch"
+    ],
+    "file_sha256": "6d2d8d9bfe6eec311a29d2ba0c6163d0bb263fea3f874b9710b7ff990a81ae3e",
+    "kernel_sha256": "e6d40441d8f4c213096c9b16e248412865b7da86f18de1120bebee24a4808130",
+    "caller": "Scene::apply_one"
+  },
+  "specification": "For any tree and any patch, with a set obeying the IdentitySet contract and starting empty. Insert: if the tree's preorder identities followed by the subtree's repeat anything, the tree is unchanged and the error is DuplicateNode naming an identity of that sequence, even when the parent is absent. Otherwise the patch applies as in UI-SCENE-PATCH-001; a success leaves a tree whose preorder identities repeat nothing and are the old sequence with the subtree's sequence put in at one position; a failure leaves the tree unchanged. Any other patch applies as in UI-SCENE-PATCH-001 with no check: updates, refusals and misses keep the preorder sequence, a successful Remove takes exactly one subtree carrying the identity out of it, and a tree that repeated nothing still repeats nothing.",
+  "assumptions": [
+    "The real BTreeSet obeys the IdentitySet contract: tested, not proved.",
+    "Scene::apply_one passes an empty set: by reading, and a seeded set is one of the manual mutations the unit test catches.",
+    "A non-Insert patch only keeps uniqueness if the tree was unique before: that precondition comes from validate at the start of a batch, and the link across a batch is not stated here."
+  ],
+  "tools": {
+    "verus": "Verus",
+    "z3": "Z3 version 4.16.0 - 64 bit",
+    "nightly": "nightly-2026-10-17"
+  },
+  "config": {
+    "entry": "python3 scripts/verify-ui.py --verus <verus>",
+    "fuzz_seconds": 20,
+    "proptest_cases": 256,
+    "proptest_seed": "12345",
+    "verus_time_limit_seconds": 300,
+    "negative_controls_scope": "--verify-root --verify-function apply_checked_patch"
+  },
+  "stages": {
+    "Verus+Z3": {
+      "result": "passed",
+      "verified": 47,
+      "errors": 0,
+      "negative_controls": [
+        {
+          "name": "report-success-on-duplicate",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "drop-the-patch",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "skip-the-check",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "swallow-the-failure",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "check-only-the-tree",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "check-only-the-subtree",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "no-empty-set-requirement",
+          "rejected": true,
+          "exit_code": 1
+        }
+      ],
+      "model_note": "Canvas, Style, Semantics and Point are replaced in the proof by value types the kernel cannot read. The proof copy adds ghost lets, asserts and a named result only. The count includes the re-verified dependencies (UI-SCENE-PATCH-001, UI-SCENE-NODE-FIND-001, UI-SCENE-NODE-REMOVE-001, UI-SCENE-UNIQUE-IDS-001). Negative controls verify only apply_checked_patch, with its dependencies already verified by the positive run; two refusals (check only the tree, only the subtree) come from a proof assertion on the failure path, not from the postcondition."
+    },
+    "Proptest": {
+      "result": "passed",
+      "harness": [
+        "properties::scene_checked_patch_property"
+      ],
+      "includes": "Trees up to 24 nodes, with fresh numbering on a flag so admitted paths are reached and repeated identities otherwise, all patch kinds except UpdateSemantics, with the real BTreeSet, against an independent recursive preorder and the existing patch oracle."
+    },
+    "Miri": {
+      "result": "passed",
+      "harness": [
+        "memory boundaries with six patch and flag combinations on one fixed shape"
+      ],
+      "note": "Stand-in field types, no user Drop and no panic injection"
+    },
+    "cargo-fuzz": {
+      "result": "passed",
+      "target": "read_boundary",
+      "completed_runs": [
+        11464,
+        978403,
+        29363
+      ],
+      "note": "Only read_boundary reaches this kernel. The run shared the build machine with other builds."
+    },
+    "Kani": {
+      "result": "Kani：发版时验证",
+      "harness": {},
+      "note": "No harness was added and none ran."
+    },
+    "Loom": {
+      "result": "N/A",
+      "reason": "The kernel has no shared state or synchronization primitive; the tree and the set are held by exclusive reference.",
+      "counted_as_pass": false
+    }
+  },
+  "real_path_test": {
+    "test": "scene::tests::checked_patch_refuses_repeats_before_writing_and_keeps_identities_unique",
+    "class": "tested, not proved",
+    "mutation_checked": "Seven manual mutations, one run each, all fail the test: no check, check only the tree, check only the subtree, failure swallowed, success reported on a repeat, patch dropped, seeded set in apply_one."
+  },
+  "behavior_change_note": "The body of apply_one moved into apply_checked_patch and takes the set as a parameter. The ? became a match. A BTreeSet is now constructed for every patch rather than only for Insert; BTreeSet::new does not allocate. The checks, errors and writes should be unchanged; that equivalence with the old text is argued by reading and tests, not proved.",
+  "chain_notes": [
+    "The first kernel run exceeded the 60 second Verus limit under load and one lemma exceeded the resource limit; the lemma was split and the limit became per-kernel (300 seconds here, 60 for the others)."
+  ],
+  "uncovered": [
+    "Uniqueness across a batch: validate followed by the fold of apply_detached is not stated as a whole",
+    "Scene::clone, so the staged value's relation to the active tree",
+    "That BTreeSet obeys the IdentitySet contract, and that apply_one passes an empty one",
+    "Panic, allocation failure, stack use and cost, including the quadratic-or-worse cost of re-checking a whole tree per Insert",
+    "Candidate construction, NativeScene's RestoreCandidate implementation, drop of the old view",
+    "UI-TXN-ATOMIC-001 stays not_verified as a whole-transaction property"
+  ],
+  "chain": {
+    "entry_exit_code": 0,
+    "complete": false,
+    "slice_complete": true,
+    "reason": "complete stays false because the CP-01 and CP-02 Kani and Bitwuzla paths are on the release checklist; they are not discharged"
+  },
+  "completion_claimed": false
+}

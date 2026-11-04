@@ -1,0 +1,82 @@
+{
+  "property": "UI-SCENE-CHECKED-PATCH-001",
+  "status": "proved",
+  "scope": "Exact production composition of the insertion identity check and the tree patch on the real Node, NodeKind, ScenePatch and SceneError declarations with Canvas, Style, Semantics and Point replaced by opaque values the kernel cannot read, over any set obeying the IdentitySet contract and starting empty, for any tree and any patch. Insert: when the tree followed by the subtree repeats an identity the tree is unchanged and DuplicateNode names an identity of that sequence; otherwise the patch applies as in UI-SCENE-PATCH-001, a success leaves a tree whose preorder identities repeat nothing and equal the old sequence with the subtree's sequence put in at one position, and a failure leaves the tree unchanged. Any other patch applies as in UI-SCENE-PATCH-001 with no check; updates, refusals and misses keep the preorder sequence, a successful Remove takes exactly one subtree carrying the identity out of it, and a tree that repeated nothing still repeats nothing. BTreeSet obeying the contract is tested, not proved; apply_one passing an empty set is by reading.",
+  "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
+  "source_sha256": "6d2d8d9bfe6eec311a29d2ba0c6163d0bb263fea3f874b9710b7ff990a81ae3e",
+  "sources": {
+    "src/scene.rs": "6d2d8d9bfe6eec311a29d2ba0c6163d0bb263fea3f874b9710b7ff990a81ae3e"
+  },
+  "kernel_sha256": "e6d40441d8f4c213096c9b16e248412865b7da86f18de1120bebee24a4808130",
+  "dependencies": {
+    "node-id-type": "39ff7bd8c3c5c51e025059e0f104105a839165e2cb4a455f094a2d2bb9cfffad",
+    "scene-node-kind-type": "15662ba19978b1271632b776e224c3307e0955852bb2e44b8c7533452a83f313",
+    "scene-node-type": "5cd4fff573ded959d547838b4447ec6383241e3ce53bef409cf839882fcf018b",
+    "scene-patch-type": "319ea18b09a59885ec8b42dc6b63f478bb93d87f5d63a196a3e27cb0cb6c3f43",
+    "scene-error-type": "2139dbdcdd29d341ab1184f217b263e52cfa2d04cde0f17021af1ff002d1051f",
+    "scene-node-find": "b74b778af544687350673b5791f817007560bb7babf2f9ee62b2fdc7f0b6b57d",
+    "scene-node-remove": "e98e2b1c9a3a0e57bcb8f8464d976ac0316807148cb696c7abd25905564cb483",
+    "scene-patch": "f2bcaf5f6d470182f2eca98a8d185b10fe457e2895ebb4004fd22ba83258f444",
+    "scene-unique-ids": "53e14531454a64931cb421b76cc60fa852c042aadea3f24a829087e708d9bbac"
+  },
+  "proof_sha256": "0aa694422f6c30a189f98b90a08eef2d756bbeda295519740bd243b7b9c1280b",
+  "runner_sha256": "996049d8efd47a35f5c14bb27a9cccbdbd4307e2c7845160aa1482f9043a896f",
+  "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
+  "command": [
+    "<home>/verus/verus",
+    "--crate-type",
+    "lib",
+    "<repo>/evidence/scene-checked-patch-kernel/kernel.rs"
+  ],
+  "exit_code": 0,
+  "solver": {
+    "path": "<home>/verus/z3",
+    "version": "Z3 version 4.16.0 - 64 bit\n",
+    "explicit_override": null
+  },
+  "verified_obligations": 47,
+  "negative_controls": [
+    {
+      "name": "report-success-on-duplicate",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "drop-the-patch",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "skip-the-check",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "swallow-the-failure",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "check-only-the-tree",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "check-only-the-subtree",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "no-empty-set-requirement",
+      "rejected": true,
+      "exit_code": 1
+    }
+  ],
+  "negative_control_rejected": true,
+  "trust_boundary": [
+    "Verus/vstd and SMT solver",
+    "Rust/Verus integer, references and slice semantics",
+    "signature annotation/extraction script",
+    "Rust compiler and target execution"
+  ]
+}

@@ -1,0 +1,34 @@
+verification results:: 0 verified, 1 errors (partial verification with `--verify-*`)
+note: verifying root module (selected functions)
+
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+   --> <repo>/evidence/scene-checked-patch-kernel/negative_skip_the_check.rs:960:1
+    |
+960 | fn apply_checked_patch<T: IdentitySet>(root:&mut Node,patch:ScenePatch,ids:&mut T)->(result:Result<(), SceneError>)
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: postcondition not satisfied
+   --> <repo>/evidence/scene-checked-patch-kernel/negative_skip_the_check.rs:962:17
+    |
+962 |           ensures patch_checked(*old(root),*final(root),patch,result),
+    |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+963 | /     {
+964 | |     let ghost o=*root;
+965 | |     let ghost original=patch;
+966 | |     if let ScenePatch::Insert { node, .. } = &patch {
+...   |
+995 | |     result
+996 | | }
+    | |_- at the end of the function body
+
+error: precondition not satisfied
+   --> <repo>/evidence/scene-checked-patch-kernel/negative_skip_the_check.rs:990:31
+    |
+511 |     requires ids_distinct(preorder_ids(o)+preorder_ids(node)),
+    |              ------------------------------------------------ failed precondition
+...
+990 |             if result is Ok { lemma_insert_ok_ids(o,*root,parent,index,node); }
+    |                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: aborting due to 2 previous errors
+

@@ -32,7 +32,9 @@
 
 2026-11-04 闭合 UI-SCENE-BATCH-COMMIT-001：`commit_scene_batch` 在真实 `Scene`、`Node`、`SceneError` 声明上的提交（其余字段类型在证明中是内核读不到的值）。对任意场景与只拿到共享引用的任意检查、暂存闭包：陈旧、耗尽、检查失败、暂存失败都报各自的错误并让场景保持原值；空批报检查的结果并保持原值；暂存只能在检查成功后调用；成功时场景恰为暂存的树加旧版本加一，与暂存值带的版本无关。反例被拒，见 `evidence/scene-batch-commit-chain/report.json`。生产传入的闭包（`Scene::validate`、`Scene::clone`、对 `apply_detached` 的折叠）不在此性质内，`Scene::clone` 没有证明。
 
-仍未覆盖：`apply_one` 在 `Insert` 前的身份检查、`Scene` 的克隆与身份校验、`apply_batch_at` 中版本赋值与整体替换两条语句的实现级规格、候选构造本身、`NativeScene` 的 `RestoreCandidate` 实现满足契约（含写入不改变准入判定）、`*self = candidate` 析构旧视图时的 panic、活动文档读取路径上第三方内部可变性的影响。
+2026-11-04 闭合 UI-SCENE-CHECKED-PATCH-001：`apply_checked_patch`（`apply_one` 的函数体）在真实 `Node`、`NodeKind`、`ScenePatch`、`SceneError` 声明上的组合（`Canvas`、`Style`、`Semantics`、`Point` 在证明中是内核读不到的值）。对任意树、任意补丁和从空开始、遵守 `IdentitySet` 契约的任意集合：`Insert` 在树后接子树的前序身份有重复时报 `DuplicateNode` 且不写，否则按 UI-SCENE-PATCH-001 写入，成功后前序身份无重复，且恰为旧序列在一个位置放入子树的序列；其他补丁不做检查，序列不变，或成功的 `Remove` 恰好取走一棵带该身份的子树，原本无重复的树仍无重复。反例被拒，见 `evidence/scene-checked-patch-chain/report.json`。真实 `BTreeSet` 满足契约只经测试，`apply_one` 传入空集合靠阅读，Kani：发版时验证。
+
+仍未覆盖：跨整批的身份唯一（`validate` 加折叠的组合没有陈述）、`Scene` 的克隆、候选构造本身、`NativeScene` 的 `RestoreCandidate` 实现满足契约（含写入不改变准入判定）、`*self = candidate` 析构旧视图时的 panic、活动文档读取路径上第三方内部可变性的影响。
 
 ### CP-04
 

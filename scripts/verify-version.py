@@ -2842,6 +2842,420 @@ proof fn lemma_visit_fresh(after:Set<NodeId>,pre:Set<NodeId>,start:Set<NodeId>,v
 }
 
 
+KERNELS["scene-checked-patch"] = {
+    "source":"src/scene.rs", "marker":"SCENE CHECKED PATCH",
+    "property":"UI-SCENE-CHECKED-PATCH-001",
+    "spec_prelude":r"""pub open spec fn ids_distinct(s:Seq<NodeId>)->bool { unrepeated(Set::<NodeId>::empty(),s) }
+// whole is rest with part put in at one position.
+// whole 是在 rest 的某个位置放入 part 的结果。
+pub open spec fn spliced_ids(whole:Seq<NodeId>,part:Seq<NodeId>,rest:Seq<NodeId>)->bool {
+    exists|k:int| #![trigger rest.take(k)] 0<=k<=rest.len() && whole==rest.take(k)+part+rest.skip(k)
+}
+// A successful removal takes exactly one subtree with the identity out of the sequence; everything else keeps the sequence.
+// 成功的移除从序列中恰好取走一棵带该身份的子树；其余情况序列不变。
+pub open spec fn patch_keeps_ids(o:Node,n:Node,patch:ScenePatch,r:Result<(),SceneError>)->bool {
+    match patch {
+        ScenePatch::Remove{id} => if r is Ok {
+                exists|t:Node| #![trigger preorder_ids(t)] t.id==id && spliced_ids(preorder_ids(o),preorder_ids(t),preorder_ids(n))
+            } else { preorder_ids(n)==preorder_ids(o) },
+        _ => preorder_ids(n)==preorder_ids(o),
+    }
+}
+// Insertion is admitted only when the tree followed by the subtree repeats nothing; its result then repeats nothing either.
+// Any other patch on a tree that repeats nothing leaves a tree that repeats nothing, without being checked.
+// 只有树后接子树无重复时才准入插入，其结果也无重复。其他补丁不做检查，无重复的树仍无重复。
+pub open spec fn patch_checked(o:Node,n:Node,patch:ScenePatch,r:Result<(),SceneError>)->bool {
+    match patch {
+        ScenePatch::Insert{node,..} => {
+            let order=preorder_ids(o)+preorder_ids(node);
+            if ids_distinct(order) {
+                patch_applied(o,n,patch,r) && (r is Ok ==> ids_distinct(preorder_ids(n)) && spliced_ids(preorder_ids(n),preorder_ids(node),preorder_ids(o)))
+                    && (r is Err ==> n==o)
+            } else {
+                n==o && exists|d:NodeId| #![trigger order.contains(d)] order.contains(d) && r==patch_err(SceneError::DuplicateNode(d))
+            }
+        }
+        _ => patch_applied(o,n,patch,r) && patch_keeps_ids(o,n,patch,r) && (ids_distinct(preorder_ids(o)) ==> ids_distinct(preorder_ids(n))),
+    }
+}
+pub open spec fn ids_span(n:Node,i:int,p:int)->Seq<NodeId> decreases p-i {
+    if i>=p { Seq::empty() } else { preorder_ids(n.children@[i])+ids_span(n,i+1,p) }
+}
+proof fn lemma_children_split(n:Node,i:int,p:int)
+    requires 0<=i<=p<=n.children@.len(),
+    ensures children_ids(n,i)==ids_span(n,i,p)+children_ids(n,p),
+    decreases p-i,
+{
+    if i==p { assert(ids_span(n,i,p)=~=Seq::<NodeId>::empty()); assert(children_ids(n,i)=~=ids_span(n,i,p)+children_ids(n,p)); }
+    else {
+        lemma_children_split(n,i+1,p);
+        assert(children_ids(n,i)==preorder_ids(n.children@[i])+children_ids(n,i+1));
+        assert(ids_span(n,i,p)==preorder_ids(n.children@[i])+ids_span(n,i+1,p));
+        assert(children_ids(n,i)=~=ids_span(n,i,p)+children_ids(n,p));
+    }
+}
+proof fn lemma_span_same(a:Node,b:Node,i:int,p:int)
+    requires 0<=i<=p, forall|j:int| #![trigger b.children@[j]] i<=j<p ==> preorder_ids(a.children@[j])==preorder_ids(b.children@[j]),
+    ensures ids_span(a,i,p)==ids_span(b,i,p),
+    decreases p-i,
+{
+    if i<p { lemma_span_same(a,b,i+1,p); assert(preorder_ids(a.children@[i])==preorder_ids(b.children@[i])); }
+}
+proof fn lemma_suffix_same(a:Node,b:Node,i:int)
+    requires 0<=i, a.children@.len()==b.children@.len(),
+        forall|j:int| #![trigger b.children@[j]] i<=j<b.children@.len() ==> preorder_ids(a.children@[j])==preorder_ids(b.children@[j]),
+    ensures children_ids(a,i)==children_ids(b,i),
+    decreases a.children@.len()-i,
+{
+    if i<a.children@.len() { lemma_suffix_same(a,b,i+1); assert(preorder_ids(a.children@[i])==preorder_ids(b.children@[i])); }
+}
+// long has one more child than short before position i; from there on they line up one apart.
+// long 在位置 i 之前比 short 多一个子节点；从那以后二者错开一位对齐。
+proof fn lemma_suffix_shift(long:Node,short:Node,i:int)
+    requires 0<=i<=short.children@.len(), long.children@.len()==short.children@.len()+1,
+        forall|j:int| #![trigger short.children@[j]] i<=j<short.children@.len() ==> long.children@[j+1]==short.children@[j],
+    ensures children_ids(long,i+1)==children_ids(short,i),
+    decreases short.children@.len()-i,
+{
+    if i<short.children@.len() {
+        lemma_suffix_shift(long,short,i+1);
+        assert(long.children@[i+1]==short.children@[i]);
+        assert(children_ids(long,i+1)==preorder_ids(long.children@[i+1])+children_ids(long,i+2));
+    }
+}
+proof fn lemma_same_ids(a:Node,b:Node)
+    requires node_same(a,b),
+    ensures preorder_ids(a)==preorder_ids(b),
+    decreases a,
+{
+    assert forall|j:int| #![trigger b.children@[j]] 0<=j<b.children@.len() implies preorder_ids(a.children@[j])==preorder_ids(b.children@[j]) by {
+        assert(node_same(a.children@[j],b.children@[j]));
+        lemma_same_ids(a.children@[j],b.children@[j]);
+    };
+    lemma_suffix_same(a,b,0);
+}
+proof fn lemma_same_children_ids(a:Node,b:Node)
+    requires a.id==b.id, a.children==b.children,
+    ensures preorder_ids(a)==preorder_ids(b),
+{
+    lemma_suffix_same(a,b,0);
+}
+// Equal children outside p and any pair of sequences at p give two sequences that differ only at p.
+// p 之外子节点身份序列相同时，两侧序列只在 p 处不同。
+proof fn lemma_child_at(a:Node,b:Node,p:int)
+    requires 0<=p<a.children@.len(), a.id==b.id, a.children@.len()==b.children@.len(),
+        forall|j:int| #![trigger b.children@[j]] 0<=j<b.children@.len() && j!=p ==> preorder_ids(a.children@[j])==preorder_ids(b.children@[j]),
+    ensures
+        preorder_ids(a)==seq![a.id]+ids_span(a,0,p)+preorder_ids(a.children@[p])+children_ids(a,p+1),
+        preorder_ids(b)==seq![a.id]+ids_span(a,0,p)+preorder_ids(b.children@[p])+children_ids(a,p+1),
+{
+    lemma_children_split(a,0,p);
+    lemma_children_split(b,0,p);
+    lemma_span_same(a,b,0,p);
+    lemma_suffix_same(a,b,p+1);
+    assert(children_ids(a,p)==preorder_ids(a.children@[p])+children_ids(a,p+1));
+    assert(children_ids(b,p)==preorder_ids(b.children@[p])+children_ids(b,p+1));
+    assert(preorder_ids(a)=~=seq![a.id]+ids_span(a,0,p)+preorder_ids(a.children@[p])+children_ids(a,p+1));
+    assert(preorder_ids(b)=~=seq![a.id]+ids_span(a,0,p)+preorder_ids(b.children@[p])+children_ids(a,p+1));
+}
+proof fn lemma_relocated_ids(o:Node,f:Node,id:NodeId,t:Node,ft:Node)->(w:(Seq<NodeId>,Seq<NodeId>))
+    requires node_relocated(o,f,id,t,ft),
+    ensures preorder_ids(o)==w.0+preorder_ids(t)+w.1, preorder_ids(f)==w.0+preorder_ids(ft)+w.1,
+    decreases o,
+{
+    if o.id==id {
+        assert(preorder_ids(o)=~=Seq::<NodeId>::empty()+preorder_ids(t)+Seq::<NodeId>::empty());
+        assert(preorder_ids(f)=~=Seq::<NodeId>::empty()+preorder_ids(ft)+Seq::<NodeId>::empty());
+        (Seq::empty(),Seq::empty())
+    } else {
+        let p=choose|p:int| #![trigger o.children@[p]] 0<=p<o.children@.len()
+            && (forall|j:int| #![trigger o.children@[j]] 0<=j<p ==> !node_holds(o.children@[j],id))
+            && (forall|j:int| #![trigger o.children@[j]] 0<=j<o.children@.len() && j!=p ==> o.children@[j]==f.children@[j])
+            && node_relocated(o.children@[p],f.children@[p],id,t,ft);
+        let inner=lemma_relocated_ids(o.children@[p],f.children@[p],id,t,ft);
+        assert forall|j:int| #![trigger f.children@[j]] 0<=j<f.children@.len() && j!=p implies preorder_ids(o.children@[j])==preorder_ids(f.children@[j]) by {
+            assert(o.children@[j]==f.children@[j]);
+        };
+        lemma_child_at(o,f,p);
+        let a=seq![o.id]+ids_span(o,0,p)+inner.0;
+        let b=inner.1+children_ids(o,p+1);
+        assert(preorder_ids(o)=~=a+preorder_ids(t)+b);
+        assert(preorder_ids(f)=~=a+preorder_ids(ft)+b);
+        (a,b)
+    }
+}
+proof fn lemma_removed_direct(o:Node,n:Node,p:int)->(w:(Seq<NodeId>,Seq<NodeId>))
+    requires 0<=p<o.children@.len(), o.id==n.id, n.children@==o.children@.remove(p),
+    ensures preorder_ids(o)==w.0+preorder_ids(o.children@[p])+w.1, preorder_ids(n)==w.0+w.1,
+{
+    lemma_children_split(o,0,p);
+    lemma_children_split(n,0,p);
+    assert forall|j:int| #![trigger n.children@[j]] 0<=j<p implies preorder_ids(o.children@[j])==preorder_ids(n.children@[j]) by {
+        assert(n.children@[j]==o.children@[j]);
+    };
+    lemma_span_same(o,n,0,p);
+    assert forall|j:int| #![trigger n.children@[j]] p<=j<n.children@.len() implies o.children@[j+1]==n.children@[j] by {
+        assert(n.children@[j]==o.children@[j+1]);
+    };
+    lemma_suffix_shift(o,n,p);
+    assert(children_ids(o,p)==preorder_ids(o.children@[p])+children_ids(o,p+1));
+    let a=seq![o.id]+ids_span(o,0,p);
+    let b=children_ids(o,p+1);
+    assert(preorder_ids(o)=~=a+preorder_ids(o.children@[p])+b);
+    assert(preorder_ids(n)=~=a+b);
+    (a,b)
+}
+proof fn lemma_removed_nested(o:Node,n:Node,p:int,x:Seq<NodeId>,a:Seq<NodeId>,b:Seq<NodeId>)->(w:(Seq<NodeId>,Seq<NodeId>))
+    requires 0<=p<o.children@.len(), o.id==n.id, o.children@.len()==n.children@.len(),
+        forall|j:int| #![trigger o.children@[j]] 0<=j<o.children@.len() && j!=p ==> node_same(o.children@[j],n.children@[j]),
+        preorder_ids(o.children@[p])==a+x+b, preorder_ids(n.children@[p])==a+b,
+    ensures preorder_ids(o)==w.0+x+w.1, preorder_ids(n)==w.0+w.1,
+{
+    assert forall|j:int| #![trigger n.children@[j]] 0<=j<n.children@.len() && j!=p implies preorder_ids(o.children@[j])==preorder_ids(n.children@[j]) by {
+        assert(node_same(o.children@[j],n.children@[j]));
+        lemma_same_ids(o.children@[j],n.children@[j]);
+    };
+    lemma_child_at(o,n,p);
+    let front=seq![o.id]+ids_span(o,0,p)+a;
+    let back=b+children_ids(o,p+1);
+    assert(preorder_ids(o)=~=front+x+back);
+    assert(preorder_ids(n)=~=front+back);
+    (front,back)
+}
+proof fn lemma_removed_ids(o:Node,n:Node,id:NodeId)->(w:(Node,Seq<NodeId>,Seq<NodeId>))
+    requires node_removed(o,n,id),
+    ensures w.0.id==id, preorder_ids(o)==w.1+preorder_ids(w.0)+w.2, preorder_ids(n)==w.1+w.2,
+    decreases o,
+{
+    if exists|p:int| #![trigger o.children@[p]] 0<=p<o.children@.len() && o.children@[p].id==id
+            && (forall|j:int| #![trigger o.children@[j]] 0<=j<p ==> o.children@[j].id!=id)
+            && n.children@=~=o.children@.remove(p) {
+        let p=choose|p:int| #![trigger o.children@[p]] 0<=p<o.children@.len() && o.children@[p].id==id
+            && (forall|j:int| #![trigger o.children@[j]] 0<=j<p ==> o.children@[j].id!=id)
+            && n.children@=~=o.children@.remove(p);
+        let w=lemma_removed_direct(o,n,p);
+        (o.children@[p],w.0,w.1)
+    } else {
+        let p=choose|p:int| #![trigger o.children@[p]] 0<=p<o.children@.len()
+            && (forall|j:int| #![trigger o.children@[j]] 0<=j<p ==> !node_below(o.children@[j],id))
+            && (forall|j:int| #![trigger o.children@[j]] 0<=j<o.children@.len() && j!=p ==> node_same(o.children@[j],n.children@[j]))
+            && node_removed(o.children@[p],n.children@[p],id);
+        let inner=lemma_removed_ids(o.children@[p],n.children@[p],id);
+        let w=lemma_removed_nested(o,n,p,preorder_ids(inner.0),inner.1,inner.2);
+        (inner.0,w.0,w.1)
+    }
+}
+// The sequence of a parent with one child put in at k, read against the parent before it.
+// 在 k 处放入一个子节点后的父节点序列，对照放入之前。
+proof fn lemma_inserted_child(t:Node,f:Node,k:int,node:Node)
+    requires 0<=k<=t.children@.len(), t.id==f.id, f.children@==t.children@.insert(k,node),
+    ensures
+        preorder_ids(t)==seq![t.id]+ids_span(t,0,k)+children_ids(t,k),
+        preorder_ids(f)==seq![t.id]+ids_span(t,0,k)+preorder_ids(node)+children_ids(t,k),
+{
+    lemma_children_split(t,0,k);
+    lemma_children_split(f,0,k);
+    assert forall|j:int| #![trigger t.children@[j]] 0<=j<k implies preorder_ids(f.children@[j])==preorder_ids(t.children@[j]) by {
+        assert(f.children@[j]==t.children@[j]);
+    };
+    lemma_span_same(f,t,0,k);
+    assert forall|j:int| #![trigger t.children@[j]] k<=j<t.children@.len() implies f.children@[j+1]==t.children@[j] by {
+        assert(f.children@[j+1]==t.children@[j]);
+    };
+    lemma_suffix_shift(f,t,k);
+    assert(f.children@[k]==node);
+    assert(children_ids(f,k)==preorder_ids(node)+children_ids(f,k+1));
+    assert(preorder_ids(t)=~=seq![t.id]+ids_span(t,0,k)+children_ids(t,k));
+    assert(preorder_ids(f)=~=seq![t.id]+ids_span(t,0,k)+preorder_ids(node)+children_ids(t,k));
+}
+proof fn lemma_spliced_witness(a:Seq<NodeId>,x:Seq<NodeId>,b:Seq<NodeId>)
+    ensures spliced_ids(a+x+b,x,a+b),
+{
+    let rest=a+b;
+    let k=a.len() as int;
+    assert(rest.take(k)=~=a);
+    assert(rest.skip(k)=~=b);
+}
+proof fn lemma_distinct_any(s:Seq<NodeId>,i:int,j:int)
+    requires ids_distinct(s), 0<=i<s.len(), 0<=j<s.len(), i!=j,
+    ensures s[i]!=s[j],
+{
+    if i>j { assert(s[j]!=s[i]); } else { assert(s[i]!=s[j]); }
+}
+proof fn lemma_distinct_removed(a:Seq<NodeId>,x:Seq<NodeId>,b:Seq<NodeId>)
+    requires ids_distinct(a+x+b),
+    ensures ids_distinct(a+b),
+{
+    let w=a+x+b;
+    let s=a+b;
+    assert forall|i:int,j:int| #![trigger s[i],s[j]] 0<=i<j<s.len() implies s[i]!=s[j] by {
+        let wi=if i<a.len() { i } else { i+x.len() };
+        let wj=if j<a.len() { j } else { j+x.len() };
+        assert(s[i]==w[wi]);
+        assert(s[j]==w[wj]);
+        lemma_distinct_any(w,wi,wj);
+    };
+}
+proof fn lemma_distinct_inserted(a:Seq<NodeId>,x:Seq<NodeId>,b:Seq<NodeId>)
+    requires ids_distinct(a+b+x),
+    ensures ids_distinct(a+x+b),
+{
+    let p=a+b+x;
+    let s=a+x+b;
+    assert forall|i:int,j:int| #![trigger s[i],s[j]] 0<=i<j<s.len() implies s[i]!=s[j] by {
+        let pi=if i<a.len() { i } else if i<a.len()+x.len() { i+b.len() } else { i-x.len() };
+        let pj=if j<a.len() { j } else if j<a.len()+x.len() { j+b.len() } else { j-x.len() };
+        assert(s[i]==p[pi]);
+        assert(s[j]==p[pj]);
+        lemma_distinct_any(p,pi,pj);
+    };
+}
+// The written node keeps its identity and its children, so the whole sequence stays.
+// 被写入的节点保留身份与子节点，整个序列不变。
+proof fn lemma_written_keeps_ids(o:Node,n:Node,id:NodeId,t:Node,f:Node)
+    requires node_relocated(o,n,id,t,f), t.id==f.id, t.children==f.children,
+    ensures preorder_ids(n)==preorder_ids(o),
+{
+    let w=lemma_relocated_ids(o,n,id,t,f);
+    lemma_same_children_ids(t,f);
+}
+proof fn lemma_patch_keeps_ids(o:Node,n:Node,patch:ScenePatch,r:Result<(),SceneError>)
+    requires patch_applied(o,n,patch,r), !(patch is Insert),
+    ensures patch_keeps_ids(o,n,patch,r), ids_distinct(preorder_ids(o)) ==> ids_distinct(preorder_ids(n)),
+{
+    match patch {
+        ScenePatch::Insert{..} => {}
+        ScenePatch::UpdateSemantics{id,semantics} => {
+            if node_holds(o,id) && r==patch_ok() {
+                let (t,f)=choose|t:Node,f:Node| #![trigger node_relocated(o,n,id,t,f)] node_relocated(o,n,id,t,f) && (|t:Node,f:Node| f==(Node{semantics:semantics,..t}))(t,f);
+                lemma_written_keeps_ids(o,n,id,t,f);
+            }
+        }
+        ScenePatch::UpdateStyle{id,style} => {
+            if node_holds(o,id) && r==patch_ok() {
+                let (t,f)=choose|t:Node,f:Node| #![trigger node_relocated(o,n,id,t,f)] node_relocated(o,n,id,t,f) && (|t:Node,f:Node| f==(Node{style:style,..t}))(t,f);
+                lemma_written_keeps_ids(o,n,id,t,f);
+            }
+        }
+        ScenePatch::SetScroll{id,offset} => {
+            if node_holds(o,id) && r==patch_ok() {
+                let (t,f)=choose|t:Node,f:Node| #![trigger node_relocated(o,n,id,t,f)] node_relocated(o,n,id,t,f) && (|t:Node,f:Node| f==(Node{scroll:offset,..t}))(t,f);
+                lemma_written_keeps_ids(o,n,id,t,f);
+            }
+        }
+        ScenePatch::UpdateText{id,text} => {
+            if node_holds(o,id) {
+                let (t,f)=choose|t:Node,f:Node| #![trigger node_relocated(o,n,id,t,f)] node_relocated(o,n,id,t,f)
+                    && if (|k:NodeKind| k is Text)(t.kind) { r==patch_ok() && f==(Node{kind:NodeKind::Text(text),..t}) } else { r==patch_err(SceneError::NotText(id)) && f==t };
+                lemma_written_keeps_ids(o,n,id,t,f);
+            }
+        }
+        ScenePatch::SetCanvas{id,canvas} => {
+            if node_holds(o,id) {
+                let (t,f)=choose|t:Node,f:Node| #![trigger node_relocated(o,n,id,t,f)] node_relocated(o,n,id,t,f)
+                    && if (|k:NodeKind| k is Canvas)(t.kind) { r==patch_ok() && f==(Node{kind:NodeKind::Canvas(canvas),..t}) } else { r==patch_err(SceneError::NotCanvas(id)) && f==t };
+                lemma_written_keeps_ids(o,n,id,t,f);
+            }
+        }
+        ScenePatch::Remove{id} => {
+            if o.id!=id {
+                if node_below(o,id) {
+                    let w=lemma_removed_ids(o,n,id);
+                    lemma_spliced_witness(w.1,preorder_ids(w.0),w.2);
+                    assert(spliced_ids(preorder_ids(o),preorder_ids(w.0),preorder_ids(n)));
+                    if ids_distinct(preorder_ids(o)) { lemma_distinct_removed(w.1,preorder_ids(w.0),w.2); }
+                } else {
+                    lemma_same_ids(o,n);
+                }
+            }
+        }
+    }
+}
+proof fn lemma_insert_ok_ids(o:Node,n:Node,parent:NodeId,index:usize,node:Node)
+    requires ids_distinct(preorder_ids(o)+preorder_ids(node)),
+        patch_applied(o,n,ScenePatch::Insert{parent:parent,index:index,node:node},patch_ok()),
+    ensures ids_distinct(preorder_ids(n)), spliced_ids(preorder_ids(n),preorder_ids(node),preorder_ids(o)),
+{
+    let written=|t:Node,f:Node| node_fields_same(t,f)
+        && f.children@==t.children@.insert(if index<t.children@.len() {index as int} else {t.children@.len() as int},node);
+    let (t,f)=choose|t:Node,f:Node| #![trigger node_relocated(o,n,parent,t,f)] node_relocated(o,n,parent,t,f) && written(t,f);
+    let w=lemma_relocated_ids(o,n,parent,t,f);
+    let k=if index<t.children@.len() {index as int} else {t.children@.len() as int};
+    lemma_inserted_child(t,f,k,node);
+    let x=preorder_ids(node);
+    let a=w.0+seq![t.id]+ids_span(t,0,k);
+    let b=children_ids(t,k)+w.1;
+    assert(preorder_ids(o)=~=a+b);
+    assert(preorder_ids(n)=~=a+x+b);
+    lemma_spliced_witness(a,x,b);
+    lemma_distinct_inserted(a,x,b);
+}
+""",
+    "signature":"""fn apply_checked_patch<T: IdentitySet>(
+    root: &mut Node,
+    patch: ScenePatch,
+    ids: &mut T,
+) -> Result<(), SceneError> {""",
+    "contract":"""fn apply_checked_patch<T: IdentitySet>(root:&mut Node,patch:ScenePatch,ids:&mut T)->(result:Result<(), SceneError>)
+        requires old(ids).seen()==Set::<NodeId>::empty(),
+        ensures patch_checked(*old(root),*final(root),patch,result),
+    {
+    let ghost o=*root;
+    let ghost original=patch;""",
+    "extra_annotations":[
+        ("""        match check_insert_identities(&*root, node, ids) {
+            Ok(()) => {}
+            Err(error) => return Err(error),
+        }""","""        let checked=check_insert_identities(&*root, node, ids);
+        match checked {
+            Ok(()) => { assert(ids_distinct(preorder_ids(o)+preorder_ids(*node))); }
+            Err(error) => {
+                proof {
+                    let s=preorder_ids(o)+preorder_ids(*node);
+                    if let SceneError::DuplicateNode(d)=error {
+                        let k=choose|k:int| #![trigger s[k]] 0<=k<s.len() && s[k]==d && unrepeated(Set::<NodeId>::empty(),s.take(k))
+                            && (Set::<NodeId>::empty().contains(d) || s.take(k).contains(d));
+                        assert(s.contains(d));
+                        let i=choose|i:int| 0<=i<s.take(k).len() && s.take(k)[i]==d;
+                        assert(s[i]==d);
+                        assert(!ids_distinct(s));
+                        assert(s.contains(d) && error==SceneError::DuplicateNode(d));
+                    }
+                }
+                return Err(error);
+            }
+        }"""),
+        ("""    apply_tree_patch(root, patch)""","""    let result=apply_tree_patch(root, patch);
+    proof {
+        if let ScenePatch::Insert{parent,index,node}=original {
+            if result is Ok { lemma_insert_ok_ids(o,*root,parent,index,node); }
+        } else {
+            lemma_patch_keeps_ids(o,*root,original,result);
+        }
+    }
+    result"""),
+    ],
+    "depends":["scene-patch","scene-unique-ids"], "evidence":"scene-checked-patch-kernel", "function_count":1,
+    # The mutations are all inside this function and the positive run has verified its dependencies.
+    # 反例都只改本函数，依赖已由正例验证。
+    "timeout":300, "negative_options":["--verify-root","--verify-function","apply_checked_patch"],
+    "scope":"Exact production composition of the insertion identity check and the tree patch on the real Node, NodeKind, ScenePatch and SceneError declarations with Canvas, Style, Semantics and Point replaced by opaque values the kernel cannot read, over any set obeying the IdentitySet contract and starting empty, for any tree and any patch. Insert: when the tree followed by the subtree repeats an identity the tree is unchanged and DuplicateNode names an identity of that sequence; otherwise the patch applies as in UI-SCENE-PATCH-001, a success leaves a tree whose preorder identities repeat nothing and equal the old sequence with the subtree's sequence put in at one position, and a failure leaves the tree unchanged. Any other patch applies as in UI-SCENE-PATCH-001 with no check; updates, refusals and misses keep the preorder sequence, a successful Remove takes exactly one subtree carrying the identity out of it, and a tree that repeated nothing still repeats nothing. BTreeSet obeying the contract is tested, not proved; apply_one passing an empty set is by reading.",
+    # The check mutations also drop the proof's assertion, so a skipped check is refused by the postcondition;
+    # a partial check is refused where the proof reads its failure against the whole order.
+    # 检查类反例同时去掉证明中的断言，跳过检查由后置条件拒绝；只查一部分在证明把失败对照完整序列处被拒。
+    "mutations":[("report-success-on-duplicate","                return Err(error);\n            }\n        }","                return Ok(());\n            }\n        }"),
+                 ("drop-the-patch","    let result=apply_tree_patch(root, patch);","    let result=Ok::<(),SceneError>(());"),
+                 ("skip-the-check","        let checked=check_insert_identities(&*root, node, ids);\n        match checked {\n            Ok(()) => { assert(ids_distinct(preorder_ids(o)+preorder_ids(*node))); }","        let checked=Ok::<(),SceneError>(());\n        match checked {\n            Ok(()) => {}"),
+                 ("swallow-the-failure","                return Err(error);\n            }\n        }","            }\n        }"),
+    ],
+    "refused_mutations":[
+                 ("check-only-the-tree","        let checked=check_insert_identities(&*root, node, ids);\n        match checked {\n            Ok(()) => { assert(ids_distinct(preorder_ids(o)+preorder_ids(*node))); }","        let checked=collect_unique_ids(&*root, ids);\n        match checked {\n            Ok(()) => {}","assertion failed"),
+                 ("check-only-the-subtree","        let checked=check_insert_identities(&*root, node, ids);\n        match checked {\n            Ok(()) => { assert(ids_distinct(preorder_ids(o)+preorder_ids(*node))); }","        let checked=collect_unique_ids(node, ids);\n        match checked {\n            Ok(()) => {}","assertion failed"),
+                         ("no-empty-set-requirement","        requires old(ids).seen()==Set::<NodeId>::empty(),\n        ensures patch_checked","        ensures patch_checked","assertion failed"),
+    ],
+}
+
+
 KERNELS["scene-state-type"] = {
     "source":"src/scene.rs", "marker":"SCENE STATE", "suffix":"TYPE", "depends":["scene-node-type"], "internal_only":True,
     # The derives are dropped for Verus as for Node; the kernel calls none of them.
@@ -3600,7 +4014,10 @@ def main():
     solver = subprocess.run([str(solver_path), "--version"], capture_output=True, text=True, timeout=30)
     options = ["--crate-type", "lib"]
     command = [args.verus, *options, str(proof_path)]
-    result = subprocess.run(command, capture_output=True, text=True, timeout=60)
+    # A composition re-verifies its dependencies; its time limit is declared with the kernel.
+    # 组合内核会重新验证依赖，时限随内核声明。
+    limit = config.get("timeout", 60)
+    result = subprocess.run(command, capture_output=True, text=True, timeout=limit)
     output = result.stdout + result.stderr
     (evidence / "verus.log").write_text(output)
     positive = summary(output)
@@ -3616,8 +4033,8 @@ def main():
             raise ValueError("review negative control: " + label)
         path = evidence / ("negative_" + label.replace("-", "_") + ".rs")
         path.write_text(mutated)
-        negative = subprocess.run([args.verus, *options, str(path)],
-                                  capture_output=True, text=True, timeout=60)
+        negative = subprocess.run([args.verus, *options, *config.get("negative_options", []), str(path)],
+                                  capture_output=True, text=True, timeout=limit)
         negative_output = negative.stdout + negative.stderr
         (evidence / ("negative-" + label + ".log")).write_text(negative_output)
         stats = summary(negative_output)

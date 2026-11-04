@@ -3,9 +3,9 @@
   "status": "proved",
   "scope": "Exact production lookups on the real Node declaration with its four non-tree field types replaced by opaque values the kernel cannot read. Both report a miss exactly when neither the node nor any descendant has the identity. A read hit returns the first preorder match. A mutable hit lends that same node, and the tree at the end of the loan is the old tree with exactly that node replaced by whatever the loan left there; every node on the path keeps its other fields and child count and every other child is unchanged. A mutable miss leaves the tree unchanged. Scene identity uniqueness, the apply_one arms that use the reference, recursion depth, stack use and the rescanning cost are excluded.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "34e7cd9c24afe41b3020b904be99de5a7229011fe32991db412a7c15e2e4ac60",
+  "source_sha256": "6d2d8d9bfe6eec311a29d2ba0c6163d0bb263fea3f874b9710b7ff990a81ae3e",
   "sources": {
-    "src/scene.rs": "34e7cd9c24afe41b3020b904be99de5a7229011fe32991db412a7c15e2e4ac60"
+    "src/scene.rs": "6d2d8d9bfe6eec311a29d2ba0c6163d0bb263fea3f874b9710b7ff990a81ae3e"
   },
   "kernel_sha256": "b74b778af544687350673b5791f817007560bb7babf2f9ee62b2fdc7f0b6b57d",
   "dependencies": {
@@ -14,7 +14,7 @@
     "scene-node-type": "5cd4fff573ded959d547838b4447ec6383241e3ce53bef409cf839882fcf018b"
   },
   "proof_sha256": "5db5f89928715156d3ff1214c53ad0fc5ee8d51a44f4965a5010c7821680ea46",
-  "runner_sha256": "b30e967f51b5f7223108f8a11f194911c4eff35cf20392a3eb615b97d1e0cdba",
+  "runner_sha256": "996049d8efd47a35f5c14bb27a9cccbdbd4307e2c7845160aa1482f9043a896f",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/verus/verus",

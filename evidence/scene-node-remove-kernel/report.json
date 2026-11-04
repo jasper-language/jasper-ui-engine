@@ -3,9 +3,9 @@
   "status": "proved",
   "scope": "Exact production removal on the real Node declaration with its four non-tree field types replaced by opaque values the kernel cannot read: the result says exactly whether the identity is a proper descendant; a miss leaves the tree structurally the same; a hit removes the first matching direct child, or else recurses into exactly the first child subtree holding the identity, with every other node structurally the same and every field of every ancestor unchanged. Scene identity uniqueness, the other apply_one arms, drop of the removed subtree, recursion depth and stack use are excluded.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "34e7cd9c24afe41b3020b904be99de5a7229011fe32991db412a7c15e2e4ac60",
+  "source_sha256": "6d2d8d9bfe6eec311a29d2ba0c6163d0bb263fea3f874b9710b7ff990a81ae3e",
   "sources": {
-    "src/scene.rs": "34e7cd9c24afe41b3020b904be99de5a7229011fe32991db412a7c15e2e4ac60"
+    "src/scene.rs": "6d2d8d9bfe6eec311a29d2ba0c6163d0bb263fea3f874b9710b7ff990a81ae3e"
   },
   "kernel_sha256": "e98e2b1c9a3a0e57bcb8f8464d976ac0316807148cb696c7abd25905564cb483",
   "dependencies": {
@@ -14,7 +14,7 @@
     "scene-node-type": "5cd4fff573ded959d547838b4447ec6383241e3ce53bef409cf839882fcf018b"
   },
   "proof_sha256": "9d7cb72777f62fa79d7bd3ec57bc5a16b078bc6a735fd4616c1c67bb0818db8d",
-  "runner_sha256": "b30e967f51b5f7223108f8a11f194911c4eff35cf20392a3eb615b97d1e0cdba",
+  "runner_sha256": "996049d8efd47a35f5c14bb27a9cccbdbd4307e2c7845160aa1482f9043a896f",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/verus/verus",

@@ -1,0 +1,37 @@
+verification results:: 0 verified, 1 errors (partial verification with `--verify-*`)
+note: verifying root module (selected functions)
+
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+   --> <repo>/evidence/scene-checked-patch-kernel/negative_no_empty_set_requirement.rs:960:1
+    |
+960 | fn apply_checked_patch<T: IdentitySet>(root:&mut Node,patch:ScenePatch,ids:&mut T)->(result:Result<(), SceneError>)
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note: recommendation not met: cannot prove that there exists values that satisfy the condition of the choose expression
+   --> <repo>/evidence/scene-checked-patch-kernel/negative_no_empty_set_requirement.rs:973:31
+    |
+973 |                           let k=choose|k:int| #![trigger s[k]] 0<=k<s.len() && s[k]==d && unrepeated(Set::<NodeId>::empty(),s.take(k))
+    |  _______________________________^
+974 | |                             && (Set::<NodeId>::empty().contains(d) || s.take(k).contains(d));
+    | |____________________________________________________________________________________________^
+
+note: recommendation not met: cannot prove that there exists values that satisfy the condition of the choose expression
+   --> <repo>/evidence/scene-checked-patch-kernel/negative_no_empty_set_requirement.rs:976:45
+    |
+976 |                         let i=choose|i:int| 0<=i<s.take(k).len() && s.take(k)[i]==d;
+    |                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: assertion failed
+   --> <repo>/evidence/scene-checked-patch-kernel/negative_no_empty_set_requirement.rs:977:32
+    |
+977 |                         assert(s[i]==d);
+    |                                ^^^^^^^ assertion failed
+
+error: assertion failed
+   --> <repo>/evidence/scene-checked-patch-kernel/negative_no_empty_set_requirement.rs:978:32
+    |
+978 |                         assert(!ids_distinct(s));
+    |                                ^^^^^^^^^^^^^^^^ assertion failed
+
+error: aborting due to 2 previous errors
+

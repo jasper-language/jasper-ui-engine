@@ -182,13 +182,7 @@ impl Scene {
     }
 
     fn apply_one(&mut self, patch: ScenePatch) -> Result<(), SceneError> {
-        if let ScenePatch::Insert { node, .. } = &patch {
-            // Validate all descendants before any insertion or follow-up patch
-            // can observe ambiguous identities. The set is local to staging.
-            // 插入前检查全部后代，避免后续补丁观察到歧义身份；集合仅在暂存阶段使用。
-            check_insert_identities(&self.root, node, &mut BTreeSet::new())?;
-        }
-        apply_tree_patch(&mut self.root, patch)
+        apply_checked_patch(&mut self.root, patch, &mut BTreeSet::new())
     }
 }
 
@@ -397,6 +391,25 @@ fn check_insert_identities<T: IdentitySet>(
 }
 // END VERIFIED SCENE UNIQUE IDS KERNEL
 
+// BEGIN VERIFIED SCENE CHECKED PATCH KERNEL
+/// Validates all descendants of an insertion before any follow-up patch can observe ambiguous
+/// identities, then applies the patch. The set starts empty and is local to staging.
+/// 插入前检查全部后代，避免后续补丁观察到歧义身份，再应用补丁；集合从空开始，仅在暂存阶段使用。
+fn apply_checked_patch<T: IdentitySet>(
+    root: &mut Node,
+    patch: ScenePatch,
+    ids: &mut T,
+) -> Result<(), SceneError> {
+    if let ScenePatch::Insert { node, .. } = &patch {
+        match check_insert_identities(&*root, node, ids) {
+            Ok(()) => {}
+            Err(error) => return Err(error),
+        }
+    }
+    apply_tree_patch(root, patch)
+}
+// END VERIFIED SCENE CHECKED PATCH KERNEL
+
 // BEGIN VERIFIED SCENE PATCH KERNEL
 /// Applies one patch to the tree. The tree is the only state reached; a failed patch may be left
 /// half-way by nothing: each branch writes only after its checks pass.
@@ -539,6 +552,84 @@ mod tests {
 
     fn id(value: u64) -> NodeId {
         NodeId(value)
+    }
+
+    #[test]
+    fn checked_patch_refuses_repeats_before_writing_and_keeps_identities_unique() {
+        fn ids(node: &Node, out: &mut Vec<u64>) {
+            out.push(node.id.0);
+            node.children.iter().for_each(|child| ids(child, out));
+        }
+        let listed = |scene: &Scene| {
+            let mut out = Vec::new();
+            ids(&scene.root, &mut out);
+            out
+        };
+        let leaf = |id: u64| Node::container(NodeId(id));
+        let base = || Scene::new(leaf(1).child(leaf(2).child(leaf(3))).child(leaf(4)));
+
+        // A repeat inside the tree, against the tree, and inside the subtree are all refused unwritten.
+        // 树内重复、与树重复、子树内重复都被拒绝且不写入。
+        for (scene, node, repeat) in [
+            (Scene::new(leaf(1).child(leaf(1))), leaf(9), 1),
+            (base(), leaf(5).child(leaf(3)), 3),
+            (base(), leaf(5).child(leaf(5)), 5),
+        ] {
+            let mut staged = scene.clone();
+            assert_eq!(
+                staged.apply_one(ScenePatch::Insert {
+                    parent: NodeId(1),
+                    index: 0,
+                    node,
+                }),
+                Err(SceneError::DuplicateNode(NodeId(repeat)))
+            );
+            assert_eq!(staged, scene);
+        }
+        // The identity check comes first: an absent parent reports the repeat, not the miss.
+        // 身份检查在先：父节点不存在时仍报重复，而不是未找到。
+        let mut staged = base();
+        assert_eq!(
+            staged.apply_one(ScenePatch::Insert {
+                parent: NodeId(99),
+                index: 0,
+                node: leaf(3),
+            }),
+            Err(SceneError::DuplicateNode(NodeId(3)))
+        );
+        assert_eq!(
+            staged.apply_one(ScenePatch::Insert {
+                parent: NodeId(99),
+                index: 0,
+                node: leaf(5),
+            }),
+            Err(SceneError::NodeNotFound(NodeId(99)))
+        );
+        assert_eq!(staged, base());
+
+        let mut staged = base();
+        staged
+            .apply_one(ScenePatch::Insert {
+                parent: NodeId(2),
+                index: 7,
+                node: leaf(5).child(leaf(6)),
+            })
+            .unwrap();
+        assert_eq!(listed(&staged), [1, 2, 3, 5, 6, 4]);
+        staged
+            .apply_one(ScenePatch::Remove { id: NodeId(2) })
+            .unwrap();
+        assert_eq!(listed(&staged), [1, 4]);
+        // Other patches are not checked, so an already repeating tree still takes them.
+        // 其他补丁不做检查，已有重复的树仍可接受。
+        let mut repeating = Scene::new(leaf(1).child(leaf(1)));
+        assert_eq!(
+            repeating.apply_one(ScenePatch::SetScroll {
+                id: NodeId(1),
+                offset: Point::new(1.0, 2.0),
+            }),
+            Ok(())
+        );
     }
 
     #[test]

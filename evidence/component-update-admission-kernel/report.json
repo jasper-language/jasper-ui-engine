@@ -12,7 +12,7 @@
     "component-update-error-type": "3a013b1723f7cdb6df80d91c4c8d6305463b54dcec778ee2cae4bd5f830e5939"
   },
   "proof_sha256": "6b64649d310c362aed38f86519cd4f9e0ec072e6c43385cec9ba48902058ac22",
-  "runner_sha256": "b30e967f51b5f7223108f8a11f194911c4eff35cf20392a3eb615b97d1e0cdba",
+  "runner_sha256": "996049d8efd47a35f5c14bb27a9cccbdbd4307e2c7845160aa1482f9043a896f",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/verus/verus",
