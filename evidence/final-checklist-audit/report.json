@@ -13,7 +13,7 @@
   "checklist_item_5_complete": true,
   "checklist_item_6_complete": true,
   "sources": {
-    "src/scene.rs": "91c619d6c85effe69158698edfb71f37d58d038dd8e34955471d4ffca541fa92",
+    "src/scene.rs": "545044f4d85b138361f93820a2d4def4ae2e1b6bb7415893d98eda2b75a041e2",
     "src/batch.rs": "7fa1d6ed36340deb93096434eb33842947c47eb5b804852565de527b20d2cce1",
     "src/input_identity.rs": "953b0982be297777cc3e2c3f3a02f697df71d83c2d3e5bc21202baa06250aa0d",
     "src/engine.rs": "453869dfd4f651a16cde03ac81d49db857793f18bfcaa620cf67c51f330f9efe",
@@ -46,7 +46,7 @@
     "tests/native_interaction_closure.rs": "ed6fc7345b46656e27bedfa59b9c8240427954eb7888b50299bf5d5bd3bd2d79",
     "tests/native_accesskit_bridge.rs": "a252859061116da97dac80f37d5b1721275a92c558cb6d6655fb39b679d6228d",
     "tests/native_gpu_host_view.rs": "5cabaaf2091c3e10de8def043b7d902a61ed37831dcdaf97d366461860422fc9",
-    "scripts/audit-closeout.py": "faffc8c1e0c20fbeffc74b933f99e2076249ab2668e8ab4a8fc873b6edded09e",
+    "scripts/audit-closeout.py": "ae11359c2781df17d02357e14f14b9bd4a229fa03f8113097afddfe0e8ede47f",
     "scripts/closeout-baseline.sh": "324530f8c5033ff29ae0e1f245c756c0d47c3da32d6cf30666ec15ec19d9bc8e",
     "src/desktop.rs": "298bea8e2dc8c62581025782419a948c3e5715bc494f0e174591aa8f1644bb28",
     "src/handle.rs": "f623079e05ca9787f4f2a05359c52ea8784107e8c83ff999e27cfce316cff88e"
@@ -71,7 +71,8 @@
     "07149b641e6f8c10896c8ff52d04edd5e2a816d9 rebind final audit to UI38 node removal (remove_node indexed loops; behavior preserved)",
     "c4b18c67a71d935cf9e34d423157252a037c13f2 rebind final audit to UI38 node lookup (find_node indexed loop, find_node_mut asks the read path per level; result meant to be unchanged, worst case nodes times depth)",
     "b30039f1a316fb7088ca1aeeb2644782e4d47b9c rebind final audit to UI38 single patch writes (apply_tree_patch takes the match from apply_one; order of checks and writes meant to be unchanged)",
-    "ebbdb49e685bcfd851c69d4e61d26dfbf24e1260 rebind final audit to UI38 identity check (collect_unique_ids generic over IdentitySet with indexed push, check_insert_identities takes the two calls from apply_one; visiting order, sets and errors meant to be unchanged)"
+    "ebbdb49e685bcfd851c69d4e61d26dfbf24e1260 rebind final audit to UI38 identity check (collect_unique_ids generic over IdentitySet with indexed push, check_insert_identities takes the two calls from apply_one; visiting order, sets and errors meant to be unchanged)",
+    "79b2e5a5ad2527aaf7ebdfe29ca04e2beaa53227 rebind final audit to UI38 batch commit (commit_scene_batch takes the body of apply_batch_at with the check and staging as closures; order of checks, errors and writes meant to be unchanged)"
   ],
   "items": {
     "1_public_contracts": {
