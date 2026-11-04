@@ -2361,6 +2361,83 @@ pub open spec fn node_removed(o:Node,n:Node,id:NodeId)->bool decreases o, {
 }
 
 
+KERNELS["scene-node-find"] = {
+    "source":"src/scene.rs", "marker":"SCENE NODE FIND",
+    "property":"UI-SCENE-NODE-FIND-001",
+    "spec_prelude":"""pub open spec fn node_holds(n:Node,id:NodeId)->bool decreases n, {
+    n.id==id || exists|i:int| #![trigger n.children@[i]] 0<=i<n.children@.len() && node_holds(n.children@[i],id)
+}
+// f is o with the first preorder match of id, namely t, replaced by ft; nothing else differs.
+// f 是把 o 中前序首个匹配 id 的节点（即 t）换成 ft 的结果，其余皆同。
+pub open spec fn node_relocated(o:Node,f:Node,id:NodeId,t:Node,ft:Node)->bool decreases o, {
+    if o.id==id { t==o && f==ft }
+    else {
+        o.id==f.id && o.kind==f.kind && o.style==f.style && o.semantics==f.semantics && o.scroll==f.scroll
+        && o.children@.len()==f.children@.len()
+        && exists|p:int| #![trigger o.children@[p]] 0<=p<o.children@.len()
+            && (forall|j:int| #![trigger o.children@[j]] 0<=j<p ==> !node_holds(o.children@[j],id))
+            && (forall|j:int| #![trigger o.children@[j]] 0<=j<o.children@.len() && j!=p ==> o.children@[j]==f.children@[j])
+            && node_relocated(o.children@[p],f.children@[p],id,t,ft)
+    }
+}
+""",
+    "signature":"fn find_node(node: &Node, id: NodeId) -> Option<&Node> {",
+    "contract":"""fn find_node(node: &Node, id: NodeId) -> (result:Option<&Node>)
+        ensures (result is None) == !node_holds(*node,id),
+            result matches Some(found) ==> node_relocated(*node,*node,id,*found,*found),
+        decreases *node,
+    {""",
+    "extra_annotations":[
+        ("    while index < node.children.len() {\n        if let Some(found) = find_node(&node.children[index], id) {\n            return Some(found);\n        }","""    while index < node.children.len()
+        invariant index<=node.children@.len(), node.id!=id,
+            forall|j:int| #![trigger node.children@[j]] 0<=j<index ==> !node_holds(node.children@[j],id),
+        decreases node.children.len()-index,
+    {
+        proof {
+            assert(decreases_to!(node.children => node.children@[index as int]));
+            assert(decreases_to!(*node => node.children@[index as int]));
+        }
+        if let Some(found) = find_node(&node.children[index], id) {
+            proof {
+                let p=index as int;
+                assert(node_relocated(node.children@[p],node.children@[p],id,*found,*found));
+            }
+            return Some(found);
+        }"""),
+        ("fn find_node_mut(node: &mut Node, id: NodeId) -> Option<&mut Node> {","""fn find_node_mut(node: &mut Node, id: NodeId) -> (result:Option<&mut Node>)
+        ensures (result is None) == !node_holds(*old(node),id),
+            result is None ==> *final(node)==*old(node),
+            result matches Some(found) ==> node_relocated(*old(node),*final(node),id,*found,*final(found)),
+        decreases *old(node),
+    {
+    let ghost start=*node;"""),
+        ("    while index < node.children.len() {\n        if find_node(&node.children[index], id).is_some() {\n            return find_node_mut(&mut node.children[index], id);\n        }","""    while index < node.children.len()
+        invariant index<=node.children@.len(), *node==start, *old(node)==start, start.id!=id,
+            forall|j:int| #![trigger start.children@[j]] 0<=j<index ==> !node_holds(start.children@[j],id),
+        decreases node.children.len()-index,
+    {
+        if find_node(&node.children[index], id).is_some() {
+            proof {
+                assert(decreases_to!(start.children => start.children@[index as int]));
+                assert(decreases_to!(start => start.children@[index as int]));
+            }
+            return find_node_mut(&mut node.children[index], id);
+        }"""),
+    ],
+    "depends":["scene-node-type"], "evidence":"scene-node-find-kernel", "function_count":2,
+    "scope":"Exact production lookups on the real Node declaration with its four non-tree field types replaced by opaque values the kernel cannot read. Both report a miss exactly when neither the node nor any descendant has the identity. A read hit returns the first preorder match. A mutable hit lends that same node, and the tree at the end of the loan is the old tree with exactly that node replaced by whatever the loan left there; every node on the path keeps its other fields and child count and every other child is unchanged. A mutable miss leaves the tree unchanged. Scene identity uniqueness, the apply_one arms that use the reference, recursion depth, stack use and the rescanning cost are excluded.",
+    "mutations":[("find-reports-root-only","    if node.id.0 == id.0 {\n        return Some(node);\n    }\n    let mut index = 0usize;\n    while index < node.children.len()\n        invariant index<=node.children@.len(), node.id!=id,","    if node.id.0 == id.0 {\n        return Some(node);\n    }\n    return None;\n    let mut index = 0usize;\n    while index < node.children.len()\n        invariant index<=node.children@.len(), node.id!=id,"),
+                 ("mut-miss-reports-a-hit","        index += 1;\n    }\n    None\n}\n\n}\n","        index += 1;\n    }\n    Some(node)\n}\n\n}\n"),
+                 ("mut-writes-on-miss","        index += 1;\n    }\n    None\n}\n\n}\n","        index += 1;\n    }\n    node.id=NodeId(0);\n    None\n}\n\n}\n"),
+                 ("mut-rewrites-ancestor-identity","            return find_node_mut(&mut node.children[index], id);","            node.id=NodeId(if id.0==0 {1} else {0});\n            return find_node_mut(&mut node.children[index], id);"),
+                 ("mut-drops-a-later-sibling","            return find_node_mut(&mut node.children[index], id);","            if index+1<node.children.len() { node.children.pop(); }\n            return find_node_mut(&mut node.children[index], id);"),
+                 ("mut-tests-the-wrong-way","        if find_node(&node.children[index], id).is_some() {","        if find_node(&node.children[index], id).is_none() {")],
+    "refused_mutations":[("find-picks-non-matching","    if node.id.0 == id.0 {\n        return Some(node);\n    }\n    let mut index = 0usize;\n    while index < node.children.len()\n        invariant index<=node.children@.len(), node.id!=id,","    if node.id.0 != id.0 {\n        return Some(node);\n    }\n    let mut index = 0usize;\n    while index < node.children.len()\n        invariant index<=node.children@.len(), node.id!=id,","invariant not satisfied"),
+                         ("mut-changes-a-node-before-the-loop","    let ghost start=*node;\n    if node.id.0 == id.0 {\n        return Some(node);\n    }\n","    let ghost start=*node;\n    if node.id.0 == id.0 {\n        return Some(node);\n    }\n    node.id=NodeId(0);\n","invariant not satisfied"),
+                         ("mut-skips-a-child","        index += 1;\n    }\n    None\n}\n\n}\n","        index += 1;\n        if index<node.children.len() {index += 1;}\n    }\n    None\n}\n\n}\n","invariant not satisfied at end of loop body")],
+}
+
+
 KERNELS["source-insert-index"] = {
     "source":"src/native_adapter/native_scene.rs", "marker":"SOURCE INSERT INDEX",
     "property":"UI-SOURCE-INSERT-INDEX-001",

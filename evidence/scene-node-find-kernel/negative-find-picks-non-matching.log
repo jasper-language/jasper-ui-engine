@@ -1,0 +1,24 @@
+verification results:: 6 verified, 1 errors
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+  --> <repo>/evidence/scene-node-find-kernel/negative_find_picks_non_matching.rs:42:1
+   |
+42 | fn find_node(node: &Node, id: NodeId) -> (result:Option<&Node>)
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: postcondition not satisfied
+  --> <repo>/evidence/scene-node-find-kernel/negative_find_picks_non_matching.rs:43:17
+   |
+43 |         ensures (result is None) == !node_holds(*node,id),
+   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+48 |         return Some(node);
+   |         ----------------- at this exit
+
+error: invariant not satisfied before loop
+  --> <repo>/evidence/scene-node-find-kernel/negative_find_picks_non_matching.rs:52:48
+   |
+52 |         invariant index<=node.children@.len(), node.id!=id,
+   |                                                ^^^^^^^^^^^
+
+error: aborting due to 2 previous errors
+

@@ -1,0 +1,85 @@
+{
+  "property": "UI-SCENE-NODE-FIND-001",
+  "status": "proved",
+  "scope": "Exact production lookups on the real Node declaration with its four non-tree field types replaced by opaque values the kernel cannot read. Both report a miss exactly when neither the node nor any descendant has the identity. A read hit returns the first preorder match. A mutable hit lends that same node, and the tree at the end of the loan is the old tree with exactly that node replaced by whatever the loan left there; every node on the path keeps its other fields and child count and every other child is unchanged. A mutable miss leaves the tree unchanged. Scene identity uniqueness, the apply_one arms that use the reference, recursion depth, stack use and the rescanning cost are excluded.",
+  "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
+  "source_sha256": "ffc7254b153a74d1705e09ed8ca65b492a351ee76556908cddff15197591e172",
+  "sources": {
+    "src/scene.rs": "ffc7254b153a74d1705e09ed8ca65b492a351ee76556908cddff15197591e172"
+  },
+  "kernel_sha256": "b74b778af544687350673b5791f817007560bb7babf2f9ee62b2fdc7f0b6b57d",
+  "dependencies": {
+    "node-id-type": "39ff7bd8c3c5c51e025059e0f104105a839165e2cb4a455f094a2d2bb9cfffad",
+    "scene-node-type": "5cd4fff573ded959d547838b4447ec6383241e3ce53bef409cf839882fcf018b"
+  },
+  "proof_sha256": "42d09769f7f2738734e56fce2eba56ddd4cecb4332feb9d2c4b3f9990518a0c2",
+  "runner_sha256": "9783f66c09a3a50ec02415e387fcdf07ce29deec9dcfd1bc16c4544f8468fffa",
+  "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
+  "command": [
+    "<home>/verus/verus",
+    "--crate-type",
+    "lib",
+    "<repo>/evidence/scene-node-find-kernel/kernel.rs"
+  ],
+  "exit_code": 0,
+  "solver": {
+    "path": "<home>/verus/z3",
+    "version": "Z3 version 4.16.0 - 64 bit\n",
+    "explicit_override": null
+  },
+  "verified_obligations": 7,
+  "negative_controls": [
+    {
+      "name": "find-reports-root-only",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "mut-miss-reports-a-hit",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "mut-writes-on-miss",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "mut-rewrites-ancestor-identity",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "mut-drops-a-later-sibling",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "mut-tests-the-wrong-way",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "find-picks-non-matching",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "mut-changes-a-node-before-the-loop",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "mut-skips-a-child",
+      "rejected": true,
+      "exit_code": 1
+    }
+  ],
+  "negative_control_rejected": true,
+  "trust_boundary": [
+    "Verus/vstd and SMT solver",
+    "Rust/Verus integer, references and slice semantics",
+    "signature annotation/extraction script",
+    "Rust compiler and target execution"
+  ]
+}

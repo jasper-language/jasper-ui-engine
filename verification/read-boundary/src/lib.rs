@@ -869,6 +869,111 @@ pub fn assert_scene_node_remove_bytes(spec: &[(u8, u8)], root: u8, id: u8) {
     assert_scene_node_remove(tree, id as u64 % 8);
 }
 
+// Independent preorder walk with an explicit stack: the path to the first match, sharing no
+// recursion or loop with the kernel. 独立的显式栈前序遍历：到首个匹配的路径，不与内核共用递归或循环。
+fn find_oracle_path(root: &Node, id: u64) -> Option<Vec<usize>> {
+    let mut pending = vec![(root, Vec::new())];
+    while let Some((node, path)) = pending.pop() {
+        if node.id.0 == id {
+            return Some(path);
+        }
+        for (at, child) in node.children.iter().enumerate().rev() {
+            let mut below = path.clone();
+            below.push(at);
+            pending.push((child, below));
+        }
+    }
+    None
+}
+
+/// Real lookups against the oracle on an arbitrary tree: both agree on the very same node, and a
+/// write through the loan changes that node and nothing else.
+/// 真实查找在任意树上对照规格：两条路径指向同一节点，经借用写入只改变该节点。
+pub fn assert_scene_node_find(tree: Node, id: u64) {
+    let path = find_oracle_path(&tree, id);
+    let target = path.as_ref().map(|path| path.iter().fold(&tree, |node, &at| &node.children[at]));
+    match (find_node(&tree, NodeId(id)), target) {
+        (Some(found), Some(target)) => assert!(std::ptr::eq(found, target)),
+        (None, None) => {}
+        (found, target) => panic!("read lookup {found:?} against {target:?}"),
+    }
+    let mut actual = tree.clone();
+    let mut expected = tree.clone();
+    let written = |node: &mut Node| {
+        if id % 2 == 0 {
+            *node = removal_leaf(100, vec![removal_leaf(101, Vec::new())]);
+        } else {
+            node.scroll = Point { x: -1.5, y: -2.5 };
+        }
+    };
+    match find_node_mut(&mut actual, NodeId(id)) {
+        Some(found) => {
+            assert_eq!(&*found, target.expect("a hit needs a match"));
+            written(found);
+            written(path.unwrap().iter().fold(&mut expected, |node, &at| &mut node.children[at]));
+        }
+        None => assert!(path.is_none()),
+    }
+    assert_eq!(actual, expected);
+}
+
+pub fn assert_scene_node_find_bytes(spec: &[(u8, u8)], root: u8, id: u8) {
+    let mut room = spec.len();
+    let tree = removal_tree(root as u64 % 8, &mut spec.iter(), &mut room);
+    assert_scene_node_find(tree, id as u64 % 8);
+}
+
+/// The same lookups on a small tree, read back node by node so the check does not clone trees.
+/// 同一查找作用于小树，逐节点读回，检查不克隆树。
+pub fn assert_scene_node_find_shape(root: u64, shape: &[(u64, Option<u64>)], id: u64) {
+    let leaf = |at: u64| removal_leaf(at, Vec::new());
+    let mut children = Vec::new();
+    let mut at = 0;
+    while at < shape.len() {
+        let (first, below) = shape[at];
+        children.push(removal_leaf(first, below.map(leaf).into_iter().collect()));
+        at += 1;
+    }
+    let mut tree = removal_leaf(root, children);
+    // The match in preorder, as (child, inside it). 前序首个匹配，记为（子节点，是否在其内）。
+    let mut hit = None;
+    let mut at = 0;
+    while hit.is_none() && root != id && at < shape.len() {
+        if shape[at].0 == id {
+            hit = Some((at, false));
+        } else if shape[at].1 == Some(id) {
+            hit = Some((at, true));
+        }
+        at += 1;
+    }
+    let at_root = root == id;
+    let expected_hit = at_root || hit.is_some();
+    assert_eq!(find_node(&tree, NodeId(id)).map(|found| found.id.0 == id), expected_hit.then_some(true));
+    let read = find_node(&tree, NodeId(id)).map(|found| found as *const Node);
+    let lent = find_node_mut(&mut tree, NodeId(id));
+    assert_eq!(lent.is_some(), expected_hit);
+    assert_eq!(lent.as_ref().map(|found| &**found as *const Node), read);
+    if let Some(found) = lent {
+        found.scroll = Point { x: -1.5, y: -2.5 };
+    }
+    let check = |node: &Node, at: u64, marked: bool| {
+        assert!(node.id.0 == at && node.kind.0 == at as u8 && node.style.0 == at as u8 ^ 1 && node.semantics.0 == at as u8 ^ 2);
+        assert_eq!(node.scroll.x == -1.5, marked);
+    };
+    check(&tree, root, at_root);
+    assert_eq!(tree.children.len(), shape.len());
+    let mut at = 0;
+    while at < shape.len() {
+        let (first, below) = shape[at];
+        check(&tree.children[at], first, hit == Some((at, false)));
+        assert_eq!(tree.children[at].children.len(), below.is_some() as usize);
+        if let Some(child) = below {
+            check(&tree.children[at].children[0], child, hit == Some((at, true)));
+        }
+        at += 1;
+    }
+}
+
 /// Real fold against an independent model: each patch in order, once, up to the first failure;
 /// the result is that failure or the model's fold; the detached value is released exactly once.
 /// 真实折叠对照独立模型：按序每补丁一次直到首个失败；结果是该失败或模型折叠值；独立值恰释放一次。
@@ -2366,6 +2471,15 @@ mod kani_checks {
         assert_scene_node_remove_shape(kani::any(), &[(child, None)], kani::any());
     }
 
+    // The same smallest shape as the removal: root plus one childless child, any identities.
+    // 与移除相同的最小形状：根加一个无子节点的子节点，身份任意。
+    #[kani::proof]
+    #[kani::unwind(2)]
+    fn scene_node_find() {
+        let child: u64 = kani::any();
+        assert_scene_node_find_shape(kani::any(), &[(child, None)], kani::any());
+    }
+
     // Arbitrary start and patches of every length up to four through the real fold; unwinding is
     // outside Kani's model. 任意起点与至多四个任意补丁穿过真实折叠；展开不在 Kani 模型内。
     #[kani::proof]
@@ -2857,6 +2971,12 @@ mod properties {
             assert_scene_node_remove_shape(at(0), &[(at(1), Some(at(2))), (at(3), Some(at(4))), (at(5), None)], id as u64 % 6);
         }
         #[test]
+        fn scene_node_find_property(spec in prop::collection::vec(any::<(u8, u8)>(), 0..24), root in any::<u8>(), id in any::<u8>()) {
+            assert_scene_node_find_bytes(&spec, root, id);
+            let at = |i: usize| spec.get(i).map_or(0, |pair| pair.0 as u64 % 6);
+            assert_scene_node_find_shape(at(0), &[(at(1), Some(at(2))), (at(3), Some(at(4))), (at(5), None)], id as u64 % 6);
+        }
+        #[test]
         fn scene_batch_stage_property(start in any::<u64>(), patches in prop::collection::vec(any::<u8>(), 0..16), panic_at in 0usize..18) {
             assert_scene_batch_stage(start, &patches);
             assert_scene_batch_panic(start, &patches, panic_at);
@@ -3252,6 +3372,9 @@ mod memory {
             assert_scene_node_remove_bytes(&[(1, 2), (2, 0), (3, 0), (2, 1), (3, 0)], version as u8, 3);
             assert_scene_node_remove_bytes(&[(1, 0), (2, 0)], version as u8, version as u8);
             assert_scene_node_remove_shape(1, &[(2, Some(3)), (4, Some(5))], version % 7);
+            assert_scene_node_find_bytes(&[(1, 2), (2, 0), (3, 0), (2, 1), (3, 0)], version as u8, 3);
+            assert_scene_node_find_bytes(&[(1, 0), (2, 0)], version as u8, version as u8);
+            assert_scene_node_find_shape(1, &[(2, Some(3)), (4, Some(5))], version % 7);
             assert_scene_batch_stage(version, &[]);
             assert_scene_batch_stage(version, &[1, 2, 3]);
             assert_scene_batch_stage(version, &[1, 5, 3]);

@@ -377,21 +377,43 @@ fn collect_unique_ids(root: &Node, ids: &mut BTreeSet<NodeId>) -> Result<(), Sce
     Ok(())
 }
 
+// BEGIN VERIFIED SCENE NODE FIND KERNEL
+/// Finds the first node with the identity in preorder, the node itself before its children.
+/// 按前序查找首个身份匹配的节点，节点本身先于其子节点。
 fn find_node(node: &Node, id: NodeId) -> Option<&Node> {
-    if node.id == id {
+    if node.id.0 == id.0 {
         return Some(node);
     }
-    node.children.iter().find_map(|child| find_node(child, id))
+    let mut index = 0usize;
+    while index < node.children.len() {
+        if let Some(found) = find_node(&node.children[index], id) {
+            return Some(found);
+        }
+        index += 1;
+    }
+    None
 }
 
+/// Lends the node `find_node` finds. Each level asks the read path which child holds the identity,
+/// because a mutable borrow cannot be retried after a miss; a level rescans, so the worst case is
+/// nodes times depth. Nothing is written here: the only change to the tree is what the caller
+/// does through the returned reference.
+/// 借出 `find_node` 找到的节点。每层先用只读路径问清哪个子节点含该身份，因为可变借用在未命中后无法重试；
+/// 每层都重新扫描，最坏为节点数乘深度。这里不写任何东西：树的唯一变化是调用者经返回引用所做的修改。
 fn find_node_mut(node: &mut Node, id: NodeId) -> Option<&mut Node> {
-    if node.id == id {
+    if node.id.0 == id.0 {
         return Some(node);
     }
-    node.children
-        .iter_mut()
-        .find_map(|child| find_node_mut(child, id))
+    let mut index = 0usize;
+    while index < node.children.len() {
+        if find_node(&node.children[index], id).is_some() {
+            return find_node_mut(&mut node.children[index], id);
+        }
+        index += 1;
+    }
+    None
 }
+// END VERIFIED SCENE NODE FIND KERNEL
 
 // BEGIN VERIFIED SCENE NODE REMOVE KERNEL
 /// Removes the first direct child with the identity; failing that, removes it from the first child
@@ -423,6 +445,49 @@ mod tests {
 
     fn id(value: u64) -> NodeId {
         NodeId(value)
+    }
+
+    #[test]
+    fn find_node_paths_agree_on_the_first_match_in_preorder() {
+        // Identity 9 is the second child's descendant and also a later direct child; the root's
+        // own identity repeats below it. 身份 9 在第二个子节点之下，之后又是直接子节点；根身份在其下重复。
+        let build = || {
+            Node::container(id(1)).with_children(vec![
+                Node::rect(id(2)),
+                Node::container(id(3)).with_children(vec![
+                    Node::rect(id(4)),
+                    Node::text(id(9), "nested"),
+                    Node::rect(id(1)),
+                ]),
+                Node::text(id(9), "direct"),
+                Node::container(id(5)).child(Node::rect(id(6))),
+            ])
+        };
+        let tree = build();
+        assert_eq!(find_node(&tree, id(1)).map(|n| n.children.len()), Some(4));
+        assert_eq!(
+            find_node(&tree, id(9)).map(|n| &n.kind),
+            Some(&NodeKind::Text("nested".into()))
+        );
+        assert_eq!(find_node(&tree, id(6)).map(|n| n.id), Some(id(6)));
+        assert!(find_node(&tree, id(7)).is_none());
+
+        let mut written = build();
+        let target = find_node_mut(&mut written, id(9)).unwrap();
+        assert_eq!(target.kind, NodeKind::Text("nested".into()));
+        target.scroll = Point::new(3.0, 4.0);
+        let mut expected = build();
+        expected.children[1].children[1].scroll = Point::new(3.0, 4.0);
+        assert_eq!(written, expected);
+
+        // A miss leaves the tree alone. 未命中不改树。
+        assert!(find_node_mut(&mut written, id(7)).is_none());
+        assert_eq!(written, expected);
+        // The root wins over its repeated identity. 根优先于其下重复的身份。
+        assert_eq!(
+            find_node_mut(&mut written, id(1)).unwrap().children.len(),
+            4
+        );
     }
 
     #[test]

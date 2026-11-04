@@ -1,0 +1,12 @@
+verification results:: 6 verified, 1 errors
+error: postcondition not satisfied
+   --> <repo>/evidence/scene-node-find-kernel/negative_mut_rewrites_ancestor_identity.rs:81:13
+    |
+ 81 |             result matches Some(found) ==> node_relocated(*old(node),*final(node),id,*found,*final(found)),
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+100 |             return find_node_mut(&mut node.children[index], id);
+    |             --------------------------------------------------- at this exit
+
+error: aborting due to 1 previous error
+

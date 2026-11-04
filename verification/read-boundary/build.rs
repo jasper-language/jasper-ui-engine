@@ -143,7 +143,7 @@ fn main() {
         ("../../src/handle.rs", &["HANDLE TYPE", "HANDLE KERNEL"][..]),
         (
             "../../src/scene.rs",
-            &["NODE ID TYPE", "VERSION KERNEL", "TRANSACTION GATE KERNEL", "SCENE BATCH STAGE KERNEL", "SCENE NODE TYPE", "SCENE NODE REMOVE KERNEL"][..],
+            &["NODE ID TYPE", "VERSION KERNEL", "TRANSACTION GATE KERNEL", "SCENE BATCH STAGE KERNEL", "SCENE NODE TYPE", "SCENE NODE REMOVE KERNEL", "SCENE NODE FIND KERNEL"][..],
         ),
     ] {
         let source = root.join(file);

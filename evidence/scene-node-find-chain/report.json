@@ -1,0 +1,147 @@
+{
+  "property": "UI-SCENE-NODE-FIND-001",
+  "backlog_item": "CP-03",
+  "status": "subproperty_scoped_checks_passed",
+  "cp03_closed": false,
+  "production": {
+    "file": "src/scene.rs",
+    "function": "find_node, find_node_mut",
+    "file_sha256": "ffc7254b153a74d1705e09ed8ca65b492a351ee76556908cddff15197591e172",
+    "kernel_sha256": "b74b778af544687350673b5791f817007560bb7babf2f9ee62b2fdc7f0b6b57d",
+    "caller": "Scene::get; Scene::apply_one, Insert and all update arms"
+  },
+  "specification": "For any tree and any identity: both lookups miss exactly when neither the node nor any descendant has the identity. A read hit returns the first preorder match. A mutable hit lends that same node, and the tree when the loan ends is the old tree with exactly that node replaced by what the loan left there; every node on the path keeps its other fields and child count, and every other child is unchanged. A mutable miss leaves the tree unchanged. Terminates by the Vec element decrease axiom.",
+  "tools": {
+    "verus": "Version: 0.2026.10.18.7d82994",
+    "z3": "Z3 version 4.16.0 - 64 bit",
+    "kani": "0.68.0",
+    "cbmc": "6.11.0",
+    "nightly": "nightly-2026-10-17"
+  },
+  "config": {
+    "entry": "python3 scripts/verify-ui.py --verus <verus>",
+    "fuzz_seconds": 20,
+    "proptest_cases": 256,
+    "proptest_seed": "12345"
+  },
+  "stages": {
+    "Verus+Z3": {
+      "result": "passed",
+      "verified": 7,
+      "errors": 0,
+      "negative_controls": [
+        {
+          "name": "find-reports-root-only",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "mut-miss-reports-a-hit",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "mut-writes-on-miss",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "mut-rewrites-ancestor-identity",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "mut-drops-a-later-sibling",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "mut-tests-the-wrong-way",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "find-picks-non-matching",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "mut-changes-a-node-before-the-loop",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "mut-skips-a-child",
+          "rejected": true,
+          "exit_code": 1
+        }
+      ],
+      "model_note": "NodeKind, Style, Semantics and Point are replaced in the proof by value types the kernel cannot read; derives are removed from Node in the proof copy because recursive Clone through Vec is a cycle in Verus. Rustc compiles the same kernel tokens against the real types. The final state of the tree is stated through Verus prophecy on the returned reference."
+    },
+    "Proptest": {
+      "result": "passed",
+      "harness": [
+        "properties::scene_node_find_property"
+      ],
+      "includes": "Arbitrary trees up to 24 nodes against an independent explicit-stack preorder walk, with both lookups compared by address and a write through the loan compared to the same write on the oracle's path; small shapes against a clone-free reader"
+    },
+    "Miri": {
+      "result": "passed",
+      "harness": [
+        "memory boundaries with fixed trees"
+      ],
+      "note": "Stand-in field types, no user Drop and no panic injection"
+    },
+    "cargo-fuzz": {
+      "result": "passed",
+      "target": "read_boundary",
+      "completed_runs": [
+        36767,
+        1456203
+      ],
+      "note": "The two counts are read_boundary and batch_decode, and only read_boundary reaches this kernel"
+    },
+    "Kani": {
+      "result": "passed_on_smallest_shape_only",
+      "harness": "kani_checks::scene_node_find",
+      "shape": "root with one childless child, arbitrary identities, unwind 2",
+      "checks": 684,
+      "failed": 0,
+      "unreachable": 6,
+      "chain_harnesses_successful": 64,
+      "not_concluded": [
+        {
+          "shape": "root over one child over one grandchild, unwind 3",
+          "result": "timeout, no verdict, reached propositional reduction with 78409 VCCs",
+          "limit_seconds": 520,
+          "load": "about 7 on 8 vCPU and 7 GiB, shared with other builds"
+        }
+      ],
+      "note": "That harness was run once outside the chain and removed. Descent past one level and the choice among several children have no Kani result; they rest on Verus and tests."
+    },
+    "Loom": {
+      "result": "N/A",
+      "reason": "The kernel holds no shared state and no synchronization primitive; the mutable lookup takes the tree by &mut, so the compiler excludes concurrent access.",
+      "substitute_evidence": "None added: the compiler's exclusive-borrow rule is the argument. It is not a concurrency proof."
+    }
+  },
+  "real_path_test": {
+    "test": "scene::tests::find_node_paths_agree_on_the_first_match_in_preorder",
+    "class": "tested, not proved",
+    "mutation_checked": "Four manual mutations, one run each, not in the Verus control table: inverted holder test, read path always asking child 0, mutable path always descending child 0, and inverted identity match each failed the new unit test. Asking child 0 and descending child 0 were caught only by the new test among the scene unit tests."
+  },
+  "behavior_change_note": "find_node's iterator closure became an indexed loop and the comparison id.0. find_node_mut now asks the read path which child holds the identity before descending, because a mutable borrow returned from a loop cannot be retried after a miss and Verus has no usable specification for iter_mut. The result is meant to be unchanged; that equivalence with the old text is argued by reading and tests, not proved. The worst-case cost rises from proportional to node count to node count times depth; the actual effect was not measured.",
+  "uncovered": [
+    "Writes the apply_one arms make through the reference, the Insert index clamp and identity check, and the root check in the Remove arm",
+    "Identity uniqueness; the specification neither assumes nor concludes it",
+    "Recursion depth, stack use and the rescanning cost",
+    "UI-TXN-ATOMIC-001 stays not_verified as a whole-transaction property"
+  ],
+  "chain": {
+    "entry_exit_code": 2,
+    "complete": false,
+    "slice_complete": false,
+    "reason": "capture-query two-key Kani obligation (CP-01) is unresolved; every stage reports passed_scoped_checks"
+  },
+  "completion_claimed": false
+}
