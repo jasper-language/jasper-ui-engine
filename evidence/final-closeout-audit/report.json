@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "kind": "jasper-ui-closeout-audit",
-  "generated_at": "2026-11-04T12:14:56.715128+00:00",
+  "generated_at": "2026-11-04T12:25:00.037802+00:00",
   "claim": "audit only; no checklist completion or whole-engine acceptance is claimed",
   "git": {
-    "branch": "dev/ui-kani-targeted",
-    "commit": "fb0ac28ba0cf9cbd81747c1d8c5e9d188353a98b",
+    "branch": "dev/ui-kani-release-only",
+    "commit": "0041338a2df3ebfc806293116bd93ddce544912a",
     "dirty_paths": []
   },
   "final_audit": {
@@ -15,7 +15,7 @@
     "recorded_status": "complete",
     "recorded_completed_items": 6,
     "covers_head": true,
-    "basis_commit": "037c2d5fe5977655712f2a573e563a7ab8419d00",
+    "basis_commit": "f53fc78b072dbe335c32e37e447963159bad7811",
     "material_changed_since_basis": [],
     "references": [
       {
@@ -78,14 +78,14 @@
     "missing_references": []
   },
   "audit_inputs": {
-    "scripts/audit-closeout.py": "ae11359c2781df17d02357e14f14b9bd4a229fa03f8113097afddfe0e8ede47f",
+    "scripts/audit-closeout.py": "2c5afa2a005cdd54c9c70ef51409699b3e01188be1560ef48a8dd9c01d5480f9",
     "scripts/closeout-baseline.sh": "398de616d2ab22cca1f120839c55a7df0b4cdd97c9520b949f5bece26d948c6d",
     "scripts/test-audit-closeout.py": "34fa073556b494d37030b4d0372260030a205ec2dfd38bf47022c01dea546e3a",
-    "docs/claude-closeout-proof-backlog.md": "df29fceac8200ce380977b242c30954028e768b430ac0d09dab2c648c920e7a0",
+    "docs/claude-closeout-proof-backlog.md": "8248671b13cf87f1fcd8610714b6e40d364201939b77366fb72826d1afc82b65",
     "docs/closeout.md": "a25c5809261e484384943ffcdfa715f519b74919733b8df82462ebfa560666a6",
-    "scripts/verify-ui.py": "7326844b55c13a671e7a07573839e58cf77ddd515e65094ecfc780dc6e11b1e4",
+    "scripts/verify-ui.py": "f61fcdce369475900b2562193953389649de0bbc9cead49859e6844d9491fc52",
     "scripts/verify-in-vm.sh": "cc88cbb9afde9788d8154b4bb8501e975ffef039c96e452e355836e50ac4c3ba",
-    ".github/workflows/ci.yml": "eeae3e2da1889165faffa3ec1471a9f4db6b3606cb2087e09260bd6a0c85d5b1",
+    ".github/workflows/ci.yml": "bf0529c8601c8a0d57ca6ea2d22c7aeb41a7855ebbd54d20518497f10e5427d0",
     "Cargo.toml": "a78eb3be5b5b5c6da54a716d20c33baaec37563515026960bc90e296188ddd65",
     "Cargo.lock": "5b95b93dc20406ae8fa6e7e8c43bd23803450c7f34c021b19d3de3f05f4fe296"
   },
@@ -2635,7 +2635,7 @@
     },
     {
       "path": "evidence/final-checklist-audit/report.json",
-      "sha256": "c0e5c87776faf27227761e1426561f0419bbe4ada4b9d6403985bbeeaa640ab8",
+      "sha256": "7cdb8115996c607e3dcfa4260e70458422903b49da70cb9e448310b0acd5497f",
       "status": "complete",
       "recorded_sources": 37,
       "stale_or_missing_sources": [],
@@ -2658,7 +2658,7 @@
     },
     {
       "path": "evidence/final-closeout-audit/report.json",
-      "sha256": "4050a2194eaf3f0bd0695adab2cc00dd6406aad58985efe755e19cce58cb0cf5",
+      "sha256": "64afebbda17ead5198a2680fe1d565c3c22f71b9e47a450f06e8a74f607bf5fb",
       "status": "unspecified",
       "recorded_sources": 0,
       "stale_or_missing_sources": [],
@@ -4497,7 +4497,7 @@
     },
     {
       "path": "evidence/validation-chain/report.json",
-      "sha256": "01b307b6d5fc5e9f514208a97be81168a6b03855557c2881809bcb2980ca8cbf",
+      "sha256": "b8b24e270ae29721514e4063c61e0989df237194400431ec7d03e33c5214ecd4",
       "status": "unspecified",
       "recorded_sources": 238,
       "stale_or_missing_sources": [],
@@ -4701,8 +4701,8 @@
                 "field": "sources",
                 "path": "scripts/audit-closeout.py",
                 "exists": true,
-                "expected_sha256": "ae11359c2781df17d02357e14f14b9bd4a229fa03f8113097afddfe0e8ede47f",
-                "actual_sha256": "ae11359c2781df17d02357e14f14b9bd4a229fa03f8113097afddfe0e8ede47f",
+                "expected_sha256": "2c5afa2a005cdd54c9c70ef51409699b3e01188be1560ef48a8dd9c01d5480f9",
+                "actual_sha256": "2c5afa2a005cdd54c9c70ef51409699b3e01188be1560ef48a8dd9c01d5480f9",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -5146,8 +5146,8 @@
                 "field": "sources",
                 "path": "scripts/audit-closeout.py",
                 "exists": true,
-                "expected_sha256": "ae11359c2781df17d02357e14f14b9bd4a229fa03f8113097afddfe0e8ede47f",
-                "actual_sha256": "ae11359c2781df17d02357e14f14b9bd4a229fa03f8113097afddfe0e8ede47f",
+                "expected_sha256": "2c5afa2a005cdd54c9c70ef51409699b3e01188be1560ef48a8dd9c01d5480f9",
+                "actual_sha256": "2c5afa2a005cdd54c9c70ef51409699b3e01188be1560ef48a8dd9c01d5480f9",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -5606,8 +5606,8 @@
                 "field": "sources",
                 "path": "scripts/audit-closeout.py",
                 "exists": true,
-                "expected_sha256": "ae11359c2781df17d02357e14f14b9bd4a229fa03f8113097afddfe0e8ede47f",
-                "actual_sha256": "ae11359c2781df17d02357e14f14b9bd4a229fa03f8113097afddfe0e8ede47f",
+                "expected_sha256": "2c5afa2a005cdd54c9c70ef51409699b3e01188be1560ef48a8dd9c01d5480f9",
+                "actual_sha256": "2c5afa2a005cdd54c9c70ef51409699b3e01188be1560ef48a8dd9c01d5480f9",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -6081,8 +6081,8 @@
                 "field": "sources",
                 "path": "scripts/audit-closeout.py",
                 "exists": true,
-                "expected_sha256": "ae11359c2781df17d02357e14f14b9bd4a229fa03f8113097afddfe0e8ede47f",
-                "actual_sha256": "ae11359c2781df17d02357e14f14b9bd4a229fa03f8113097afddfe0e8ede47f",
+                "expected_sha256": "2c5afa2a005cdd54c9c70ef51409699b3e01188be1560ef48a8dd9c01d5480f9",
+                "actual_sha256": "2c5afa2a005cdd54c9c70ef51409699b3e01188be1560ef48a8dd9c01d5480f9",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -6512,8 +6512,8 @@
                 "field": "sources",
                 "path": "scripts/audit-closeout.py",
                 "exists": true,
-                "expected_sha256": "ae11359c2781df17d02357e14f14b9bd4a229fa03f8113097afddfe0e8ede47f",
-                "actual_sha256": "ae11359c2781df17d02357e14f14b9bd4a229fa03f8113097afddfe0e8ede47f",
+                "expected_sha256": "2c5afa2a005cdd54c9c70ef51409699b3e01188be1560ef48a8dd9c01d5480f9",
+                "actual_sha256": "2c5afa2a005cdd54c9c70ef51409699b3e01188be1560ef48a8dd9c01d5480f9",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -7182,7 +7182,7 @@
     "completion_claimed": false,
     "static_audit_complete": true,
     "final_report_covers_head": true,
-    "final_report_basis": "037c2d5fe5977655712f2a573e563a7ab8419d00",
+    "final_report_basis": "f53fc78b072dbe335c32e37e447963159bad7811",
     "material_paths_changed_since_final_report_basis": 0,
     "missing_required_sources": 0,
     "missing_required_evidence": 0,
@@ -7192,8 +7192,8 @@
   },
   "baseline_regression": {
     "status": "passed",
-    "started_at": "2026-11-04T12:14:42.235721+00:00",
-    "finished_at": "2026-11-04T12:14:56.438525+00:00",
+    "started_at": "2026-11-04T12:24:47.506951+00:00",
+    "finished_at": "2026-11-04T12:24:59.756898+00:00",
     "command": [
       "<repo>/scripts/verify-in-vm.sh",
       "env",
@@ -7202,7 +7202,7 @@
     ],
     "returncode": 0,
     "log": "evidence/final-closeout-audit/baseline.log",
-    "log_sha256": "a3b90fbd22975766d60845c326de1d683d26699610f8f55b5b54994205a48ec5"
+    "log_sha256": "59f3ad5905fd6ca96ecd00c300c21c17a08cac094b2ff7581596a4d613a96d1c"
   },
   "final_gate": {
     "ready": true,

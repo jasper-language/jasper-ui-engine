@@ -2,8 +2,8 @@
 
 This report is an audit snapshot, not a delivery acceptance record.
 
-- branch: `dev/ui-kani-targeted`
-- commit: `fb0ac28ba0cf9cbd81747c1d8c5e9d188353a98b`
+- branch: `dev/ui-kani-release-only`
+- commit: `0041338a2df3ebfc806293116bd93ddce544912a`
 - explicit item 1-5 completions: 5/5
 - final report materially covers HEAD: `true`
 - missing required evidence: 0
