@@ -996,3 +996,24 @@ local-text-frame-guard-pending/storage-proof-mapping.json；旧Kani超时保留�
 真实路径测试（`committed_frame_replays_interaction_state_and_drops_what_the_candidate_refuses`，测试证据，不是证明）：真实 `NativeScene` 与真实 Blitz 文档，读回替换后的视图，检查窗口尺寸与缩放、滚动、按下、悬停、焦点、指针和帧缓存；隐藏节点后按下与焦点被丢弃而帧仍提交。对 `NativeScene` 的 trait 实现做的九个手动变异都使它失败（各一次，未入 Verus 反例表）：不写视口、不写滚动、不写按下、不写焦点、不写悬停、不存指针、不存帧缓存、按下总准入、焦点总准入。
 
 假设与未覆盖：`NativeScene` 的 trait 实现只由测试检查，未证明其满足契约；契约假设写入不改变准入判定，理由是写入只碰文档，准入只读来源元数据，这一点未形式化。Blitz 在这些写入与 `resolve` 中的行为、候选构造本身、`frame_retires_node`（依赖 CP-02 的 `source_subtree_contains`）都在证明之外。证据：`evidence/scene-interaction-restore-kernel/`、`evidence/scene-interaction-restore-chain/report.json`。
+
+## UI-SCENE-NODE-REMOVE-001：节点移除语义（2026-11-04，CP-03 子性质）
+
+`remove_node` 的迭代器闭包改为两段下标循环，比较改为 `id.0`，求值顺序与结果不变（新旧文本的等价靠阅读和现有测试，未证明）。
+
+| 阶段 | 范围 | 结果 |
+|---|---|---|
+| Verus/Z3 | 真实 `Node` 声明上任意树与任意身份：返回值恰为该身份是否真后代；未命中时树结构相同；命中时移除首个匹配的直接子节点，否则只递归进首个含它的子树，其他节点结构相同，祖先的非树字段不变；可终止 | 8 verified/0 errors。十一个反例被拒：五个在后置条件，四个在中间断言，两个在循环不变式 |
+| Proptest | 至多 24 节点的任意树对照独立函数式规格 | 256 例通过 |
+| Miri | 固定小树 | 通过 |
+| cargo-fuzz | `read_boundary` | 39553 次（`batch_decode` 1122183 次不触及此内核；负载下运行） |
+| Kani | **只有最小形状**：根加一个无子节点的子节点，身份任意，unwind 2 | 652 checks / 0 failed（8 unreachable） |
+| Loom | N/A：内核无共享状态与同步原语，经 `&mut` 独占 | 不计 PASS；未添加替代运行 |
+
+Kani 未得出结论的形状：两子节点（unwind 3）和一子一孙（unwind 3）各 1500 秒超时、无判定（构建机负载约 36，内存 7G，与其他构建同跑），更大的形状也在较短限时内超时。开销在递归 `Vec<Node>` 的 drop 展开。所以嵌套移除与两种优先顺序没有 Kani 结果，只有 Verus 与测试。
+
+证明中的模型差异：`NodeKind`、`Style`、`Semantics`、`Point` 换成内核读不到的值类型；证明副本去掉 `Node` 的派生（经 `Vec` 的递归 `Clone` 在 Verus 中成环）。rustc 以真实类型编译相同的内核词法。
+
+真实路径测试（测试证据，不是证明）：新单元测试直接用真实类型，覆盖直接子节点优先、只动首个子树、未命中不变、根自身不算后代。四个手动变异（反转匹配、移除下标 0、不下探、下探不停）都使它失败（各一次，未入 Verus 反例表）。`tests/scene_batch_transaction.rs` 抓到其中三个，漏掉“移除下标 0”，说明该模型测试对直接移除的位置检查偏弱。
+
+未覆盖：身份唯一性及“移除后该身份不再存在”这一推论；`apply_one` 其余分支及 `Remove` 分支的根检查；被移除子树的析构、递归深度与栈使用。证据：`evidence/scene-node-remove-kernel/`、`evidence/scene-node-remove-chain/report.json`。

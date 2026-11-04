@@ -196,6 +196,8 @@ PROOF_BACKLOG = {
             "evidence/scene-batch-stage-chain/report.json",
             "evidence/scene-interaction-restore-kernel/report.json",
             "evidence/scene-interaction-restore-chain/report.json",
+            "evidence/scene-node-remove-kernel/report.json",
+            "evidence/scene-node-remove-chain/report.json",
         ],
     },
     "CP-04": {

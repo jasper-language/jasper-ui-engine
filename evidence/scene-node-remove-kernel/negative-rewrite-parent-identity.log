@@ -1,0 +1,12 @@
+verification results:: 7 verified, 1 errors
+error: postcondition not satisfied
+  --> <repo>/evidence/scene-node-remove-kernel/negative_rewrite_parent_identity.rs:57:13
+   |
+57 |             result ==> node_removed(*old(parent),*final(parent),id),
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+75 |             return true;
+   |             ----------- at this exit
+
+error: aborting due to 1 previous error
+

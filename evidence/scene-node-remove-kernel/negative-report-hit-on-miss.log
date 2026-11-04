@@ -1,0 +1,39 @@
+verification results:: 7 verified, 1 errors
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+  --> <repo>/evidence/scene-node-remove-kernel/negative_report_hit_on_miss.rs:54:1
+   |
+54 | fn remove_node(parent: &mut Node, id: NodeId) -> (result:bool)
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: postcondition not satisfied
+   --> <repo>/evidence/scene-node-remove-kernel/negative_report_hit_on_miss.rs:55:17
+    |
+ 55 |           ensures result==node_below(*old(parent),id),
+    |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+ 59 | /     {
+ 60 | |     let ghost start=*parent;
+ 61 | |     let mut index = 0usize;
+ 62 | |     while index < parent.children.len()
+...   |
+115 | |     true
+116 | | }
+    | |_- at the end of the function body
+
+error: postcondition not satisfied
+   --> <repo>/evidence/scene-node-remove-kernel/negative_report_hit_on_miss.rs:57:13
+    |
+ 57 |               result ==> node_removed(*old(parent),*final(parent),id),
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+ 58 |           decreases *old(parent),
+ 59 | /     {
+ 60 | |     let ghost start=*parent;
+ 61 | |     let mut index = 0usize;
+ 62 | |     while index < parent.children.len()
+...   |
+115 | |     true
+116 | | }
+    | |_- at the end of the function body
+
+error: aborting due to 2 previous errors
+

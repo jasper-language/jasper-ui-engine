@@ -758,6 +758,117 @@ pub fn assert_scene_frame_panic(panic_in_source: bool, source_version: u64, toke
     assert_eq!(active, token);
 }
 
+// Stand-ins for the three non-tree field types of the extracted `Node`; the kernel never reads
+// them, and each carries a value so a mix-up between nodes is visible to the oracle.
+// 提取出的 Node 的三个非树字段类型的替身；内核不读取它们，各带一个值，节点间串位时规格能发现。
+#[derive(Clone, Debug, PartialEq)]
+pub struct NodeKind(u8);
+#[derive(Clone, Debug, PartialEq)]
+pub struct Style(u8);
+#[derive(Clone, Debug, PartialEq)]
+pub struct Semantics(u8);
+
+fn removal_leaf(id: u64, children: Vec<Node>) -> Node {
+    let tag = id as u8;
+    Node {
+        id: NodeId(id),
+        kind: NodeKind(tag),
+        style: Style(tag ^ 1),
+        semantics: Semantics(tag ^ 2),
+        scroll: Point { x: tag as f32, y: -(tag as f32) },
+        children,
+    }
+}
+
+/// Builds a tree in preorder: each pair is an identity and how many of the following nodes stay
+/// under it. 按前序建树：每对是身份及其后留在其下的节点数。
+fn removal_tree(id: u64, spec: &mut std::slice::Iter<'_, (u8, u8)>, room: &mut usize) -> Node {
+    let mut children = Vec::new();
+    while *room > 0 {
+        let Some(&(child, stay)) = spec.next() else { break };
+        *room -= 1;
+        let mut inner = (stay as usize % 4).min(*room);
+        *room -= inner;
+        children.push(removal_tree(child as u64 % 8, spec, &mut inner));
+        *room += inner;
+    }
+    removal_leaf(id, children)
+}
+
+// Independent functional oracle: rebuilds the expected tree, shares no loop with the kernel.
+// 独立函数式规格：重建期望树，不与内核共用循环。
+fn removal_oracle(node: &Node, id: u64) -> Option<Node> {
+    if let Some(at) = node.children.iter().position(|child| child.id.0 == id) {
+        let mut rebuilt = node.clone();
+        rebuilt.children = node.children[..at].iter().chain(&node.children[at + 1..]).cloned().collect();
+        return Some(rebuilt);
+    }
+    node.children.iter().enumerate().find_map(|(at, child)| {
+        removal_oracle(child, id).map(|changed| {
+            let mut rebuilt = node.clone();
+            rebuilt.children[at] = changed;
+            rebuilt
+        })
+    })
+}
+
+/// Real removal against the oracle on an arbitrary tree, with the root's own identity included in
+/// the identity domain. 真实移除在任意树上对照规格，身份域包含根自身。
+pub fn assert_scene_node_remove(tree: Node, id: u64) {
+    let expected = removal_oracle(&tree, id);
+    let mut actual = tree.clone();
+    assert_eq!(remove_node(&mut actual, NodeId(id)), expected.is_some());
+    assert_eq!(actual, expected.unwrap_or(tree));
+}
+
+/// The same removal on a small tree given as first-level identities with an optional child, read
+/// back node by node so the check does not clone trees.
+/// 同一移除作用于小树（第一层身份加可选子节点），逐节点读回，检查不克隆树。
+pub fn assert_scene_node_remove_shape(root: u64, shape: &[(u64, Option<u64>)], id: u64) {
+    let leaf = |at: u64| removal_leaf(at, Vec::new());
+    let mut children = Vec::new();
+    let mut at = 0;
+    while at < shape.len() {
+        let (first, below) = shape[at];
+        children.push(removal_leaf(first, below.map(leaf).into_iter().collect()));
+        at += 1;
+    }
+    let mut tree = removal_leaf(root, children);
+    let hit = remove_node(&mut tree, NodeId(id));
+    // A direct child wins over any nested match; the earliest of either kind wins over later ones.
+    // 直接子节点优先于任何嵌套匹配；同类中最早的优先。
+    let direct = (0..shape.len()).find(|&at| shape[at].0 == id);
+    let nested = (0..shape.len()).find(|&at| shape[at].1 == Some(id));
+    assert_eq!(hit, direct.is_some() || nested.is_some());
+    let same = |node: &Node, at: u64| {
+        node.id.0 == at && node.kind.0 == at as u8 && node.style.0 == at as u8 ^ 1 && node.semantics.0 == at as u8 ^ 2
+    };
+    assert!(same(&tree, root));
+    assert_eq!(tree.children.len() + direct.is_some() as usize, shape.len());
+    let mut read = 0;
+    let mut at = 0;
+    while at < shape.len() {
+        if direct != Some(at) {
+            let (first, below) = shape[at];
+            let kept = if direct.is_none() && nested == Some(at) { None } else { below };
+            assert!(same(&tree.children[read], first));
+            assert_eq!(tree.children[read].children.len(), kept.is_some() as usize);
+            if let Some(child) = kept {
+                assert!(same(&tree.children[read].children[0], child));
+                assert!(tree.children[read].children[0].children.is_empty());
+            }
+            read += 1;
+        }
+        at += 1;
+    }
+}
+
+pub fn assert_scene_node_remove_bytes(spec: &[(u8, u8)], root: u8, id: u8) {
+    let mut room = spec.len();
+    let tree = removal_tree(root as u64 % 8, &mut spec.iter(), &mut room);
+    assert_scene_node_remove(tree, id as u64 % 8);
+}
+
 /// Real fold against an independent model: each patch in order, once, up to the first failure;
 /// the result is that failure or the model's fold; the detached value is released exactly once.
 /// 真实折叠对照独立模型：按序每补丁一次直到首个失败；结果是该失败或模型折叠值；独立值恰释放一次。
@@ -2245,6 +2356,16 @@ mod kani_checks {
         assert_scene_frame_order(kani::any(), kani::any(), kani::any(), kani::any(), kani::any());
     }
 
+    // Arbitrary identities on one root with one childless child, the only shape that finished:
+    // recursive `Vec<Node>` drop glue grows with the bound, and larger shapes timed out with no
+    // verdict. 根加一个无子节点的子节点上的任意身份，这是唯一跑完的形状：递归 Vec<Node> 的 drop 展开随界增长，更大的形状超时且无判定。
+    #[kani::proof]
+    #[kani::unwind(2)]
+    fn scene_node_remove() {
+        let child: u64 = kani::any();
+        assert_scene_node_remove_shape(kani::any(), &[(child, None)], kani::any());
+    }
+
     // Arbitrary start and patches of every length up to four through the real fold; unwinding is
     // outside Kani's model. 任意起点与至多四个任意补丁穿过真实折叠；展开不在 Kani 模型内。
     #[kani::proof]
@@ -2730,6 +2851,12 @@ mod properties {
         }
 
         #[test]
+        fn scene_node_remove_property(spec in prop::collection::vec(any::<(u8, u8)>(), 0..24), root in any::<u8>(), id in any::<u8>()) {
+            assert_scene_node_remove_bytes(&spec, root, id);
+            let at = |i: usize| spec.get(i).map_or(0, |pair| pair.0 as u64 % 6);
+            assert_scene_node_remove_shape(at(0), &[(at(1), Some(at(2))), (at(3), Some(at(4))), (at(5), None)], id as u64 % 6);
+        }
+        #[test]
         fn scene_batch_stage_property(start in any::<u64>(), patches in prop::collection::vec(any::<u8>(), 0..16), panic_at in 0usize..18) {
             assert_scene_batch_stage(start, &patches);
             assert_scene_batch_panic(start, &patches, panic_at);
@@ -3122,6 +3249,9 @@ mod memory {
             }
             assert_scene_frame_panic(true, version, version);
             assert_scene_frame_panic(false, version, version);
+            assert_scene_node_remove_bytes(&[(1, 2), (2, 0), (3, 0), (2, 1), (3, 0)], version as u8, 3);
+            assert_scene_node_remove_bytes(&[(1, 0), (2, 0)], version as u8, version as u8);
+            assert_scene_node_remove_shape(1, &[(2, Some(3)), (4, Some(5))], version % 7);
             assert_scene_batch_stage(version, &[]);
             assert_scene_batch_stage(version, &[1, 2, 3]);
             assert_scene_batch_stage(version, &[1, 5, 3]);
@@ -3345,6 +3475,7 @@ mod schedules {
                 assert_desktop_timestamp(first[0] as u128);
                 assert_scene_frame_order(first[0] & 1 == 1, first[1] as u64, first[2] as u64, first[3] & 1 == 1, first[0] as u64);
                 assert_scene_batch_stage(first[0] as u64, &first[..(first[1] as usize & 3)]);
+                assert_scene_node_remove_bytes(&[(first[0], first[1]), (first[2], first[3])], first[0], first[2]);
                 assert_scene_interaction_restore(first[0] as u64, first[1] as u64, Some(first[2]), Some(first[3]), Some(first[0]), first[1] as u64, first[2], first[3], first[0]);
                 assert_desktop_pointer_path(&[(1, first[0], first[1] as u16, 0, 0, first[2] as u64), (0, 0, 0, first[3] as u32, 0, 1), (2, first[0], first[1] as u16, 0, 0, 2)]);
                 assert_color_construct(first[0], first[1], first[2], first[3], first[0] ^ first[3]);

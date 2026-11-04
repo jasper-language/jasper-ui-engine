@@ -23,6 +23,7 @@ pub enum NodeKind {
 }
 
 /// One node in the instance scene.
+// BEGIN VERIFIED SCENE NODE TYPE
 #[derive(Clone, Debug, PartialEq)]
 pub struct Node {
     pub id: NodeId,
@@ -33,6 +34,7 @@ pub struct Node {
     pub scroll: Point,
     pub children: Vec<Node>,
 }
+// END VERIFIED SCENE NODE TYPE
 
 impl Node {
     pub fn new(id: NodeId, kind: NodeKind) -> Self {
@@ -391,16 +393,29 @@ fn find_node_mut(node: &mut Node, id: NodeId) -> Option<&mut Node> {
         .find_map(|child| find_node_mut(child, id))
 }
 
+// BEGIN VERIFIED SCENE NODE REMOVE KERNEL
+/// Removes the first direct child with the identity; failing that, removes it from the first child
+/// subtree that holds it, leaving every other node alone. A miss changes nothing.
+/// 优先移除首个身份匹配的直接子节点；否则只在首个含该身份的子树中移除，其余节点不动；未命中不做任何改变。
 fn remove_node(parent: &mut Node, id: NodeId) -> bool {
-    if let Some(index) = parent.children.iter().position(|child| child.id == id) {
-        parent.children.remove(index);
-        return true;
+    let mut index = 0usize;
+    while index < parent.children.len() {
+        if parent.children[index].id.0 == id.0 {
+            parent.children.remove(index);
+            return true;
+        }
+        index += 1;
     }
-    parent
-        .children
-        .iter_mut()
-        .any(|child| remove_node(child, id))
+    index = 0;
+    while index < parent.children.len() {
+        if remove_node(&mut parent.children[index], id) {
+            return true;
+        }
+        index += 1;
+    }
+    false
 }
+// END VERIFIED SCENE NODE REMOVE KERNEL
 
 #[cfg(test)]
 mod tests {
@@ -408,6 +423,40 @@ mod tests {
 
     fn id(value: u64) -> NodeId {
         NodeId(value)
+    }
+
+    #[test]
+    fn remove_node_prefers_a_direct_child_and_touches_one_subtree() {
+        // Identity 9 sits in a nested subtree first, then as a direct child, then nested again.
+        // 身份 9 先在嵌套子树，再是直接子节点，之后又在嵌套子树；这里绕过 Scene 的唯一性检查。
+        let tree = |children: Vec<Node>| Node::container(id(1)).with_children(children);
+        let nested = |at: u64| Node::container(id(at)).child(Node::rect(id(9)));
+        let mut direct = tree(vec![
+            nested(2),
+            Node::text(id(9), "gone"),
+            Node::rect(id(3)),
+            nested(4),
+        ]);
+        assert!(remove_node(&mut direct, id(9)));
+        assert_eq!(direct, tree(vec![nested(2), Node::rect(id(3)), nested(4)]));
+
+        let mut deep = tree(vec![Node::rect(id(3)), nested(2), nested(4)]);
+        assert!(remove_node(&mut deep, id(9)));
+        assert_eq!(
+            deep,
+            tree(vec![Node::rect(id(3)), Node::container(id(2)), nested(4)])
+        );
+
+        let before = deep.clone();
+        assert!(remove_node(&mut deep, id(9)));
+        assert_eq!(deep.children[2], Node::container(id(4)));
+        let after = deep.clone();
+        assert!(!remove_node(&mut deep, id(9)));
+        assert_eq!(deep, after);
+        assert_ne!(before, after);
+        // The root's own identity is not its descendant. 根自身不是自己的后代。
+        assert!(!remove_node(&mut deep, id(1)));
+        assert_eq!(deep, after);
     }
 
     #[test]

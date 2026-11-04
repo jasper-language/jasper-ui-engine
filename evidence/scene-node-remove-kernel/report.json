@@ -1,0 +1,95 @@
+{
+  "property": "UI-SCENE-NODE-REMOVE-001",
+  "status": "proved",
+  "scope": "Exact production removal on the real Node declaration with its four non-tree field types replaced by opaque values the kernel cannot read: the result says exactly whether the identity is a proper descendant; a miss leaves the tree structurally the same; a hit removes the first matching direct child, or else recurses into exactly the first child subtree holding the identity, with every other node structurally the same and every field of every ancestor unchanged. Scene identity uniqueness, the other apply_one arms, drop of the removed subtree, recursion depth and stack use are excluded.",
+  "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
+  "source_sha256": "4f9969e164cc16068aa865794eeaf1a400b463ba9dc89b429d15ff580be941bf",
+  "sources": {
+    "src/scene.rs": "4f9969e164cc16068aa865794eeaf1a400b463ba9dc89b429d15ff580be941bf"
+  },
+  "kernel_sha256": "e98e2b1c9a3a0e57bcb8f8464d976ac0316807148cb696c7abd25905564cb483",
+  "dependencies": {
+    "node-id-type": "39ff7bd8c3c5c51e025059e0f104105a839165e2cb4a455f094a2d2bb9cfffad",
+    "scene-node-type": "5cd4fff573ded959d547838b4447ec6383241e3ce53bef409cf839882fcf018b"
+  },
+  "proof_sha256": "a977c749bbb4ca313e62c744b0bb342f5468804bd2ba9ee63990fd21124f065a",
+  "runner_sha256": "084b23829727b0d5b5cabdd2d895ad6f60b9d299020936ff4b350f6c2c18219c",
+  "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
+  "command": [
+    "<home>/verus/verus",
+    "--crate-type",
+    "lib",
+    "<repo>/evidence/scene-node-remove-kernel/kernel.rs"
+  ],
+  "exit_code": 0,
+  "solver": {
+    "path": "<home>/verus/z3",
+    "version": "Z3 version 4.16.0 - 64 bit\n",
+    "explicit_override": null
+  },
+  "verified_obligations": 8,
+  "negative_controls": [
+    {
+      "name": "report-hit-on-miss",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "report-miss-on-deep-hit",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "report-miss-on-direct-hit",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "descend-first-child-only",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "rewrite-parent-identity",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "no-removal",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "remove-wrong-index",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "remove-whole-list",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "match-wrong-child",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "skip-direct-search",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "skip-a-child",
+      "rejected": true,
+      "exit_code": 1
+    }
+  ],
+  "negative_control_rejected": true,
+  "trust_boundary": [
+    "Verus/vstd and SMT solver",
+    "Rust/Verus integer, references and slice semantics",
+    "signature annotation/extraction script",
+    "Rust compiler and target execution"
+  ]
+}

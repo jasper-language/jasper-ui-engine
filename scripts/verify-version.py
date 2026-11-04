@@ -2241,6 +2241,126 @@ spec fn restore_script<I,V,S,P,C,T:RestoreCandidate<I,V,S,P,C>>(t:T,c:CarriedInt
 }
 
 
+KERNELS["scene-node-type"] = {
+    "source":"src/scene.rs", "marker":"SCENE NODE", "suffix":"TYPE", "depends":["node-id-type"], "internal_only":True,
+    # The derives are dropped for Verus (recursive Clone through Vec is a cycle there); the kernel
+    # calls none of them, and rustc compiles the identical tokens against the real field types.
+    # Verus 中去掉派生（经 Vec 的递归 Clone 成环）；内核不调用它们，rustc 以真实字段类型编译相同词法。
+    "signature":"#[derive(Clone, Debug, PartialEq)]\npub struct Node {", "contract":"pub struct Node {", "function_count":0,
+    "spec_prelude":"""pub struct NodeKind(u64);
+pub struct Style(u64);
+pub struct Semantics(u64);
+pub struct Point(u64);
+broadcast use vstd::std_specs::vec::axiom_vec_index_decreases;
+""",
+}
+
+
+KERNELS["scene-node-remove"] = {
+    "source":"src/scene.rs", "marker":"SCENE NODE REMOVE",
+    "property":"UI-SCENE-NODE-REMOVE-001",
+    "spec_prelude":"""pub open spec fn node_below(node:Node,id:NodeId)->bool decreases node, {
+    exists|i:int| #![trigger node.children@[i]] 0<=i<node.children@.len() && (node.children@[i].id==id || node_below(node.children@[i],id))
+}
+pub open spec fn node_fields_same(a:Node,b:Node)->bool {
+    a.id==b.id && a.kind==b.kind && a.style==b.style && a.semantics==b.semantics && a.scroll==b.scroll
+}
+pub open spec fn node_same(a:Node,b:Node)->bool decreases a, {
+    node_fields_same(a,b) && a.children@.len()==b.children@.len()
+        && forall|i:int| #![trigger a.children@[i]] 0<=i<a.children@.len() ==> node_same(a.children@[i],b.children@[i])
+}
+pub proof fn node_same_refl(a:Node) ensures node_same(a,a), decreases a, {
+    assert forall|i:int| #![trigger a.children@[i]] 0<=i<a.children@.len() implies node_same(a.children@[i],a.children@[i]) by {
+        node_same_refl(a.children@[i]);
+    };
+}
+pub open spec fn node_removed(o:Node,n:Node,id:NodeId)->bool decreases o, {
+    node_fields_same(o,n) && (
+        (exists|p:int| #![trigger o.children@[p]] 0<=p<o.children@.len() && o.children@[p].id==id
+            && (forall|j:int| #![trigger o.children@[j]] 0<=j<p ==> o.children@[j].id!=id)
+            && n.children@=~=o.children@.remove(p))
+        || ((forall|j:int| #![trigger o.children@[j]] 0<=j<o.children@.len() ==> o.children@[j].id!=id)
+            && n.children@.len()==o.children@.len()
+            && exists|p:int| #![trigger o.children@[p]] 0<=p<o.children@.len()
+                && (forall|j:int| #![trigger o.children@[j]] 0<=j<p ==> !node_below(o.children@[j],id))
+                && (forall|j:int| #![trigger o.children@[j]] 0<=j<o.children@.len() && j!=p ==> node_same(o.children@[j],n.children@[j]))
+                && node_removed(o.children@[p],n.children@[p],id)))
+}
+""",
+    "signature":"fn remove_node(parent: &mut Node, id: NodeId) -> bool {",
+    "contract":"""fn remove_node(parent: &mut Node, id: NodeId) -> (result:bool)
+        ensures result==node_below(*old(parent),id),
+            !result ==> node_same(*old(parent),*final(parent)),
+            result ==> node_removed(*old(parent),*final(parent),id),
+        decreases *old(parent),
+    {
+    let ghost start=*parent;""",
+    "extra_annotations":[
+        ("    let mut index = 0usize;\n    while index < parent.children.len() {","""    let mut index = 0usize;
+    while index < parent.children.len()
+        invariant index<=parent.children@.len(), *parent==start, *old(parent)==start,
+            forall|j:int| #![trigger start.children@[j]] 0<=j<index ==> start.children@[j].id!=id,
+        decreases parent.children.len()-index,
+    {"""),
+        ("            parent.children.remove(index);\n            return true;","""            parent.children.remove(index);
+            proof {
+                let p=index as int;
+                assert(start.children@[p].id==id);
+                assert(parent.children@=~=start.children@.remove(p));
+            }
+            return true;"""),
+        ("    index = 0;\n    while index < parent.children.len() {","""    proof { node_same_refl(start); }
+    index = 0;
+    while index < parent.children.len()
+        invariant index<=parent.children@.len(), *old(parent)==start,
+            node_fields_same(start,*parent),
+            parent.children@.len()==start.children@.len(),
+            forall|j:int| #![trigger start.children@[j]] 0<=j<start.children@.len() ==> start.children@[j].id!=id,
+            forall|j:int| #![trigger start.children@[j]] 0<=j<index ==> !node_below(start.children@[j],id),
+            forall|j:int| #![trigger start.children@[j]] 0<=j<index ==> node_same(start.children@[j],parent.children@[j]),
+            forall|j:int| #![trigger start.children@[j]] index<=j<start.children@.len() ==> parent.children@[j]==start.children@[j],
+        decreases parent.children.len()-index,
+    {
+        let ghost before=parent.children@;
+        proof {
+            assert(before[index as int]==start.children@[index as int]);
+            assert(decreases_to!(start.children => start.children@[index as int]));
+            assert(decreases_to!(start => start.children@[index as int]));
+        }"""),
+        ("        if remove_node(&mut parent.children[index], id) {\n            return true;\n        }","""        if remove_node(&mut parent.children[index], id) {
+            proof {
+                let p=index as int;
+                assert forall|j:int| #![trigger start.children@[j]] 0<=j<start.children@.len() && j!=p implies node_same(start.children@[j],parent.children@[j]) by {
+                    assert(parent.children@[j]==before[j]);
+                    if j>p { node_same_refl(start.children@[j]); }
+                };
+                assert(start.children@[p]==before[p]);
+                assert(node_removed(start.children@[p],parent.children@[p],id));
+            }
+            return true;
+        }
+        proof {
+            let p=index as int;
+            assert forall|j:int| #![trigger start.children@[j]] 0<=j<start.children@.len() && j!=p implies parent.children@[j]==before[j] by {};
+            assert(start.children@[p]==before[p]);
+        }"""),
+    ],
+    "depends":["scene-node-type"], "evidence":"scene-node-remove-kernel", "function_count":1,
+    "scope":"Exact production removal on the real Node declaration with its four non-tree field types replaced by opaque values the kernel cannot read: the result says exactly whether the identity is a proper descendant; a miss leaves the tree structurally the same; a hit removes the first matching direct child, or else recurses into exactly the first child subtree holding the identity, with every other node structurally the same and every field of every ancestor unchanged. Scene identity uniqueness, the other apply_one arms, drop of the removed subtree, recursion depth and stack use are excluded.",
+    "mutations":[("report-hit-on-miss","    false\n}","    true\n}"),
+                 ("report-miss-on-deep-hit","assert(node_removed(start.children@[p],parent.children@[p],id));\n            }\n            return true;","assert(node_removed(start.children@[p],parent.children@[p],id));\n            }\n            return false;"),
+                 ("report-miss-on-direct-hit","assert(parent.children@=~=start.children@.remove(p));\n            }\n            return true;","assert(parent.children@=~=start.children@.remove(p));\n            }\n            return false;"),
+                 ("descend-first-child-only","    index = 0;\n    while index < parent.children.len()\n","    index = 0;\n    while index < parent.children.len() && index<1\n"),
+                 ("rewrite-parent-identity","            parent.children.remove(index);\n            proof {","            parent.children.remove(index);\n            parent.id=NodeId(0);\n            proof {")],
+    "refused_mutations":[("no-removal","            parent.children.remove(index);\n","","assertion failed"),
+                         ("remove-wrong-index","parent.children.remove(index);","parent.children.remove(0);","assertion failed"),
+                         ("remove-whole-list","parent.children.remove(index);","parent.children.clear();","assertion failed"),
+                         ("match-wrong-child","parent.children[index].id.0 == id.0","parent.children[index].id.0 != id.0","assertion failed"),
+                         ("skip-direct-search","    while index < parent.children.len()\n        invariant index<=parent.children@.len(), *parent==start,","    while index < parent.children.len() && false\n        invariant index<=parent.children@.len(), *parent==start,","invariant not satisfied"),
+                         ("skip-a-child","        index += 1;\n    }\n    false","        index += 1;\n        if index<parent.children.len() {index += 1;}\n    }\n    false","invariant not satisfied at end of loop body")],
+}
+
+
 KERNELS["source-insert-index"] = {
     "source":"src/native_adapter/native_scene.rs", "marker":"SOURCE INSERT INDEX",
     "property":"UI-SOURCE-INSERT-INDEX-001",

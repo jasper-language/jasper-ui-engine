@@ -1,0 +1,27 @@
+verification results:: 7 verified, 1 errors
+note: while loop: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+  --> <repo>/evidence/scene-node-remove-kernel/negative_report_miss_on_deep_hit.rs:80:5
+   |
+80 |     while index < parent.children.len()
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: postcondition not satisfied
+   --> <repo>/evidence/scene-node-remove-kernel/negative_report_miss_on_deep_hit.rs:55:17
+    |
+ 55 |         ensures result==node_below(*old(parent),id),
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+106 |             return false;
+    |             ------------ at this exit
+
+error: postcondition not satisfied
+   --> <repo>/evidence/scene-node-remove-kernel/negative_report_miss_on_deep_hit.rs:56:13
+    |
+ 56 |             !result ==> node_same(*old(parent),*final(parent)),
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+106 |             return false;
+    |             ------------ at this exit
+
+error: aborting due to 2 previous errors
+

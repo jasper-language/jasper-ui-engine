@@ -865,3 +865,7 @@ CP-02 仍无判定：只选一个断言（切片后 30 个 VCC）在 45 分钟�
 ## 2026-11-04：候选的交互状态重放（CP-03 子性质）
 
 `NativeScene::rebuild_candidate` 的恢复段改为 `restore_candidate_interaction`，行为不变。重放顺序有六步证据（Loom 为 N/A），前提是候选的写入遵守 trait 契约。`NativeScene` 的实现只由真实文档测试和九个手动变异检查，没有证明。Blitz 对这些写入的处理、候选构造、`apply_one` 的补丁语义仍未证明，范围见 `verification.md` 的 UI-SCENE-INTERACTION-RESTORE-001。
+
+## 2026-11-04：节点移除语义（CP-03 子性质）
+
+`remove_node` 从迭代器闭包改为两段下标循环，比较改为 `id.0`，行为不变。语义有 Verus 全域证明，范围见 `verification.md` 的 UI-SCENE-NODE-REMOVE-001。Kani 只跑完根加一个子节点的形状，嵌套形状超时、无判定。`apply_one` 的其余分支仍未证明。

@@ -1,0 +1,9 @@
+verification results:: 7 verified, 1 errors
+error: invariant not satisfied before loop
+  --> <repo>/evidence/scene-node-remove-kernel/negative_skip_direct_search.rs:84:13
+   |
+84 |             forall|j:int| #![trigger start.children@[j]] 0<=j<start.children@.len() ==> start.children@[j].id!=id,
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: aborting due to 1 previous error
+

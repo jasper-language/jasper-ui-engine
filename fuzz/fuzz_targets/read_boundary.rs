@@ -1,6 +1,6 @@
 #![no_main]
 use jasper_ui_read_verification::{
-    assert_scene_batch_stage, assert_scene_interaction_restore, assert_scene_frame_order, assert_borrow, assert_bold_alias, assert_desktop_pointer_path, assert_desktop_timestamp, DesktopPointerStep, assert_handle_allocator_path, assert_handle_status_path, assert_handle_fixed_path, assert_handle_path, assert_handle_retirement, HandleStep, assert_bytes_slot, assert_canvas_import, assert_canvas_pixel, assert_capture_query, assert_color_construct,
+    assert_scene_batch_stage, assert_scene_node_remove_bytes, assert_scene_interaction_restore, assert_scene_frame_order, assert_borrow, assert_bold_alias, assert_desktop_pointer_path, assert_desktop_timestamp, DesktopPointerStep, assert_handle_allocator_path, assert_handle_status_path, assert_handle_fixed_path, assert_handle_path, assert_handle_retirement, HandleStep, assert_bytes_slot, assert_canvas_import, assert_canvas_pixel, assert_capture_query, assert_color_construct,
     assert_command_modifier, assert_cursor, assert_endpoint, assert_focus_cleanup,
     assert_damage_convergence, assert_damage_rect, assert_damage_span, assert_damage_write, assert_focus_selection, assert_font_family, assert_font_order, assert_font_weight, assert_frame_damage, assert_glyph_skew, assert_glyph_skew_pure, assert_frame_pace, assert_frame_reuse, assert_frame_tick, assert_gpu_readback_layout, assert_header, assert_access_actions, assert_access_change, assert_access_request, assert_text_offset, assert_text_range, assert_hover_lifecycle, assert_input_retire,
     assert_keyboard_focus, assert_payload, assert_pixel_conversion, assert_pointer_order,
@@ -158,6 +158,8 @@ fuzz_target!(|data: &[u8]| {
     assert_scene_frame_order(frame_bits & 1 == 1, len as u64, pos as u64, frame_bits & 2 == 2, data.len() as u64);
     assert_scene_frame_order(frame_bits & 1 == 1, len as u64, len as u64, frame_bits & 2 == 2, data.len() as u64);
     assert_scene_batch_stage(len as u64, &data[..data.len().min(32)]);
+    let removal: Vec<(u8, u8)> = data.chunks_exact(2).take(64).map(|c| (c[0], c[1])).collect();
+    assert_scene_node_remove_bytes(&removal, frame_bits, len as u8);
     if let [a, b, c, d, e, f, g, h, ..] = *data {
         assert_scene_interaction_restore(a as u64, b as u64, (c & 16 != 0).then_some(c), (d & 16 != 0).then_some(d), (e & 16 != 0).then_some(e), f as u64, g, h, a);
     }

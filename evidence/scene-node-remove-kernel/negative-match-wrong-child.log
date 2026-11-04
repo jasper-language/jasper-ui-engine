@@ -1,0 +1,21 @@
+verification results:: 7 verified, 1 errors
+note: while loop: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+  --> <repo>/evidence/scene-node-remove-kernel/negative_match_wrong_child.rs:62:5
+   |
+62 |     while index < parent.children.len()
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: invariant not satisfied at end of loop body
+  --> <repo>/evidence/scene-node-remove-kernel/negative_match_wrong_child.rs:64:13
+   |
+64 |             forall|j:int| #![trigger start.children@[j]] 0<=j<index ==> start.children@[j].id!=id,
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: assertion failed
+  --> <repo>/evidence/scene-node-remove-kernel/negative_match_wrong_child.rs:71:24
+   |
+71 |                 assert(start.children@[p].id==id);
+   |                        ^^^^^^^^^^^^^^^^^^^^^^^^^ assertion failed
+
+error: aborting due to 2 previous errors
+

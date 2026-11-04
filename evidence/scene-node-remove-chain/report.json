@@ -1,0 +1,185 @@
+{
+  "property": "UI-SCENE-NODE-REMOVE-001",
+  "backlog_item": "CP-03",
+  "status": "subproperty_scoped_checks_passed",
+  "cp03_closed": false,
+  "production": {
+    "file": "src/scene.rs",
+    "function": "remove_node",
+    "file_sha256": "4f9969e164cc16068aa865794eeaf1a400b463ba9dc89b429d15ff580be941bf",
+    "kernel_sha256": "e98e2b1c9a3a0e57bcb8f8464d976ac0316807148cb696c7abd25905564cb483",
+    "caller": "Scene::apply_one, ScenePatch::Remove arm"
+  },
+  "specification": "For any tree and any identity: the result is exactly whether the identity is a proper descendant; on a miss the tree is structurally the same; on a hit the first matching direct child is removed, or else the removal recurses into exactly the first child subtree holding the identity, with every other node structurally the same and all non-tree fields of each ancestor unchanged. Terminates by the Vec element decrease axiom.",
+  "tools": {
+    "verus": "Version: 0.2026.10.18.7d82994",
+    "z3": "Z3 version 4.16.0 - 64 bit",
+    "kani": "0.68.0",
+    "cbmc": "6.11.0",
+    "nightly": "nightly-2026-10-17"
+  },
+  "config": {
+    "entry": "python3 scripts/verify-ui.py --verus <verus>",
+    "fuzz_seconds": 20,
+    "proptest_cases": 256,
+    "proptest_seed": "12345"
+  },
+  "stages": {
+    "Verus+Z3": {
+      "result": "passed",
+      "verified": 8,
+      "errors": 0,
+      "negative_controls": [
+        {
+          "name": "report-hit-on-miss",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "report-miss-on-deep-hit",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "report-miss-on-direct-hit",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "descend-first-child-only",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "rewrite-parent-identity",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "no-removal",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "remove-wrong-index",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "remove-whole-list",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "match-wrong-child",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "skip-direct-search",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "skip-a-child",
+          "rejected": true,
+          "exit_code": 1
+        }
+      ],
+      "controls_rejected_by": {
+        "report-hit-on-miss": "postcondition",
+        "report-miss-on-deep-hit": "postcondition",
+        "report-miss-on-direct-hit": "postcondition",
+        "descend-first-child-only": "postcondition",
+        "rewrite-parent-identity": "postcondition",
+        "no-removal": "assertion",
+        "remove-wrong-index": "assertion",
+        "remove-whole-list": "assertion",
+        "match-wrong-child": "assertion",
+        "skip-direct-search": "loop invariant before the second loop",
+        "skip-a-child": "loop invariant"
+      },
+      "model_note": "NodeKind, Style, Semantics and Point are replaced in the proof by value types the kernel cannot read; derives are removed from Node in the proof copy because recursive Clone through Vec is a cycle in Verus. Rustc compiles the same kernel tokens against the real types."
+    },
+    "Proptest": {
+      "result": "passed",
+      "harness": [
+        "properties::scene_node_remove_property"
+      ],
+      "includes": "Arbitrary trees up to 24 nodes against an independent functional oracle, and small shapes against a clone-free reader; the three non-tree stand-in fields carry values so a node mix-up is visible"
+    },
+    "Miri": {
+      "result": "passed",
+      "harness": [
+        "memory boundaries with fixed trees"
+      ],
+      "note": "Stand-in field types, no user Drop and no panic injection"
+    },
+    "cargo-fuzz": {
+      "result": "passed",
+      "target": "read_boundary",
+      "completed_runs": [
+        39553,
+        1122183
+      ],
+      "note": "The two counts are read_boundary and batch_decode, and only read_boundary reaches this kernel; run under load"
+    },
+    "Kani": {
+      "result": "passed_on_smallest_shape_only",
+      "harness": "kani_checks::scene_node_remove",
+      "shape": "root with one childless child, arbitrary identities, unwind 2",
+      "checks": 652,
+      "failed": 0,
+      "unreachable": 8,
+      "chain_harnesses_successful": 63,
+      "not_concluded": [
+        {
+          "shape": "root over two children with a grandchild under one, unwind 3 and 4",
+          "result": "timeout, no verdict",
+          "limit_seconds": [
+            550,
+            300,
+            240
+          ]
+        },
+        {
+          "shape": "root over two childless children, unwind 3",
+          "result": "timeout rc=124, no verdict, still in symbolic execution",
+          "limit_seconds": 1500,
+          "load": "about 36 on 8 vCPU and 7 GiB, shared with other builds"
+        },
+        {
+          "shape": "root over one child over one grandchild, unwind 3",
+          "result": "timeout rc=124, no verdict, still in symbolic execution",
+          "limit_seconds": 1500,
+          "load": "about 36 on 8 vCPU and 7 GiB, shared with other builds"
+        }
+      ],
+      "note": "Recursive Vec<Node> drop glue dominates symbolic execution. Nested removal, direct-over-nested precedence and first-subtree precedence have no Kani result; they rest on Verus and tests."
+    },
+    "Loom": {
+      "result": "N/A",
+      "reason": "The kernel holds no shared state and no synchronization primitive and takes the tree by &mut, so the compiler excludes concurrent access.",
+      "substitute_evidence": "None added: the compiler's exclusive-borrow rule is the argument. It is not a concurrency proof."
+    }
+  },
+  "real_path_test": {
+    "test": "scene::tests::remove_node_prefers_a_direct_child_and_touches_one_subtree, tests/scene_batch_transaction.rs",
+    "class": "tested, not proved",
+    "mutation_checked": "Four manual mutations, one run each, not in the Verus control table: inverted match, removing index 0, never descending, and descending without stopping each failed the new unit test. tests/scene_batch_transaction.rs caught three of the four and missed removing index 0, so that model test is weak on the position of a direct removal."
+  },
+  "behavior_change_note": "The iterator closures were replaced by indexed loops and the comparison by id.0; evaluation order and result are meant to be unchanged. That equivalence with the old text is argued by reading and the existing tests, not proved.",
+  "uncovered": [
+    "Identity uniqueness and any corollary that the identity is absent afterwards; the specification does not assume or conclude uniqueness",
+    "The other apply_one arms, including the root check in the Remove arm",
+    "Drop of the removed subtree, recursion depth and stack use",
+    "UI-TXN-ATOMIC-001 stays not_verified as a whole-transaction property"
+  ],
+  "chain": {
+    "entry_exit_code": 2,
+    "complete": false,
+    "slice_complete": false,
+    "reason": "capture-query two-key Kani obligation (CP-01) is unresolved; every stage reports passed_scoped_checks"
+  },
+  "completion_claimed": false
+}
