@@ -13,7 +13,7 @@
   "checklist_item_5_complete": true,
   "checklist_item_6_complete": true,
   "sources": {
-    "src/scene.rs": "34e7cd9c24afe41b3020b904be99de5a7229011fe32991db412a7c15e2e4ac60",
+    "src/scene.rs": "6d2d8d9bfe6eec311a29d2ba0c6163d0bb263fea3f874b9710b7ff990a81ae3e",
     "src/batch.rs": "7fa1d6ed36340deb93096434eb33842947c47eb5b804852565de527b20d2cce1",
     "src/input_identity.rs": "953b0982be297777cc3e2c3f3a02f697df71d83c2d3e5bc21202baa06250aa0d",
     "src/engine.rs": "453869dfd4f651a16cde03ac81d49db857793f18bfcaa620cf67c51f330f9efe",
@@ -46,7 +46,7 @@
     "tests/native_interaction_closure.rs": "ed6fc7345b46656e27bedfa59b9c8240427954eb7888b50299bf5d5bd3bd2d79",
     "tests/native_accesskit_bridge.rs": "a252859061116da97dac80f37d5b1721275a92c558cb6d6655fb39b679d6228d",
     "tests/native_gpu_host_view.rs": "5cabaaf2091c3e10de8def043b7d902a61ed37831dcdaf97d366461860422fc9",
-    "scripts/audit-closeout.py": "2c5afa2a005cdd54c9c70ef51409699b3e01188be1560ef48a8dd9c01d5480f9",
+    "scripts/audit-closeout.py": "c35818886196c06b4a0b1f2a029d073464fa454bfecce365d15c6ff3fe4ec99b",
     "scripts/closeout-baseline.sh": "795348ae338977f144bbadfae72c7e729f2c0d88f20c344cd08b56f8b0abbba4",
     "src/desktop.rs": "298bea8e2dc8c62581025782419a948c3e5715bc494f0e174591aa8f1644bb28",
     "src/handle.rs": "f623079e05ca9787f4f2a05359c52ea8784107e8c83ff999e27cfce316cff88e"
@@ -76,7 +76,8 @@
     "8155fd6466738ddfc967f5db93276ae6bb150ba5 rebind final audit after formatting the batch commit unit test (test module only)",
     "037c2d5fe5977655712f2a573e563a7ab8419d00 rebind final audit after the targeted Kani entry point (verification scripts, docs and evidence only; no production code changed)",
     "f53fc78b072dbe335c32e37e447963159bad7811 rebind final audit after moving Kani to release validation (verification scripts, CI and docs only; no production code changed)",
-    "663b043a0fd2f00eaf9d1ba17b680fcb012d27f4 rebind final audit after the JB-U1 ui.* plugin host (new optional module and additive CPU render entry; render gate rewritten with matches!, behaviour unchanged; verification scripts extended)"
+    "663b043a0fd2f00eaf9d1ba17b680fcb012d27f4 rebind final audit after the JB-U1 ui.* plugin host (new optional module and additive CPU render entry; render gate rewritten with matches!, behaviour unchanged; verification scripts extended)",
+    "f4577355b199ebd0d3f3e35dabb13a026b802231 rebind final audit after the checked patch kernel (apply_one moved into apply_checked_patch, new unit test and proof; verification scripts, docs and evidence otherwise)"
   ],
   "items": {
     "1_public_contracts": {
