@@ -76,7 +76,7 @@
     "8155fd6466738ddfc967f5db93276ae6bb150ba5 rebind final audit after formatting the batch commit unit test (test module only)",
     "037c2d5fe5977655712f2a573e563a7ab8419d00 rebind final audit after the targeted Kani entry point (verification scripts, docs and evidence only; no production code changed)",
     "f53fc78b072dbe335c32e37e447963159bad7811 rebind final audit after moving Kani to release validation (verification scripts, CI and docs only; no production code changed)",
-    "09dc4438d6b680ffed22b9584143283d0ae87888 rebind final audit after the JB-U1 ui.* plugin host (new optional module and additive CPU render entry; render gate rewritten with matches!, behaviour unchanged; verification scripts extended)"
+    "663b043a0fd2f00eaf9d1ba17b680fcb012d27f4 rebind final audit after the JB-U1 ui.* plugin host (new optional module and additive CPU render entry; render gate rewritten with matches!, behaviour unchanged; verification scripts extended)"
   ],
   "items": {
     "1_public_contracts": {
