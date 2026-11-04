@@ -121,7 +121,7 @@
     "bitwuzla_source": {
       "origin": "official upstream repository, tag refs/tags/0.8.2",
       "commit": "61bdc637a291c27597fc04263328ecd29d36cc12",
-      "check": "git ls-remote of the official tag and git rev-parse HEAD of the VM source tree give this same commit"
+      "check": "git ls-remote of the official tag on 2026-11-04 and git rev-parse HEAD of the VM source tree give this same commit"
     },
     "built_binary": {
       "path": "tools directory in the build VM, bin/bitwuzla",
@@ -149,6 +149,7 @@
         "use": "build only, unpacked into a tools directory"
       }
     },
-    "not_recorded": "Compile flags and download logs of the 2026-11-03 build were not kept here; these values were read back from the VM on 2026-11-04. Meson verifies wrap source hashes at fetch time, but the downloaded archives themselves were not re-hashed today."
+    "not_recorded": "Compile flags and download logs of the 2026-11-03 build were not kept: the source tree has no build directory left. The other values were read back from the VM on 2026-11-04. Wrap hashes are the values pinned in the wrap files; the downloaded archives were not re-hashed today.",
+    "license": "Bitwuzla: MIT (COPYING in the source tree). Verification tool only, not a product dependency."
   }
 }

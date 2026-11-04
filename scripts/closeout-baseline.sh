@@ -15,6 +15,7 @@ run() {
 
 run python3 scripts/check-blitz-native-dependencies.py
 run python3 scripts/test-audit-closeout.py
+run python3 scripts/test-kani-policy.py
 run cargo fmt --all -- --check
 run cargo check --locked --all-targets
 run cargo check --locked --features native-engine-cpu --all-targets

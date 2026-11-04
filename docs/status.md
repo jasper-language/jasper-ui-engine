@@ -885,3 +885,9 @@ CP-02 仍无判定：只选一个断言（切片后 30 个 VCC）在 45 分钟�
 ## 2026-11-04：批次提交（CP-03 子性质）
 
 `apply_batch_at` 的函数体移入 `commit_scene_batch`，检查与暂存改为只拿共享引用的闭包。版本判定之后的写入只有末尾一次整体替换，这一点有 Verus 全域证明，范围见 `verification.md` 的 UI-SCENE-BATCH-COMMIT-001。生产闭包、`Scene` 的克隆、闭包内 panic 不在证明内，整事务性质 UI-TXN-ATOMIC-001 仍是 not_verified。
+
+## 2026-11-04：验证入口改为定点 Kani
+
+`verify-ui.py` 的 Kani 阶段不再跑整库，改为 `--kani-harness` 指定的 harness，单个 10 分钟、3.5 GB，同一时间一个。撞上限记 `undetermined`，链继续但不算通过；反例和工具错误立即失败。实测两个 harness 的全链六阶段通过，入口退出 2 的原因仍是 CP-01；2 秒上限的对照按预期得到 `undetermined`。其余 harness 本轮没跑，证据仍绑定之前的提交。不指定 harness 的路径和 `--kani-full` 没有端到端运行过。没有生产代码改动。
+
+同日更正 Bitwuzla 记录：首次构建和运行 A–F 早于用户本人的批准，见 `evidence/native-subtree-bitwuzla-capability/report.json`，并补了来源与校验值。2026-11-03 的编译参数和下载日志没有保留。
