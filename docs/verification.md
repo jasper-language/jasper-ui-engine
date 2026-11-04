@@ -1038,3 +1038,27 @@ Kani 未得出结论的形状：一子一孙（unwind 3）520 秒超时、无判
 真实路径测试（测试证据，不是证明）：新单元测试直接用真实类型，覆盖前序优先于后面的直接子节点、根优先于其下重复的身份、未命中不改树。四个手动变异（反转含有判定、只读路径总问子节点 0、可变路径总下探子节点 0、反转身份比较）都使它失败（各一次，未入 Verus 反例表）。其中两个“子节点 0”变异在 `scene` 单元测试里只有这个新测试抓到。
 
 未覆盖：`apply_one` 各分支经引用所做的写入、`Insert` 的下标钳制与身份检查、`Remove` 分支的根检查；身份唯一性（规格不假设也不推出）；递归深度、栈使用与重复扫描代价。证据：`evidence/scene-node-find-kernel/`、`evidence/scene-node-find-chain/report.json`。
+
+## UI-SCENE-PATCH-001：单个补丁对树的写入（2026-11-04，CP-03 子性质）
+
+`apply_one` 拆成两段：`Insert` 的身份检查留在 `apply_one`，其余全部进入新内核 `apply_tree_patch(root, patch)`。`ok_or(..)?` 改写为 `match`，`index.min(len)` 改写为 `if`，根检查比较改为 `id.0`。检查与写入的先后没有变（等价靠阅读和测试，未证明）。
+
+| 阶段 | 范围 | 结果 |
+|---|---|---|
+| Verus/Z3 | 真实 `Node`、`NodeKind`、`ScenePatch`、`SceneError` 声明上任意树与任意补丁的七个分支：身份不存在时报 `NodeNotFound` 且树仍是旧树；字段更新只改 `find_node_mut` 借出节点的该字段；`UpdateText`、`SetCanvas` 只写种类匹配的节点，否则报对应拒绝且节点不变；`Insert` 把节点放到首个匹配节点之下、下标钳制到子节点数的位置；`Remove` 拒绝根，否则移除首个匹配，未命中时树结构相同 | 15 verified/0 errors（含依赖的查找与移除内核）。23 个反例被拒：22 个在后置条件，1 个在中间断言 |
+| Proptest | 至多 24 节点的任意树、按身份变化的种类、七种补丁，对照基于显式栈路径和函数式重建的独立规格；身份域含根 | 256 例通过 |
+| Miri | 固定小树上七种补丁 | 通过 |
+| cargo-fuzz | `read_boundary` | 16647 次（与其他构建同跑；`batch_decode` 1115393 次不触及此内核） |
+| Kani | **只有三个分支和最小形状，`Insert` 没有结果**：根加一个无子节点的子节点，身份任意，unwind 2。`scene_patch_update` 只查 `UpdateStyle`，`scene_patch_kind` 只查 `SetCanvas`，`scene_patch_remove` 查根拒绝、命中、未命中。其余分支没有 harness | 677、769、643 checks / 0 failed（15、15、11 unreachable） |
+| Loom | N/A：内核无共享状态与同步原语，树经 `&mut` 独占 | 不计 PASS；未添加替代运行 |
+
+Kani 未得出结论的形状（都在链外单跑一次，已撤下；构建机与其他构建同跑，负载约 7–14）：
+
+- `Insert`，每种形状都超时、无判定：根加一个子节点、下标任意（默认求解器 540 秒；预留空间后 540 秒；kissat 420 秒）；下标限定 ≥1 且预留空间（400 秒）；无子节点的根、下标任意（400 秒）；只查未命中、完全不写入的形状（在链内，1293 秒仍未结束，cbmc 占 5.5 GiB，人工终止）。未命中也跑不完，说明成本不只在 `Vec::insert` 的写入，确切原因未查明。所以 `Insert` 分支没有 Kani 结果，只有 Verus 与测试。
+- 其他分支的 unwind 3：`scene_patch_remove` 与 `scene_patch_kind` 同跑 540 秒超时，开销在 `Node` 递归析构的展开上。
+
+证明中的模型差异：`Canvas`、`Style`、`Semantics`、`Point` 换成内核读不到的值类型，证明副本去掉派生。`NodeKind` 从这一项起在证明中是真实枚举（`UI-SCENE-NODE-REMOVE-001`、`UI-SCENE-NODE-FIND-001` 因此也改在真实枚举上重新运行）。harness 中 `Canvas` 这个名字解析到提取出的光栅存储，不是场景画布类型；它只作不被读取的载荷，相等性只比宽度。
+
+真实路径测试（测试证据，不是证明）：`scene::tests::apply_tree_patch_writes_only_what_each_patch_names` 用真实类型覆盖七种补丁的未命中、越界与精确下标、滚动写入、文本写入、两种种类拒绝、根拒绝和移除下标 0。六个手动变异（越界钳到 0、文本接受其他种类、画布报错误的拒绝、跳过根检查、滚动未命中报成功、插入未命中报成功）都使它失败（各一次，未入 Verus 反例表），其中四个在 `scene` 单元测试里只有这个新测试抓到。
+
+未覆盖：`apply_one` 在 `Insert` 前的身份检查（`collect_unique_ids` 用 `BTreeSet`）及其错误优先级；`apply_batch_at` 中版本赋值与整体替换；`Scene` 的克隆与校验；旧值和被移除子树的析构；递归深度与栈使用。规格不假设也不推出身份唯一性。证据：`evidence/scene-patch-kernel/`、`evidence/scene-patch-chain/report.json`。

@@ -873,3 +873,7 @@ CP-02 仍无判定：只选一个断言（切片后 30 个 VCC）在 45 分钟�
 ## 2026-11-04：节点查找语义（CP-03 子性质）
 
 `find_node` 从迭代器闭包改为下标循环；`find_node_mut` 改为每层先用只读路径确定含该身份的子节点，再借出。结果不变，但最坏代价从与节点数成正比变为节点数乘深度，未测量实际影响。语义有 Verus 全域证明，范围见 `verification.md` 的 UI-SCENE-NODE-FIND-001。`apply_one` 各分支的写入仍未证明。
+
+## 2026-11-04：单个补丁对树的写入（CP-03 子性质）
+
+`apply_one` 拆出 `apply_tree_patch`，七个分支的写入与错误有 Verus 全域证明，范围见 `verification.md` 的 UI-SCENE-PATCH-001。`Insert` 分支在 Kani 上每种形状都超时、无判定，只有 Verus 与测试。`Insert` 前的身份检查、版本赋值与整体替换仍未证明。

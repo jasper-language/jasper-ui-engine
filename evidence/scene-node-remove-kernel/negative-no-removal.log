@@ -1,8 +1,8 @@
 verification results:: 7 verified, 1 errors
 error: assertion failed
-  --> <repo>/evidence/scene-node-remove-kernel/negative_no_removal.rs:71:24
+  --> <repo>/evidence/scene-node-remove-kernel/negative_no_removal.rs:79:24
    |
-71 |                 assert(parent.children@=~=start.children@.remove(p));
+79 |                 assert(parent.children@=~=start.children@.remove(p));
    |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ assertion failed
 
 error: aborting due to 1 previous error

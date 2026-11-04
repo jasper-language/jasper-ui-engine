@@ -3,17 +3,18 @@
   "status": "proved",
   "scope": "Exact production removal on the real Node declaration with its four non-tree field types replaced by opaque values the kernel cannot read: the result says exactly whether the identity is a proper descendant; a miss leaves the tree structurally the same; a hit removes the first matching direct child, or else recurses into exactly the first child subtree holding the identity, with every other node structurally the same and every field of every ancestor unchanged. Scene identity uniqueness, the other apply_one arms, drop of the removed subtree, recursion depth and stack use are excluded.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "ffc7254b153a74d1705e09ed8ca65b492a351ee76556908cddff15197591e172",
+  "source_sha256": "c00c2bd2cd98845c8e5a2dabedf50c0835b31c25ad462156092d35db6554a62f",
   "sources": {
-    "src/scene.rs": "ffc7254b153a74d1705e09ed8ca65b492a351ee76556908cddff15197591e172"
+    "src/scene.rs": "c00c2bd2cd98845c8e5a2dabedf50c0835b31c25ad462156092d35db6554a62f"
   },
   "kernel_sha256": "e98e2b1c9a3a0e57bcb8f8464d976ac0316807148cb696c7abd25905564cb483",
   "dependencies": {
     "node-id-type": "39ff7bd8c3c5c51e025059e0f104105a839165e2cb4a455f094a2d2bb9cfffad",
+    "scene-node-kind-type": "15662ba19978b1271632b776e224c3307e0955852bb2e44b8c7533452a83f313",
     "scene-node-type": "5cd4fff573ded959d547838b4447ec6383241e3ce53bef409cf839882fcf018b"
   },
-  "proof_sha256": "a977c749bbb4ca313e62c744b0bb342f5468804bd2ba9ee63990fd21124f065a",
-  "runner_sha256": "9783f66c09a3a50ec02415e387fcdf07ce29deec9dcfd1bc16c4544f8468fffa",
+  "proof_sha256": "9d7cb72777f62fa79d7bd3ec57bc5a16b078bc6a735fd4616c1c67bb0818db8d",
+  "runner_sha256": "91e87ced4987242d98eb9f10cbf34d8319a5dce50cd1615cf45792fecb66d4aa",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/verus/verus",

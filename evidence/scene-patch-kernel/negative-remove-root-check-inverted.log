@@ -1,0 +1,31 @@
+verification results:: 14 verified, 1 errors
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+   --> <repo>/evidence/scene-patch-kernel/negative_remove_root_check_inverted.rs:293:1
+    |
+293 | fn apply_tree_patch(root: &mut Node, patch: ScenePatch) -> (result:Result<(), SceneError>)
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: postcondition not satisfied
+   --> <repo>/evidence/scene-patch-kernel/negative_remove_root_check_inverted.rs:294:17
+    |
+294 |         ensures patch_applied(*old(root),*final(root),patch,result),
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+361 |                 return Err(SceneError::CannotRemoveRoot);
+    |                 ---------------------------------------- at this exit
+
+error: postcondition not satisfied
+   --> <repo>/evidence/scene-patch-kernel/negative_remove_root_check_inverted.rs:294:17
+    |
+294 |           ensures patch_applied(*old(root),*final(root),patch,result),
+    |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+295 | /     {
+296 | |     match patch {
+297 | |         ScenePatch::Insert {
+298 | |             parent,
+...   |
+370 | | }
+    | |_- at the end of the function body
+
+error: aborting due to 2 previous errors
+

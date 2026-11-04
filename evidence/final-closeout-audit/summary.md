@@ -2,8 +2,8 @@
 
 This report is an audit snapshot, not a delivery acceptance record.
 
-- branch: `dev/ui38-node-find`
-- commit: `27f8de2a1b04cf71902eb701eaaf1497a055ee89`
+- branch: `dev/ui38-remove-node`
+- commit: `ae53bb435fbb11e541df00120d8ce1d8f49668e7`
 - explicit item 1-5 completions: 5/5
 - final report materially covers HEAD: `true`
 - missing required evidence: 0
@@ -11,7 +11,7 @@ This report is an audit snapshot, not a delivery acceptance record.
 - stale/missing recorded source hashes: 0
 - branch refs included: `included`
 - tool configuration: `passed`
-- evidence reports indexed: 408
+- evidence reports indexed: 406
 
 ## Checklist readings
 

@@ -2241,14 +2241,20 @@ spec fn restore_script<I,V,S,P,C,T:RestoreCandidate<I,V,S,P,C>>(t:T,c:CarriedInt
 }
 
 
+KERNELS["scene-node-kind-type"] = {
+    "source":"src/scene.rs", "marker":"SCENE NODE KIND", "suffix":"TYPE", "depends":[], "internal_only":True,
+    "signature":"#[derive(Clone, Debug, PartialEq)]\npub enum NodeKind {", "contract":"pub enum NodeKind {", "function_count":0,
+    "spec_prelude":"pub struct Canvas(u64);\n",
+}
+
+
 KERNELS["scene-node-type"] = {
-    "source":"src/scene.rs", "marker":"SCENE NODE", "suffix":"TYPE", "depends":["node-id-type"], "internal_only":True,
+    "source":"src/scene.rs", "marker":"SCENE NODE", "suffix":"TYPE", "depends":["node-id-type","scene-node-kind-type"], "internal_only":True,
     # The derives are dropped for Verus (recursive Clone through Vec is a cycle there); the kernel
     # calls none of them, and rustc compiles the identical tokens against the real field types.
     # Verus 中去掉派生（经 Vec 的递归 Clone 成环）；内核不调用它们，rustc 以真实字段类型编译相同词法。
     "signature":"#[derive(Clone, Debug, PartialEq)]\npub struct Node {", "contract":"pub struct Node {", "function_count":0,
-    "spec_prelude":"""pub struct NodeKind(u64);
-pub struct Style(u64);
+    "spec_prelude":"""pub struct Style(u64);
 pub struct Semantics(u64);
 pub struct Point(u64);
 broadcast use vstd::std_specs::vec::axiom_vec_index_decreases;
@@ -2435,6 +2441,94 @@ pub open spec fn node_relocated(o:Node,f:Node,id:NodeId,t:Node,ft:Node)->bool de
     "refused_mutations":[("find-picks-non-matching","    if node.id.0 == id.0 {\n        return Some(node);\n    }\n    let mut index = 0usize;\n    while index < node.children.len()\n        invariant index<=node.children@.len(), node.id!=id,","    if node.id.0 != id.0 {\n        return Some(node);\n    }\n    let mut index = 0usize;\n    while index < node.children.len()\n        invariant index<=node.children@.len(), node.id!=id,","invariant not satisfied"),
                          ("mut-changes-a-node-before-the-loop","    let ghost start=*node;\n    if node.id.0 == id.0 {\n        return Some(node);\n    }\n","    let ghost start=*node;\n    if node.id.0 == id.0 {\n        return Some(node);\n    }\n    node.id=NodeId(0);\n","invariant not satisfied"),
                          ("mut-skips-a-child","        index += 1;\n    }\n    None\n}\n\n}\n","        index += 1;\n        if index<node.children.len() {index += 1;}\n    }\n    None\n}\n\n}\n","invariant not satisfied at end of loop body")],
+}
+
+
+KERNELS["scene-patch-type"] = {
+    "source":"src/scene.rs", "marker":"SCENE PATCH", "suffix":"TYPE", "depends":["scene-node-type"], "internal_only":True,
+    "signature":"#[derive(Clone, Debug, PartialEq)]\npub enum ScenePatch {", "contract":"pub enum ScenePatch {", "function_count":0,
+}
+
+
+KERNELS["scene-error-type"] = {
+    "source":"src/scene.rs", "marker":"SCENE ERROR", "suffix":"TYPE", "depends":["node-id-type"], "internal_only":True,
+    "signature":"#[derive(Clone, Debug, PartialEq, Eq)]\npub enum SceneError {", "contract":"pub enum SceneError {", "function_count":0,
+}
+
+
+KERNELS["scene-patch"] = {
+    "source":"src/scene.rs", "marker":"SCENE PATCH",
+    "property":"UI-SCENE-PATCH-001",
+    "spec_prelude":"""pub open spec fn patch_ok()->Result<(),SceneError> { Ok(()) }
+pub open spec fn patch_err(e:SceneError)->Result<(),SceneError> { Err(e) }
+// The identity is absent: this error, and the tree is the old tree.
+// 身份不存在：报此错误，树仍是旧树。
+pub open spec fn patch_missed(o:Node,n:Node,id:NodeId,r:Result<(),SceneError>)->bool {
+    !node_holds(o,id) && n==o && r==patch_err(SceneError::NodeNotFound(id))
+}
+pub open spec fn patch_updated(o:Node,n:Node,id:NodeId,r:Result<(),SceneError>,written:spec_fn(Node,Node)->bool)->bool {
+    patch_missed(o,n,id,r) || (node_holds(o,id) && r==patch_ok()
+        && exists|t:Node,f:Node| #![trigger node_relocated(o,n,id,t,f)] node_relocated(o,n,id,t,f) && written(t,f))
+}
+pub open spec fn patch_kind_set(o:Node,n:Node,id:NodeId,r:Result<(),SceneError>,admits:spec_fn(NodeKind)->bool,kind:NodeKind,refusal:SceneError)->bool {
+    patch_missed(o,n,id,r) || (node_holds(o,id)
+        && exists|t:Node,f:Node| #![trigger node_relocated(o,n,id,t,f)] node_relocated(o,n,id,t,f)
+            && if admits(t.kind) { r==patch_ok() && f==(Node{kind:kind,..t}) }
+               else { r==patch_err(refusal) && f==t })
+}
+pub open spec fn patch_applied(o:Node,n:Node,patch:ScenePatch,r:Result<(),SceneError>)->bool {
+    match patch {
+        ScenePatch::Insert{parent,index,node} => patch_updated(o,n,parent,r,|t:Node,f:Node| node_fields_same(t,f)
+            && f.children@==t.children@.insert(if index<t.children@.len() {index as int} else {t.children@.len() as int},node)),
+        ScenePatch::UpdateSemantics{id,semantics} => patch_updated(o,n,id,r,|t:Node,f:Node| f==(Node{semantics:semantics,..t})),
+        ScenePatch::UpdateStyle{id,style} => patch_updated(o,n,id,r,|t:Node,f:Node| f==(Node{style:style,..t})),
+        ScenePatch::SetScroll{id,offset} => patch_updated(o,n,id,r,|t:Node,f:Node| f==(Node{scroll:offset,..t})),
+        ScenePatch::UpdateText{id,text} => patch_kind_set(o,n,id,r,|k:NodeKind| k is Text,NodeKind::Text(text),SceneError::NotText(id)),
+        ScenePatch::SetCanvas{id,canvas} => patch_kind_set(o,n,id,r,|k:NodeKind| k is Canvas,NodeKind::Canvas(canvas),SceneError::NotCanvas(id)),
+        ScenePatch::Remove{id} => if o.id==id { n==o && r==patch_err(SceneError::CannotRemoveRoot) }
+            else if node_below(o,id) { r==patch_ok() && node_removed(o,n,id) }
+            else { node_same(o,n) && r==patch_err(SceneError::NodeNotFound(id)) },
+    }
+}
+""",
+    "signature":"fn apply_tree_patch(root: &mut Node, patch: ScenePatch) -> Result<(), SceneError> {",
+    "contract":"""fn apply_tree_patch(root: &mut Node, patch: ScenePatch) -> (result:Result<(), SceneError>)
+        ensures patch_applied(*old(root),*final(root),patch,result),
+    {""",
+    "extra_annotations":[
+        ('                node.semantics = semantics;\n                Ok(())','                let ghost t=*node;\n                node.semantics = semantics;\n                proof { assert(node_relocated(*old(root),*final(root),id,t,*node)); }\n                Ok(())'),
+        ('                node.style = style;\n                Ok(())','                let ghost t=*node;\n                node.style = style;\n                proof { assert(node_relocated(*old(root),*final(root),id,t,*node)); }\n                Ok(())'),
+        ('                node.scroll = offset;\n                Ok(())','                let ghost t=*node;\n                node.scroll = offset;\n                proof { assert(node_relocated(*old(root),*final(root),id,t,*node)); }\n                Ok(())'),
+        ('                let len = parent_node.children.len();','                let ghost t=*parent_node;\n                let len = parent_node.children.len();'),
+        ('                parent_node.children.insert(index, node);\n                Ok(())','                parent_node.children.insert(index, node);\n                proof { assert(node_relocated(*old(root),*final(root),parent,t,*parent_node)); }\n                Ok(())'),
+    ],
+    "depends":["scene-patch-type","scene-error-type","scene-node-find","scene-node-remove"], "evidence":"scene-patch-kernel", "function_count":1,
+    "scope":"Exact production match over every real ScenePatch variant, on the real Node, NodeKind, ScenePatch and SceneError declarations with Canvas, Style, Semantics and Point replaced by opaque values the kernel cannot read: an update of an absent identity reports NodeNotFound and leaves the tree; a hit rewrites exactly the named field of the node find_node_mut lends and nothing else; UpdateText and SetCanvas write only a node of the matching kind and otherwise report the refusal with the node unchanged; Insert places the node under the first match at the index clamped to the child count; Remove refuses the root, removes the first match otherwise, and reports NodeNotFound with the tree structurally the same on a miss. Not proved: the identity check apply_one runs before Insert, apply_batch_at's version write and swap, Scene clone, destructors, recursion depth.",
+    "mutations":[
+                 ('insert-clamps-to-front','let index = if index < len { index } else { len };','let index = if index < len { index } else { 0 };'),
+                 ('insert-ignores-index','let index = if index < len { index } else { len };','let index = if index < len { len } else { len };'),
+                 ('insert-ok-on-miss','None => Err(SceneError::NodeNotFound(parent)),','None => Ok(()),'),
+                 ('insert-wrong-miss-identity','None => Err(SceneError::NodeNotFound(parent)),','None => Err(SceneError::NodeNotFound(NodeId(0))),'),
+                 ('insert-rewrites-parent','parent_node.children.insert(index, node);','parent_node.children.insert(index, node);\n                parent_node.id=NodeId(0);'),
+                 ('semantics-not-written','                node.semantics = semantics;\n',''),
+                 ('style-not-written','                node.style = style;\n',''),
+                 ('scroll-not-written','                node.scroll = offset;\n',''),
+                 ('style-also-writes-scroll','node.style = style;','node.style = style;\n                node.scroll=Point(0);'),
+                 ('style-finds-another-identity','ScenePatch::UpdateStyle { id, style } => match find_node_mut(root, id) {','ScenePatch::UpdateStyle { id, style } => match find_node_mut(root, NodeId(0)) {'),
+                 ('scroll-ok-on-miss','                Ok(())\n            }\n            None => Err(SceneError::NodeNotFound(id)),\n        },\n        ScenePatch::UpdateText','                Ok(())\n            }\n            None => Ok(()),\n        },\n        ScenePatch::UpdateText'),
+                 ('text-not-written','                    *existing = text;\n',''),
+                 ('text-admits-other-kinds','_ => Err(SceneError::NotText(id)),','_ => Ok(()),'),
+                 ('text-reports-canvas-refusal','_ => Err(SceneError::NotText(id)),','_ => Err(SceneError::NotCanvas(id)),'),
+                 ('text-writes-on-refusal','_ => Err(SceneError::NotText(id)),','_ => { node.scroll=Point(0); Err(SceneError::NotText(id)) },'),
+                 ('canvas-not-written','                    *existing = canvas;\n',''),
+                 ('canvas-admits-other-kinds','_ => Err(SceneError::NotCanvas(id)),','_ => Ok(()),'),
+                 ('canvas-reports-text-refusal','_ => Err(SceneError::NotCanvas(id)),','_ => Err(SceneError::NotText(id)),'),
+                 ('remove-skips-root-check','if root.id.0 == id.0 {\n                return Err(SceneError::CannotRemoveRoot);\n            }\n',''),
+                 ('remove-root-check-inverted','if root.id.0 == id.0 {','if root.id.0 != id.0 {'),
+                 ('remove-reports-miss-as-ok','            } else {\n                Err(SceneError::NodeNotFound(id))\n            }','            } else {\n                Ok(())\n            }'),
+                 ('remove-reports-hit-as-miss','if remove_node(root, id) {\n                Ok(())','if remove_node(root, id) {\n                Err(SceneError::NodeNotFound(id))'),
+    ],
+    "refused_mutations":[("insert-under-the-root","match find_node_mut(root, parent) {","match Some(root) {","assertion failed")],
 }
 
 

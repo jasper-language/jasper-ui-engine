@@ -200,6 +200,8 @@ PROOF_BACKLOG = {
             "evidence/scene-node-remove-chain/report.json",
             "evidence/scene-node-find-kernel/report.json",
             "evidence/scene-node-find-chain/report.json",
+            "evidence/scene-patch-kernel/report.json",
+            "evidence/scene-patch-chain/report.json",
         ],
     },
     "CP-04": {

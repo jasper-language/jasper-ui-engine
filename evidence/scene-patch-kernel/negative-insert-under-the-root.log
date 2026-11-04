@@ -1,0 +1,9 @@
+verification results:: 14 verified, 1 errors
+error: assertion failed
+   --> <repo>/evidence/scene-patch-kernel/negative_insert_under_the_root.rs:307:32
+    |
+307 |                 proof { assert(node_relocated(*old(root),*final(root),parent,t,*parent_node)); }
+    |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ assertion failed
+
+error: aborting due to 1 previous error
+

@@ -1,17 +1,17 @@
 verification results:: 7 verified, 1 errors
 error: postcondition not satisfied
-   --> <repo>/evidence/scene-node-remove-kernel/negative_descend_first_child_only.rs:55:17
+   --> <repo>/evidence/scene-node-remove-kernel/negative_descend_first_child_only.rs:63:17
     |
- 55 |           ensures result==node_below(*old(parent),id),
+ 63 |           ensures result==node_below(*old(parent),id),
     |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
 ...
- 59 | /     {
- 60 | |     let ghost start=*parent;
- 61 | |     let mut index = 0usize;
- 62 | |     while index < parent.children.len()
+ 67 | /     {
+ 68 | |     let ghost start=*parent;
+ 69 | |     let mut index = 0usize;
+ 70 | |     while index < parent.children.len()
 ...   |
-115 | |     false
-116 | | }
+123 | |     false
+124 | | }
     | |_- at the end of the function body
 
 error: aborting due to 1 previous error

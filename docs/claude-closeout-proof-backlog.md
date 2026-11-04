@@ -24,7 +24,9 @@
 
 2026-11-04 闭合 UI-SCENE-NODE-FIND-001：`find_node` 与 `find_node_mut` 在真实 `Node` 声明上的语义（其余字段类型在证明中是内核读不到的值）。对任意树与任意身份：未命中当且仅当节点本身和所有后代都没有该身份；只读命中返回前序首个匹配；可变命中借出同一节点，借用结束时的树恰为旧树把该节点换成借用留下的值，路径上的节点其余字段与子节点数不变，其他子节点不变；可变未命中不改树。反例被拒，见 `evidence/scene-node-find-chain/report.json`。
 
-仍未覆盖：`apply_one` 各分支经返回引用所做的写入（`Remove` 分支的根检查、插入、更新）、`Scene` 的克隆与身份校验、`apply_batch_at` 中版本赋值与整体替换两条语句的实现级规格、候选构造本身、`NativeScene` 的 `RestoreCandidate` 实现满足契约（含写入不改变准入判定）、`*self = candidate` 析构旧视图时的 panic、活动文档读取路径上第三方内部可变性的影响。
+2026-11-04 闭合 UI-SCENE-PATCH-001：`apply_tree_patch` 在真实 `Node`、`NodeKind`、`ScenePatch`、`SceneError` 声明上的七个分支（`Canvas`、`Style`、`Semantics`、`Point` 在证明中是内核读不到的值）。对任意树与任意补丁，未命中、种类拒绝与根拒绝报对应错误且不写；命中只改补丁所指的字段，`Insert` 按钳制后的下标放置，`Remove` 移除首个匹配。反例被拒，见 `evidence/scene-patch-chain/report.json`。Kani 只查了三个分支的最小形状，`Insert` 分支每种形状都超时、无判定。
+
+仍未覆盖：`apply_one` 在 `Insert` 前的身份检查、`Scene` 的克隆与身份校验、`apply_batch_at` 中版本赋值与整体替换两条语句的实现级规格、候选构造本身、`NativeScene` 的 `RestoreCandidate` 实现满足契约（含写入不改变准入判定）、`*self = candidate` 析构旧视图时的 panic、活动文档读取路径上第三方内部可变性的影响。
 
 ### CP-04
 

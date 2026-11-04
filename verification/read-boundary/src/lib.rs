@@ -758,11 +758,23 @@ pub fn assert_scene_frame_panic(panic_in_source: bool, source_version: u64, toke
     assert_eq!(active, token);
 }
 
-// Stand-ins for the three non-tree field types of the extracted `Node`; the kernel never reads
-// them, and each carries a value so a mix-up between nodes is visible to the oracle.
-// 提取出的 Node 的三个非树字段类型的替身；内核不读取它们，各带一个值，节点间串位时规格能发现。
-#[derive(Clone, Debug, PartialEq)]
-pub struct NodeKind(u8);
+// Stand-ins for the non-tree field types of the extracted `Node`; the kernels never read them, and
+// each carries a value so a mix-up between nodes is visible to the oracle. The canvas is the
+// extracted raster storage, which stands in for the scene's canvas by name; its width carries the
+// value and it allocates nothing.
+// 提取出的 Node 的非树字段类型的替身；内核不读取它们，各带一个值，节点间串位时规格能发现。
+// 画布用提取出的光栅存储按名字替代场景画布，宽度带值，不分配。
+impl PartialEq for Canvas {
+    fn eq(&self, other: &Self) -> bool {
+        self.width == other.width
+    }
+}
+fn tagged_canvas(tag: u8) -> Canvas {
+    Canvas { width: tag as u32, height: 0, pixels: Vec::new(), clip_stack: Vec::new() }
+}
+fn tagged_kind(tag: u8) -> NodeKind {
+    NodeKind::Canvas(tagged_canvas(tag))
+}
 #[derive(Clone, Debug, PartialEq)]
 pub struct Style(u8);
 #[derive(Clone, Debug, PartialEq)]
@@ -772,7 +784,7 @@ fn removal_leaf(id: u64, children: Vec<Node>) -> Node {
     let tag = id as u8;
     Node {
         id: NodeId(id),
-        kind: NodeKind(tag),
+        kind: tagged_kind(tag),
         style: Style(tag ^ 1),
         semantics: Semantics(tag ^ 2),
         scroll: Point { x: tag as f32, y: -(tag as f32) },
@@ -841,7 +853,7 @@ pub fn assert_scene_node_remove_shape(root: u64, shape: &[(u64, Option<u64>)], i
     let nested = (0..shape.len()).find(|&at| shape[at].1 == Some(id));
     assert_eq!(hit, direct.is_some() || nested.is_some());
     let same = |node: &Node, at: u64| {
-        node.id.0 == at && node.kind.0 == at as u8 && node.style.0 == at as u8 ^ 1 && node.semantics.0 == at as u8 ^ 2
+        node.id.0 == at && node.kind == tagged_kind(at as u8) && node.style.0 == at as u8 ^ 1 && node.semantics.0 == at as u8 ^ 2
     };
     assert!(same(&tree, root));
     assert_eq!(tree.children.len() + direct.is_some() as usize, shape.len());
@@ -884,6 +896,124 @@ fn find_oracle_path(root: &Node, id: u64) -> Option<Vec<usize>> {
         }
     }
     None
+}
+
+// Independent oracle over the path `find_oracle_path` gives, sharing no code with the kernel:
+// the expected tree and result of one patch.
+// 基于 `find_oracle_path` 路径的独立规格，不与内核共用代码：单个补丁的期望树与结果。
+fn patch_oracle(tree: &Node, patch: &ScenePatch) -> (Node, Result<(), SceneError>) {
+    let mut expected = tree.clone();
+    let id = match patch {
+        ScenePatch::Insert { parent, .. } => *parent,
+        ScenePatch::UpdateStyle { id, .. }
+        | ScenePatch::UpdateSemantics { id, .. }
+        | ScenePatch::UpdateText { id, .. }
+        | ScenePatch::SetCanvas { id, .. }
+        | ScenePatch::SetScroll { id, .. }
+        | ScenePatch::Remove { id } => *id,
+    };
+    if let ScenePatch::Remove { .. } = patch {
+        if tree.id.0 == id.0 {
+            return (expected, Err(SceneError::CannotRemoveRoot));
+        }
+        return match removal_oracle(tree, id.0) {
+            Some(rebuilt) => (rebuilt, Ok(())),
+            None => (expected, Err(SceneError::NodeNotFound(id))),
+        };
+    }
+    let Some(path) = find_oracle_path(tree, id.0) else {
+        return (expected, Err(SceneError::NodeNotFound(id)));
+    };
+    let target = path.iter().fold(&mut expected, |node, &at| &mut node.children[at]);
+    let mut result = Ok(());
+    match patch {
+        ScenePatch::Insert { index, node, .. } => {
+            let at = (*index).min(target.children.len());
+            let tail = target.children.split_off(at);
+            target.children.push(node.clone());
+            target.children.extend(tail);
+        }
+        ScenePatch::UpdateStyle { style, .. } => target.style = style.clone(),
+        ScenePatch::UpdateSemantics { semantics, .. } => target.semantics = semantics.clone(),
+        ScenePatch::SetScroll { offset, .. } => target.scroll = *offset,
+        ScenePatch::UpdateText { text, .. } => {
+            if matches!(target.kind, NodeKind::Text(_)) {
+                target.kind = NodeKind::Text(text.clone());
+            } else {
+                result = Err(SceneError::NotText(id));
+            }
+        }
+        ScenePatch::SetCanvas { canvas, .. } => {
+            if matches!(target.kind, NodeKind::Canvas(_)) {
+                target.kind = NodeKind::Canvas(canvas.clone());
+            } else {
+                result = Err(SceneError::NotCanvas(id));
+            }
+        }
+        ScenePatch::Remove { .. } => unreachable!("handled above"),
+    }
+    (expected, result)
+}
+
+/// The real kernel against the oracle on an arbitrary tree and patch.
+/// 真实内核在任意树与补丁上对照规格。
+pub fn assert_scene_patch(tree: Node, patch: ScenePatch) {
+    let (expected, result) = patch_oracle(&tree, &patch);
+    let mut actual = tree;
+    assert_eq!(apply_tree_patch(&mut actual, patch), result);
+    assert_eq!(actual, expected);
+}
+
+// Gives each node a kind by identity, so text and canvas refusals are both reachable.
+// 按身份给节点定种类，使文本与画布两种拒绝都可达。
+fn vary_kinds(node: &mut Node) {
+    node.kind = match node.id.0 % 3 {
+        0 => NodeKind::Text("old".into()),
+        1 => tagged_kind(200),
+        _ => NodeKind::Rect,
+    };
+    node.children.iter_mut().for_each(vary_kinds);
+}
+
+pub fn assert_scene_patch_bytes(spec: &[(u8, u8)], root: u8, id: u8, op: u8, index: u8) {
+    let mut room = spec.len();
+    let mut tree = removal_tree(root as u64 % 8, &mut spec.iter(), &mut room);
+    vary_kinds(&mut tree);
+    let id = NodeId(id as u64 % 8);
+    let patch = match op % 7 {
+        0 => ScenePatch::Insert {
+            parent: id,
+            index: index as usize % 6,
+            node: removal_leaf(100, vec![removal_leaf(101, Vec::new())]),
+        },
+        1 => ScenePatch::UpdateStyle { id, style: Style(250) },
+        2 => ScenePatch::UpdateSemantics { id, semantics: Semantics(251) },
+        3 => ScenePatch::SetScroll { id, offset: Point { x: -1.5, y: -2.5 } },
+        4 => ScenePatch::UpdateText { id, text: "new".into() },
+        5 => ScenePatch::SetCanvas { id, canvas: tagged_canvas(252) },
+        _ => ScenePatch::Remove { id },
+    };
+    assert_scene_patch(tree, patch);
+}
+
+// Root with one childless child, for Kani: the fields of both nodes are read back, so the check
+// does not clone trees. Which node is hit: the root first, then the child, else neither.
+// 根加一个无子节点的子节点，供 Kani 使用：逐字段读回，不克隆树。命中：先根，后子节点，否则无。
+#[cfg(kani)]
+fn patch_shape(root: u64, child: u64, kinds: (NodeKind, NodeKind)) -> Node {
+    let mut below = removal_leaf(child, Vec::new());
+    below.kind = kinds.1;
+    let mut tree = removal_leaf(root, vec![below]);
+    tree.kind = kinds.0;
+    tree
+}
+
+#[cfg(kani)]
+fn check_untouched_fields(node: &Node, at: u64) {
+    assert!(node.id.0 == at);
+    assert!(node.style == Style(at as u8 ^ 1));
+    assert!(node.semantics == Semantics(at as u8 ^ 2));
+    assert!(node.scroll.x == at as u8 as f32);
 }
 
 /// Real lookups against the oracle on an arbitrary tree: both agree on the very same node, and a
@@ -957,7 +1087,7 @@ pub fn assert_scene_node_find_shape(root: u64, shape: &[(u64, Option<u64>)], id:
         found.scroll = Point { x: -1.5, y: -2.5 };
     }
     let check = |node: &Node, at: u64, marked: bool| {
-        assert!(node.id.0 == at && node.kind.0 == at as u8 && node.style.0 == at as u8 ^ 1 && node.semantics.0 == at as u8 ^ 2);
+        assert!(node.id.0 == at && node.kind == tagged_kind(at as u8) && node.style.0 == at as u8 ^ 1 && node.semantics.0 == at as u8 ^ 2);
         assert_eq!(node.scroll.x == -1.5, marked);
     };
     check(&tree, root, at_root);
@@ -2480,6 +2610,67 @@ mod kani_checks {
         assert_scene_node_find_shape(kani::any(), &[(child, None)], kani::any());
     }
 
+    // Root plus one childless child, any identities. A field update hits the root, the child or
+    // neither; only the hit node's named field changes.
+    // 根加一个无子节点的子节点，身份任意。字段更新命中根、子节点或都不命中；只有命中节点的该字段变化。
+    #[kani::proof]
+    #[kani::unwind(2)]
+    fn scene_patch_update() {
+        let (root, child, id): (u64, u64, u64) = (kani::any(), kani::any(), kani::any());
+        let mut tree = patch_shape(root, child, (NodeKind::Rect, NodeKind::Rect));
+        let result = apply_tree_patch(&mut tree, ScenePatch::UpdateStyle { id: NodeId(id), style: Style(250) });
+        assert!(result == if root == id || child == id { Ok(()) } else { Err(SceneError::NodeNotFound(NodeId(id))) });
+        assert!(tree.style == if root == id { Style(250) } else { Style(root as u8 ^ 1) });
+        assert!(tree.children.len() == 1);
+        let below = &tree.children[0];
+        assert!(below.style == if root != id && child == id { Style(250) } else { Style(child as u8 ^ 1) });
+        assert!(tree.id.0 == root && below.id.0 == child);
+        assert!(tree.semantics == Semantics(root as u8 ^ 2) && below.semantics == Semantics(child as u8 ^ 2));
+    }
+
+    // A canvas write admits a canvas node and refuses any other kind, leaving the kind alone.
+    // 画布写入只接受画布节点，其他种类被拒且种类不变。
+    #[kani::proof]
+    #[kani::unwind(2)]
+    fn scene_patch_kind() {
+        let (root, child, id): (u64, u64, u64) = (kani::any(), kani::any(), kani::any());
+        let admitted: bool = kani::any();
+        let kind = if admitted { tagged_kind(7) } else { NodeKind::Rect };
+        let mut tree = patch_shape(root, child, (kind, tagged_kind(8)));
+        let result = apply_tree_patch(&mut tree, ScenePatch::SetCanvas { id: NodeId(id), canvas: tagged_canvas(9) });
+        if root == id {
+            assert!(result == if admitted { Ok(()) } else { Err(SceneError::NotCanvas(NodeId(id))) });
+            assert!(tree.kind == if admitted { tagged_kind(9) } else { NodeKind::Rect });
+            assert!(tree.children[0].kind == tagged_kind(8));
+        } else {
+            assert!(result == if child == id { Ok(()) } else { Err(SceneError::NodeNotFound(NodeId(id))) });
+            assert!(tree.kind == if admitted { tagged_kind(7) } else { NodeKind::Rect });
+            assert!(tree.children[0].kind == if child == id { tagged_kind(9) } else { tagged_kind(8) });
+        }
+    }
+
+    // No Insert harness: a patch that carries a Node did not finish on any shape, the miss with no
+    // write included, which outlasted 1293 seconds at 5.5 GiB. The cause is not established.
+    // 没有 Insert 的 harness：携带 Node 的补丁在任何形状上都未跑完，含不写入的未命中分支（超过 1293 秒、5.5 GiB）。原因未查明。
+
+    // The root is refused before any search, whatever the child's identity is.
+    // 无论子节点身份如何，根都在查找前被拒。
+    #[kani::proof]
+    #[kani::unwind(2)]
+    fn scene_patch_remove() {
+        let (root, child, id): (u64, u64, u64) = (kani::any(), kani::any(), kani::any());
+        let mut tree = patch_shape(root, child, (NodeKind::Rect, NodeKind::Rect));
+        let result = apply_tree_patch(&mut tree, ScenePatch::Remove { id: NodeId(id) });
+        if root == id {
+            assert!(result == Err(SceneError::CannotRemoveRoot) && tree.children.len() == 1);
+        } else if child == id {
+            assert!(result == Ok(()) && tree.children.is_empty());
+        } else {
+            assert!(result == Err(SceneError::NodeNotFound(NodeId(id))) && tree.children.len() == 1);
+        }
+        assert!(tree.id.0 == root);
+    }
+
     // Arbitrary start and patches of every length up to four through the real fold; unwinding is
     // outside Kani's model. 任意起点与至多四个任意补丁穿过真实折叠；展开不在 Kani 模型内。
     #[kani::proof]
@@ -2971,6 +3162,10 @@ mod properties {
             assert_scene_node_remove_shape(at(0), &[(at(1), Some(at(2))), (at(3), Some(at(4))), (at(5), None)], id as u64 % 6);
         }
         #[test]
+        fn scene_patch_property(spec in prop::collection::vec(any::<(u8, u8)>(), 0..24), root in any::<u8>(), id in any::<u8>(), op in any::<u8>(), index in any::<u8>()) {
+            assert_scene_patch_bytes(&spec, root, id, op, index);
+        }
+        #[test]
         fn scene_node_find_property(spec in prop::collection::vec(any::<(u8, u8)>(), 0..24), root in any::<u8>(), id in any::<u8>()) {
             assert_scene_node_find_bytes(&spec, root, id);
             let at = |i: usize| spec.get(i).map_or(0, |pair| pair.0 as u64 % 6);
@@ -3375,6 +3570,11 @@ mod memory {
             assert_scene_node_find_bytes(&[(1, 2), (2, 0), (3, 0), (2, 1), (3, 0)], version as u8, 3);
             assert_scene_node_find_bytes(&[(1, 0), (2, 0)], version as u8, version as u8);
             assert_scene_node_find_shape(1, &[(2, Some(3)), (4, Some(5))], version % 7);
+            let mut op = 0;
+            while op < 7 {
+                assert_scene_patch_bytes(&[(1, 2), (2, 0), (3, 0), (2, 1), (3, 0)], version as u8, 3, op, version as u8);
+                op += 1;
+            }
             assert_scene_batch_stage(version, &[]);
             assert_scene_batch_stage(version, &[1, 2, 3]);
             assert_scene_batch_stage(version, &[1, 5, 3]);

@@ -1,0 +1,28 @@
+verification results:: 14 verified, 1 errors
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+   --> <repo>/evidence/scene-patch-kernel/negative_style_finds_another_identity.rs:293:1
+    |
+293 | fn apply_tree_patch(root: &mut Node, patch: ScenePatch) -> (result:Result<(), SceneError>)
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: postcondition not satisfied
+   --> <repo>/evidence/scene-patch-kernel/negative_style_finds_another_identity.rs:294:17
+    |
+294 |           ensures patch_applied(*old(root),*final(root),patch,result),
+    |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+295 | /     {
+296 | |     match patch {
+297 | |         ScenePatch::Insert {
+298 | |             parent,
+...   |
+370 | | }
+    | |_- at the end of the function body
+
+error: assertion failed
+   --> <repo>/evidence/scene-patch-kernel/negative_style_finds_another_identity.rs:325:32
+    |
+325 |                 proof { assert(node_relocated(*old(root),*final(root),id,t,*node)); }
+    |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ assertion failed
+
+error: aborting due to 2 previous errors
+

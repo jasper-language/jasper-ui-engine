@@ -1,20 +1,20 @@
 verification results:: 7 verified, 1 errors
 note: while loop: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
-  --> <repo>/evidence/scene-node-remove-kernel/negative_skip_a_child.rs:80:5
+  --> <repo>/evidence/scene-node-remove-kernel/negative_skip_a_child.rs:88:5
    |
-80 |     while index < parent.children.len()
+88 |     while index < parent.children.len()
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: invariant not satisfied at end of loop body
-  --> <repo>/evidence/scene-node-remove-kernel/negative_skip_a_child.rs:85:13
+  --> <repo>/evidence/scene-node-remove-kernel/negative_skip_a_child.rs:93:13
    |
-85 |             forall|j:int| #![trigger start.children@[j]] 0<=j<index ==> !node_below(start.children@[j],id),
+93 |             forall|j:int| #![trigger start.children@[j]] 0<=j<index ==> !node_below(start.children@[j],id),
    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: invariant not satisfied at end of loop body
-  --> <repo>/evidence/scene-node-remove-kernel/negative_skip_a_child.rs:86:13
+  --> <repo>/evidence/scene-node-remove-kernel/negative_skip_a_child.rs:94:13
    |
-86 |             forall|j:int| #![trigger start.children@[j]] 0<=j<index ==> node_same(start.children@[j],parent.children@[j]),
+94 |             forall|j:int| #![trigger start.children@[j]] 0<=j<index ==> node_same(start.children@[j],parent.children@[j]),
    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: aborting due to 2 previous errors

@@ -1,0 +1,160 @@
+{
+  "property": "UI-SCENE-PATCH-001",
+  "status": "proved",
+  "scope": "Exact production match over every real ScenePatch variant, on the real Node, NodeKind, ScenePatch and SceneError declarations with Canvas, Style, Semantics and Point replaced by opaque values the kernel cannot read: an update of an absent identity reports NodeNotFound and leaves the tree; a hit rewrites exactly the named field of the node find_node_mut lends and nothing else; UpdateText and SetCanvas write only a node of the matching kind and otherwise report the refusal with the node unchanged; Insert places the node under the first match at the index clamped to the child count; Remove refuses the root, removes the first match otherwise, and reports NodeNotFound with the tree structurally the same on a miss. Not proved: the identity check apply_one runs before Insert, apply_batch_at's version write and swap, Scene clone, destructors, recursion depth.",
+  "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
+  "source_sha256": "c00c2bd2cd98845c8e5a2dabedf50c0835b31c25ad462156092d35db6554a62f",
+  "sources": {
+    "src/scene.rs": "c00c2bd2cd98845c8e5a2dabedf50c0835b31c25ad462156092d35db6554a62f"
+  },
+  "kernel_sha256": "f2bcaf5f6d470182f2eca98a8d185b10fe457e2895ebb4004fd22ba83258f444",
+  "dependencies": {
+    "node-id-type": "39ff7bd8c3c5c51e025059e0f104105a839165e2cb4a455f094a2d2bb9cfffad",
+    "scene-node-kind-type": "15662ba19978b1271632b776e224c3307e0955852bb2e44b8c7533452a83f313",
+    "scene-node-type": "5cd4fff573ded959d547838b4447ec6383241e3ce53bef409cf839882fcf018b",
+    "scene-patch-type": "319ea18b09a59885ec8b42dc6b63f478bb93d87f5d63a196a3e27cb0cb6c3f43",
+    "scene-error-type": "2139dbdcdd29d341ab1184f217b263e52cfa2d04cde0f17021af1ff002d1051f",
+    "scene-node-find": "b74b778af544687350673b5791f817007560bb7babf2f9ee62b2fdc7f0b6b57d",
+    "scene-node-remove": "e98e2b1c9a3a0e57bcb8f8464d976ac0316807148cb696c7abd25905564cb483"
+  },
+  "proof_sha256": "a256383596fdd8751f3c4bb0893aed932b166ce554f93516f1fe659a9174768f",
+  "runner_sha256": "91e87ced4987242d98eb9f10cbf34d8319a5dce50cd1615cf45792fecb66d4aa",
+  "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
+  "command": [
+    "<home>/verus/verus",
+    "--crate-type",
+    "lib",
+    "<repo>/evidence/scene-patch-kernel/kernel.rs"
+  ],
+  "exit_code": 0,
+  "solver": {
+    "path": "<home>/verus/z3",
+    "version": "Z3 version 4.16.0 - 64 bit\n",
+    "explicit_override": null
+  },
+  "verified_obligations": 15,
+  "negative_controls": [
+    {
+      "name": "insert-clamps-to-front",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "insert-ignores-index",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "insert-ok-on-miss",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "insert-wrong-miss-identity",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "insert-rewrites-parent",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "semantics-not-written",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "style-not-written",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "scroll-not-written",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "style-also-writes-scroll",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "style-finds-another-identity",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "scroll-ok-on-miss",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "text-not-written",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "text-admits-other-kinds",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "text-reports-canvas-refusal",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "text-writes-on-refusal",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "canvas-not-written",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "canvas-admits-other-kinds",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "canvas-reports-text-refusal",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "remove-skips-root-check",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "remove-root-check-inverted",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "remove-reports-miss-as-ok",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "remove-reports-hit-as-miss",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "insert-under-the-root",
+      "rejected": true,
+      "exit_code": 1
+    }
+  ],
+  "negative_control_rejected": true,
+  "trust_boundary": [
+    "Verus/vstd and SMT solver",
+    "Rust/Verus integer, references and slice semantics",
+    "signature annotation/extraction script",
+    "Rust compiler and target execution"
+  ]
+}

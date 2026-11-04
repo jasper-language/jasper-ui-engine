@@ -1,27 +1,27 @@
 verification results:: 6 verified, 1 errors
 note: while loop: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
-  --> <repo>/evidence/scene-node-find-kernel/negative_mut_tests_the_wrong_way.rs:89:5
+  --> <repo>/evidence/scene-node-find-kernel/negative_mut_tests_the_wrong_way.rs:97:5
    |
-89 |     while index < node.children.len()
+97 |     while index < node.children.len()
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: postcondition not satisfied
-  --> <repo>/evidence/scene-node-find-kernel/negative_mut_tests_the_wrong_way.rs:79:17
-   |
-79 |         ensures (result is None) == !node_holds(*old(node),id),
-   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+   --> <repo>/evidence/scene-node-find-kernel/negative_mut_tests_the_wrong_way.rs:87:17
+    |
+ 87 |         ensures (result is None) == !node_holds(*old(node),id),
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
 ...
-99 |             return find_node_mut(&mut node.children[index], id);
-   |             --------------------------------------------------- at this exit
+107 |             return find_node_mut(&mut node.children[index], id);
+    |             --------------------------------------------------- at this exit
 
 error: postcondition not satisfied
-  --> <repo>/evidence/scene-node-find-kernel/negative_mut_tests_the_wrong_way.rs:80:13
-   |
-80 |             result is None ==> *final(node)==*old(node),
-   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+   --> <repo>/evidence/scene-node-find-kernel/negative_mut_tests_the_wrong_way.rs:88:13
+    |
+ 88 |             result is None ==> *final(node)==*old(node),
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
 ...
-99 |             return find_node_mut(&mut node.children[index], id);
-   |             --------------------------------------------------- at this exit
+107 |             return find_node_mut(&mut node.children[index], id);
+    |             --------------------------------------------------- at this exit
 
 error: aborting due to 2 previous errors
 

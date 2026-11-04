@@ -14,6 +14,7 @@ pub struct NodeId(pub u64);
 // END VERIFIED NODE ID TYPE
 
 /// What a node represents for the engine.
+// BEGIN VERIFIED SCENE NODE KIND TYPE
 #[derive(Clone, Debug, PartialEq)]
 pub enum NodeKind {
     Container,
@@ -21,6 +22,7 @@ pub enum NodeKind {
     Rect,
     Canvas(Canvas),
 }
+// END VERIFIED SCENE NODE KIND TYPE
 
 /// One node in the instance scene.
 // BEGIN VERIFIED SCENE NODE TYPE
@@ -188,74 +190,20 @@ impl Scene {
     }
 
     fn apply_one(&mut self, patch: ScenePatch) -> Result<(), SceneError> {
-        match patch {
-            ScenePatch::Insert {
-                parent,
-                index,
-                node,
-            } => {
-                // Validate all descendants before any insertion or follow-up patch
-                // can observe ambiguous identities. The set is local to staging.
-                // 插入前检查全部后代，避免后续补丁观察到歧义身份；集合仅在暂存阶段使用。
-                let mut ids = BTreeSet::new();
-                collect_unique_ids(&self.root, &mut ids)?;
-                collect_unique_ids(&node, &mut ids)?;
-                let parent_node = find_node_mut(&mut self.root, parent)
-                    .ok_or(SceneError::NodeNotFound(parent))?;
-                let index = index.min(parent_node.children.len());
-                parent_node.children.insert(index, node);
-                Ok(())
-            }
-            ScenePatch::UpdateSemantics { id, semantics } => {
-                let node = find_node_mut(&mut self.root, id).ok_or(SceneError::NodeNotFound(id))?;
-                node.semantics = semantics;
-                Ok(())
-            }
-            ScenePatch::UpdateStyle { id, style } => {
-                let node = find_node_mut(&mut self.root, id).ok_or(SceneError::NodeNotFound(id))?;
-                node.style = style;
-                Ok(())
-            }
-            ScenePatch::SetScroll { id, offset } => {
-                let node = find_node_mut(&mut self.root, id).ok_or(SceneError::NodeNotFound(id))?;
-                node.scroll = offset;
-                Ok(())
-            }
-            ScenePatch::UpdateText { id, text } => {
-                let node = find_node_mut(&mut self.root, id).ok_or(SceneError::NodeNotFound(id))?;
-                match &mut node.kind {
-                    NodeKind::Text(existing) => {
-                        *existing = text;
-                        Ok(())
-                    }
-                    _ => Err(SceneError::NotText(id)),
-                }
-            }
-            ScenePatch::SetCanvas { id, canvas } => {
-                let node = find_node_mut(&mut self.root, id).ok_or(SceneError::NodeNotFound(id))?;
-                match &mut node.kind {
-                    NodeKind::Canvas(existing) => {
-                        *existing = canvas;
-                        Ok(())
-                    }
-                    _ => Err(SceneError::NotCanvas(id)),
-                }
-            }
-            ScenePatch::Remove { id } => {
-                if self.root.id == id {
-                    return Err(SceneError::CannotRemoveRoot);
-                }
-                if remove_node(&mut self.root, id) {
-                    Ok(())
-                } else {
-                    Err(SceneError::NodeNotFound(id))
-                }
-            }
+        if let ScenePatch::Insert { node, .. } = &patch {
+            // Validate all descendants before any insertion or follow-up patch
+            // can observe ambiguous identities. The set is local to staging.
+            // 插入前检查全部后代，避免后续补丁观察到歧义身份；集合仅在暂存阶段使用。
+            let mut ids = BTreeSet::new();
+            collect_unique_ids(&self.root, &mut ids)?;
+            collect_unique_ids(node, &mut ids)?;
         }
+        apply_tree_patch(&mut self.root, patch)
     }
 }
 
 /// Incremental scene operation.
+// BEGIN VERIFIED SCENE PATCH TYPE
 #[derive(Clone, Debug, PartialEq)]
 pub enum ScenePatch {
     Insert {
@@ -288,8 +236,10 @@ pub enum ScenePatch {
         id: NodeId,
     },
 }
+// END VERIFIED SCENE PATCH TYPE
 
 /// Scene patch failures.
+// BEGIN VERIFIED SCENE ERROR TYPE
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SceneError {
     NodeNotFound(NodeId),
@@ -305,6 +255,7 @@ pub enum SceneError {
     /// 无可用的新版本；场景保持不变。
     VersionExhausted,
 }
+// END VERIFIED SCENE ERROR TYPE
 
 // BEGIN VERIFIED VERSION KERNEL
 /// Computes the next version without wrapping or saturating.
@@ -377,6 +328,80 @@ fn collect_unique_ids(root: &Node, ids: &mut BTreeSet<NodeId>) -> Result<(), Sce
     Ok(())
 }
 
+// BEGIN VERIFIED SCENE PATCH KERNEL
+/// Applies one patch to the tree. The tree is the only state reached; a failed patch may be left
+/// half-way by nothing: each branch writes only after its checks pass.
+/// 把一个补丁应用到树。只触及树本身；每个分支都先通过检查再写入。
+fn apply_tree_patch(root: &mut Node, patch: ScenePatch) -> Result<(), SceneError> {
+    match patch {
+        ScenePatch::Insert {
+            parent,
+            index,
+            node,
+        } => match find_node_mut(root, parent) {
+            Some(parent_node) => {
+                let len = parent_node.children.len();
+                let index = if index < len { index } else { len };
+                parent_node.children.insert(index, node);
+                Ok(())
+            }
+            None => Err(SceneError::NodeNotFound(parent)),
+        },
+        ScenePatch::UpdateSemantics { id, semantics } => match find_node_mut(root, id) {
+            Some(node) => {
+                node.semantics = semantics;
+                Ok(())
+            }
+            None => Err(SceneError::NodeNotFound(id)),
+        },
+        ScenePatch::UpdateStyle { id, style } => match find_node_mut(root, id) {
+            Some(node) => {
+                node.style = style;
+                Ok(())
+            }
+            None => Err(SceneError::NodeNotFound(id)),
+        },
+        ScenePatch::SetScroll { id, offset } => match find_node_mut(root, id) {
+            Some(node) => {
+                node.scroll = offset;
+                Ok(())
+            }
+            None => Err(SceneError::NodeNotFound(id)),
+        },
+        ScenePatch::UpdateText { id, text } => match find_node_mut(root, id) {
+            Some(node) => match &mut node.kind {
+                NodeKind::Text(existing) => {
+                    *existing = text;
+                    Ok(())
+                }
+                _ => Err(SceneError::NotText(id)),
+            },
+            None => Err(SceneError::NodeNotFound(id)),
+        },
+        ScenePatch::SetCanvas { id, canvas } => match find_node_mut(root, id) {
+            Some(node) => match &mut node.kind {
+                NodeKind::Canvas(existing) => {
+                    *existing = canvas;
+                    Ok(())
+                }
+                _ => Err(SceneError::NotCanvas(id)),
+            },
+            None => Err(SceneError::NodeNotFound(id)),
+        },
+        ScenePatch::Remove { id } => {
+            if root.id.0 == id.0 {
+                return Err(SceneError::CannotRemoveRoot);
+            }
+            if remove_node(root, id) {
+                Ok(())
+            } else {
+                Err(SceneError::NodeNotFound(id))
+            }
+        }
+    }
+}
+// END VERIFIED SCENE PATCH KERNEL
+
 // BEGIN VERIFIED SCENE NODE FIND KERNEL
 /// Finds the first node with the identity in preorder, the node itself before its children.
 /// 按前序查找首个身份匹配的节点，节点本身先于其子节点。
@@ -445,6 +470,113 @@ mod tests {
 
     fn id(value: u64) -> NodeId {
         NodeId(value)
+    }
+
+    #[test]
+    fn apply_tree_patch_writes_only_what_each_patch_names() {
+        let build = || {
+            Node::container(id(1)).with_children(vec![
+                Node::text(id(2), "first"),
+                Node::canvas(id(3), Canvas::default()),
+                Node::rect(id(4)),
+            ])
+        };
+        let apply = |patch| {
+            let mut tree = build();
+            let result = apply_tree_patch(&mut tree, patch);
+            (tree, result)
+        };
+        let missing = SceneError::NodeNotFound(id(9));
+
+        // Each kind of patch misses without touching the tree. 每种补丁未命中都不改树。
+        for patch in [
+            ScenePatch::Insert {
+                parent: id(9),
+                index: 0,
+                node: Node::rect(id(5)),
+            },
+            ScenePatch::UpdateStyle {
+                id: id(9),
+                style: Style::default(),
+            },
+            ScenePatch::UpdateSemantics {
+                id: id(9),
+                semantics: Semantics::default(),
+            },
+            ScenePatch::UpdateText {
+                id: id(9),
+                text: "x".into(),
+            },
+            ScenePatch::SetCanvas {
+                id: id(9),
+                canvas: Canvas::default(),
+            },
+            ScenePatch::SetScroll {
+                id: id(9),
+                offset: Point::new(1.0, 2.0),
+            },
+            ScenePatch::Remove { id: id(9) },
+        ] {
+            assert_eq!(apply(patch), (build(), Err(missing.clone())));
+        }
+
+        // An index past the end lands last; an exact one lands there. 越界下标落到末尾；精确下标落在原位。
+        let (tree, result) = apply(ScenePatch::Insert {
+            parent: id(1),
+            index: 99,
+            node: Node::rect(id(5)),
+        });
+        assert_eq!(result, Ok(()));
+        let order: Vec<u64> = tree.children.iter().map(|node| node.id.0).collect();
+        assert_eq!(order, [2, 3, 4, 5]);
+        let (tree, _) = apply(ScenePatch::Insert {
+            parent: id(1),
+            index: 1,
+            node: Node::rect(id(5)),
+        });
+        let order: Vec<u64> = tree.children.iter().map(|node| node.id.0).collect();
+        assert_eq!(order, [2, 5, 3, 4]);
+
+        let (tree, result) = apply(ScenePatch::SetScroll {
+            id: id(4),
+            offset: Point::new(1.0, 2.0),
+        });
+        let mut expected = build();
+        expected.children[2].scroll = Point::new(1.0, 2.0);
+        assert_eq!((tree, result), (expected, Ok(())));
+
+        // Text and canvas writes need the matching kind. 文本与画布写入须种类匹配。
+        let (tree, result) = apply(ScenePatch::UpdateText {
+            id: id(2),
+            text: "second".into(),
+        });
+        let mut expected = build();
+        expected.children[0].kind = NodeKind::Text("second".into());
+        assert_eq!((tree, result), (expected, Ok(())));
+        assert_eq!(
+            apply(ScenePatch::UpdateText {
+                id: id(3),
+                text: "x".into(),
+            }),
+            (build(), Err(SceneError::NotText(id(3))))
+        );
+        assert_eq!(
+            apply(ScenePatch::SetCanvas {
+                id: id(2),
+                canvas: Canvas::default(),
+            }),
+            (build(), Err(SceneError::NotCanvas(id(2))))
+        );
+
+        // The root is refused; a child is removed. 根被拒；子节点被移除。
+        assert_eq!(
+            apply(ScenePatch::Remove { id: id(1) }),
+            (build(), Err(SceneError::CannotRemoveRoot))
+        );
+        let (tree, result) = apply(ScenePatch::Remove { id: id(2) });
+        let mut expected = build();
+        expected.children.remove(0);
+        assert_eq!((tree, result), (expected, Ok(())));
     }
 
     #[test]

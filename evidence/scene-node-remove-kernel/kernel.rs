@@ -1,7 +1,8 @@
 use vstd::prelude::*;
 verus! {
 
-pub struct NodeKind(u64);
+pub struct Canvas(u64);
+
 pub struct Style(u64);
 pub struct Semantics(u64);
 pub struct Point(u64);
@@ -37,6 +38,13 @@ pub open spec fn node_removed(o:Node,n:Node,id:NodeId)->bool decreases o, {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct NodeId(pub u64);
+
+pub enum NodeKind {
+    Container,
+    Text(String),
+    Rect,
+    Canvas(Canvas),
+}
 
 pub struct Node {
     pub id: NodeId,

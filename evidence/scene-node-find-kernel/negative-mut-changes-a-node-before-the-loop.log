@@ -1,8 +1,8 @@
 verification results:: 6 verified, 1 errors
 error: invariant not satisfied before loop
-  --> <repo>/evidence/scene-node-find-kernel/negative_mut_changes_a_node_before_the_loop.rs:91:48
+  --> <repo>/evidence/scene-node-find-kernel/negative_mut_changes_a_node_before_the_loop.rs:99:48
    |
-91 |         invariant index<=node.children@.len(), *node==start, *old(node)==start, start.id!=id,
+99 |         invariant index<=node.children@.len(), *node==start, *old(node)==start, start.id!=id,
    |                                                ^^^^^^^^^^^^
 
 error: aborting due to 1 previous error

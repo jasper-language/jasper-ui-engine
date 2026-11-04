@@ -3,17 +3,18 @@
   "status": "proved",
   "scope": "Exact production lookups on the real Node declaration with its four non-tree field types replaced by opaque values the kernel cannot read. Both report a miss exactly when neither the node nor any descendant has the identity. A read hit returns the first preorder match. A mutable hit lends that same node, and the tree at the end of the loan is the old tree with exactly that node replaced by whatever the loan left there; every node on the path keeps its other fields and child count and every other child is unchanged. A mutable miss leaves the tree unchanged. Scene identity uniqueness, the apply_one arms that use the reference, recursion depth, stack use and the rescanning cost are excluded.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "ffc7254b153a74d1705e09ed8ca65b492a351ee76556908cddff15197591e172",
+  "source_sha256": "c00c2bd2cd98845c8e5a2dabedf50c0835b31c25ad462156092d35db6554a62f",
   "sources": {
-    "src/scene.rs": "ffc7254b153a74d1705e09ed8ca65b492a351ee76556908cddff15197591e172"
+    "src/scene.rs": "c00c2bd2cd98845c8e5a2dabedf50c0835b31c25ad462156092d35db6554a62f"
   },
   "kernel_sha256": "b74b778af544687350673b5791f817007560bb7babf2f9ee62b2fdc7f0b6b57d",
   "dependencies": {
     "node-id-type": "39ff7bd8c3c5c51e025059e0f104105a839165e2cb4a455f094a2d2bb9cfffad",
+    "scene-node-kind-type": "15662ba19978b1271632b776e224c3307e0955852bb2e44b8c7533452a83f313",
     "scene-node-type": "5cd4fff573ded959d547838b4447ec6383241e3ce53bef409cf839882fcf018b"
   },
-  "proof_sha256": "42d09769f7f2738734e56fce2eba56ddd4cecb4332feb9d2c4b3f9990518a0c2",
-  "runner_sha256": "9783f66c09a3a50ec02415e387fcdf07ce29deec9dcfd1bc16c4544f8468fffa",
+  "proof_sha256": "5db5f89928715156d3ff1214c53ad0fc5ee8d51a44f4965a5010c7821680ea46",
+  "runner_sha256": "91e87ced4987242d98eb9f10cbf34d8319a5dce50cd1615cf45792fecb66d4aa",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/verus/verus",

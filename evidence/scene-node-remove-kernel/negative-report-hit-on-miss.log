@@ -1,38 +1,38 @@
 verification results:: 7 verified, 1 errors
 note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
-  --> <repo>/evidence/scene-node-remove-kernel/negative_report_hit_on_miss.rs:54:1
+  --> <repo>/evidence/scene-node-remove-kernel/negative_report_hit_on_miss.rs:62:1
    |
-54 | fn remove_node(parent: &mut Node, id: NodeId) -> (result:bool)
+62 | fn remove_node(parent: &mut Node, id: NodeId) -> (result:bool)
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: postcondition not satisfied
-   --> <repo>/evidence/scene-node-remove-kernel/negative_report_hit_on_miss.rs:55:17
+   --> <repo>/evidence/scene-node-remove-kernel/negative_report_hit_on_miss.rs:63:17
     |
- 55 |           ensures result==node_below(*old(parent),id),
+ 63 |           ensures result==node_below(*old(parent),id),
     |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
 ...
- 59 | /     {
- 60 | |     let ghost start=*parent;
- 61 | |     let mut index = 0usize;
- 62 | |     while index < parent.children.len()
+ 67 | /     {
+ 68 | |     let ghost start=*parent;
+ 69 | |     let mut index = 0usize;
+ 70 | |     while index < parent.children.len()
 ...   |
-115 | |     true
-116 | | }
+123 | |     true
+124 | | }
     | |_- at the end of the function body
 
 error: postcondition not satisfied
-   --> <repo>/evidence/scene-node-remove-kernel/negative_report_hit_on_miss.rs:57:13
+   --> <repo>/evidence/scene-node-remove-kernel/negative_report_hit_on_miss.rs:65:13
     |
- 57 |               result ==> node_removed(*old(parent),*final(parent),id),
+ 65 |               result ==> node_removed(*old(parent),*final(parent),id),
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
- 58 |           decreases *old(parent),
- 59 | /     {
- 60 | |     let ghost start=*parent;
- 61 | |     let mut index = 0usize;
- 62 | |     while index < parent.children.len()
+ 66 |           decreases *old(parent),
+ 67 | /     {
+ 68 | |     let ghost start=*parent;
+ 69 | |     let mut index = 0usize;
+ 70 | |     while index < parent.children.len()
 ...   |
-115 | |     true
-116 | | }
+123 | |     true
+124 | | }
     | |_- at the end of the function body
 
 error: aborting due to 2 previous errors

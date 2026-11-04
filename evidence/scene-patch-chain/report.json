@@ -1,0 +1,263 @@
+{
+  "property": "UI-SCENE-PATCH-001",
+  "backlog_item": "CP-03",
+  "status": "subproperty_scoped_checks_passed",
+  "cp03_closed": false,
+  "production": {
+    "file": "src/scene.rs",
+    "function": "apply_tree_patch",
+    "file_sha256": "c00c2bd2cd98845c8e5a2dabedf50c0835b31c25ad462156092d35db6554a62f",
+    "kernel_sha256": "f2bcaf5f6d470182f2eca98a8d185b10fe457e2895ebb4004fd22ba83258f444",
+    "caller": "Scene::apply_one, after the identity check it runs for Insert"
+  },
+  "specification": "For any tree and any patch of the seven variants: an absent identity reports NodeNotFound and the tree is the old tree (Remove: structurally the same). A hit on a field update rewrites exactly the named field of the first preorder match and nothing else. UpdateText and SetCanvas write only a node of the matching kind and otherwise report NotText or NotCanvas with the node unchanged. Insert places the node under the first match at the index clamped to the child count, other fields of that node unchanged. Remove refuses the root with CannotRemoveRoot and otherwise removes the first match as UI-SCENE-NODE-REMOVE-001 states.",
+  "tools": {
+    "verus": "Version: 0.2026.10.18.7d82994",
+    "z3": "Z3 version 4.16.0 - 64 bit",
+    "kani": "0.68.0",
+    "cbmc": "6.11.0",
+    "nightly": "nightly-2026-10-17"
+  },
+  "config": {
+    "entry": "python3 scripts/verify-ui.py --verus <verus>",
+    "fuzz_seconds": 20,
+    "proptest_cases": 256,
+    "proptest_seed": "12345"
+  },
+  "stages": {
+    "Verus+Z3": {
+      "result": "passed",
+      "verified": 15,
+      "errors": 0,
+      "negative_controls": [
+        {
+          "name": "insert-clamps-to-front",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "insert-ignores-index",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "insert-ok-on-miss",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "insert-wrong-miss-identity",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "insert-rewrites-parent",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "semantics-not-written",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "style-not-written",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "scroll-not-written",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "style-also-writes-scroll",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "style-finds-another-identity",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "scroll-ok-on-miss",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "text-not-written",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "text-admits-other-kinds",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "text-reports-canvas-refusal",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "text-writes-on-refusal",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "canvas-not-written",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "canvas-admits-other-kinds",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "canvas-reports-text-refusal",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "remove-skips-root-check",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "remove-root-check-inverted",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "remove-reports-miss-as-ok",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "remove-reports-hit-as-miss",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "insert-under-the-root",
+          "rejected": true,
+          "exit_code": 1
+        }
+      ],
+      "model_note": "Canvas, Style, Semantics and Point are replaced in the proof by value types the kernel cannot read; derives are removed from the proof copies. NodeKind is now the real enum in the proof, so the removal and lookup kernels were rerun on it. The final state of the tree is stated through Verus prophecy on the reference."
+    },
+    "Proptest": {
+      "result": "passed",
+      "harness": [
+        "properties::scene_patch_property"
+      ],
+      "includes": "Arbitrary trees up to 24 nodes with kinds varying by identity and all seven patches, identity domain including the root, against an independent oracle built on an explicit-stack path and functional rebuild"
+    },
+    "Miri": {
+      "result": "passed",
+      "harness": [
+        "memory boundaries with a fixed tree and all seven patches"
+      ],
+      "note": "Stand-in field types, no user Drop and no panic injection"
+    },
+    "cargo-fuzz": {
+      "result": "passed",
+      "target": "read_boundary",
+      "completed_runs": [
+        16647,
+        1115393
+      ],
+      "note": "The two counts are read_boundary and batch_decode, and only read_boundary reaches this kernel. The run shared the build machine with other builds."
+    },
+    "Kani": {
+      "result": "passed_on_three_branches_and_smallest_shape_only",
+      "harness": {
+        "kani_checks::scene_patch_update": {
+          "branch": "UpdateStyle only",
+          "checks": 677,
+          "failed": 0,
+          "unreachable": 15
+        },
+        "kani_checks::scene_patch_kind": {
+          "branch": "SetCanvas only",
+          "checks": 769,
+          "failed": 0,
+          "unreachable": 15
+        },
+        "kani_checks::scene_patch_remove": {
+          "branch": "Remove: root refusal, hit, miss",
+          "checks": 643,
+          "failed": 0,
+          "unreachable": 11
+        }
+      },
+      "shape": "root with one childless child, arbitrary identities, unwind 2",
+      "chain_harnesses_successful": 67,
+      "not_concluded": [
+        {
+          "shape": "Insert, root over one child, any index, default solver",
+          "result": "timeout, no verdict",
+          "limit_seconds": 540
+        },
+        {
+          "shape": "Same with room reserved",
+          "result": "timeout, no verdict",
+          "limit_seconds": 540
+        },
+        {
+          "shape": "Same with kissat",
+          "result": "timeout, no verdict",
+          "limit_seconds": 420
+        },
+        {
+          "shape": "Insert, room reserved, index at least 1",
+          "result": "timeout, no verdict",
+          "limit_seconds": 400
+        },
+        {
+          "shape": "Insert, childless root, any index",
+          "result": "timeout, no verdict",
+          "limit_seconds": 400
+        },
+        {
+          "shape": "Insert, absent parent, no write",
+          "result": "stopped by hand inside a chain run, no verdict, cbmc at 5.5 GiB",
+          "limit_seconds": 1293
+        },
+        {
+          "shape": "scene_patch_remove and scene_patch_kind at unwind 3, together",
+          "result": "timeout, no verdict, unwinding recursive Node drop",
+          "limit_seconds": 540
+        }
+      ],
+      "note": "Insert, UpdateSemantics, SetScroll and UpdateText have no Kani result; they rest on Verus and tests. Even the Insert miss did not finish, so the cost is not only the Vec::insert write; the cause is not established. These runs shared the build machine at load about 7 to 14. The stand-in named Canvas is the extracted raster storage, used as an unread payload compared by width."
+    },
+    "Loom": {
+      "result": "N/A",
+      "reason": "The kernel holds no shared state and no synchronization primitive; the tree is taken by &mut, so the compiler excludes concurrent access.",
+      "substitute_evidence": "None added: the compiler's exclusive-borrow rule is the argument. It is not a concurrency proof."
+    }
+  },
+  "real_path_test": {
+    "test": "scene::tests::apply_tree_patch_writes_only_what_each_patch_names",
+    "class": "tested, not proved",
+    "mutation_checked": "Six manual mutations, one run each, not in the Verus control table: past-the-end index clamped to 0, text admitting other kinds, canvas reporting the wrong refusal, root check skipped, scroll miss reporting Ok, insert miss reporting Ok each failed the new unit test. Four were caught only by the new test among the scene unit tests."
+  },
+  "behavior_change_note": "apply_one keeps the identity check for Insert and hands the rest to apply_tree_patch. ok_or with ? became match, index.min became if, and the root comparison became id.0. The order of checks and writes is unchanged; that equivalence with the old text is argued by reading and tests, not proved.",
+  "uncovered": [
+    "The identity check apply_one runs before Insert (collect_unique_ids uses BTreeSet) and its error priority",
+    "Version write and swap in apply_batch_at; Scene clone and validation",
+    "Destructors of replaced values and removed subtrees, recursion depth and stack use",
+    "Identity uniqueness; the specification neither assumes nor concludes it",
+    "UI-TXN-ATOMIC-001 stays not_verified as a whole-transaction property"
+  ],
+  "chain": {
+    "entry_exit_code": 2,
+    "complete": false,
+    "slice_complete": false,
+    "reason": "capture-query two-key Kani obligation (CP-01) is unresolved; every stage reports passed_scoped_checks"
+  },
+  "completion_claimed": false
+}
