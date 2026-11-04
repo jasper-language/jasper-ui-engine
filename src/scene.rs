@@ -107,11 +107,13 @@ impl Node {
 }
 
 /// A scene is rooted at a single container node.
+// BEGIN VERIFIED SCENE STATE TYPE
 #[derive(Clone, Debug, PartialEq)]
 pub struct Scene {
     pub root: Node,
     version: u64,
 }
+// END VERIFIED SCENE STATE TYPE
 
 impl Scene {
     /// Compatibility constructor; public tree mutation is checked at use sites.
@@ -163,23 +165,13 @@ impl Scene {
         expected_version: u64,
         patches: &[ScenePatch],
     ) -> Result<(), SceneError> {
-        let next_version =
-            match decide_scene_version(self.version, expected_version, patches.is_empty()) {
-                VersionDecision::Stale => {
-                    return Err(SceneError::StaleVersion {
-                        expected: expected_version,
-                        actual: self.version,
-                    })
-                }
-                VersionDecision::Unchanged => return self.validate(),
-                VersionDecision::Exhausted => return Err(SceneError::VersionExhausted),
-                VersionDecision::Advance(version) => version,
-            };
-        self.validate()?;
-        let mut next = stage_scene_batch(self.clone(), patches, Self::apply_detached)?;
-        next.version = next_version;
-        *self = next;
-        Ok(())
+        commit_scene_batch(
+            self,
+            expected_version,
+            patches.is_empty(),
+            Self::validate,
+            |active: &Scene| stage_scene_batch(active.clone(), patches, Self::apply_detached),
+        )
     }
 
     /// A plain function with no receiver, so staging cannot reach the active scene.
@@ -312,6 +304,46 @@ fn stage_scene_batch<S, P, E>(
     Ok(staged)
 }
 // END VERIFIED SCENE BATCH STAGE KERNEL
+
+// BEGIN VERIFIED SCENE BATCH COMMIT KERNEL
+/// Decides the version, checks, stages and commits. Both closures only read the active scene, so
+/// the single write is the whole replacement at the end, carrying the decided version.
+/// 判定版本、检查、暂存、提交。两个闭包只能读活动场景，唯一的写入是末尾的整体替换，版本取判定结果。
+fn commit_scene_batch(
+    scene: &mut Scene,
+    expected_version: u64,
+    empty: bool,
+    validate: impl FnOnce(&Scene) -> Result<(), SceneError>,
+    stage: impl FnOnce(&Scene) -> Result<Scene, SceneError>,
+) -> Result<(), SceneError> {
+    let next_version = match decide_scene_version(scene.version, expected_version, empty) {
+        VersionDecision::Stale => {
+            return Err(SceneError::StaleVersion {
+                expected: expected_version,
+                actual: scene.version,
+            })
+        }
+        VersionDecision::Unchanged => return validate(&*scene),
+        VersionDecision::Exhausted => return Err(SceneError::VersionExhausted),
+        VersionDecision::Advance(version) => version,
+    };
+    let checked = validate(&*scene);
+    match checked {
+        Ok(()) => {}
+        Err(error) => return Err(error),
+    }
+    let staged = stage(&*scene);
+    match staged {
+        Ok(staged) => {
+            let mut next = staged;
+            next.version = next_version;
+            *scene = next;
+            Ok(())
+        }
+        Err(error) => Err(error),
+    }
+}
+// END VERIFIED SCENE BATCH COMMIT KERNEL
 
 // BEGIN VERIFIED SCENE IDENTITY SET INSTANCE
 // Extracted so the harnesses run the real set; that it obeys the contract is tested, not proved.
@@ -507,6 +539,97 @@ mod tests {
 
     fn id(value: u64) -> NodeId {
         NodeId(value)
+    }
+
+    #[test]
+    fn batch_commit_writes_only_the_staged_tree_with_the_decided_version() {
+        let tree = |id: u64| Node::container(NodeId(id));
+        let scene = |version: u64| Scene {
+            root: tree(1),
+            version,
+        };
+        let staged = |id: u64| {
+            move |_: &Scene| {
+                Ok(Scene {
+                    root: Node::container(NodeId(id)),
+                    version: 77,
+                })
+            }
+        };
+        let never_check = |_: &Scene| -> Result<(), SceneError> { panic!("must not check") };
+        let never_stage = |_: &Scene| -> Result<Scene, SceneError> { panic!("must not stage") };
+        let duplicate = SceneError::DuplicateNode(NodeId(9));
+
+        let mut active = scene(5);
+        assert_eq!(
+            commit_scene_batch(&mut active, 4, false, never_check, never_stage),
+            Err(SceneError::StaleVersion {
+                expected: 4,
+                actual: 5
+            })
+        );
+        assert_eq!(active, scene(5));
+        // Stale wins over an empty batch and over exhaustion.
+        // 陈旧优先于空批和耗尽。
+        assert_eq!(
+            commit_scene_batch(&mut active, 4, true, never_check, never_stage),
+            Err(SceneError::StaleVersion {
+                expected: 4,
+                actual: 5
+            })
+        );
+        let mut full = scene(u64::MAX);
+        assert_eq!(
+            commit_scene_batch(&mut full, 5, false, never_check, never_stage),
+            Err(SceneError::StaleVersion {
+                expected: 5,
+                actual: u64::MAX
+            })
+        );
+        assert_eq!(
+            commit_scene_batch(&mut full, u64::MAX, false, never_check, never_stage),
+            Err(SceneError::VersionExhausted)
+        );
+        assert_eq!(full, scene(u64::MAX));
+        // An empty batch at the last version still only checks.
+        // 空批即使在最后一个版本也只做检查。
+        assert_eq!(
+            commit_scene_batch(&mut full, u64::MAX, true, |_| Ok(()), never_stage),
+            Ok(())
+        );
+        assert_eq!(full, scene(u64::MAX));
+
+        assert_eq!(
+            commit_scene_batch(&mut active, 5, true, |_| Err(duplicate.clone()), never_stage),
+            Err(duplicate.clone())
+        );
+        assert_eq!(active, scene(5));
+        assert_eq!(
+            commit_scene_batch(&mut active, 5, true, |_| Ok(()), never_stage),
+            Ok(())
+        );
+        assert_eq!(active, scene(5));
+        assert_eq!(
+            commit_scene_batch(&mut active, 5, false, |_| Err(duplicate.clone()), never_stage),
+            Err(duplicate.clone())
+        );
+        assert_eq!(active, scene(5));
+        assert_eq!(
+            commit_scene_batch(&mut active, 5, false, |_| Ok(()), |_| {
+                Err(SceneError::NodeNotFound(NodeId(3)))
+            }),
+            Err(SceneError::NodeNotFound(NodeId(3)))
+        );
+        assert_eq!(active, scene(5));
+
+        // The staged version is overwritten, the staged tree taken whole.
+        // 暂存版本被覆盖，暂存树被整体采用。
+        assert_eq!(
+            commit_scene_batch(&mut active, 5, false, |_| Ok(()), staged(2)),
+            Ok(())
+        );
+        assert_eq!(active.version(), 6);
+        assert_eq!(active.root, tree(2));
     }
 
     #[test]

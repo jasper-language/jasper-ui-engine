@@ -1175,6 +1175,62 @@ pub fn assert_scene_node_find_shape(root: u64, shape: &[(u64, Option<u64>)], id:
 /// Real fold against an independent model: each patch in order, once, up to the first failure;
 /// the result is that failure or the model's fold; the detached value is released exactly once.
 /// 真实折叠对照独立模型：按序每补丁一次直到首个失败；结果是该失败或模型折叠值；独立值恰释放一次。
+/// Runs the real commit with recording closures against an independent reading of the order of checks.
+/// 用记录调用的闭包运行真实提交，对照独立写出的检查顺序。
+pub fn assert_scene_batch_commit(root: Node, staged: Node, version: u64, expected: u64, empty: bool, check_error: Option<u64>, stage_error: Option<u64>, staged_version: u64) {
+    let before_id = root.id;
+    let staged_id = staged.id;
+    let same_as_before = |scene: &Scene| scene.root.id == before_id && scene.version == version;
+    let (checks, stages) = (std::cell::Cell::new(0u8), std::cell::Cell::new(0u8));
+    let check_result = check_error.map_or(Ok(()), |id| Err(SceneError::DuplicateNode(NodeId(id))));
+    let stage_result = stage_error.map_or(Ok(()), |id| Err(SceneError::NodeNotFound(NodeId(id))));
+    let mut scene = Scene { root, version };
+    let result = commit_scene_batch(
+        &mut scene,
+        expected,
+        empty,
+        |active: &Scene| {
+            assert!(same_as_before(active) && checks.get() == 0 && stages.get() == 0);
+            checks.set(1);
+            check_result.clone()
+        },
+        |active: &Scene| {
+            assert!(same_as_before(active) && checks.get() == 1 && stages.get() == 0);
+            stages.set(1);
+            stage_result.clone().map(|()| Scene { root: staged, version: staged_version })
+        },
+    );
+    let (want, want_checks, want_stages) = if expected != version {
+        (Err(SceneError::StaleVersion { expected, actual: version }), 0, 0)
+    } else if empty {
+        (check_result.clone(), 1, 0)
+    } else if version == u64::MAX {
+        (Err(SceneError::VersionExhausted), 0, 0)
+    } else if check_result.is_err() {
+        (check_result.clone(), 1, 0)
+    } else {
+        (stage_result.clone(), 1, 1)
+    };
+    assert!(result == want && checks.get() == want_checks && stages.get() == want_stages);
+    if want_stages == 1 && stage_result.is_ok() {
+        assert!(scene.root.id == staged_id && scene.version == version + 1);
+    } else {
+        assert!(same_as_before(&scene));
+    }
+}
+
+pub fn assert_scene_batch_commit_bytes(spec: &[(u8, u8)], root: u8, staged: u8, version: u64, offset: u8, flags: u8) {
+    let mut room = spec.len();
+    let mut pairs = spec.iter();
+    let active = removal_tree(root as u64 % 16, &mut pairs, &mut room);
+    let next = removal_tree(staged as u64 % 16, &mut pairs, &mut room);
+    // Half of the inputs hit the admitted path; the top of the range reaches exhaustion.
+    // 一半输入走准入路径；范围顶端触及耗尽。
+    let version = if flags & 64 != 0 { u64::MAX - (version & 1) } else { version };
+    let expected = if flags & 1 != 0 { version } else { version.wrapping_add(offset as u64) };
+    assert_scene_batch_commit(active, next, version, expected, flags & 2 != 0, (flags & 4 != 0).then_some(root as u64), (flags & 8 != 0).then_some(staged as u64), offset as u64);
+}
+
 pub fn assert_scene_batch_stage(start: u64, patches: &[u8]) {
     let fails = |patch: u8| patch % 5 == 0;
     let step = |state: u64, patch: u8| state.wrapping_mul(31).wrapping_add(patch as u64);
@@ -2689,6 +2745,14 @@ mod kani_checks {
         }
     }
 
+    // Any versions, verdicts and identities on childless trees; the closures record the calls.
+    // 任意版本、判定与身份，树都无子节点；闭包记录调用。
+    #[kani::proof]
+    #[kani::unwind(2)]
+    fn scene_batch_commit() {
+        assert_scene_batch_commit(removal_leaf(kani::any(), Vec::new()), removal_leaf(kani::any(), Vec::new()), kani::any(), kani::any(), kani::any(), kani::any(), kani::any(), kani::any());
+    }
+
     // Root plus one child over the two-slot set: Ok exactly when they differ, and the repeat is named.
     // 根加一个子节点，配两槽集合：恰在两者不同时 Ok，否则指名重复者。
     #[kani::proof]
@@ -3279,6 +3343,10 @@ mod properties {
             assert_scene_patch_bytes(&spec, root, id, op, index);
         }
         #[test]
+        fn scene_batch_commit_property(spec in prop::collection::vec(any::<(u8, u8)>(), 0..24), root in any::<u8>(), staged in any::<u8>(), version in any::<u64>(), offset in any::<u8>(), flags in any::<u8>()) {
+            assert_scene_batch_commit_bytes(&spec, root, staged, version, offset, flags);
+        }
+        #[test]
         fn scene_unique_ids_property(spec in prop::collection::vec(any::<(u8, u8)>(), 0..24), root in any::<u8>(), inserted in any::<u8>(), start in any::<u8>()) {
             assert_scene_unique_ids_bytes(&spec, root, inserted, start);
         }
@@ -3684,6 +3752,9 @@ mod memory {
             assert_scene_node_remove_bytes(&[(1, 2), (2, 0), (3, 0), (2, 1), (3, 0)], version as u8, 3);
             assert_scene_node_remove_bytes(&[(1, 0), (2, 0)], version as u8, version as u8);
             assert_scene_node_remove_shape(1, &[(2, Some(3)), (4, Some(5))], version % 7);
+            for flags in [0, 1, 3, 5, 7, 9, 65, 67] {
+                assert_scene_batch_commit_bytes(&[(1, 2), (2, 0), (3, 0)], version as u8, 3, version, 1, flags);
+            }
             assert_scene_unique_ids_bytes(&[(1, 2), (2, 0), (3, 0), (2, 1), (3, 0)], version as u8, 3, 5);
             assert_scene_unique_ids_bytes(&[(1, 0), (1, 0)], version as u8, version as u8, version as u8);
             assert_scene_node_find_bytes(&[(1, 2), (2, 0), (3, 0), (2, 1), (3, 0)], version as u8, 3);

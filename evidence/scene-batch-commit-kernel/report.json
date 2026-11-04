@@ -1,0 +1,95 @@
+{
+  "property": "UI-SCENE-BATCH-COMMIT-001",
+  "status": "proved",
+  "scope": "Exact production commit on the real Scene, Node and SceneError declarations with the non-tree field types replaced by opaque values the kernel cannot read, over arbitrary check and staging closures that see only a shared reference. A stale batch, an exhausted version, a failed check and a failed staging each report their own error and leave the scene equal to what it was; an empty batch reports the check's result and leaves it equal; staging may only be called after a successful check; a success leaves the staged tree and the old version plus one, whatever version the staged value carried. That staging does not run on the stale, exhausted and empty paths is not stated here and is tested. Not covered: the production closures (Scene::validate, Scene::clone, the fold over apply_detached), drop of the replaced scene, allocation failure and panic.",
+  "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
+  "source_sha256": "545044f4d85b138361f93820a2d4def4ae2e1b6bb7415893d98eda2b75a041e2",
+  "sources": {
+    "src/scene.rs": "545044f4d85b138361f93820a2d4def4ae2e1b6bb7415893d98eda2b75a041e2"
+  },
+  "kernel_sha256": "94bb7446c06ca86796853a134f620e18a46e2cde89611b97e25bd6d376b3ca94",
+  "dependencies": {
+    "node-id-type": "39ff7bd8c3c5c51e025059e0f104105a839165e2cb4a455f094a2d2bb9cfffad",
+    "scene-node-kind-type": "15662ba19978b1271632b776e224c3307e0955852bb2e44b8c7533452a83f313",
+    "scene-node-type": "5cd4fff573ded959d547838b4447ec6383241e3ce53bef409cf839882fcf018b",
+    "scene-state-type": "51c9da64c74b38bd44090d3030af88a3012dba7f89a68320f27d16d21e24ce20",
+    "scene-error-type": "2139dbdcdd29d341ab1184f217b263e52cfa2d04cde0f17021af1ff002d1051f",
+    "version": "ea228645bd18bfb597c8bd08e6af48188bed7f3abb4d724fbd0c4b5d6174035d",
+    "transaction-gate": "21915020f6995629cb4636e14afa3038ec6220e0f9ce860043561009a5069536"
+  },
+  "proof_sha256": "86ece46c6b209fd9d7a8eb915820e2f944423b43e9901c0a429ac9093f18fb18",
+  "runner_sha256": "2be7bd54c9a8b010ae0264edf12fd5c9f96229a4daffd634f43a3be490205e49",
+  "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
+  "command": [
+    "<home>/verus/verus",
+    "--crate-type",
+    "lib",
+    "<repo>/evidence/scene-batch-commit-kernel/kernel.rs"
+  ],
+  "exit_code": 0,
+  "solver": {
+    "path": "<home>/verus/z3",
+    "version": "Z3 version 4.16.0 - 64 bit\n",
+    "explicit_override": null
+  },
+  "verified_obligations": 4,
+  "negative_controls": [
+    {
+      "name": "keep-the-staged-version",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "version-from-the-current-scene",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "drop-the-replacement",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "report-the-wrong-actual",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "exhausted-reports-success",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "empty-skips-the-check",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "swallow-the-check-failure",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "swallow-the-staging-failure",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "advance-before-the-check",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "stage-without-the-check",
+      "rejected": true,
+      "exit_code": 1
+    }
+  ],
+  "negative_control_rejected": true,
+  "trust_boundary": [
+    "Verus/vstd and SMT solver",
+    "Rust/Verus integer, references and slice semantics",
+    "signature annotation/extraction script",
+    "Rust compiler and target execution"
+  ]
+}

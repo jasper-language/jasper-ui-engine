@@ -68,7 +68,7 @@ for file, markers in [
     ("src/pointer.rs", ["POINTER ROUTER TYPE", "CAPTURE QUERY KERNEL", "HOVER CHANGE TYPE", "HOVER STORAGE TYPE", "HOVER UPDATE KERNEL", "HOVER RETIRE KERNEL"]),
     ("src/desktop.rs", ["PIXEL ERROR TYPE", "PIXEL CONVERT KERNEL", "DESKTOP POINTER KERNEL", "DESKTOP POINTER STATE TYPE", "DESKTOP POINTER STATE KERNEL"]),
     ("src/handle.rs", ["HANDLE TYPE", "HANDLE KERNEL"]),
-    ("src/scene.rs", ["NODE ID TYPE", "VERSION KERNEL", "TRANSACTION GATE KERNEL", "SCENE BATCH STAGE KERNEL", "SCENE NODE KIND TYPE", "SCENE NODE TYPE", "SCENE PATCH TYPE", "SCENE ERROR TYPE", "SCENE NODE REMOVE KERNEL", "SCENE NODE FIND KERNEL", "SCENE PATCH KERNEL", "SCENE UNIQUE IDS KERNEL", "SCENE IDENTITY SET INSTANCE"]),
+    ("src/scene.rs", ["NODE ID TYPE", "VERSION KERNEL", "TRANSACTION GATE KERNEL", "SCENE BATCH STAGE KERNEL", "SCENE STATE TYPE", "SCENE BATCH COMMIT KERNEL", "SCENE NODE KIND TYPE", "SCENE NODE TYPE", "SCENE PATCH TYPE", "SCENE ERROR TYPE", "SCENE NODE REMOVE KERNEL", "SCENE NODE FIND KERNEL", "SCENE PATCH KERNEL", "SCENE UNIQUE IDS KERNEL", "SCENE IDENTITY SET INSTANCE"]),
 ]:
     source = (ROOT / file).read_text()
     for marker in markers:
@@ -86,7 +86,7 @@ for target in ["read_boundary", "batch_decode"]:
     for seed in (ROOT / "fuzz/seeds" / target).iterdir():
         shutil.copyfile(seed, corpora / target / seed.name)
 kernels = ["version", "decode-range", "transaction-gate", "byte-read", "cursor-read",
-           "scalar-read", "header-read", "bounded-payload", "surface-row", "surface-span", "surface-borrow", "surface-write", "surface-segment", "surface-view", "pixel-pack", "pixel-convert", "canvas-import", "canvas-pixel", "color-construct", "desktop-pointer", "desktop-pointer-state", "handle", "font-order", "font-weight", "font-family", "bold-alias", "glyph-skew", "frame-reuse", "damage-span", "damage-rect", "frame-tick", "frame-pace", "text-offset", "text-range", "access-actions", "access-change", "access-request", "gpu-readback", "resource-gate", "role-activation", "bytes-slot", "command-modifier", "text-class", "focus-cleanup", "keyboard-focus", "focus-select", "input-retire", "hover-update", "hover-retire", "pointer-order", "capture-query", "scene-update-admission", "scene-frame-completion", "scene-frame-order", "scene-batch-stage", "scene-node-remove", "scene-node-find", "scene-patch", "scene-unique-ids", "scene-interaction-restore", "component-update-admission"]
+           "scalar-read", "header-read", "bounded-payload", "surface-row", "surface-span", "surface-borrow", "surface-write", "surface-segment", "surface-view", "pixel-pack", "pixel-convert", "canvas-import", "canvas-pixel", "color-construct", "desktop-pointer", "desktop-pointer-state", "handle", "font-order", "font-weight", "font-family", "bold-alias", "glyph-skew", "frame-reuse", "damage-span", "damage-rect", "frame-tick", "frame-pace", "text-offset", "text-range", "access-actions", "access-change", "access-request", "gpu-readback", "resource-gate", "role-activation", "bytes-slot", "command-modifier", "text-class", "focus-cleanup", "keyboard-focus", "focus-select", "input-retire", "hover-update", "hover-retire", "pointer-order", "capture-query", "scene-update-admission", "scene-frame-completion", "scene-frame-order", "scene-batch-stage", "scene-node-remove", "scene-node-find", "scene-patch", "scene-unique-ids", "scene-batch-commit", "scene-interaction-restore", "component-update-admission"]
 stages = [
     ("Verus+Z3", [[sys.executable, "scripts/verify-version.py", "--kernel", k, "--verus", a.verus] for k in kernels]),
     ("Proptest", [["cargo", "--version"], ["cargo", "test", "--locked", "--test", "batch_properties"],
@@ -170,9 +170,9 @@ for stage in report["stages"]:
     log_path = out / (stage["name"].replace("+", "-") + ".log")
     output = log_path.read_text()
     required = {
-        "Proptest": [("test result: ok. 2 passed", 3), ("test result: ok. 3 passed", 1), ("test result: ok. 57 passed", 1), ("test result: ok. 8 passed", 1)],
+        "Proptest": [("test result: ok. 2 passed", 3), ("test result: ok. 3 passed", 1), ("test result: ok. 58 passed", 1), ("test result: ok. 8 passed", 1)],
         "Miri": [("test result: ok. 2 passed", 4), ("test result: ok. 3 passed", 2), ("test result: ok. 6 passed", 1)],
-        "Kani": [("VERIFICATION:- SUCCESSFUL", 69)],
+        "Kani": [("VERIFICATION:- SUCCESSFUL", 70)],
         "Loom": [("test result: ok. 1 passed", 1)],
     }
     matched = all(output.count(token) >= count for token, count in required.get(stage["name"], []))

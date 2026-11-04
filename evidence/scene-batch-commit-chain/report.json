@@ -1,0 +1,158 @@
+{
+  "property": "UI-SCENE-BATCH-COMMIT-001",
+  "backlog_item": "CP-03",
+  "status": "subproperty_scoped_checks_passed",
+  "cp03_closed": false,
+  "production": {
+    "file": "src/scene.rs",
+    "functions": [
+      "commit_scene_batch"
+    ],
+    "file_sha256": "545044f4d85b138361f93820a2d4def4ae2e1b6bb7415893d98eda2b75a041e2",
+    "kernel_sha256": "94bb7446c06ca86796853a134f620e18a46e2cde89611b97e25bd6d376b3ca94",
+    "caller": "Scene::apply_batch_at"
+  },
+  "specification": "For any scene, expected version, emptiness and any check and staging closures seeing only a shared reference. A stale batch reports StaleVersion with the expected and the current version; an exhausted version reports VersionExhausted; an empty batch at the current version reports exactly the check's result; a failed check or failed staging reports that error. All of these leave the scene equal to what it was. Staging may only be called after a successful check. A success leaves the staged tree and the old version plus one, whatever version the staged value carried.",
+  "assumptions": [
+    "The closures take a shared reference, so they cannot write the active scene: that is Rust's own rule (interior mutability in Scene would break it; Scene has none by reading, not proved).",
+    "The check and staging closures are arbitrary in the proof. What the production closures do is outside this property: Scene::validate has its traversal proved in UI-SCENE-UNIQUE-IDS-001 with BTreeSet tested, the fold is proved in UI-SCENE-BATCH-STAGE-001, Scene::clone is not proved."
+  ],
+  "tools": {
+    "verus": "Version: 0.2026.10.18.7d82994",
+    "z3": "Z3 version 4.16.0 - 64 bit",
+    "kani": "0.68.0",
+    "cbmc": "6.11.0",
+    "nightly": "nightly-2026-10-17"
+  },
+  "config": {
+    "entry": "python3 scripts/verify-ui.py --verus <verus>",
+    "fuzz_seconds": 20,
+    "proptest_cases": 256,
+    "proptest_seed": "12345"
+  },
+  "stages": {
+    "Verus+Z3": {
+      "result": "passed",
+      "verified": 4,
+      "errors": 0,
+      "negative_controls": [
+        {
+          "name": "keep-the-staged-version",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "version-from-the-current-scene",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "drop-the-replacement",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "report-the-wrong-actual",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "exhausted-reports-success",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "empty-skips-the-check",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "swallow-the-check-failure",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "swallow-the-staging-failure",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "advance-before-the-check",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "stage-without-the-check",
+          "rejected": true,
+          "exit_code": 1
+        }
+      ],
+      "model_note": "Canvas, Style, Semantics and Point are replaced in the proof by value types the kernel cannot read. The derives on Scene and Node are dropped in the proof copy; the kernel calls none of them. The proof copy adds ghost lets and asserts only."
+    },
+    "Proptest": {
+      "result": "passed",
+      "harness": [
+        "properties::scene_batch_commit_property"
+      ],
+      "includes": "Trees up to 24 nodes, any version with half of the inputs admitted and the top of the range reaching exhaustion, any check and staging verdicts, against an independent reading of the order of checks. Recording closures also check how many times each ran and that each saw the scene unchanged. The comparison of scenes is by root identity and version, not whole-tree equality."
+    },
+    "Miri": {
+      "result": "passed",
+      "harness": [
+        "memory boundaries with eight flag combinations on fixed trees"
+      ],
+      "note": "Stand-in field types, no user Drop and no panic injection"
+    },
+    "cargo-fuzz": {
+      "result": "passed",
+      "target": "read_boundary",
+      "completed_runs": [
+        15633,
+        1001038
+      ],
+      "note": "The two counts are read_boundary and batch_decode, and only read_boundary reaches this kernel. The run shared the build machine with other builds."
+    },
+    "Kani": {
+      "result": "passed_on_childless_trees_only",
+      "harness": {
+        "kani_checks::scene_batch_commit": {
+          "shape": "Two childless trees, arbitrary identities, versions, emptiness and verdicts, unwind 2",
+          "checks": 390,
+          "failed": 0,
+          "unreachable": 2
+        }
+      },
+      "chain_harnesses_successful": 70
+    },
+    "Loom": {
+      "result": "N/A",
+      "reason": "The kernel has no shared state or synchronization primitive; the scene is held by exclusive reference.",
+      "counted_as_pass": false
+    }
+  },
+  "real_path_test": {
+    "test": "scene::tests::batch_commit_writes_only_the_staged_tree_with_the_decided_version",
+    "class": "tested, not proved",
+    "mutation_checked": "Eight manual mutations, one run each: staged version kept, replacement dropped, wrong actual version in the stale error, exhaustion reporting success, empty batch skipping the check, check failure swallowed, staging failure swallowed, check removed before staging. Each failed the new unit test or another scene unit test."
+  },
+  "behavior_change_note": "The body of apply_batch_at moved into commit_scene_batch, which takes the check and the staging as closures. The ? operators became matches, and staging now takes a shared reference and clones inside the closure instead of cloning at the call. The order of checks, the errors and the writes should be unchanged; that equivalence with the old text is argued by reading and tests, not proved.",
+  "chain_notes": [
+    "The first feature test run filled the build machine's root disk to 100 percent twice because a debug build with gpu-pending takes more than 9 GiB; no chain stage was running then. Caches of this repository were deleted and the GPU tests were rerun without debug information.",
+    "The full gpu-pending test run did not complete. Only the library tests (186) and tests/native_gpu_render (3) ran with gpu-pending, in a separate target directory without debug information."
+  ],
+  "uncovered": [
+    "That the production closures are what apply_batch_at passes is by reading: apply_batch_at itself is not in the proof",
+    "Scene::clone and whether a stage result built from it has any relation to the active scene",
+    "That staging does not run on the stale, exhausted and empty paths: tested with recording closures, not stated in the proof",
+    "Panic in a closure, drop of the replaced scene, allocation failure, stack use and cost",
+    "The composition of the identity check with apply_tree_patch: no statement that a successful Insert leaves a tree with unique identities",
+    "UI-TXN-ATOMIC-001 stays not_verified as a whole-transaction property"
+  ],
+  "chain": {
+    "entry_exit_code": 2,
+    "complete": false,
+    "slice_complete": false,
+    "reason": "capture-query two-key Kani obligation (CP-01) is unresolved; every stage reports passed_scoped_checks"
+  },
+  "completion_claimed": false
+}

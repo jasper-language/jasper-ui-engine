@@ -1,0 +1,30 @@
+verification results:: 3 verified, 1 errors
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+   --> <repo>/evidence/scene-batch-commit-kernel/negative_stage_without_the_check.rs:122:1
+    |
+122 | fn commit_scene_batch<V:FnOnce(&Scene)->Result<(),SceneError>,S:FnOnce(&Scene)->Result<Scene,SceneError>>(scene:&mut Scene,expected_version:u64,empty:bool,validate:V,stage:S)->(result:Result<(),SceneError>)
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: postcondition not satisfied
+   --> <repo>/evidence/scene-batch-commit-kernel/negative_stage_without_the_check.rs:125:17
+    |
+125 |           ensures batch_committed(*old(scene),*final(scene),expected_version,empty,validate,stage,result),
+    |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+140 | /     match staged {
+141 | |         Ok(staged) => {
+142 | |             let ghost staged_version=staged.version;
+143 | |             let mut next = staged;
+...   |
+149 | |         Err(error) => Err(error),
+150 | |     }
+    | |_____- at the end of the function body
+
+error: Call to non-static function fails to satisfy `callee.requires(args)`
+   --> <repo>/evidence/scene-batch-commit-kernel/negative_stage_without_the_check.rs:139:18
+    |
+139 |     let staged = stage(&*scene);
+    |                  ^^^^^^^^^^^^^^
+
+error: aborting due to 2 previous errors
+

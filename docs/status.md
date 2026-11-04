@@ -881,3 +881,7 @@ CP-02 仍无判定：只选一个断言（切片后 30 个 VCC）在 45 分钟�
 ## 2026-11-04：插入前的身份检查（CP-03 子性质）
 
 `collect_unique_ids` 改为对 `IdentitySet` 泛型，`apply_one` 的两次调用收进 `check_insert_identities`。遍历的判定有 Verus 全域证明，范围见 `verification.md` 的 UI-SCENE-UNIQUE-IDS-001。真实 `BTreeSet` 满足契约只经测试。版本赋值与整体替换仍未证明。
+
+## 2026-11-04：批次提交（CP-03 子性质）
+
+`apply_batch_at` 的函数体移入 `commit_scene_batch`，检查与暂存改为只拿共享引用的闭包。版本判定之后的写入只有末尾一次整体替换，这一点有 Verus 全域证明，范围见 `verification.md` 的 UI-SCENE-BATCH-COMMIT-001。生产闭包、`Scene` 的克隆、闭包内 panic 不在证明内，整事务性质 UI-TXN-ATOMIC-001 仍是 not_verified。

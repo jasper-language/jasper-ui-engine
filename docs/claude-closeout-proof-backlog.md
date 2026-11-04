@@ -28,6 +28,8 @@
 
 2026-11-04 闭合 UI-SCENE-UNIQUE-IDS-001：`collect_unique_ids` 与 `check_insert_identities` 在真实 `Node`、`SceneError` 声明上的判定（其余字段类型在证明中是内核读不到的值）。对任意树和遵守 `IdentitySet` 契约的任意集合：相对前序身份序列（插入检查是树后接子树），`Ok` 只在无重复且都不在起始集合时出现，集合恰为起始加序列；`DuplicateNode(d)` 指名首个重复位置，其前缀无重复，集合恰为起始加该前缀；不出现其他错误。反例被拒，见 `evidence/scene-unique-ids-chain/report.json`。真实 `BTreeSet` 满足契约只经测试，Kani 上真实集合即使单节点也没有判定。
 
+2026-11-04 闭合 UI-SCENE-BATCH-COMMIT-001：`commit_scene_batch` 在真实 `Scene`、`Node`、`SceneError` 声明上的提交（其余字段类型在证明中是内核读不到的值）。对任意场景与只拿到共享引用的任意检查、暂存闭包：陈旧、耗尽、检查失败、暂存失败都报各自的错误并让场景保持原值；空批报检查的结果并保持原值；暂存只能在检查成功后调用；成功时场景恰为暂存的树加旧版本加一，与暂存值带的版本无关。反例被拒，见 `evidence/scene-batch-commit-chain/report.json`。生产传入的闭包（`Scene::validate`、`Scene::clone`、对 `apply_detached` 的折叠）不在此性质内，`Scene::clone` 没有证明。
+
 仍未覆盖：`apply_one` 在 `Insert` 前的身份检查、`Scene` 的克隆与身份校验、`apply_batch_at` 中版本赋值与整体替换两条语句的实现级规格、候选构造本身、`NativeScene` 的 `RestoreCandidate` 实现满足契约（含写入不改变准入判定）、`*self = candidate` 析构旧视图时的 panic、活动文档读取路径上第三方内部可变性的影响。
 
 ### CP-04

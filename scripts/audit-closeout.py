@@ -204,6 +204,8 @@ PROOF_BACKLOG = {
             "evidence/scene-patch-chain/report.json",
             "evidence/scene-unique-ids-kernel/report.json",
             "evidence/scene-unique-ids-chain/report.json",
+            "evidence/scene-batch-commit-kernel/report.json",
+            "evidence/scene-batch-commit-chain/report.json",
         ],
     },
     "CP-04": {

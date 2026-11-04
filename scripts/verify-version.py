@@ -2779,6 +2779,68 @@ proof fn lemma_visit_fresh(after:Set<NodeId>,pre:Set<NodeId>,start:Set<NodeId>,v
 }
 
 
+KERNELS["scene-state-type"] = {
+    "source":"src/scene.rs", "marker":"SCENE STATE", "suffix":"TYPE", "depends":["scene-node-type"], "internal_only":True,
+    # The derives are dropped for Verus as for Node; the kernel calls none of them.
+    # 与 Node 相同，Verus 中去掉派生；内核不调用它们。
+    "signature":"#[derive(Clone, Debug, PartialEq)]\npub struct Scene {", "contract":"pub struct Scene {", "function_count":0,
+}
+
+
+KERNELS["scene-batch-commit"] = {
+    "source":"src/scene.rs", "marker":"SCENE BATCH COMMIT",
+    "property":"UI-SCENE-BATCH-COMMIT-001",
+    "spec_prelude":"""// What one call leaves behind, by the order the checks are made in.
+// 一次调用留下的结果，按检查的先后写出。
+spec fn batch_committed<V:FnOnce(&Scene)->Result<(),SceneError>,S:FnOnce(&Scene)->Result<Scene,SceneError>>(o:Scene,n:Scene,expected:u64,empty:bool,validate:V,stage:S,result:Result<(),SceneError>)->bool {
+    if expected!=o.version { result==Err::<(),SceneError>(SceneError::StaleVersion{expected:expected,actual:o.version}) && n==o }
+    else if empty { validate.ensures((&o,),result) && n==o }
+    else if o.version==u64::MAX { result==Err::<(),SceneError>(SceneError::VersionExhausted) && n==o }
+    else {
+        match result {
+            Err(error)=>n==o && (validate.ensures((&o,),Err::<(),SceneError>(error))
+                || (validate.ensures((&o,),Ok::<(),SceneError>(())) && stage.ensures((&o,),Err::<Scene,SceneError>(error)))),
+            Ok(_)=>validate.ensures((&o,),Ok::<(),SceneError>(())) && n.version==o.version+1
+                && exists|v:u64| #[trigger] stage.ensures((&o,),Ok::<Scene,SceneError>(Scene{root:n.root,version:v})),
+        }
+    }
+}
+""",
+    "signature":"""fn commit_scene_batch(
+    scene: &mut Scene,
+    expected_version: u64,
+    empty: bool,
+    validate: impl FnOnce(&Scene) -> Result<(), SceneError>,
+    stage: impl FnOnce(&Scene) -> Result<Scene, SceneError>,
+) -> Result<(), SceneError> {""",
+    "contract":"""fn commit_scene_batch<V:FnOnce(&Scene)->Result<(),SceneError>,S:FnOnce(&Scene)->Result<Scene,SceneError>>(scene:&mut Scene,expected_version:u64,empty:bool,validate:V,stage:S)->(result:Result<(),SceneError>)
+        requires validate.requires((&*old(scene),)),
+            validate.ensures((&*old(scene),),Ok::<(),SceneError>(())) ==> stage.requires((&*old(scene),)),
+        ensures batch_committed(*old(scene),*final(scene),expected_version,empty,validate,stage,result),
+    {
+    let ghost o=*scene;""",
+    "extra_annotations":[
+        ("        Ok(()) => {}\n","        Ok(()) => { assert(checked->Ok_0==()); }\n"),
+        ("            *scene = next;","""            *scene = next;
+            assert(stage.ensures((&o,),Ok::<Scene,SceneError>(Scene{root:scene.root,version:staged_version})));"""),
+        ("            let mut next = staged;","""            let ghost staged_version=staged.version;
+            let mut next = staged;"""),
+    ],
+    "depends":["scene-state-type","scene-error-type","transaction-gate"], "evidence":"scene-batch-commit-kernel", "function_count":1,
+    "scope":"Exact production commit on the real Scene, Node and SceneError declarations with the non-tree field types replaced by opaque values the kernel cannot read, over arbitrary check and staging closures that see only a shared reference. A stale batch, an exhausted version, a failed check and a failed staging each report their own error and leave the scene equal to what it was; an empty batch reports the check's result and leaves it equal; staging may only be called after a successful check; a success leaves the staged tree and the old version plus one, whatever version the staged value carried. That staging does not run on the stale, exhausted and empty paths is not stated here and is tested. Not covered: the production closures (Scene::validate, Scene::clone, the fold over apply_detached), drop of the replaced scene, allocation failure and panic.",
+    "mutations":[("keep-the-staged-version","            next.version = next_version;\n","            \n"),
+                 ("version-from-the-current-scene","            next.version = next_version;","            next.version = scene.version;"),
+                 ("drop-the-replacement","            *scene = next;\n            assert(stage.ensures((&o,),Ok::<Scene,SceneError>(Scene{root:scene.root,version:staged_version})));","            scene.version = next.version;"),
+                 ("report-the-wrong-actual","                actual: scene.version,","                actual: expected_version,"),
+                 ("exhausted-reports-success","VersionDecision::Exhausted => return Err(SceneError::VersionExhausted),","VersionDecision::Exhausted => return Ok(()),"),
+                 ("empty-skips-the-check","VersionDecision::Unchanged => return validate(&*scene),","VersionDecision::Unchanged => return Ok(()),"),
+                 ("swallow-the-check-failure","        Err(error) => return Err(error),\n    }\n    let staged","        Err(error) => return Ok(()),\n    }\n    let staged"),
+                 ("swallow-the-staging-failure","        Err(error) => Err(error),\n    }\n}","        Err(error) => Ok(()),\n    }\n}"),
+                 ("advance-before-the-check","    let checked = validate(&*scene);","    scene.version = next_version;\n    let checked = validate(&*scene);")],
+    "precondition_mutations":[("stage-without-the-check","    let checked = validate(&*scene);\n    match checked {\n        Ok(()) => { assert(checked->Ok_0==()); }\n        Err(error) => return Err(error),\n    }\n    let staged = stage(&*scene);","    let staged = stage(&*scene);")],
+}
+
+
 KERNELS["source-insert-index"] = {
     "source":"src/native_adapter/native_scene.rs", "marker":"SOURCE INSERT INDEX",
     "property":"UI-SOURCE-INSERT-INDEX-001",

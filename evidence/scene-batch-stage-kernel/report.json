@@ -3,14 +3,14 @@
   "status": "proved",
   "scope": "Exact production fold over arbitrary state, patch and error types with an arbitrary closure: a ghost trace gives Ok as the in-order composition of one successful application per patch, and Err as the error of the first failing application after a successful prefix. Patch semantics, Scene::clone, identity validation, the version gate, the active assignment and panic unwinding are excluded; unwinding and the real Scene transaction are covered by Proptest/Miri tests, not by this proof.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "91c619d6c85effe69158698edfb71f37d58d038dd8e34955471d4ffca541fa92",
+  "source_sha256": "545044f4d85b138361f93820a2d4def4ae2e1b6bb7415893d98eda2b75a041e2",
   "sources": {
-    "src/scene.rs": "91c619d6c85effe69158698edfb71f37d58d038dd8e34955471d4ffca541fa92"
+    "src/scene.rs": "545044f4d85b138361f93820a2d4def4ae2e1b6bb7415893d98eda2b75a041e2"
   },
   "kernel_sha256": "e177fe8a750730a557b1a1666690a93c907d673aa81d5508d1c67eadeee10708",
   "dependencies": {},
   "proof_sha256": "6ef196fad2930d81faa2784c3a22a8a35f86a1ad61064c1ee78b1aa58b1cc6a4",
-  "runner_sha256": "d7b6e604bd68b91eb6fc88db1bb4aeb297917cbc41b83e2afab55dc855c4f21f",
+  "runner_sha256": "2be7bd54c9a8b010ae0264edf12fd5c9f96229a4daffd634f43a3be490205e49",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/verus/verus",

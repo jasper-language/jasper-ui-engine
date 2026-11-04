@@ -1087,3 +1087,22 @@ Kani 未得出结论的形状（都在链外，已撤下；构建机与其他构
 真实路径测试（测试证据，不是证明）：`scene::tests::identity_checks_report_the_first_repeat_in_preorder` 用真实类型和真实 `BTreeSet` 覆盖无重复、深处重复、根与子节点重复、树内重复优先于树与子树之间的重复、子树内重复，以及被拒绝的 `Insert` 不改树和版本。六个手动变异（子节点正序入栈、先查子树、去掉 `Insert` 检查、`admit` 恒报新、树与子树用两个集合、跳过子树）都使 `scene` 单元测试失败（各一次，未入 Verus 反例表）。
 
 假设与未覆盖：`BTreeSet` 满足 `IdentitySet` 契约、调用方从空集合开始（都未证明）；身份检查与 `apply_tree_patch` 的组合，也就是成功的 `Insert` 之后身份仍唯一，没有陈述；`apply_batch_at` 中版本赋值与整体替换；`Scene` 的克隆；析构、分配失败、栈使用与开销。证据：`evidence/scene-unique-ids-kernel/`、`evidence/scene-unique-ids-chain/report.json`。
+
+## UI-SCENE-BATCH-COMMIT-001：批次提交（2026-11-04，CP-03 子性质）
+
+`apply_batch_at` 的函数体移入 `commit_scene_batch`，检查与暂存作为闭包传入；`?` 改为 `match`，克隆从调用处移到暂存闭包内。检查先后、错误和写入应当不变（等价靠阅读和测试，未证明）。
+
+| 阶段 | 范围 | 结果 |
+|---|---|---|
+| Verus/Z3 | 真实 `Scene`、`Node`、`SceneError` 声明上任意场景与只拿共享引用的任意闭包：陈旧报期望与当前版本，耗尽报 `VersionExhausted`，空批报检查结果，检查或暂存失败报该错误，这些情况场景都等于原值；暂存只能在检查成功后调用；成功时场景恰为暂存的树加旧版本加一，与暂存值带的版本无关 | 4 verified/0 errors（含依赖）。10 个反例被拒：8 个只在后置条件，2 个（检查前推进版本、不检查就暂存）同时在闭包前置条件和后置条件 |
+| Proptest | 至多 24 节点的树、任意版本（一半输入被准入，范围顶端触及耗尽）、任意判定，对照独立写出的检查顺序；闭包记录调用次数并检查看到的场景未变。场景比较用根身份和版本，不是整树相等 | 256 例通过 |
+| Miri | 固定树上八种标志组合 | 通过 |
+| cargo-fuzz | `read_boundary` | 15633 次（与其他构建同跑；`batch_decode` 1001038 次不触及此内核） |
+| Kani | **只有无子节点的树**：`scene_batch_commit` 身份、版本、空批与判定都任意，unwind 2 | 390 checks / 0 failed（2 unreachable）；链中 70 个 harness 全部成功 |
+| Loom | N/A：内核无共享状态与同步原语，场景经 `&mut` 独占 | 不计 PASS；未添加替代运行 |
+
+真实路径测试（测试证据，不是证明）：`scene::tests::batch_commit_writes_only_the_staged_tree_with_the_decided_version` 覆盖陈旧优先于空批和耗尽、耗尽、空批只检查、检查失败、暂存失败与成功。八个手动变异（保留暂存版本、不替换、陈旧错误的当前版本写错、耗尽报成功、空批不检查、吞掉检查失败、吞掉暂存失败、暂存前不检查）都使 `scene` 单元测试失败（各一次）。
+
+测试范围：默认 160/0，`cpu-pending` 240/0。`gpu-pending` 只跑了库测试 186/0 和 `native_gpu_render` 3/0，在单独的无调试信息目录里；带调试信息的全量运行因构建机磁盘写满没有完成。
+
+假设与未覆盖：闭包只拿共享引用所以不能写活动场景，依赖 `Scene` 没有内部可变性（靠阅读）；`apply_batch_at` 本身不在证明内，它传入的是不是这两个闭包靠阅读；生产闭包的行为不在此性质内（`Scene::validate` 的遍历见 UI-SCENE-UNIQUE-IDS-001，折叠见 UI-SCENE-BATCH-STAGE-001，`Scene::clone` 未证明）；陈旧、耗尽、空批路径上暂存不运行只经测试，证明里没有陈述；闭包内 panic、被替换场景的析构、分配失败、栈使用与开销；成功的 `Insert` 之后身份仍唯一没有陈述；UI-TXN-ATOMIC-001 仍是 not_verified。证据：`evidence/scene-batch-commit-kernel/`、`evidence/scene-batch-commit-chain/report.json`。
