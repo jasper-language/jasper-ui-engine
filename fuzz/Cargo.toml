@@ -48,3 +48,10 @@ path = "fuzz_targets/host_coordination.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "host_render"
+path = "fuzz_targets/host_render.rs"
+test = false
+doc = false
+bench = false

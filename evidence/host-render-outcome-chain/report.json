@@ -1,0 +1,154 @@
+{
+  "property": "UI-HOST-RENDER-OUTCOME-001",
+  "backlog_item": "CP-06",
+  "status": "subproperty_scoped_checks_passed",
+  "cp06_closed": false,
+  "production": {
+    "file": "src/surface_lifecycle.rs",
+    "type": "SurfaceCoordinator",
+    "functions": [
+      "render"
+    ],
+    "file_sha256": "c8a703f4bc7e5cc35c2b801b014aab3cfd29173b7df5965783625f5a0fb125d8",
+    "kernel_sha256": "7cce6d61161d30eb911ca610af0d555283880213544fe404988ebad30961fd70",
+    "caller": "HostRenderer::gated_render in src/native_adapter/render_host.rs",
+    "caller_sha256": "7a4db251e3d266a547131d18f6fbb6900b43f5144dacc91e3b183365e7776ad1"
+  },
+  "specification": "For any owner, caller, generation, state, result type and engine closure. The engine is reachable only at the exact live generation; calling it elsewhere fails the closure's precondition. A refusal returns None and leaves the coordinator equal. The lifecycle never moves. An admitted call returns the engine's own result. Afterwards a present can be acknowledged exactly when this render succeeded into a host texture, so a failed render withdraws a frame still waiting. Every call is a step of the coordinator trace, so the earlier trace theorems hold with it.",
+  "behavior_change": [
+    "render_gpu_to_host_view failing after the gate withdraws a pending frame and leaves the view dirty; the frame stayed acknowledgeable before",
+    "render_to_surface and render_to_surface_with_damage failing after the gate leave the view dirty, as render_to_backend and render_gpu did",
+    "every render failing after the gate withdraws a pending frame; a frame the host could still have presented is redrawn once"
+  ],
+  "assumptions": [
+    "The engine closure is arbitrary; its ensures relation is only what the contract states about it.",
+    "Traces are sequences of calls on one exclusively held value: Rust ownership, not proved here.",
+    "Verus default integer model, not a cross-platform execution test."
+  ],
+  "tools": {
+    "verus": "Verus 0.2026.10.18.7d82994",
+    "z3": "Z3 version 4.16.0 - 64 bit",
+    "nightly": "nightly-2026-10-17"
+  },
+  "config": {
+    "entry": "python3 scripts/verify-ui.py --verus <verus>",
+    "fuzz_seconds": 20,
+    "proptest_cases": 256,
+    "proptest_seed": "12345"
+  },
+  "stages": {
+    "Verus+Z3": {
+      "result": "passed",
+      "verified": 40,
+      "errors": 0,
+      "negative_controls": [
+        {
+          "name": "refusal-withdraws-the-frame",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "failure-keeps-the-frame",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "failure-marks-a-frame",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "failure-reports-a-refusal",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "delivered-keeps-the-frame",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "delivered-marks-a-frame",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "texture-marks-nothing",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "success-reports-a-refusal",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "engine-runs-after-a-refusal",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "engine-runs-without-the-gate",
+          "rejected": true,
+          "exit_code": 1
+        }
+      ],
+      "model_note": "The count includes the re-verified dependencies. 8 wrong implementations fail a postcondition and 2 calls of the engine after a refusal or without the gate fail the closure precondition."
+    },
+    "Proptest": {
+      "result": "passed",
+      "harness": [
+        "actual::tests in verification/host-surface"
+      ],
+      "test_count": 14,
+      "new_tests": 3,
+      "includes": "A decision table written apart from the production checks at the generation edges, recording how often the engine was asked; traces up to 48 steps against a separately kept record of the last render."
+    },
+    "Miri": {
+      "result": "passed",
+      "test_count": 9,
+      "harness": [
+        "the non-property tests of verification/host-surface"
+      ],
+      "note": "The five property tests are skipped under Miri. The module has no unsafe code."
+    },
+    "cargo-fuzz": {
+      "result": "passed",
+      "target": "host_render",
+      "completed_runs": 1056792,
+      "other_targets": {
+        "read_boundary": 10919,
+        "batch_decode": 1335813,
+        "ui_plugin_gate": 31424,
+        "host_surface": 101007,
+        "host_coordination": 897406
+      },
+      "note": "New in the chain. The engine's answer comes from the input. Generations stay far below exhaustion; that edge rests on the Verus contract and the table test. All targets ran 20 seconds on a shared VM."
+    },
+    "Kani": {
+      "result": "Kani：发版时验证",
+      "note": "No new harness ran in this chain."
+    },
+    "Loom": {
+      "result": "N/A",
+      "reason": "The type has no shared state, atomic or synchronization primitive and is held by exclusive reference; no concurrent execution exists to explore.",
+      "counted_as_pass": false
+    }
+  },
+  "real_path_test": {
+    "test": "verification/host-surface tests; tests/native_host_renderer.rs (6 passed, 2 new); tests/native_gpu_host_view.rs (3 passed, 1 new, llvmpipe); tests/native_item5_journey.rs (3 passed)",
+    "class": "tested, not proved",
+    "mutation_checked": "21 wrong implementations were each applied to a scratch copy. 8 in the kernel and 1 in gated_render, and 11 removals of a HostRenderer entry's gate, failed at least one test. Removing the gate of focused_node survived.",
+    "surviving_mutant": "focused_node without its lifecycle check: a foreign owner is refused by the view, and suspend and retire have already cleared focus, so by reading no reachable state tells them apart. Not proved equivalent."
+  },
+  "not_covered": [
+    "What the engine closures do",
+    "That each HostRenderer entry calls the right gate: tests and reading only; render_gpu and render_gpu_to_host_view gates were not mutated",
+    "wgpu and Vello (third-party TCB)",
+    "hardware surfaces and compositors",
+    "vsync",
+    "device loss",
+    "suspend and resume on a real platform",
+    "the capability matrix"
+  ]
+}

@@ -1,0 +1,17 @@
+verification results:: 39 verified, 1 errors
+error: postcondition not satisfied
+   --> <repo>/evidence/host-render-outcome-kernel/negative_failure_marks_a_frame.rs:625:13
+    |
+625 | /             match result {
+626 | |                 None => !surface_live(coordinator_surface(*old(self)),caller,generation) && *final(self)==*old(self),
+627 | |                 Some(outcome) => surface_live(coordinator_surface(*old(self)),caller,generation)
+628 | |                     && engine.ensures((),outcome)
+629 | |                     && coordinator_pending(*final(self))==(outcome is Ok && pixels is AwaitingPresent),
+630 | |             },
+    | |_____________^ failed this postcondition
+...
+645 |           Some(result)
+    |           ------------ at the end of the function body
+
+error: aborting due to 1 previous error
+

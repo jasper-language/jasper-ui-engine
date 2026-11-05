@@ -5,7 +5,7 @@
   "checklist_item_5_complete": true,
   "scope": "Move active native examples to formal Engine/HostRenderer entries; exercise declaration, update, layout/presentation, window and pointer interaction, generation-gated lifecycle, injected external text/IME display, accessibility, resource rejection, retirement and a release performance baseline.",
   "sources": {
-    "src/native_adapter/render_host.rs": "5a23804c4c50e10e78a470941b3df49e63a8ac7c87d15e8c217ac7a951c0d2bf",
+    "src/native_adapter/render_host.rs": "7a4db251e3d266a547131d18f6fbb6900b43f5144dacc91e3b183365e7776ad1",
     "examples/full_scene.rs": "43d1ba52b4b2a326c3fb5ad0583d6e01df2dc43c49d501f3ba6751be3c4f27cd",
     "examples/window.rs": "f76e908e96439bf12340ab98ac4ece56279e447d9fb8a031d10a58210bc26b6f",
     "tests/native_item5_journey.rs": "024cb2b56967da67fd3134bfff29de1a2220ad7d1827d2af47ebae2a03db5097",
@@ -125,6 +125,30 @@
       "pixels": "full_scene.ppm, root.png and resized.png are byte-identical to the artifacts recorded here.",
       "performance": "Same VM, not comparable as an optimization gate: median_us=146, p95_us=150, samples=6. The performance block above is unchanged from the original run.",
       "output": "The rerun's artifacts were not retained; the recorded hashes are the original artifacts'."
+    },
+    {
+      "date": "2026-11-05",
+      "reason": "HostRenderer render entries moved behind SurfaceCoordinator::render; a failed software render now leaves the view dirty, so the path was re-run, not only rehashed",
+      "render_host_sha256": "7a4db251e3d266a547131d18f6fbb6900b43f5144dacc91e3b183365e7776ad1",
+      "commands_run": [
+        "all_targets_check",
+        "integration",
+        "release_scene",
+        "window_once",
+        "window_click",
+        "window_capture"
+      ],
+      "results": {
+        "all_targets_check": "passed",
+        "integration_tests": "3 passed, 0 failed",
+        "full_scene": "passed",
+        "window_once": "exit 0",
+        "window_click": "item5_window=pass activated=1",
+        "window_capture": "exit 0"
+      },
+      "pixels": "full_scene.ppm, root.png and resized.png are byte-identical to the artifacts recorded here.",
+      "performance": "Same VM, not comparable as an optimization gate: median_us=142, p95_us=150, samples=6. The performance block above is unchanged from the original run.",
+      "output": "The rerun's logs were not retained; the recorded hashes are the original artifacts'."
     }
   ]
 }

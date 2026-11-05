@@ -4162,6 +4162,50 @@ proof fn surface_pending_is_active(t:Seq<SurfaceCoordinator>,j:int)
         ("a-mark-may-come-from-any-state","n.surface==o.surface && o.surface.state is Active && n.present_pending\n}","n.surface==o.surface && n.present_pending\n}","postcondition not satisfied"),
     ],
 }
+KERNELS["surface-rendered-pixels-type"] = {"source":"src/surface_lifecycle.rs","marker":"SURFACE RENDERED PIXELS","suffix":"TYPE","signature":None,"depends":[],"internal_only":True}
+_RENDER_GATE = "if !self.surface.render_allowed(caller, generation) {\n            return None;\n        }\n"
+_RENDER_FAILED = "Err(_) => self.frame_superseded(),"
+_RENDER_DELIVERED = "RenderedPixels::Delivered => self.frame_superseded(),"
+_RENDER_TEXTURE = "RenderedPixels::AwaitingPresent => {\n                    self.texture_rendered(caller, generation);\n                }"
+KERNELS["surface-render-outcome"] = {
+    "source":"src/surface_lifecycle.rs", "marker":"SURFACE RENDER OUTCOME",
+    "property":"UI-HOST-RENDER-OUTCOME-001",
+    "timeout":300,
+    "signature":"""pub fn render<T, E>(
+        &mut self,
+        caller: u64,
+        generation: u64,
+        pixels: RenderedPixels,
+        engine: impl FnOnce() -> Result<T, E>,
+    ) -> Option<Result<T, E>> {""",
+    "contract":"""pub fn render<T,E>(&mut self,caller:u64,generation:u64,pixels:RenderedPixels,engine:impl FnOnce()->Result<T,E>)->(result:Option<Result<T,E>>)
+        requires surface_live(coordinator_surface(*old(self)),caller,generation) ==> engine.requires(()),
+        ensures coordinator_surface(*final(self))==coordinator_surface(*old(self)),
+            surface_coordinator_step(*old(self),*final(self)),
+            match result {
+                None => !surface_live(coordinator_surface(*old(self)),caller,generation) && *final(self)==*old(self),
+                Some(outcome) => surface_live(coordinator_surface(*old(self)),caller,generation)
+                    && engine.ensures((),outcome)
+                    && coordinator_pending(*final(self))==(outcome is Ok && pixels is AwaitingPresent),
+            },
+    {""",
+    "function_count":1, "depends":["surface-coordination","surface-rendered-pixels-type"], "evidence":"host-render-outcome-kernel",
+    "scope":"the real SurfaceCoordinator::render over all owners, generations, states, result types and engine closures: the engine is reachable only at the exact live generation; a refusal leaves everything equal and reports None; the lifecycle never moves; afterwards a present can be acknowledged exactly when this render succeeded into a host texture, so a failed render withdraws any frame still waiting. Not what the engine does, nor which HostRenderer entry point calls it.",
+    "mutations":[
+        ("refusal-withdraws-the-frame",_RENDER_GATE,"if !self.surface.render_allowed(caller, generation) {\n            self.frame_superseded();\n            return None;\n        }\n"),
+        ("failure-keeps-the-frame",_RENDER_FAILED,"Err(_) => {}"),
+        ("failure-marks-a-frame",_RENDER_FAILED,"Err(_) => { self.texture_rendered(caller, generation); }"),
+        ("failure-reports-a-refusal",_RENDER_FAILED,"Err(_) => { self.frame_superseded(); return None; }"),
+        ("delivered-keeps-the-frame",_RENDER_DELIVERED,"RenderedPixels::Delivered => {}"),
+        ("delivered-marks-a-frame",_RENDER_DELIVERED,"RenderedPixels::Delivered => { self.texture_rendered(caller, generation); }"),
+        ("texture-marks-nothing",_RENDER_TEXTURE,"RenderedPixels::AwaitingPresent => self.frame_superseded(),"),
+        ("success-reports-a-refusal","Some(result)\n","let _ = result;\n        None\n"),
+    ],
+    "precondition_mutations":[
+        ("engine-runs-after-a-refusal",_RENDER_GATE,"if !self.surface.render_allowed(caller, generation) {\n            let _ = engine();\n            return None;\n        }\n"),
+        ("engine-runs-without-the-gate",_RENDER_GATE,""),
+    ],
+}
 HANDLE_PRELUDE = r"""
 pub closed spec fn handle_slots(a: HandleAllocator) -> Seq<u32> { a.slots@ }
 pub closed spec fn handle_capacity(a: HandleAllocator) -> u32 { a.capacity }

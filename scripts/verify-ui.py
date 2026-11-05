@@ -100,7 +100,7 @@ for file, markers in [
 report["production_regions_sha256"] = hashlib.sha256((out / "production.rs").read_bytes()).hexdigest()
 manifest = "verification/read-boundary/Cargo.toml"
 host_surface_manifest = "verification/host-surface/Cargo.toml"
-FUZZ_TARGETS = ["read_boundary", "batch_decode", "ui_plugin_gate", "host_surface", "host_coordination"]
+FUZZ_TARGETS = ["read_boundary", "batch_decode", "ui_plugin_gate", "host_surface", "host_coordination", "host_render"]
 corpora = out / "corpora"
 for target in FUZZ_TARGETS:
     (corpora / target).mkdir(parents=True, exist_ok=True)
@@ -108,7 +108,7 @@ for target in FUZZ_TARGETS:
     for seed in (ROOT / "fuzz/seeds" / target).iterdir():
         shutil.copyfile(seed, corpora / target / seed.name)
 kernels = ["version", "decode-range", "transaction-gate", "byte-read", "cursor-read",
-           "scalar-read", "header-read", "bounded-payload", "surface-row", "surface-span", "surface-borrow", "surface-write", "surface-segment", "surface-view", "pixel-pack", "pixel-convert", "canvas-import", "canvas-pixel", "color-construct", "desktop-pointer", "desktop-pointer-state", "handle", "font-order", "font-weight", "font-family", "bold-alias", "glyph-skew", "frame-reuse", "damage-span", "damage-rect", "frame-tick", "frame-pace", "text-offset", "text-range", "access-actions", "access-change", "access-request", "gpu-readback", "resource-gate", "role-activation", "bytes-slot", "command-modifier", "text-class", "focus-cleanup", "keyboard-focus", "focus-select", "input-retire", "hover-update", "hover-retire", "pointer-order", "capture-query", "scene-update-admission", "scene-frame-completion", "scene-frame-order", "scene-batch-stage", "scene-node-remove", "scene-node-find", "scene-patch", "scene-unique-ids", "scene-checked-patch", "scene-batch-unique", "scene-batch-commit", "scene-interaction-restore", "component-update-admission", "ui-plugin-rect", "ui-plugin-count", "ui-plugin-reloc", "surface-render-gate", "surface-transition", "surface-coordination"]
+           "scalar-read", "header-read", "bounded-payload", "surface-row", "surface-span", "surface-borrow", "surface-write", "surface-segment", "surface-view", "pixel-pack", "pixel-convert", "canvas-import", "canvas-pixel", "color-construct", "desktop-pointer", "desktop-pointer-state", "handle", "font-order", "font-weight", "font-family", "bold-alias", "glyph-skew", "frame-reuse", "damage-span", "damage-rect", "frame-tick", "frame-pace", "text-offset", "text-range", "access-actions", "access-change", "access-request", "gpu-readback", "resource-gate", "role-activation", "bytes-slot", "command-modifier", "text-class", "focus-cleanup", "keyboard-focus", "focus-select", "input-retire", "hover-update", "hover-retire", "pointer-order", "capture-query", "scene-update-admission", "scene-frame-completion", "scene-frame-order", "scene-batch-stage", "scene-node-remove", "scene-node-find", "scene-patch", "scene-unique-ids", "scene-checked-patch", "scene-batch-unique", "scene-batch-commit", "scene-interaction-restore", "component-update-admission", "ui-plugin-rect", "ui-plugin-count", "ui-plugin-reloc", "surface-render-gate", "surface-transition", "surface-coordination", "surface-render-outcome"]
 if a.kani_full:
     # Sequential whole-library run keeps the shared lock and memory ceiling; the per-harness clock does not apply.
     # 整库顺序运行保留共享锁与内存上限；单 harness 时钟不适用。
@@ -143,7 +143,8 @@ stages = [
                ["cargo", "+" + a.nightly, "miri", "test", "--locked", "--manifest-path", host_surface_manifest, "--",
                 "--skip", "any_state_follows_the_table", "--skip", "a_live_generation_names_one_state_along_any_trace",
                 "--skip", "successful_cycles_stay_active_and_monotone",
-                "--skip", "a_pending_present_belongs_to_the_generation_that_rendered_it"]]),
+                "--skip", "a_pending_present_belongs_to_the_generation_that_rendered_it",
+                "--skip", "a_frame_to_acknowledge_comes_from_the_last_render"]]),
     ("cargo-fuzz", [["cargo", "fuzz", "--version"]] + [
         ["cargo", "+" + a.nightly, "fuzz", "run", target, str(corpora / target), "--",
          "-max_total_time=" + str(a.fuzz_seconds), "-max_len=4096", "-rss_limit_mb=1024",
@@ -256,8 +257,8 @@ for stage in report["stages"]:
     log_path = out / (stage["name"].replace("+", "-") + ".log")
     output = log_path.read_text()
     required = {
-        "Proptest": [("test result: ok. 2 passed", 3), ("test result: ok. 3 passed", 1), ("test result: ok. 60 passed", 1), ("test result: ok. 8 passed", 1), ("test result: ok. 11 passed", 1)],
-        "Miri": [("test result: ok. 2 passed", 4), ("test result: ok. 3 passed", 2), ("test result: ok. 6 passed", 1), ("test result: ok. 7 passed", 1)],
+        "Proptest": [("test result: ok. 2 passed", 3), ("test result: ok. 3 passed", 1), ("test result: ok. 60 passed", 1), ("test result: ok. 8 passed", 1), ("test result: ok. 14 passed", 1)],
+        "Miri": [("test result: ok. 2 passed", 4), ("test result: ok. 3 passed", 2), ("test result: ok. 6 passed", 1), ("test result: ok. 9 passed", 1)],
         "Kani": [("VERIFICATION:- SUCCESSFUL", 70)],
         "Loom": [("test result: ok. 1 passed", 1)],
     }

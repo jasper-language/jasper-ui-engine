@@ -1,0 +1,29 @@
+verification results:: 39 verified, 1 errors
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+   --> <repo>/evidence/host-render-outcome-kernel/negative_engine_runs_without_the_gate.rs:621:5
+    |
+621 |     pub fn render<T,E>(&mut self,caller:u64,generation:u64,pixels:RenderedPixels,engine:impl FnOnce()->Result<T,E>)->(result:Option<Result<T,E>>)
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: postcondition not satisfied
+   --> <repo>/evidence/host-render-outcome-kernel/negative_engine_runs_without_the_gate.rs:625:13
+    |
+625 | /             match result {
+626 | |                 None => !surface_live(coordinator_surface(*old(self)),caller,generation) && *final(self)==*old(self),
+627 | |                 Some(outcome) => surface_live(coordinator_surface(*old(self)),caller,generation)
+628 | |                     && engine.ensures((),outcome)
+629 | |                     && coordinator_pending(*final(self))==(outcome is Ok && pixels is AwaitingPresent),
+630 | |             },
+    | |_____________^ failed this postcondition
+...
+642 |           Some(result)
+    |           ------------ at the end of the function body
+
+error: Call to non-static function fails to satisfy `callee.requires(args)`
+   --> <repo>/evidence/host-render-outcome-kernel/negative_engine_runs_without_the_gate.rs:632:30
+    |
+632 |                 let result = engine();
+    |                              ^^^^^^^^
+
+error: aborting due to 2 previous errors
+

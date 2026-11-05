@@ -9,8 +9,11 @@ use jasper_ui_engine::geometry::Size;
 use jasper_ui_engine::native::host::{
     FrameDamage, HostRenderError, HostRenderer, SurfaceLifecycleError, SurfaceState,
 };
+use jasper_ui_engine::native::{
+    EventReply, HostKeyInput, KeyLocation, Modifiers, PointerAction, SceneUpdateError,
+};
 use jasper_ui_engine::resource::UiBytesSlot;
-use jasper_ui_engine::scene::{Node, NodeId, Scene};
+use jasper_ui_engine::scene::{Node, NodeId, Scene, ScenePatch};
 use jasper_ui_engine::style::{Color, Length, Style};
 
 const OWNER: u64 = 71;
@@ -337,4 +340,172 @@ fn every_step_refuses_as_the_lifecycle_does_before_the_view_is_touched() {
     assert!(!host.close(OWNER, version, &mut count));
     assert_eq!(host.surface_status(OWNER), Some(retired));
     assert_eq!(focus_events, 0);
+}
+
+#[test]
+fn a_failed_software_render_leaves_the_view_dirty() {
+    let source = scene();
+    let version = source.version();
+    let mut host = HostRenderer::new(OWNER, &source, &font(), 320, 200).unwrap();
+    let generation = host.surface_status(OWNER).unwrap().generation;
+    let mut bytes = vec![0; 320 * 200 * 4];
+    assert!(host.render_to_surface(OWNER, version, generation, &mut bytes, 320 * 4, BUDGET));
+    assert_eq!(host.needs_frame(OWNER, generation), Some(false));
+    assert!(!host.render_to_surface(OWNER, version + 1, generation, &mut bytes, 320 * 4, BUDGET));
+    assert_eq!(host.needs_frame(OWNER, generation), Some(true));
+    assert!(host.render_to_surface(OWNER, version, generation, &mut bytes, 320 * 4, BUDGET));
+    assert_eq!(host.needs_frame(OWNER, generation), Some(false));
+    assert_eq!(
+        host.render_to_surface_with_damage(
+            OWNER,
+            version + 1,
+            generation,
+            &mut bytes,
+            320 * 4,
+            BUDGET
+        ),
+        None
+    );
+    assert_eq!(host.needs_frame(OWNER, generation), Some(true));
+}
+
+// A patch the engine would accept, so that a refusal can only come from the gate.
+// 引擎本会接受的补丁，因此拒绝只可能来自门。
+fn accepted_patch() -> [ScenePatch; 1] {
+    [ScenePatch::UpdateStyle {
+        id: NodeId(2),
+        style: Style::default()
+            .size(Length::Px(41.0), Length::Px(30.0))
+            .background(Color::RED),
+    }]
+}
+
+// Calls every generation-gated entry with the given owner and generation and checks that it refuses.
+// A frame that is clean going in stays clean, so an entry that reached the view would show.
+// 以给定归属者和代数调用每个受代数门控的入口并检查其拒绝。进入时干净的帧保持干净，入口若碰到视图就会暴露。
+fn assert_every_gated_entry_refuses(
+    host: &mut HostRenderer,
+    owner: u64,
+    version: u64,
+    generation: u64,
+) {
+    let sink_calls = std::cell::Cell::new(0);
+    let mut bytes = vec![0; 320 * 200 * 4];
+    let key = HostKeyInput {
+        key: "Tab",
+        code: "Tab",
+        pressed: true,
+        repeat: false,
+        composing: false,
+        modifiers: Modifiers::default(),
+        location: KeyLocation::Standard,
+    };
+    assert_eq!(host.needs_frame(owner, generation), None);
+    assert!(host
+        .accessibility_tree(owner, version, generation)
+        .is_none());
+    assert!(
+        !host.focus(owner, version, generation, NodeId(2), &mut |_| sink_calls
+            .set(sink_calls.get() + 1))
+    );
+    assert!(
+        !host.deactivate(owner, version, generation, &mut |_| sink_calls
+            .set(sink_calls.get() + 1))
+    );
+    assert!(!host.set_viewport_scroll(owner, version, generation, 0.0, 1.0));
+    assert!(!host.invalidate_frame(owner, generation));
+    assert!(!host.pointer(
+        owner,
+        version,
+        generation,
+        PointerAction::Down,
+        5.0,
+        5.0,
+        true,
+        &mut |_| {
+            sink_calls.set(sink_calls.get() + 1);
+            EventReply::default()
+        },
+        &mut |_| sink_calls.set(sink_calls.get() + 1),
+    ));
+    assert!(!host.key(
+        owner,
+        version,
+        generation,
+        &key,
+        &mut |_| {
+            sink_calls.set(sink_calls.get() + 1);
+            EventReply::default()
+        },
+        &mut |_| sink_calls.set(sink_calls.get() + 1),
+    ));
+    assert!(!host.apply_with_focus_events(
+        owner,
+        version,
+        version + 1,
+        generation,
+        &accepted_patch(),
+        &mut |_| sink_calls.set(sink_calls.get() + 1),
+    ));
+    assert!(!host.render_to_surface(owner, version, generation, &mut bytes, 320 * 4, BUDGET));
+    assert_eq!(
+        host.render_to_surface_with_damage(owner, version, generation, &mut bytes, 320 * 4, BUDGET),
+        None
+    );
+    assert!(host
+        .render_to_backend(owner, version, generation, &mut FailingPresent, BUDGET)
+        .is_err());
+    assert_eq!(sink_calls.get(), 0);
+    assert!(
+        bytes.iter().all(|byte| *byte == 0),
+        "a refused render wrote pixels"
+    );
+}
+
+#[test]
+fn every_gated_entry_refuses_before_the_view_is_touched() {
+    let source = scene();
+    let version = source.version();
+    let mut host = HostRenderer::new(OWNER, &source, &font(), 320, 200).unwrap();
+    let live = host.surface_status(OWNER).unwrap().generation;
+    let mut bytes = vec![0; 320 * 200 * 4];
+    assert!(host.render_to_surface(OWNER, version, live, &mut bytes, 320 * 4, BUDGET));
+    let identity = host.snapshot_identity(OWNER);
+
+    for (owner, generation) in [(OWNER + 1, live), (OWNER, live + 1), (OWNER, live - 1)] {
+        assert_every_gated_entry_refuses(&mut host, owner, version, generation);
+        assert_eq!(
+            host.needs_frame(OWNER, live),
+            Some(false),
+            "the clean frame stayed clean"
+        );
+        assert_eq!(host.snapshot_identity(OWNER), identity);
+    }
+
+    // Without a generation, these two still ask the lifecycle who may touch the view.
+    // 这两个入口不带代数，仍由生命周期判定谁能碰视图。
+    assert!(!host.apply(OWNER + 1, version, version + 1, &accepted_patch()));
+    assert!(host
+        .try_apply(OWNER + 1, version, version + 1, &accepted_patch())
+        .is_err());
+    assert!(host.focused_node(OWNER + 1, version).is_none());
+    assert_eq!(host.needs_frame(OWNER, live), Some(false));
+
+    let suspended = host.suspend(OWNER, version, live, &mut |_| {}).unwrap();
+    assert_every_gated_entry_refuses(&mut host, OWNER, version, suspended);
+    assert_eq!(
+        host.try_apply(OWNER, version, version + 1, &accepted_patch()),
+        Err(SceneUpdateError::Closed)
+    );
+    assert!(!host.apply(OWNER, version, version + 1, &accepted_patch()));
+    assert!(host.focused_node(OWNER, version).is_none());
+    assert_eq!(host.snapshot_identity(OWNER), identity);
+
+    host.retire(OWNER, version, suspended, &mut |_| {}).unwrap();
+    let retired = host.surface_status(OWNER).unwrap().generation;
+    assert_every_gated_entry_refuses(&mut host, OWNER, version, retired);
+    assert_eq!(
+        host.try_apply(OWNER, version, version + 1, &accepted_patch()),
+        Err(SceneUpdateError::Closed)
+    );
 }

@@ -1202,6 +1202,23 @@ Kani 未得出结论的形状（都在链外，已撤下；构建机与其他构
 
 假设与未覆盖：轨迹是对单个独占值的调用序列，这由 Rust 所有权保证，此处未证明；引擎闭包内部做了什么没有规格；哪个公开入口调用了哪个门、删除预检后除已列变化外行为不变，只靠阅读与测试；wgpu、Vello 属第三方 TCB；硬件 Surface、合成器、垂直同步、设备丢失、真实平台休眠恢复与能力矩阵都没有证据。证据见 `evidence/host-surface-coordination-chain/report.json`。
 
+## UI-HOST-RENDER-OUTCOME-001：渲染结果与待呈现帧（CP-06 子性质，2026-11-05）
+
+真实 `src/surface_lifecycle.rs` 的 `SurfaceCoordinator::render`。`HostRenderer` 的五个渲染入口都经 `gated_render` 调用它。行为变化见 `status.md` 同日条目。
+
+| 阶段 | 范围 | 结果 |
+|---|---|---|
+| Verus/Z3 | 任意归属者、调用者、代数、状态、结果类型与引擎闭包：引擎只在恰为当前活动代数时才会被调用，否则不满足闭包前置条件；拒绝返回 `None`，不改变状态；生命周期不迁移；准入时原样返回引擎结果；渲染之后可确认呈现，当且仅当这一次渲染成功写入宿主纹理；每次调用都是协调器轨迹的一环，既有轨迹定理继续成立 | 40 verified/0 errors（含依赖）；10 个反例全部被拒：8 个错误实现、2 个拒绝后或无门时仍调用引擎 |
+| Proptest | `verification/host-surface`：与生产检查分开写出的判定表，覆盖代数边界并记录引擎被调用的次数；长度 48 以内的任意轨迹，对照单独记录的最近一次渲染 | 14 项通过，新增 3 项（属性各 256 例，`PROPTEST_RNG_SEED=12345`） |
+| Miri | 同 crate 的 9 个非属性测试 | 通过；5 个属性测试不在 Miri 内。模块没有 unsafe |
+| cargo-fuzz | `host_render` 首次进入验证链；引擎的回答来自输入 | 1056792 次，无崩溃（`read_boundary` 10919、`batch_decode` 1335813、`ui_plugin_gate` 31424、`host_surface` 101007、`host_coordination` 897406）。各目标 20 秒，虚拟机与其他任务共用。代数远低于耗尽，该边界靠 Verus 合约与判定表测试 |
+| Kani | | Kani：发版时验证 |
+| Loom | N/A：类型没有共享状态、原子量或同步原语，由独占引用持有 | 不计 PASS；链中既有 Loom 场景通过，与本切片无关 |
+
+21 个错误实现逐个作用于临时副本：内核 8 个、`gated_render` 1 个、公开入口去掉门 11 个，都至少让一项测试失败；去掉 `focused_node` 的门存活。外来归属者被视图拒绝，暂停和退休已清除焦点，按阅读没有可达状态能区分两者，未证明等价。真实路径另有 `tests/native_host_renderer.rs` 6 项（新增 2 项）、`tests/native_gpu_host_view.rs` 3 项（新增 1 项，llvmpipe）通过，这些是测试，不是证明。
+
+假设与未覆盖：引擎闭包内部做了什么没有规格；公开入口与门的对应只靠测试和阅读，`render_gpu` 与 `render_gpu_to_host_view` 的门没有做变异；wgpu、Vello 属第三方 TCB；硬件 Surface、合成器、垂直同步、设备丢失、真实平台休眠恢复与能力矩阵都没有证据。证据见 `evidence/host-render-outcome-chain/report.json`。
+
 ## 发版清单补充
 
 `ui_plugin_gate` 的三个内核加入发版 Kani 时的候选 harness，现在未编写，`Kani：发版时验证`。

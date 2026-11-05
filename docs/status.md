@@ -920,3 +920,15 @@ CP-02 仍无判定：只选一个断言（切片后 30 个 VCC）在 45 分钟�
 这改变了几种错误结果，原先的预检与生命周期不一致：`resume` 对非暂停且代数过期的 Surface 现在报 `StaleGeneration`（原 `WrongState`）；对已退休 Surface 再次 `retire` 现在报 `Lifecycle(WrongState)`（原 `ViewRetired`），且不再调用引擎；`close` 对外来归属者或已退休 Surface 不再调用引擎；非活动 Surface 代数为最大值时，`reconfigure` 与 `suspend` 报 `WrongState`（原 `GenerationExhausted`）。
 
 未覆盖：引擎闭包内部做了什么、各公开入口是否调用了正确的门（靠阅读与集成测试）、硬件 Surface、合成器、垂直同步、设备丢失、真实平台休眠恢复、能力矩阵、wgpu/Vello TCB 登记，CP-06 仍未闭合。过期版本被引擎拒绝时仍报 `ViewRetired`，名称不够准确，本切片未改。定点通过，等批次全量。
+
+## 2026-11-05：渲染结果与待呈现帧（CP-06 子性质）
+
+`HostRenderer` 的五个渲染入口改为经过同一道门 `SurfaceCoordinator::render`。对任意归属者、代数、状态、结果类型与引擎闭包，有 Verus 全域证明：引擎只在恰为当前活动代数时才会被调用；拒绝不改变任何状态；生命周期不因渲染迁移；渲染之后，宿主能否确认呈现，当且仅当这一次渲染成功写入了宿主纹理。范围见 `verification.md` 的 UI-HOST-RENDER-OUTCOME-001。
+
+这改变了失败后的行为，原先各入口不一致：
+
+- `render_gpu_to_host_view` 失败（门之后的任何失败，包括版本过期与不支持的格式）现在撤销仍在等待呈现的帧，`gpu_presented` 返回 false，`needs_frame` 返回 `Some(true)`。原先这个帧仍可确认，而失败的渲染可能已写过同一纹理。代价是宿主确实可以呈现的旧帧也要重绘一次。
+- `render_to_surface`、`render_to_surface_with_damage` 失败现在也使视图保持待重绘，与 `render_to_backend`、`render_gpu` 一致。这几个入口失败时同样撤销待呈现帧。
+- 门处拒绝（外来归属者、过期代数、非活动状态）行为不变：引擎不被调用，待呈现帧保留。
+
+未覆盖：引擎闭包内部做了什么；公开入口与门的对应只有测试和阅读，没有证明。硬件 Surface、合成器、垂直同步、设备丢失、真实平台休眠恢复、能力矩阵与 wgpu/Vello TCB 登记仍没有证据，CP-06 仍未闭合。定点通过，等批次全量。

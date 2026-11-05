@@ -235,6 +235,8 @@ PROOF_BACKLOG = {
             "evidence/surface-lifecycle-chain/report.json",
             "evidence/host-surface-coordination-kernel/report.json",
             "evidence/host-surface-coordination-chain/report.json",
+            "evidence/host-render-outcome-kernel/report.json",
+            "evidence/host-render-outcome-chain/report.json",
         ],
     },
     "CP-07": {

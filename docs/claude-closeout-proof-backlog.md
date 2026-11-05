@@ -54,6 +54,8 @@
 
 2026-11-05 闭合 UI-HOST-SURFACE-COORDINATION-001：`HostRenderer` 的生命周期步骤与待呈现标志改由真实 `SurfaceCoordinator` 执行。对任意归属者、代数、尺寸、状态与引擎闭包：只有被准入的步骤才能调用引擎；拒绝与生命周期自身一致且不改变状态；引擎拒绝不改变状态；引擎接受后迁移必定提交并丢弃待呈现帧；任意轨迹上待呈现帧可追溯到当前生命周期状态下的渲染。反例被拒，见 `evidence/host-surface-coordination-chain/report.json`；Kani：发版时验证。
 
+2026-11-05 闭合 UI-HOST-RENDER-OUTCOME-001：`HostRenderer` 的五个渲染入口改为经过真实 `SurfaceCoordinator::render`。对任意归属者、代数、状态、结果类型与引擎闭包：引擎只在恰为当前活动代数时才会被调用；拒绝不改变状态；生命周期不因渲染迁移；渲染之后可确认呈现，当且仅当这一次渲染成功写入宿主纹理，因此失败的渲染会撤销等待呈现的帧。反例被拒，见 `evidence/host-render-outcome-chain/report.json`；Kani：发版时验证。
+
 仍未覆盖：引擎闭包内部、各公开入口与门的对应关系（靠阅读与集成测试）、硬件 Surface、合成器、垂直同步、设备丢失、真实平台休眠恢复、能力矩阵，以及 wgpu/Vello TCB 登记。
 
 ### CP-07

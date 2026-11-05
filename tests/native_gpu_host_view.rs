@@ -197,3 +197,77 @@ fn unsupported_host_format_is_explicit_and_fails_closed() {
     ));
     assert_eq!(engine.needs_frame(OWNER, generation), Some(true));
 }
+
+#[test]
+fn a_failed_render_withdraws_the_frame_waiting_for_a_present() {
+    let instance =
+        wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle_from_env());
+    let host = pollster::block_on(DeviceHandle::new_from_compatible_surface(
+        instance, None, None, None,
+    ))
+    .expect("host wgpu device");
+    let device = host.device.clone();
+    let mut gpu = GpuRenderer::from_wgpu(host.instance, host.adapter, host.device, host.queue);
+    let view_of = |format| {
+        device
+            .create_texture(&wgpu::TextureDescriptor {
+                label: Some("withdrawn frame target"),
+                size: wgpu::Extent3d {
+                    width: W,
+                    height: H,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                view_formats: &[],
+            })
+            .create_view(&wgpu::TextureViewDescriptor::default())
+    };
+    let good = view_of(FORMAT);
+    let unsupported = wgpu::TextureFormat::Rgba16Float;
+    let bad = view_of(unsupported);
+    let source = scene();
+    let version = source.version();
+    let mut engine = HostRenderer::new(OWNER, &source, &font(), W, H).expect("native import");
+    let generation = engine.surface_status(OWNER).unwrap().generation;
+    let mut render = |engine: &mut HostRenderer, format, view, owner, version| {
+        engine.render_gpu_to_host_view(owner, version, generation, &mut gpu, format, view, BUDGET)
+    };
+
+    // A refusal at the gate never reaches the frame waiting for its present.
+    // 门处的拒绝碰不到等待呈现的帧。
+    render(&mut engine, FORMAT, &good, OWNER, version).expect("first frame");
+    assert_eq!(
+        render(&mut engine, FORMAT, &good, OWNER + 1, version),
+        Err(GpuFrameError::Rejected)
+    );
+    assert!(engine.gpu_presented(OWNER, generation));
+    assert_eq!(engine.needs_frame(OWNER, generation), Some(false));
+
+    // An admitted render that fails does withdraw it, whichever way the engine failed.
+    // 已准入的渲染失败时必定撤销，无论引擎以何种方式失败。
+    render(&mut engine, FORMAT, &good, OWNER, version).expect("second frame");
+    assert!(matches!(
+        render(&mut engine, unsupported, &bad, OWNER, version),
+        Err(GpuFrameError::Unsupported(_))
+    ));
+    assert!(!engine.gpu_presented(OWNER, generation));
+    assert_eq!(engine.needs_frame(OWNER, generation), Some(true));
+
+    render(&mut engine, FORMAT, &good, OWNER, version).expect("third frame");
+    assert_eq!(
+        render(&mut engine, FORMAT, &good, OWNER, version + 1),
+        Err(GpuFrameError::Rejected)
+    );
+    assert!(!engine.gpu_presented(OWNER, generation));
+    assert_eq!(engine.needs_frame(OWNER, generation), Some(true));
+
+    // A new frame is acknowledged as usual.
+    // 新帧照常可以确认。
+    render(&mut engine, FORMAT, &good, OWNER, version).expect("retry");
+    assert!(engine.gpu_presented(OWNER, generation));
+    assert_eq!(engine.needs_frame(OWNER, generation), Some(false));
+}

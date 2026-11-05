@@ -3,9 +3,9 @@
   "status": "proved",
   "scope": "the real SurfaceCoordinator over all owners, generations, extents, states and engine closures: the engine is reachable only from an admitted step; refusals are the lifecycle's own and leave everything equal; an engine refusal leaves everything equal; an accepted engine always commits the lifecycle's transition and drops a pending present; a pending present along any trace comes from the current lifecycle state, which is active. Not what the engine does, nor which HostRenderer entry point calls which gate.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "96fc89142e2b79f574b61f42d827de479a75b2f3c24667f3b24e4aeb7d610267",
+  "source_sha256": "c8a703f4bc7e5cc35c2b801b014aab3cfd29173b7df5965783625f5a0fb125d8",
   "sources": {
-    "src/surface_lifecycle.rs": "96fc89142e2b79f574b61f42d827de479a75b2f3c24667f3b24e4aeb7d610267"
+    "src/surface_lifecycle.rs": "c8a703f4bc7e5cc35c2b801b014aab3cfd29173b7df5965783625f5a0fb125d8"
   },
   "kernel_sha256": "f3780a24208699a8886124dc2bdd490a8008ba7a195fe4874709fba5379829f9",
   "dependencies": {
@@ -19,7 +19,7 @@
     "surface-coordinator-storage-type": "49d643d9ad3e0820ccc67d510b887ef20c8c80c11f463cade70f0ac97fd0657e"
   },
   "proof_sha256": "af679003fba5231512cfd18edacf9614679ec5afb6fd93c592e76cac008c710f",
-  "runner_sha256": "87e78a874bbd1658d2b5878212e71fad81fb990ebec88e8b5166bce17e256ab1",
+  "runner_sha256": "132fdd41bb257ebc8abee2244b70a8328c8cf803a73836e38da0c421e24bb98b",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/verus/verus",

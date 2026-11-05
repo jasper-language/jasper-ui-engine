@@ -26,7 +26,7 @@
     "scene-batch-commit": "94bb7446c06ca86796853a134f620e18a46e2cde89611b97e25bd6d376b3ca94"
   },
   "proof_sha256": "966adf6e3020034b1b3c569dc128c493d0a1f4f4efb8a8b31dd4811862564343",
-  "runner_sha256": "87e78a874bbd1658d2b5878212e71fad81fb990ebec88e8b5166bce17e256ab1",
+  "runner_sha256": "132fdd41bb257ebc8abee2244b70a8328c8cf803a73836e38da0c421e24bb98b",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/verus/verus",

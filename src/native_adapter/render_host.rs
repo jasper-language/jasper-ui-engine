@@ -10,6 +10,8 @@ use crate::native::host::SceneHostView;
 use crate::native::host::{GpuFrameError, GpuRenderer};
 use crate::native::{SceneFocusEvent, SceneUpdate, SceneUpdateError};
 use crate::scene::{NodeId, Scene, ScenePatch};
+#[cfg(feature = "cpu-pending")]
+use crate::surface_lifecycle::RenderedPixels;
 use crate::surface_lifecycle::{
     SurfaceCoordinator, SurfaceLifecycleError, SurfaceStatus, SurfaceStepError,
 };
@@ -364,6 +366,27 @@ impl HostRenderer {
         self.inner.invalidate_frame(owner)
     }
 
+    /// Every render entry goes through here: the lifecycle admits it, a failure leaves the view
+    /// dirty, and the coordinator records what the outcome means for a pending present.
+    /// 所有渲染入口都经过这里：由生命周期准入，失败后视图保持待重绘，协调器记录结果对待呈现帧的影响。
+    #[cfg(feature = "cpu-pending")]
+    fn gated_render<T, E>(
+        &mut self,
+        owner: u64,
+        generation: u64,
+        pixels: RenderedPixels,
+        render: impl FnOnce(&mut SceneHostView) -> Result<T, E>,
+    ) -> Option<Result<T, E>> {
+        let inner = &mut self.inner;
+        self.surface.render(owner, generation, pixels, || {
+            let result = render(inner);
+            if result.is_err() {
+                inner.invalidate_frame(owner);
+            }
+            result
+        })
+    }
+
     #[cfg(feature = "cpu-pending")]
     pub fn render_to_surface(
         &mut self,
@@ -374,16 +397,13 @@ impl HostRenderer {
         stride: usize,
         budget: usize,
     ) -> bool {
-        if !self.surface.render_allowed(owner, generation) {
-            return false;
-        }
-        let rendered = self
-            .inner
-            .render_to_surface(owner, version, bytes, stride, budget);
-        if rendered {
-            self.surface.frame_superseded();
-        }
-        rendered
+        let rendered = self.gated_render(owner, generation, RenderedPixels::Delivered, |inner| {
+            inner
+                .render_to_surface(owner, version, bytes, stride, budget)
+                .then_some(())
+                .ok_or(())
+        });
+        rendered == Some(Ok(()))
     }
 
     #[cfg(feature = "cpu-pending")]
@@ -396,16 +416,12 @@ impl HostRenderer {
         stride: usize,
         budget: usize,
     ) -> Option<crate::native::host::FrameDamage> {
-        if !self.surface.render_allowed(owner, generation) {
-            return None;
-        }
-        let damage = self
-            .inner
-            .render_to_surface_with_damage(owner, version, bytes, stride, budget);
-        if damage.is_some() {
-            self.surface.frame_superseded();
-        }
-        damage
+        self.gated_render(owner, generation, RenderedPixels::Delivered, |inner| {
+            inner
+                .render_to_surface_with_damage(owner, version, bytes, stride, budget)
+                .ok_or(())
+        })?
+        .ok()
     }
 
     #[cfg(feature = "cpu-pending")]
@@ -417,20 +433,14 @@ impl HostRenderer {
         backend: &mut impl crate::backend::RenderBackend,
         budget: usize,
     ) -> Result<(), crate::backend::BackendError> {
-        if !self.surface.render_allowed(owner, generation) {
-            return Err(crate::backend::BackendError::Invalid(
+        self.gated_render(owner, generation, RenderedPixels::Delivered, |inner| {
+            inner.render_to_backend(owner, version, backend, budget)
+        })
+        .unwrap_or_else(|| {
+            Err(crate::backend::BackendError::Invalid(
                 "stale or inactive host surface generation".into(),
-            ));
-        }
-        let result = self
-            .inner
-            .render_to_backend(owner, version, backend, budget);
-        if result.is_ok() {
-            self.surface.frame_superseded();
-        } else {
-            self.inner.invalidate_frame(owner);
-        }
-        result
+            ))
+        })
     }
 
     #[cfg(feature = "gpu-pending")]
@@ -442,18 +452,15 @@ impl HostRenderer {
         gpu: &mut GpuRenderer,
         budget: usize,
     ) -> Result<Vec<u8>, GpuFrameError> {
-        if !self.surface.render_allowed(owner, generation) {
-            return Err(GpuFrameError::Rejected);
-        }
-        let result = self.inner.render_gpu(owner, version, gpu, budget);
-        if result.is_ok() {
-            self.surface.frame_superseded();
-        } else {
-            self.inner.invalidate_frame(owner);
-        }
-        result
+        self.gated_render(owner, generation, RenderedPixels::Delivered, |inner| {
+            inner.render_gpu(owner, version, gpu, budget)
+        })
+        .unwrap_or(Err(GpuFrameError::Rejected))
     }
 
+    /// A failure here withdraws any frame still waiting for a present: it may have written to the
+    /// same texture. `gpu_presented` then refuses and `needs_frame` asks for a new render.
+    /// 此处失败会撤销仍在等待呈现的帧，因为它可能已写入同一纹理；之后 `gpu_presented` 拒绝，`needs_frame` 要求重新渲染。
     #[cfg(feature = "gpu-pending")]
     pub fn render_gpu_to_host_view(
         &mut self,
@@ -465,16 +472,13 @@ impl HostRenderer {
         view: &wgpu::TextureView,
         budget: usize,
     ) -> Result<(), GpuFrameError> {
-        if !self.surface.render_allowed(owner, generation) {
-            return Err(GpuFrameError::Rejected);
-        }
-        let result = self
-            .inner
-            .render_gpu_to_host_view(owner, version, gpu, format, view, budget);
-        if result.is_ok() {
-            self.surface.texture_rendered(owner, generation);
-        }
-        result
+        self.gated_render(
+            owner,
+            generation,
+            RenderedPixels::AwaitingPresent,
+            |inner| inner.render_gpu_to_host_view(owner, version, gpu, format, view, budget),
+        )
+        .unwrap_or(Err(GpuFrameError::Rejected))
     }
 
     /// Acknowledge that the host's `Queue::present` succeeded for the exact live generation.

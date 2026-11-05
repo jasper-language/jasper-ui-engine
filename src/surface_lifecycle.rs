@@ -398,6 +398,50 @@ impl SurfaceCoordinator {
 }
 // END VERIFIED SURFACE COORDINATION KERNEL
 
+// BEGIN VERIFIED SURFACE RENDERED PIXELS TYPE
+/// Where a successful render leaves its pixels.
+/// 渲染成功后像素所在的位置。
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RenderedPixels {
+    /// Already in the host's hands (a copied buffer, a backend that presented). Nothing to confirm.
+    /// 已交到宿主手中（已复制的缓冲区、已呈现的后端），无需确认。
+    Delivered,
+    /// In a host texture that the host must still present and acknowledge.
+    /// 在宿主纹理中，宿主仍须呈现并确认。
+    AwaitingPresent,
+}
+// END VERIFIED SURFACE RENDERED PIXELS TYPE
+
+// BEGIN VERIFIED SURFACE RENDER OUTCOME KERNEL
+impl SurfaceCoordinator {
+    /// Run `engine` only at the exact live generation. `None` means it was never asked. A failed
+    /// render may have touched the target, so it leaves no frame the host could still acknowledge.
+    /// 仅在恰为当前活动代数时运行 `engine`；`None` 表示未调用。失败的渲染可能已写过目标，因此不留下宿主还能确认的帧。
+    pub fn render<T, E>(
+        &mut self,
+        caller: u64,
+        generation: u64,
+        pixels: RenderedPixels,
+        engine: impl FnOnce() -> Result<T, E>,
+    ) -> Option<Result<T, E>> {
+        if !self.surface.render_allowed(caller, generation) {
+            return None;
+        }
+        let result = engine();
+        match &result {
+            Ok(_) => match pixels {
+                RenderedPixels::Delivered => self.frame_superseded(),
+                RenderedPixels::AwaitingPresent => {
+                    self.texture_rendered(caller, generation);
+                }
+            },
+            Err(_) => self.frame_superseded(),
+        }
+        Some(result)
+    }
+}
+// END VERIFIED SURFACE RENDER OUTCOME KERNEL
+
 #[cfg(test)]
 mod tests {
     use proptest::prelude::*;
@@ -869,6 +913,148 @@ mod tests {
                 if coordinator.present_pending() {
                     prop_assert_eq!(after.state, SurfaceState::Active);
                 }
+            }
+        }
+    }
+
+    // Written apart from the production checks: when the engine may run and what each outcome
+    // leaves behind for the host to acknowledge.
+    // 与生产检查分开写出：引擎何时可以运行，以及每种结果留下什么供宿主确认。
+    fn check_render(
+        coordinator: &mut SurfaceCoordinator,
+        caller: u64,
+        expected: u64,
+        pixels: RenderedPixels,
+        answer: bool,
+    ) {
+        let before = *coordinator;
+        let status = coordinator.status(COORD_OWNER).unwrap();
+        let admitted = caller == COORD_OWNER
+            && expected == status.generation
+            && status.state == SurfaceState::Active;
+        let mut asked = 0;
+        let result = coordinator.render(caller, expected, pixels, || {
+            asked += 1;
+            if answer {
+                Ok(9u8)
+            } else {
+                Err(3u8)
+            }
+        });
+        assert_eq!(asked, u32::from(admitted));
+        assert_eq!(coordinator.status(COORD_OWNER), Some(status));
+        if !admitted {
+            assert_eq!(result, None);
+            assert_eq!(*coordinator, before);
+        } else if answer {
+            assert_eq!(result, Some(Ok(9)));
+            assert_eq!(
+                coordinator.present_pending(),
+                pixels == RenderedPixels::AwaitingPresent
+            );
+        } else {
+            assert_eq!(result, Some(Err(3)));
+            assert!(!coordinator.present_pending());
+        }
+    }
+
+    #[test]
+    fn a_render_follows_the_table_at_the_generation_edges() {
+        for state in STATES {
+            for generation in [1, 2, u64::MAX - 1, u64::MAX] {
+                for pending in [false, state == SurfaceState::Active] {
+                    for caller in [COORD_OWNER, COORD_OWNER + 1] {
+                        for expected in [generation, generation.wrapping_add(1)] {
+                            for pixels in
+                                [RenderedPixels::Delivered, RenderedPixels::AwaitingPresent]
+                            {
+                                for answer in [false, true] {
+                                    let mut coordinator =
+                                        coordinator_at(state, generation, pending);
+                                    check_render(
+                                        &mut coordinator,
+                                        caller,
+                                        expected,
+                                        pixels,
+                                        answer,
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn a_failed_render_withdraws_the_frame_waiting_for_a_present() {
+        let mut coordinator = SurfaceCoordinator::new(COORD_OWNER, 1, 1);
+        let rendered = coordinator.render(COORD_OWNER, 1, RenderedPixels::AwaitingPresent, || {
+            Ok::<(), ()>(())
+        });
+        assert_eq!(rendered, Some(Ok(())));
+        let failed = coordinator.render(COORD_OWNER, 1, RenderedPixels::AwaitingPresent, || {
+            Err::<(), ()>(())
+        });
+        assert_eq!(failed, Some(Err(())));
+        assert!(!coordinator.presented(COORD_OWNER, 1));
+    }
+
+    proptest! {
+        #[test]
+        fn a_frame_to_acknowledge_comes_from_the_last_render(
+            ops in proptest::collection::vec((0u8..5, any::<bool>(), any::<bool>()), 0..48),
+        ) {
+            let mut coordinator = SurfaceCoordinator::new(COORD_OWNER, 3, 5);
+            // The generation of the last render that succeeded into a texture, unless something
+            // has withdrawn it since. Kept apart from the coordinator's flag.
+            // 最近一次成功渲染到纹理的代数，除非之后被撤销；与协调器的标志分开记录。
+            let mut rendered_at = None;
+            for (op, stale, answer) in ops {
+                let status = coordinator.status(COORD_OWNER).unwrap();
+                let live = status.state == SurfaceState::Active;
+                let expected = status.generation + u64::from(stale);
+                match op {
+                    0 => {
+                        check_render(&mut coordinator, COORD_OWNER, expected,
+                            RenderedPixels::AwaitingPresent, answer);
+                        if live && !stale {
+                            rendered_at = answer.then_some(status.generation);
+                        }
+                    }
+                    1 => {
+                        check_render(&mut coordinator, COORD_OWNER, expected,
+                            RenderedPixels::Delivered, answer);
+                        if live && !stale {
+                            rendered_at = None;
+                        }
+                    }
+                    2 => {
+                        let acknowledged = coordinator.presented(COORD_OWNER, expected);
+                        prop_assert_eq!(acknowledged,
+                            live && !stale && rendered_at == Some(status.generation));
+                        if acknowledged {
+                            rendered_at = None;
+                        }
+                    }
+                    3 => {
+                        if coordinator.reconfigure(COORD_OWNER, expected, 3, 5, || answer).is_ok() {
+                            rendered_at = None;
+                        }
+                    }
+                    _ => {
+                        let moved = if live {
+                            coordinator.suspend(COORD_OWNER, expected, || answer)
+                        } else {
+                            coordinator.resume(COORD_OWNER, expected, 3, 5, || answer)
+                        };
+                        if moved.is_ok() {
+                            rendered_at = None;
+                        }
+                    }
+                }
+                prop_assert_eq!(coordinator.present_pending(), rendered_at.is_some());
             }
         }
     }
