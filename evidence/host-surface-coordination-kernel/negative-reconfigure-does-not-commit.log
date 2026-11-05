@@ -1,0 +1,23 @@
+verification results:: 37 verified, 1 errors
+error: postcondition not satisfied
+   --> <repo>/evidence/host-surface-coordination-kernel/negative_reconfigure_does_not_commit.rs:452:17
+    |
+452 |           ensures match result {
+    |  _________________^
+453 | |             Ok(value)=>{ let reconfigured=value; engine.ensures((),true) && surface_reconfigured(coordinator_surface(*old(self)),...
+454 | |             Err(SurfaceStepError::EngineRejected)=>engine.ensures((),false) && surface_admits_active(coordinator_surface(*old(sel...
+455 | |             Err(SurfaceStepError::Lifecycle(error))=>!(surface_admits_active(coordinator_surface(*old(self)),caller,expected_gene...
+456 | |         },
+    | |_________^ failed this postcondition
+457 |           surface_coordinator_step(*old(self),*final(self)),
+458 | /     { reveal(coordinator_surface); reveal(coordinator_pending); reveal(surface_coordinator_step); reveal(surface_admits_active); ...
+459 | |       reveal(surface_reconfigured); reveal(surface_suspended); reveal(surface_resumed); reveal(surface_retired); reveal(surface_r...
+460 | |         let mut next = self.surface;
+461 | |         let reconfigured = match next.reconfigure(caller, expected_generation, width, height) {
+...   |
+468 | |         Ok(reconfigured)
+469 | |     }
+    | |_____- at the end of the function body
+
+error: aborting due to 1 previous error
+

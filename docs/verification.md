@@ -1185,6 +1185,23 @@ Kani 未得出结论的形状（都在链外，已撤下；构建机与其他构
 
 假设与未覆盖：轨迹是对单个独占值的调用序列，这由 Rust 所有权保证，此处未证明；`HostRenderer` 对状态机的编排只有已有集成测试；wgpu、Vello 属第三方 TCB；硬件 Surface、合成器、垂直同步、设备丢失、真实平台休眠恢复与能力矩阵都没有证据。证据见 `evidence/surface-lifecycle-chain/report.json`。
 
+## UI-HOST-SURFACE-COORDINATION-001：宿主对生命周期的协调（CP-06 子性质，2026-11-05）
+
+真实 `src/surface_lifecycle.rs` 的 `SurfaceCoordinator`。`HostRenderer` 的 `reconfigure`、`suspend`、`resume`、`retire`、`close` 与待呈现标志改由它执行，原先三个预检函数已删除。行为变化见 `status.md` 同日条目。
+
+| 阶段 | 范围 | 结果 |
+|---|---|---|
+| Verus/Z3 | 任意归属者、调用者、代数、尺寸、状态与引擎闭包：引擎只能从被准入的步骤调用，否则不满足闭包前置条件；拒绝就是生命周期自身的拒绝，不改变状态；引擎拒绝不改变状态；引擎接受后迁移必定提交并丢弃待呈现帧。从无待呈现帧出发的任意轨迹上：其下的生命周期本身是生命周期轨迹；待呈现帧可追溯到一个渲染步骤，此后生命周期未迁移，且状态为活动 | 38 verified/0 errors（含依赖）；30 个反例全部被拒：22 个错误实现、5 个“拒绝后仍调用引擎”、3 个放宽的轨迹步骤，后者说明轨迹定理不是空真 |
+| Proptest | `verification/host-surface`：与生产检查分开写出的判定表，覆盖代数边界并记录引擎被调用的次数；`close`；长度 48 以内的任意轨迹，对照单独记录的渲染代数 | 11 项通过，新增 4 项（属性各 256 例，`PROPTEST_RNG_SEED=12345`） |
+| Miri | 同 crate 的 7 个非属性测试 | 通过；4 个属性测试不在 Miri 内。模块没有 unsafe |
+| cargo-fuzz | `host_coordination` 首次进入验证链；引擎的回答来自输入 | 806681 次，无崩溃（`read_boundary` 1695、`batch_decode` 794653、`ui_plugin_gate` 25691、`host_surface` 86521）。各目标 20 秒，虚拟机与其他任务共用，`read_boundary` 次数明显低于以往。代数远低于耗尽，该边界靠 Verus 合约与判定表测试 |
+| Kani | | Kani：发版时验证 |
+| Loom | N/A：类型没有共享状态、原子量或同步原语，由独占引用持有 | 不计 PASS；链中既有 Loom 场景通过，与本切片无关 |
+
+25 个错误实现逐个作用于临时副本，每个都至少让 `verification/host-surface` 的一项测试失败。真实路径另有 `tests/native_host_renderer.rs` 4 项（新增 1 项）和 `tests/native_gpu_host_view.rs` 2 项（llvmpipe）通过，这些是测试，不是证明。
+
+假设与未覆盖：轨迹是对单个独占值的调用序列，这由 Rust 所有权保证，此处未证明；引擎闭包内部做了什么没有规格；哪个公开入口调用了哪个门、删除预检后除已列变化外行为不变，只靠阅读与测试；wgpu、Vello 属第三方 TCB；硬件 Surface、合成器、垂直同步、设备丢失、真实平台休眠恢复与能力矩阵都没有证据。证据见 `evidence/host-surface-coordination-chain/report.json`。
+
 ## 发版清单补充
 
 `ui_plugin_gate` 的三个内核加入发版 Kani 时的候选 harness，现在未编写，`Kani：发版时验证`。

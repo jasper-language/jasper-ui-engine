@@ -1,0 +1,267 @@
+{
+  "property": "UI-HOST-SURFACE-COORDINATION-001",
+  "backlog_item": "CP-06",
+  "status": "subproperty_scoped_checks_passed",
+  "cp06_closed": false,
+  "production": {
+    "file": "src/surface_lifecycle.rs",
+    "type": "SurfaceCoordinator",
+    "functions": [
+      "new",
+      "status",
+      "render_allowed",
+      "active_for_owner",
+      "present_pending",
+      "reconfigure",
+      "suspend",
+      "resume",
+      "retire",
+      "close",
+      "frame_superseded",
+      "texture_rendered",
+      "presented",
+      "adopt"
+    ],
+    "file_sha256": "96fc89142e2b79f574b61f42d827de479a75b2f3c24667f3b24e4aeb7d610267",
+    "kernel_sha256": "f3780a24208699a8886124dc2bdd490a8008ba7a195fe4874709fba5379829f9",
+    "caller": "HostRenderer in src/native_adapter/render_host.rs",
+    "caller_sha256": "5a23804c4c50e10e78a470941b3df49e63a8ac7c87d15e8c217ac7a951c0d2bf"
+  },
+  "specification": "For any owner, caller, generation, extent, state and engine closure. The engine is reachable only from a step the lifecycle admits; calling it elsewhere fails the closure's precondition. A lifecycle refusal is the lifecycle's own refusal and leaves the coordinator equal. An engine refusal leaves the coordinator equal. An accepted engine always commits the lifecycle's transition and drops any pending present, so an admitted step cannot fail after the engine did its work. Along any trace from a state with nothing pending: the lifecycle underneath is itself a lifecycle trace, and a pending present comes from a render step whose lifecycle state has not moved since, and that state is active.",
+  "behavior_change": [
+    "resume on a non-suspended surface with a stale generation reports StaleGeneration, was WrongState",
+    "retire on a retired surface reports Lifecycle(WrongState) without calling the engine, was ViewRetired",
+    "close by a foreign owner or on a retired surface no longer calls the engine",
+    "reconfigure and suspend on a non-active surface at the maximum generation report WrongState, was GenerationExhausted"
+  ],
+  "assumptions": [
+    "Traces are sequences of calls on one exclusively held value: Rust ownership, not proved here.",
+    "The engine closure is arbitrary; its ensures relation is only what the contract states about it.",
+    "Verus default integer model, not a cross-platform execution test."
+  ],
+  "tools": {
+    "verus": "Verus 0.2026.10.18.7d82994",
+    "z3": "Z3 version 4.16.0 - 64 bit",
+    "nightly": "nightly-2026-10-17"
+  },
+  "config": {
+    "entry": "python3 scripts/verify-ui.py --verus <verus>",
+    "fuzz_seconds": 20,
+    "proptest_cases": 256,
+    "proptest_seed": "12345"
+  },
+  "stages": {
+    "Verus+Z3": {
+      "result": "passed",
+      "verified": 38,
+      "errors": 0,
+      "negative_controls": [
+        {
+          "name": "reconfigure-ignores-the-engine",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "reconfigure-does-not-commit",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "reconfigure-misreports-a-refusal",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "suspend-ignores-the-engine",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "suspend-does-not-commit",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "suspend-misreports-a-refusal",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "resume-ignores-the-engine",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "resume-does-not-commit",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "resume-misreports-a-refusal",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "retire-ignores-the-engine",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "retire-does-not-commit",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "retire-misreports-a-refusal",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "close-ignores-the-engine",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "close-does-not-commit",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "adopt-keeps-the-pending-present",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "adopt-keeps-the-old-lifecycle",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "superseded-keeps-the-frame",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "render-ignores-the-gate",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "render-marks-nothing",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "present-ignores-the-gate",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "present-without-a-frame",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "present-keeps-the-frame",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "reconfigure-engine-runs-after-a-refusal",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "suspend-engine-runs-after-a-refusal",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "resume-engine-runs-after-a-refusal",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "retire-engine-runs-after-a-refusal",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "close-engine-runs-after-a-refusal",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "a-move-may-keep-the-pending-present",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "a-mark-may-move-the-lifecycle",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "a-mark-may-come-from-any-state",
+          "rejected": true,
+          "exit_code": 1
+        }
+      ],
+      "model_note": "The count includes the re-verified dependencies. 22 wrong implementations fail a postcondition, 5 calls of the engine after a refusal fail the closure precondition, and 3 weakened trace steps are refused, which shows the trace theorems are not vacuous."
+    },
+    "Proptest": {
+      "result": "passed",
+      "harness": [
+        "actual::tests in verification/host-surface"
+      ],
+      "test_count": 11,
+      "new_tests": 4,
+      "includes": "A decision table written apart from the production checks at the generation edges, recording how often the engine was asked; close; traces up to 48 steps against a separately kept record of the rendering generation."
+    },
+    "Miri": {
+      "result": "passed",
+      "test_count": 7,
+      "harness": [
+        "the non-property tests of verification/host-surface"
+      ],
+      "note": "The four property tests are skipped under Miri. The module has no unsafe code."
+    },
+    "cargo-fuzz": {
+      "result": "passed",
+      "target": "host_coordination",
+      "completed_runs": 806681,
+      "other_targets": {
+        "read_boundary": 1695,
+        "batch_decode": 794653,
+        "ui_plugin_gate": 25691,
+        "host_surface": 86521
+      },
+      "note": "New in the chain. The engine's answer comes from the input. Generations stay far below exhaustion; that edge rests on the Verus contract and the table test. All targets ran 20 seconds on a shared VM; read_boundary completed far fewer runs than in earlier chains."
+    },
+    "Kani": {
+      "result": "Kani：发版时验证",
+      "note": "No new harness ran in this chain."
+    },
+    "Loom": {
+      "result": "N/A",
+      "reason": "The type has no shared state, atomic or synchronization primitive and is held by exclusive reference; no concurrent execution exists to explore.",
+      "counted_as_pass": false
+    }
+  },
+  "real_path_test": {
+    "test": "verification/host-surface tests; tests/native_host_renderer.rs (4 passed); tests/native_gpu_host_view.rs (2 passed, llvmpipe)",
+    "class": "tested, not proved",
+    "mutation_checked": "25 wrong implementations of the kernel were each applied to a scratch copy and each failed at least one test of verification/host-surface."
+  },
+  "not_covered": [
+    "What the engine closures do",
+    "Which HostRenderer entry point calls which gate: reading and integration tests only",
+    "That the preflight removal is equivalent to the old checks outside the listed behavior changes: reading and tests only",
+    "wgpu and Vello (third-party TCB)",
+    "hardware surfaces and compositors",
+    "vsync",
+    "device loss",
+    "suspend and resume on a real platform",
+    "the capability matrix"
+  ]
+}

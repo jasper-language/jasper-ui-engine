@@ -1,0 +1,12 @@
+verification results:: 37 verified, 1 errors
+error: postcondition not satisfied
+   --> <repo>/evidence/host-surface-coordination-kernel/negative_close_ignores_the_engine.rs:542:17
+    |
+542 | ...   ensures result ==> engine.ensures((),true) && surface_retired_current(coordinator_surface(*old(self)),coordinator_surface(*final(self)),caller,true) && !coordinator_pending(*final(self)),
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+552 | ...   true
+    |       ---- at the end of the function body
+
+error: aborting due to 1 previous error
+

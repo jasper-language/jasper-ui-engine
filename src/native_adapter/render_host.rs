@@ -11,7 +11,7 @@ use crate::native::host::{GpuFrameError, GpuRenderer};
 use crate::native::{SceneFocusEvent, SceneUpdate, SceneUpdateError};
 use crate::scene::{NodeId, Scene, ScenePatch};
 use crate::surface_lifecycle::{
-    SurfaceLifecycle, SurfaceLifecycleError, SurfaceState, SurfaceStatus,
+    SurfaceCoordinator, SurfaceLifecycleError, SurfaceStatus, SurfaceStepError,
 };
 
 /// Host coordinator failure. A lifecycle rejection precedes all native engine work.
@@ -41,13 +41,21 @@ impl From<SurfaceLifecycleError> for HostRenderError {
     }
 }
 
+/// Name what the engine's refusal means for this step.
+/// 说明引擎拒绝对这一步意味着什么。
+fn step_error(error: SurfaceStepError, engine_rejected: HostRenderError) -> HostRenderError {
+    match error {
+        SurfaceStepError::Lifecycle(error) => HostRenderError::Lifecycle(error),
+        SurfaceStepError::EngineRejected => engine_rejected,
+    }
+}
+
 /// One native view plus its host-owned presentation lifecycle.
 /// 一个原生视图及其宿主持有的呈现生命周期。
 pub struct HostRenderer {
     owner: u64,
     inner: SceneHostView,
-    surface: SurfaceLifecycle,
-    gpu_present_pending: bool,
+    surface: SurfaceCoordinator,
 }
 
 impl HostRenderer {
@@ -58,8 +66,7 @@ impl HostRenderer {
         Some(Self {
             owner,
             inner: SceneHostView::new(owner, scene, font, width, height)?,
-            surface: SurfaceLifecycle::new(owner, width, height),
-            gpu_present_pending: false,
+            surface: SurfaceCoordinator::new(owner, width, height),
         })
     }
 
@@ -76,8 +83,7 @@ impl HostRenderer {
         Some(Self {
             owner,
             inner: SceneHostView::with_fonts(owner, scene, fonts, width, height)?,
-            surface: SurfaceLifecycle::new(owner, width, height),
-            gpu_present_pending: false,
+            surface: SurfaceCoordinator::new(owner, width, height),
         })
     }
 
@@ -89,7 +95,7 @@ impl HostRenderer {
         if !self.surface.render_allowed(owner, generation) {
             return None;
         }
-        Some(self.gpu_present_pending || self.inner.needs_frame(self.owner)?)
+        Some(self.surface.present_pending() || self.inner.needs_frame(self.owner)?)
     }
 
     /// Reconfigure the engine viewport and return the new surface generation. Validation failure
@@ -103,23 +109,18 @@ impl HostRenderer {
         height: u32,
         scale: f32,
     ) -> Result<u64, HostRenderError> {
-        let status = self.preflight_advance(owner, generation)?;
-        if status.state != SurfaceState::Active {
-            return Err(HostRenderError::Lifecycle(
-                SurfaceLifecycleError::WrongState,
-            ));
-        }
-        if width == 0 || height == 0 {
-            return Err(HostRenderError::ViewportRejected);
-        }
-        if !self.inner.set_viewport(owner, width, height, scale) {
-            return Err(HostRenderError::ViewportRejected);
-        }
-        // A host Surface replacement invalidates its old pixel copy, not only layout.
-        // 宿主替换 Surface 时也必须废弃旧像素副本，而不仅是重新布局。
-        self.inner.invalidate_frame(owner);
-        self.gpu_present_pending = false;
-        Ok(self.surface.reconfigure(owner, generation, width, height)?)
+        let inner = &mut self.inner;
+        self.surface
+            .reconfigure(owner, generation, width, height, || {
+                if width == 0 || height == 0 || !inner.set_viewport(owner, width, height, scale) {
+                    return false;
+                }
+                // A host Surface replacement invalidates its old pixel copy, not only layout.
+                // 宿主替换 Surface 时也必须废弃旧像素副本，而不仅是重新布局。
+                inner.invalidate_frame(owner);
+                true
+            })
+            .map_err(|error| step_error(error, HostRenderError::ViewportRejected))
     }
 
     /// Host releases window/Surface/device resources. Scene and semantic state survive.
@@ -131,17 +132,12 @@ impl HostRenderer {
         generation: u64,
         focus: &mut impl FnMut(SceneFocusEvent),
     ) -> Result<u64, HostRenderError> {
-        let status = self.preflight_advance(owner, generation)?;
-        if status.state != SurfaceState::Active {
-            return Err(HostRenderError::Lifecycle(
-                SurfaceLifecycleError::WrongState,
-            ));
-        }
-        if !self.inner.deactivate(owner, version, focus) {
-            return Err(HostRenderError::ViewRetired);
-        }
-        self.gpu_present_pending = false;
-        Ok(self.surface.suspend(owner, generation)?)
+        let inner = &mut self.inner;
+        self.surface
+            .suspend(owner, generation, || {
+                inner.deactivate(owner, version, focus)
+            })
+            .map_err(|error| step_error(error, HostRenderError::ViewRetired))
     }
 
     /// Host recreated resources. The viewport metadata is updated before activation becomes
@@ -155,35 +151,16 @@ impl HostRenderer {
         height: u32,
         scale: f32,
     ) -> Result<u64, HostRenderError> {
-        let status = self
-            .surface
-            .status(owner)
-            .ok_or(HostRenderError::Lifecycle(
-                SurfaceLifecycleError::WrongOwner,
-            ))?;
-        if status.state != SurfaceState::Suspended {
-            return Err(HostRenderError::Lifecycle(
-                SurfaceLifecycleError::WrongState,
-            ));
-        }
-        if status.generation != generation {
-            return Err(HostRenderError::Lifecycle(
-                SurfaceLifecycleError::StaleGeneration,
-            ));
-        }
-        if generation == u64::MAX {
-            return Err(HostRenderError::Lifecycle(
-                SurfaceLifecycleError::GenerationExhausted,
-            ));
-        }
-        if width == 0 || height == 0 {
-            return Err(HostRenderError::ViewportRejected);
-        }
-        if !self.inner.set_viewport(owner, width, height, scale) {
-            return Err(HostRenderError::ViewportRejected);
-        }
-        self.inner.invalidate_frame(owner);
-        Ok(self.surface.resume(owner, generation, width, height)?)
+        let inner = &mut self.inner;
+        self.surface
+            .resume(owner, generation, width, height, || {
+                if width == 0 || height == 0 || !inner.set_viewport(owner, width, height, scale) {
+                    return false;
+                }
+                inner.invalidate_frame(owner);
+                true
+            })
+            .map_err(|error| step_error(error, HostRenderError::ViewportRejected))
     }
 
     /// Retire native ownership after the host observed its final lifecycle generation.
@@ -195,13 +172,12 @@ impl HostRenderer {
         generation: u64,
         focus: &mut impl FnMut(SceneFocusEvent),
     ) -> Result<(), HostRenderError> {
-        self.preflight(owner, generation)?;
-        if !self.inner.close_with_focus_events(owner, version, focus) {
-            return Err(HostRenderError::ViewRetired);
-        }
-        self.gpu_present_pending = false;
-        self.surface.retire(owner, generation)?;
-        Ok(())
+        let inner = &mut self.inner;
+        self.surface
+            .retire(owner, generation, || {
+                inner.close_with_focus_events(owner, version, focus)
+            })
+            .map_err(|error| step_error(error, HostRenderError::ViewRetired))
     }
 
     /// Retire without an epoch. Preferred only for error paths that do not own a current surface.
@@ -212,11 +188,10 @@ impl HostRenderer {
         version: u64,
         focus: &mut impl FnMut(SceneFocusEvent),
     ) -> bool {
-        if !self.inner.close_with_focus_events(owner, version, focus) {
-            return false;
-        }
-        self.gpu_present_pending = false;
-        self.surface.retire_current(owner)
+        let inner = &mut self.inner;
+        self.surface.close(owner, || {
+            inner.close_with_focus_events(owner, version, focus)
+        })
     }
 
     pub fn apply(&mut self, owner: u64, expected: u64, next: u64, patches: &[ScenePatch]) -> bool {
@@ -225,7 +200,7 @@ impl HostRenderer {
         }
         let applied = self.inner.apply(owner, expected, next, patches);
         if applied {
-            self.gpu_present_pending = false;
+            self.surface.frame_superseded();
         }
         applied
     }
@@ -242,7 +217,7 @@ impl HostRenderer {
         }
         let result = self.inner.try_apply(owner, expected, next, patches);
         if result.is_ok() {
-            self.gpu_present_pending = false;
+            self.surface.frame_superseded();
         }
         result
     }
@@ -300,7 +275,7 @@ impl HostRenderer {
         node: NodeId,
         sink: &mut impl FnMut(SceneFocusEvent),
     ) -> bool {
-        self.preflight_active(owner, generation).is_ok()
+        self.surface.render_allowed(owner, generation)
             && self.inner.focus(owner, version, node, sink)
     }
 
@@ -316,7 +291,7 @@ impl HostRenderer {
         pointer: &mut impl FnMut(crate::native::SceneEvent) -> crate::native::EventReply,
         focus: &mut impl FnMut(SceneFocusEvent),
     ) -> bool {
-        self.preflight_active(owner, generation).is_ok()
+        self.surface.render_allowed(owner, generation)
             && self
                 .inner
                 .pointer(owner, version, phase, x, y, pressed, pointer, focus)
@@ -331,7 +306,7 @@ impl HostRenderer {
         key: &mut impl FnMut(crate::native::SceneKeyEvent) -> crate::native::EventReply,
         focus: &mut impl FnMut(SceneFocusEvent),
     ) -> bool {
-        self.preflight_active(owner, generation).is_ok()
+        self.surface.render_allowed(owner, generation)
             && self.inner.key(owner, version, input, key, focus)
     }
 
@@ -351,7 +326,7 @@ impl HostRenderer {
             .inner
             .apply_with_focus_events(owner, expected, next, patches, focus);
         if applied {
-            self.gpu_present_pending = false;
+            self.surface.frame_superseded();
         }
         applied
     }
@@ -364,7 +339,7 @@ impl HostRenderer {
         x: f64,
         y: f64,
     ) -> bool {
-        self.preflight_active(owner, generation).is_ok()
+        self.surface.render_allowed(owner, generation)
             && self.inner.set_viewport_scroll(owner, version, x, y)
     }
 
@@ -377,7 +352,7 @@ impl HostRenderer {
         generation: u64,
         focus: &mut impl FnMut(SceneFocusEvent),
     ) -> bool {
-        self.preflight_active(owner, generation).is_ok()
+        self.surface.render_allowed(owner, generation)
             && self.inner.deactivate(owner, version, focus)
     }
 
@@ -385,7 +360,7 @@ impl HostRenderer {
         if !self.surface.render_allowed(owner, generation) {
             return false;
         }
-        self.gpu_present_pending = false;
+        self.surface.frame_superseded();
         self.inner.invalidate_frame(owner)
     }
 
@@ -406,7 +381,7 @@ impl HostRenderer {
             .inner
             .render_to_surface(owner, version, bytes, stride, budget);
         if rendered {
-            self.gpu_present_pending = false;
+            self.surface.frame_superseded();
         }
         rendered
     }
@@ -428,7 +403,7 @@ impl HostRenderer {
             .inner
             .render_to_surface_with_damage(owner, version, bytes, stride, budget);
         if damage.is_some() {
-            self.gpu_present_pending = false;
+            self.surface.frame_superseded();
         }
         damage
     }
@@ -451,7 +426,7 @@ impl HostRenderer {
             .inner
             .render_to_backend(owner, version, backend, budget);
         if result.is_ok() {
-            self.gpu_present_pending = false;
+            self.surface.frame_superseded();
         } else {
             self.inner.invalidate_frame(owner);
         }
@@ -472,7 +447,7 @@ impl HostRenderer {
         }
         let result = self.inner.render_gpu(owner, version, gpu, budget);
         if result.is_ok() {
-            self.gpu_present_pending = false;
+            self.surface.frame_superseded();
         } else {
             self.inner.invalidate_frame(owner);
         }
@@ -497,7 +472,7 @@ impl HostRenderer {
             .inner
             .render_gpu_to_host_view(owner, version, gpu, format, view, budget);
         if result.is_ok() {
-            self.gpu_present_pending = true;
+            self.surface.texture_rendered(owner, generation);
         }
         result
     }
@@ -507,65 +482,6 @@ impl HostRenderer {
     /// 确认宿主对精确当前代数成功执行 `Queue::present`；确认前 `needs_frame` 保持该纹理帧待呈现。
     #[cfg(feature = "gpu-pending")]
     pub fn gpu_presented(&mut self, owner: u64, generation: u64) -> bool {
-        if !self.surface.render_allowed(owner, generation) || !self.gpu_present_pending {
-            return false;
-        }
-        self.gpu_present_pending = false;
-        true
-    }
-
-    fn preflight_active(&self, owner: u64, generation: u64) -> Result<(), HostRenderError> {
-        self.preflight(owner, generation)?;
-        let status = self
-            .surface
-            .status(owner)
-            .ok_or(HostRenderError::Lifecycle(
-                SurfaceLifecycleError::WrongOwner,
-            ))?;
-        if status.state != SurfaceState::Active {
-            return Err(HostRenderError::Lifecycle(
-                SurfaceLifecycleError::WrongState,
-            ));
-        }
-        Ok(())
-    }
-
-    fn preflight_advance(
-        &self,
-        owner: u64,
-        generation: u64,
-    ) -> Result<SurfaceStatus, HostRenderError> {
-        let status = self
-            .surface
-            .status(owner)
-            .ok_or(HostRenderError::Lifecycle(
-                SurfaceLifecycleError::WrongOwner,
-            ))?;
-        if status.generation != generation {
-            return Err(HostRenderError::Lifecycle(
-                SurfaceLifecycleError::StaleGeneration,
-            ));
-        }
-        if generation == u64::MAX {
-            return Err(HostRenderError::Lifecycle(
-                SurfaceLifecycleError::GenerationExhausted,
-            ));
-        }
-        Ok(status)
-    }
-
-    fn preflight(&self, owner: u64, generation: u64) -> Result<(), HostRenderError> {
-        let status = self
-            .surface
-            .status(owner)
-            .ok_or(HostRenderError::Lifecycle(
-                SurfaceLifecycleError::WrongOwner,
-            ))?;
-        if status.generation != generation {
-            return Err(HostRenderError::Lifecycle(
-                SurfaceLifecycleError::StaleGeneration,
-            ));
-        }
-        Ok(())
+        self.surface.presented(owner, generation)
     }
 }

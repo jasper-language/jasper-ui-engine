@@ -1,0 +1,9 @@
+verification results:: 37 verified, 1 errors
+error: Call to non-static function fails to satisfy `callee.requires(args)`
+   --> <repo>/evidence/host-surface-coordination-kernel/negative_retire_engine_runs_after_a_refusal.rs:529:37
+    |
+529 |             Err(error) => { let _ = engine(); return Err(SurfaceStepError::Lifecycle(error)); },
+    |                                     ^^^^^^^^
+
+error: aborting due to 1 previous error
+

@@ -1,0 +1,12 @@
+verification results:: 37 verified, 1 errors
+error: postcondition not satisfied
+   --> <repo>/evidence/host-surface-coordination-kernel/negative_a_mark_may_come_from_any_state.rs:192:13
+    |
+190 | proof fn surface_pending_is_active(t:Seq<SurfaceCoordinator>,j:int)
+    |       ------------------------------------------------------------- at the end of the function body
+191 |     requires surface_coordinator_trace(t), 0<=j<t.len(), !t[0].present_pending, t[j].present_pending,
+192 |     ensures t[j].surface.state is Active,
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+
+error: aborting due to 1 previous error
+

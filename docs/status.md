@@ -912,3 +912,11 @@ CP-02 仍无判定：只选一个断言（切片后 30 个 VCC）在 45 分钟�
 ## 2026-11-05：Surface 生命周期迁移（CP-06 子性质）
 
 `SurfaceLifecycle` 的全部迁移（`reconfigure`、`suspend`、`resume`、`retire`、`retire_current`）与任意轨迹有 Verus 全域证明，范围见 `verification.md` 的 UI-SURFACE-LIFECYCLE-001。这只是生命周期状态机：`HostRenderer` 的编排、wgpu/Vello、硬件 Surface、合成器、垂直同步、设备丢失、真实平台休眠恢复与能力矩阵都没有覆盖，CP-06 仍未闭合。定点通过，等批次全量。
+
+## 2026-11-05：宿主对 Surface 生命周期的协调（CP-06 子性质）
+
+`HostRenderer` 的 `reconfigure`、`suspend`、`resume`、`retire`、`close` 与待呈现标志改由新类型 `SurfaceCoordinator` 执行：先在副本上迁移，准入后才调用引擎，引擎接受后才提交。对任意引擎闭包，有 Verus 全域证明：只有被准入的步骤才能调用引擎；拒绝与生命周期自身一致；引擎拒绝不改变任何状态；引擎接受后生命周期必定迁移；任意轨迹上，待呈现帧来自当前生命周期状态。范围见 `verification.md` 的 UI-HOST-SURFACE-COORDINATION-001。
+
+这改变了几种错误结果，原先的预检与生命周期不一致：`resume` 对非暂停且代数过期的 Surface 现在报 `StaleGeneration`（原 `WrongState`）；对已退休 Surface 再次 `retire` 现在报 `Lifecycle(WrongState)`（原 `ViewRetired`），且不再调用引擎；`close` 对外来归属者或已退休 Surface 不再调用引擎；非活动 Surface 代数为最大值时，`reconfigure` 与 `suspend` 报 `WrongState`（原 `GenerationExhausted`）。
+
+未覆盖：引擎闭包内部做了什么、各公开入口是否调用了正确的门（靠阅读与集成测试）、硬件 Surface、合成器、垂直同步、设备丢失、真实平台休眠恢复、能力矩阵、wgpu/Vello TCB 登记，CP-06 仍未闭合。过期版本被引擎拒绝时仍报 `ViewRetired`，名称不够准确，本切片未改。定点通过，等批次全量。

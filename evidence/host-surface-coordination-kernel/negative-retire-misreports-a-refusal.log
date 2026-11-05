@@ -1,0 +1,17 @@
+verification results:: 37 verified, 1 errors
+error: postcondition not satisfied
+   --> <repo>/evidence/host-surface-coordination-kernel/negative_retire_misreports_a_refusal.rs:518:17
+    |
+518 |   ...   ensures match result {
+    |  _______________^
+519 | | ...       Ok(value)=>{ let retired=value; engine.ensures((),true) && surface_retired(coordinator_surface(*old(self)),coordinator_...
+520 | | ...       Err(SurfaceStepError::EngineRejected)=>engine.ensures((),false) && surface_admits_retire(coordinator_surface(*old(self)...
+521 | | ...       Err(SurfaceStepError::Lifecycle(error))=>!(surface_admits_retire(coordinator_surface(*old(self)),caller,expected_genera...
+522 | | ...   },
+    | |_______^ failed this postcondition
+...
+529 |   ...       Err(_) => return Err(SurfaceStepError::EngineRejected),
+    |                       -------------------------------------------- at this exit
+
+error: aborting due to 1 previous error
+

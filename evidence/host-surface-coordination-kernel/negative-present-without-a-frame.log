@@ -1,0 +1,12 @@
+verification results:: 37 verified, 1 errors
+error: postcondition not satisfied
+   --> <repo>/evidence/host-surface-coordination-kernel/negative_present_without_a_frame.rs:583:17
+    |
+583 |         ensures result==(surface_live(coordinator_surface(*old(self)),caller,generation) && coordinator_pending(*old(self))),
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+592 |         true
+    |         ---- at the end of the function body
+
+error: aborting due to 1 previous error
+

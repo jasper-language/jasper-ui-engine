@@ -1,0 +1,17 @@
+verification results:: 37 verified, 1 errors
+error: postcondition not satisfied
+   --> <repo>/evidence/host-surface-coordination-kernel/negative_resume_misreports_a_refusal.rs:496:17
+    |
+496 |   ...   ensures match result {
+    |  _______________^
+497 | | ...       Ok(value)=>{ let resumed=value; engine.ensures((),true) && surface_resumed(coordinator_surface(*old(self)),coordinator_...
+498 | | ...       Err(SurfaceStepError::EngineRejected)=>engine.ensures((),false) && surface_admits_suspended(coordinator_surface(*old(se...
+499 | | ...       Err(SurfaceStepError::Lifecycle(error))=>!(surface_admits_suspended(coordinator_surface(*old(self)),caller,expected_gen...
+500 | | ...   },
+    | |_______^ failed this postcondition
+...
+507 |   ...       Err(_) => return Err(SurfaceStepError::EngineRejected),
+    |                       -------------------------------------------- at this exit
+
+error: aborting due to 1 previous error
+

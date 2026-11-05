@@ -1,0 +1,9 @@
+verification results:: 37 verified, 1 errors
+error: assertion failed
+   --> <repo>/evidence/host-surface-coordination-kernel/negative_a_move_may_keep_the_pending_present.rs:180:16
+    |
+180 |         assert(t[j]==t[k]);
+    |                ^^^^^^^^^^ assertion failed
+
+error: aborting due to 1 previous error
+

@@ -1,0 +1,11 @@
+verification results:: 37 verified, 1 errors
+error: postcondition not satisfied
+   --> <repo>/evidence/host-surface-coordination-kernel/negative_adopt_keeps_the_pending_present.rs:596:58
+    |
+595 |     fn adopt(&mut self,next:SurfaceLifecycle)
+    |     ----------------------------------------- at the end of the function body
+596 |         ensures coordinator_surface(*final(self))==next, !coordinator_pending(*final(self)),
+    |                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+
+error: aborting due to 1 previous error
+

@@ -3,9 +3,9 @@
   "status": "proved",
   "scope": "render admission decided by exact owner, active state and generation; not lifecycle transitions, generation monotonicity or host resource replacement",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "f117293f240801994fec91d5b2a205937aa015cb1b2ce281448e1c76fd592d55",
+  "source_sha256": "96fc89142e2b79f574b61f42d827de479a75b2f3c24667f3b24e4aeb7d610267",
   "sources": {
-    "src/surface_lifecycle.rs": "f117293f240801994fec91d5b2a205937aa015cb1b2ce281448e1c76fd592d55"
+    "src/surface_lifecycle.rs": "96fc89142e2b79f574b61f42d827de479a75b2f3c24667f3b24e4aeb7d610267"
   },
   "kernel_sha256": "1165373689740b4071d5eea4c6c4d54d6414a05b2a88495149cf695b548b773c",
   "dependencies": {
@@ -13,7 +13,7 @@
     "surface-lifecycle-storage-type": "4a7da0410b341e6e1a90ab045b1a2546174a2be360fe477659691075e6301e6c"
   },
   "proof_sha256": "d6a41fc8f5e170d1d312841914f409cd2511d4f4c045c9d1c7ffe35a847df537",
-  "runner_sha256": "9ced6ae49e9658441f6dc330138939658e4197302cc350bce10ab58f93398a0e",
+  "runner_sha256": "87e78a874bbd1658d2b5878212e71fad81fb990ebec88e8b5166bce17e256ab1",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/verus/verus",

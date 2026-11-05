@@ -41,3 +41,10 @@ path = "fuzz_targets/ui_plugin_gate.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "host_coordination"
+path = "fuzz_targets/host_coordination.rs"
+test = false
+doc = false
+bench = false

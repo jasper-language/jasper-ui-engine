@@ -1,0 +1,13 @@
+verification results:: 37 verified, 1 errors
+error: postcondition not satisfied
+   --> <repo>/evidence/host-surface-coordination-kernel/negative_superseded_keeps_the_frame.rs:560:85
+    |
+560 |           ensures coordinator_surface(*final(self))==coordinator_surface(*old(self)), !coordinator_pending(*final(self)), surface_c...
+    |                                                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+561 | /     { reveal(coordinator_surface); reveal(coordinator_pending); reveal(surface_coordinator_step); reveal(surface_step);
+562 | |
+563 | |     }
+    | |_____- at the end of the function body
+
+error: aborting due to 1 previous error
+

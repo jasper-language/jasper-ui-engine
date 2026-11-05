@@ -1,0 +1,23 @@
+verification results:: 37 verified, 1 errors
+error: postcondition not satisfied
+   --> <repo>/evidence/host-surface-coordination-kernel/negative_resume_does_not_commit.rs:496:17
+    |
+496 |           ensures match result {
+    |  _________________^
+497 | |             Ok(value)=>{ let resumed=value; engine.ensures((),true) && surface_resumed(coordinator_surface(*old(self)),coordinato...
+498 | |             Err(SurfaceStepError::EngineRejected)=>engine.ensures((),false) && surface_admits_suspended(coordinator_surface(*old(...
+499 | |             Err(SurfaceStepError::Lifecycle(error))=>!(surface_admits_suspended(coordinator_surface(*old(self)),caller,expected_g...
+500 | |         },
+    | |_________^ failed this postcondition
+501 |           surface_coordinator_step(*old(self),*final(self)),
+502 | /     { reveal(coordinator_surface); reveal(coordinator_pending); reveal(surface_coordinator_step); reveal(surface_admits_active); ...
+503 | |       reveal(surface_reconfigured); reveal(surface_suspended); reveal(surface_resumed); reveal(surface_retired); reveal(surface_r...
+504 | |         let mut next = self.surface;
+505 | |         let resumed = match next.resume(caller, expected_generation, width, height) {
+...   |
+512 | |         Ok(resumed)
+513 | |     }
+    | |_____- at the end of the function body
+
+error: aborting due to 1 previous error
+

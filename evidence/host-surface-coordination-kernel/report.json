@@ -1,0 +1,196 @@
+{
+  "property": "UI-HOST-SURFACE-COORDINATION-001",
+  "status": "proved",
+  "scope": "the real SurfaceCoordinator over all owners, generations, extents, states and engine closures: the engine is reachable only from an admitted step; refusals are the lifecycle's own and leave everything equal; an engine refusal leaves everything equal; an accepted engine always commits the lifecycle's transition and drops a pending present; a pending present along any trace comes from the current lifecycle state, which is active. Not what the engine does, nor which HostRenderer entry point calls which gate.",
+  "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
+  "source_sha256": "96fc89142e2b79f574b61f42d827de479a75b2f3c24667f3b24e4aeb7d610267",
+  "sources": {
+    "src/surface_lifecycle.rs": "96fc89142e2b79f574b61f42d827de479a75b2f3c24667f3b24e4aeb7d610267"
+  },
+  "kernel_sha256": "f3780a24208699a8886124dc2bdd490a8008ba7a195fe4874709fba5379829f9",
+  "dependencies": {
+    "surface-state-type": "174c3de4fef6bdd59f7cbe7580869e0989c02ca9aab809bfc038592a42ed38bd",
+    "surface-status-type": "ca505f09140eab7515783947a9709fdc09d61c26610559e99e4fcc3a30299d27",
+    "surface-lifecycle-error-type": "b30dad969c7d971cb49762cb6644d6d2addb820fd32997c424e2403335599ec2",
+    "surface-lifecycle-storage-type": "4a7da0410b341e6e1a90ab045b1a2546174a2be360fe477659691075e6301e6c",
+    "surface-render-gate": "1165373689740b4071d5eea4c6c4d54d6414a05b2a88495149cf695b548b773c",
+    "surface-transition": "f82aa70f906897b7001aa81adeee500443ed51305dc11f8ff04d3b72f8b1d859",
+    "surface-step-error-type": "e865835d5b4d80930e6fcab6957937608255c40ed11ef4a08ce05c4ade952a3a",
+    "surface-coordinator-storage-type": "49d643d9ad3e0820ccc67d510b887ef20c8c80c11f463cade70f0ac97fd0657e"
+  },
+  "proof_sha256": "af679003fba5231512cfd18edacf9614679ec5afb6fd93c592e76cac008c710f",
+  "runner_sha256": "87e78a874bbd1658d2b5878212e71fad81fb990ebec88e8b5166bce17e256ab1",
+  "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
+  "command": [
+    "<home>/verus/verus",
+    "--crate-type",
+    "lib",
+    "<repo>/evidence/host-surface-coordination-kernel/kernel.rs"
+  ],
+  "exit_code": 0,
+  "solver": {
+    "path": "<home>/verus/z3",
+    "version": "Z3 version 4.16.0 - 64 bit\n",
+    "explicit_override": null
+  },
+  "verified_obligations": 38,
+  "negative_controls": [
+    {
+      "name": "reconfigure-ignores-the-engine",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "reconfigure-does-not-commit",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "reconfigure-misreports-a-refusal",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "suspend-ignores-the-engine",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "suspend-does-not-commit",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "suspend-misreports-a-refusal",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "resume-ignores-the-engine",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "resume-does-not-commit",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "resume-misreports-a-refusal",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "retire-ignores-the-engine",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "retire-does-not-commit",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "retire-misreports-a-refusal",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "close-ignores-the-engine",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "close-does-not-commit",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "adopt-keeps-the-pending-present",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "adopt-keeps-the-old-lifecycle",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "superseded-keeps-the-frame",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "render-ignores-the-gate",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "render-marks-nothing",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "present-ignores-the-gate",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "present-without-a-frame",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "present-keeps-the-frame",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "reconfigure-engine-runs-after-a-refusal",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "suspend-engine-runs-after-a-refusal",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "resume-engine-runs-after-a-refusal",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "retire-engine-runs-after-a-refusal",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "close-engine-runs-after-a-refusal",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "a-move-may-keep-the-pending-present",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "a-mark-may-move-the-lifecycle",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "a-mark-may-come-from-any-state",
+      "rejected": true,
+      "exit_code": 1
+    }
+  ],
+  "negative_control_rejected": true,
+  "trust_boundary": [
+    "Verus/vstd and SMT solver",
+    "Rust/Verus integer, references and slice semantics",
+    "signature annotation/extraction script",
+    "Rust compiler and target execution"
+  ]
+}

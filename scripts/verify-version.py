@@ -3939,6 +3939,229 @@ proof fn surface_retired_is_final(t:Seq<SurfaceLifecycle>,i:int,j:int,caller:u64
         ("a-step-may-reopen-a-retired-surface","    || surface_closed(o,n)\n}","    || surface_closed(o,n)\n    || (o.state is Retired && moved && n.state is Active)\n}","postcondition not satisfied"),
     ],
 }
+def _coordinated_contract(op, params, admits, relation, ok_type, ok_binding):
+    # `relation` is the lifecycle's own transition relation, with `{n}` and `{r}` to fill.
+    # `relation` 是生命周期自身的迁移关系，留出 `{n}`、`{r}` 待填。
+    ok = relation.format(n="coordinator_surface(*final(self))", r="Ok::<" + ok_type + ",SurfaceLifecycleError>(" + ok_binding + ")")
+    refused = relation.format(n="coordinator_surface(*old(self))", r="Err::<" + ok_type + ",SurfaceLifecycleError>(error)")
+    return ("pub fn " + op + "(&mut self," + params + ",engine:impl FnOnce()->bool)->(result:Result<" + ok_type + ",SurfaceStepError>)\n"
+            "        requires " + admits + " ==> engine.requires(()),\n"
+            "        ensures match result {\n"
+            "            Ok(value)=>{ let " + ok_binding + "=value; engine.ensures((),true) && " + ok + " && !coordinator_pending(*final(self)) },\n"
+            "            Err(SurfaceStepError::EngineRejected)=>engine.ensures((),false) && " + admits + " && *final(self)==*old(self),\n"
+            "            Err(SurfaceStepError::Lifecycle(error))=>!(" + admits + ") && " + refused + " && *final(self)==*old(self),\n"
+            "        },\n"
+            "        surface_coordinator_step(*old(self),*final(self)),\n"
+            "    { reveal(coordinator_surface); reveal(coordinator_pending); reveal(surface_coordinator_step); reveal(surface_admits_active); reveal(surface_admits_suspended); reveal(surface_admits_retire);\n"
+            "      reveal(surface_reconfigured); reveal(surface_suspended); reveal(surface_resumed); reveal(surface_retired); reveal(surface_refusal); reveal(surface_advanced); reveal(surface_closed);")
+
+_COORD_REFUSAL = "Err(error) => return Err(SurfaceStepError::Lifecycle(error)),"
+_COORD_ENGINE = "if !engine() {\n            return Err(SurfaceStepError::EngineRejected);\n        }\n"
+_COORD_OPS = [
+    ("reconfigure", "let reconfigured = match next.reconfigure(caller, expected_generation, width, height) {\n            Ok(generation) => generation,\n            ", "        self.adopt(next);\n        Ok(reconfigured)", "Ok(reconfigured)"),
+    ("suspend", "let suspended = match next.suspend(caller, expected_generation) {\n            Ok(generation) => generation,\n            ", "        self.adopt(next);\n        Ok(suspended)", "Ok(suspended)"),
+    ("resume", "let resumed = match next.resume(caller, expected_generation, width, height) {\n            Ok(generation) => generation,\n            ", "        self.adopt(next);\n        Ok(resumed)", "Ok(resumed)"),
+    ("retire", "match next.retire(caller, expected_generation) {\n            Ok(()) => {}\n            ", "        self.adopt(next);\n        Ok(())", "Ok(())"),
+]
+_COORD_MIDDLE = {
+    "reconfigure": "\n        };\n        ", "suspend": "\n        };\n        ", "resume": "\n        };\n        ", "retire": "\n        }\n        ",
+}
+def _coordinated_mutations():
+    posts, pres = [], []
+    for op, head, tail, ok in _COORD_OPS:
+        whole_engine = head + _COORD_REFUSAL + _COORD_MIDDLE[op] + _COORD_ENGINE + tail
+        # The engine's refusal is ignored and the step commits anyway.
+        posts.append((op + "-ignores-the-engine", whole_engine, head + _COORD_REFUSAL + _COORD_MIDDLE[op] + "let _ = engine();\n" + tail))
+        # The engine accepted, but the lifecycle does not advance.
+        posts.append((op + "-does-not-commit", whole_engine, head + _COORD_REFUSAL + _COORD_MIDDLE[op] + _COORD_ENGINE + "        " + ok))
+        # A lifecycle refusal is reported as the engine's.
+        posts.append((op + "-misreports-a-refusal", head + _COORD_REFUSAL, head + "Err(_) => return Err(SurfaceStepError::EngineRejected),"))
+        # The engine runs although the lifecycle refused: the precondition is unreachable there.
+        pres.append((op + "-engine-runs-after-a-refusal", head + _COORD_REFUSAL, head + "Err(error) => { let _ = engine(); return Err(SurfaceStepError::Lifecycle(error)); },"))
+    return posts, pres
+
+_COORD_POSTS, _COORD_PRES = _coordinated_mutations()
+KERNELS["surface-step-error-type"] = {"source":"src/surface_lifecycle.rs","marker":"SURFACE STEP ERROR","suffix":"TYPE","signature":None,"depends":["surface-lifecycle-error-type"],"internal_only":True}
+KERNELS["surface-coordinator-storage-type"] = {"source":"src/surface_lifecycle.rs","marker":"SURFACE COORDINATOR STORAGE","suffix":"TYPE","signature":None,"depends":["surface-lifecycle-storage-type"],"internal_only":True}
+KERNELS["surface-coordination"] = {
+    "source":"src/surface_lifecycle.rs", "marker":"SURFACE COORDINATION",
+    "property":"UI-HOST-SURFACE-COORDINATION-001",
+    "timeout":300,
+    "spec_prelude":"""pub closed spec fn coordinator_surface(c:SurfaceCoordinator)->SurfaceLifecycle { c.surface }
+pub closed spec fn coordinator_pending(c:SurfaceCoordinator)->bool { c.present_pending }
+pub closed spec fn surface_admits_close(o:SurfaceLifecycle,caller:u64)->bool {
+    caller==o.owner && !(o.state is Retired)
+}
+pub closed spec fn surface_admits_active(o:SurfaceLifecycle,caller:u64,generation:u64)->bool {
+    caller==o.owner && generation==o.generation && o.state is Active && o.generation<u64::MAX
+}
+pub closed spec fn surface_admits_suspended(o:SurfaceLifecycle,caller:u64,generation:u64)->bool {
+    caller==o.owner && generation==o.generation && o.state is Suspended && o.generation<u64::MAX
+}
+pub closed spec fn surface_admits_retire(o:SurfaceLifecycle,caller:u64,generation:u64)->bool {
+    caller==o.owner && generation==o.generation && !(o.state is Retired)
+}
+// One link of any coordinator trace. Moving the lifecycle always drops a pending present; only an
+// active lifecycle that stays put may gain one.
+// 协调器任意轨迹的一环：生命周期迁移总是丢弃待呈现帧；只有原地不动的活动生命周期才能获得一帧。
+pub closed spec fn surface_coordinator_marked(o:SurfaceCoordinator,n:SurfaceCoordinator)->bool {
+    n.surface==o.surface && o.surface.state is Active && n.present_pending
+}
+pub closed spec fn surface_coordinator_step(o:SurfaceCoordinator,n:SurfaceCoordinator)->bool {
+    n==o
+    || (surface_step(o.surface,n.surface) && !n.present_pending)
+    || surface_coordinator_marked(o,n)
+}
+pub closed spec fn surface_coordinator_trace(t:Seq<SurfaceCoordinator>)->bool {
+    forall|k:int| 0<=k<t.len()-1 ==> #[trigger] surface_coordinator_step(t[k],t[k+1])
+}
+// The lifecycle underneath a coordinator trace is itself a lifecycle trace, so every lifecycle theorem carries over.
+// 协调器轨迹之下的生命周期本身就是生命周期轨迹，生命周期的定理全部沿用。
+proof fn surface_coordinator_trace_projects(t:Seq<SurfaceCoordinator>)
+    requires surface_coordinator_trace(t),
+    ensures surface_trace(t.map_values(|c:SurfaceCoordinator| c.surface)),
+{
+    reveal(surface_coordinator_trace); reveal(surface_coordinator_step); reveal(surface_coordinator_marked); reveal(surface_trace); reveal(surface_step);
+    let s=t.map_values(|c:SurfaceCoordinator| c.surface);
+    assert forall|k:int| 0<=k<s.len()-1 implies #[trigger] surface_step(s[k],s[k+1]) by {
+        assert(surface_coordinator_step(t[k],t[k+1]));
+        assert(s[k]==t[k].surface && s[k+1]==t[k+1].surface);
+    }
+}
+// A pending present traces back to the step that rendered it, and the lifecycle has not moved
+// since: the host can only present what the current generation rendered.
+// 待呈现帧可追溯到渲染它的那一步，且此后生命周期没有迁移：宿主只能呈现当前代数渲染的内容。
+proof fn surface_pending_comes_from_this_generation(t:Seq<SurfaceCoordinator>,j:int)->(i:int)
+    requires surface_coordinator_trace(t), 0<=j<t.len(), !t[0].present_pending, t[j].present_pending,
+    ensures 0<=i<j, surface_coordinator_marked(t[i],t[i+1]),
+        forall|k:int| i<k<=j ==> (#[trigger] t[k]).surface==t[j].surface && t[k].present_pending,
+    decreases j,
+{
+    reveal(surface_coordinator_trace); reveal(surface_coordinator_step);
+    assert(j>0);
+    let k=j-1;
+    assert(surface_coordinator_step(t[k],t[k+1]));
+    assert(k+1==j);
+    if surface_coordinator_marked(t[k],t[j]) {
+        reveal(surface_coordinator_marked);
+        assert forall|m:int| k<m<=j implies (#[trigger] t[m]).surface==t[j].surface && t[m].present_pending by { assert(m==j); }
+        k
+    } else {
+        assert(t[j]==t[k]);
+        let i=surface_pending_comes_from_this_generation(t,k);
+        assert forall|m:int| i<m<=j implies (#[trigger] t[m]).surface==t[j].surface && t[m].present_pending by {
+            if m<j { assert(i<m<=k); }
+        }
+        i
+    }
+}
+// A pending present only exists while the lifecycle is active.
+// 待呈现帧只在生命周期活动时存在。
+proof fn surface_pending_is_active(t:Seq<SurfaceCoordinator>,j:int)
+    requires surface_coordinator_trace(t), 0<=j<t.len(), !t[0].present_pending, t[j].present_pending,
+    ensures t[j].surface.state is Active,
+{
+    let i=surface_pending_comes_from_this_generation(t,j);
+    reveal(surface_coordinator_marked);
+    assert(t[i+1].surface==t[j].surface);
+}
+""",
+    "signature":"pub fn new(owner: u64, width: u32, height: u32) -> Self {",
+    "contract":"""pub fn new(owner: u64, width: u32, height: u32) -> (result: Self)
+        ensures surface_new(coordinator_surface(result),owner,width,height), !coordinator_pending(result),
+    { reveal(coordinator_surface); reveal(coordinator_pending);""",
+    "extra_annotations":[
+        ("pub fn status(&self, caller: u64) -> Option<SurfaceStatus> {","pub fn status(&self,caller:u64)->(result:Option<SurfaceStatus>) ensures surface_read(coordinator_surface(*self),caller,result), { reveal(coordinator_surface);"),
+        ("pub fn render_allowed(&self, caller: u64, generation: u64) -> bool {","pub fn render_allowed(&self,caller:u64,generation:u64)->(result:bool) ensures result==surface_live(coordinator_surface(*self),caller,generation), { reveal(coordinator_surface); reveal(surface_live); reveal(surface_gate_model);"),
+        ("pub(crate) fn active_for_owner(&self, caller: u64) -> bool {","pub(crate) fn active_for_owner(&self,caller:u64)->(result:bool) ensures result==(caller==surface_gate_model(&coordinator_surface(*self)).0 && surface_gate_model(&coordinator_surface(*self)).1), { reveal(coordinator_surface);"),
+        ("pub fn present_pending(&self) -> bool {","pub fn present_pending(&self)->(result:bool) ensures result==coordinator_pending(*self), { reveal(coordinator_pending);"),
+        ("""pub fn reconfigure(
+        &mut self,
+        caller: u64,
+        expected_generation: u64,
+        width: u32,
+        height: u32,
+        engine: impl FnOnce() -> bool,
+    ) -> Result<u64, SurfaceStepError> {""", _coordinated_contract("reconfigure","caller:u64,expected_generation:u64,width:u32,height:u32",
+            "surface_admits_active(coordinator_surface(*old(self)),caller,expected_generation)",
+            "surface_reconfigured(coordinator_surface(*old(self)),{n},caller,expected_generation,width,height,{r})","u64","reconfigured")),
+        ("""pub fn suspend(
+        &mut self,
+        caller: u64,
+        expected_generation: u64,
+        engine: impl FnOnce() -> bool,
+    ) -> Result<u64, SurfaceStepError> {""", _coordinated_contract("suspend","caller:u64,expected_generation:u64",
+            "surface_admits_active(coordinator_surface(*old(self)),caller,expected_generation)",
+            "surface_suspended(coordinator_surface(*old(self)),{n},caller,expected_generation,{r})","u64","suspended")),
+        ("""pub fn resume(
+        &mut self,
+        caller: u64,
+        expected_generation: u64,
+        width: u32,
+        height: u32,
+        engine: impl FnOnce() -> bool,
+    ) -> Result<u64, SurfaceStepError> {""", _coordinated_contract("resume","caller:u64,expected_generation:u64,width:u32,height:u32",
+            "surface_admits_suspended(coordinator_surface(*old(self)),caller,expected_generation)",
+            "surface_resumed(coordinator_surface(*old(self)),{n},caller,expected_generation,width,height,{r})","u64","resumed")),
+        ("""pub fn retire(
+        &mut self,
+        caller: u64,
+        expected_generation: u64,
+        engine: impl FnOnce() -> bool,
+    ) -> Result<(), SurfaceStepError> {""", _coordinated_contract("retire","caller:u64,expected_generation:u64",
+            "surface_admits_retire(coordinator_surface(*old(self)),caller,expected_generation)",
+            "surface_retired(coordinator_surface(*old(self)),{n},caller,expected_generation,{r})","()","retired")),
+        ("pub fn close(&mut self, caller: u64, engine: impl FnOnce() -> bool) -> bool {",
+         """pub fn close(&mut self,caller:u64,engine:impl FnOnce()->bool)->(result:bool)
+        requires surface_admits_close(coordinator_surface(*old(self)),caller) ==> engine.requires(()),
+        ensures result ==> engine.ensures((),true) && surface_retired_current(coordinator_surface(*old(self)),coordinator_surface(*final(self)),caller,true) && !coordinator_pending(*final(self)),
+            !result ==> *final(self)==*old(self) && (surface_admits_close(coordinator_surface(*old(self)),caller) ==> engine.ensures((),false)),
+            surface_coordinator_step(*old(self),*final(self)),
+    { reveal(coordinator_surface); reveal(coordinator_pending); reveal(surface_admits_close); reveal(surface_coordinator_step); reveal(surface_retired_current); reveal(surface_closed);"""),
+        ("pub fn frame_superseded(&mut self) {","""pub fn frame_superseded(&mut self)
+        ensures coordinator_surface(*final(self))==coordinator_surface(*old(self)), !coordinator_pending(*final(self)), surface_coordinator_step(*old(self),*final(self)),
+    { reveal(coordinator_surface); reveal(coordinator_pending); reveal(surface_coordinator_step); reveal(surface_step);"""),
+        ("pub fn texture_rendered(&mut self, caller: u64, generation: u64) -> bool {","""pub fn texture_rendered(&mut self,caller:u64,generation:u64)->(result:bool)
+        ensures result==surface_live(coordinator_surface(*old(self)),caller,generation),
+            coordinator_surface(*final(self))==coordinator_surface(*old(self)),
+            coordinator_pending(*final(self))==(result || coordinator_pending(*old(self))),
+            surface_coordinator_step(*old(self),*final(self)),
+    { reveal(coordinator_surface); reveal(coordinator_pending); reveal(surface_coordinator_step); reveal(surface_coordinator_marked); reveal(surface_live); reveal(surface_gate_model);"""),
+        ("pub fn presented(&mut self, caller: u64, generation: u64) -> bool {","""pub fn presented(&mut self,caller:u64,generation:u64)->(result:bool)
+        ensures result==(surface_live(coordinator_surface(*old(self)),caller,generation) && coordinator_pending(*old(self))),
+            coordinator_surface(*final(self))==coordinator_surface(*old(self)),
+            coordinator_pending(*final(self))==(coordinator_pending(*old(self)) && !result),
+            surface_coordinator_step(*old(self),*final(self)),
+    { reveal(coordinator_surface); reveal(coordinator_pending); reveal(surface_coordinator_step); reveal(surface_step); reveal(surface_live); reveal(surface_gate_model);"""),
+        ("fn adopt(&mut self, next: SurfaceLifecycle) {","""fn adopt(&mut self,next:SurfaceLifecycle)
+        ensures coordinator_surface(*final(self))==next, !coordinator_pending(*final(self)),
+    { reveal(coordinator_surface); reveal(coordinator_pending);"""),
+    ],
+    "function_count":13, "depends":["surface-transition","surface-step-error-type","surface-coordinator-storage-type"], "evidence":"host-surface-coordination-kernel",
+    "scope":"the real SurfaceCoordinator over all owners, generations, extents, states and engine closures: the engine is reachable only from an admitted step; refusals are the lifecycle's own and leave everything equal; an engine refusal leaves everything equal; an accepted engine always commits the lifecycle's transition and drops a pending present; a pending present along any trace comes from the current lifecycle state, which is active. Not what the engine does, nor which HostRenderer entry point calls which gate.",
+    "mutations":_COORD_POSTS+[
+        ("close-ignores-the-engine","if !engine() {\n            return false;\n        }\n        self.adopt(next);\n        true","let _ = engine();\n        self.adopt(next);\n        true"),
+        ("close-does-not-commit","if !engine() {\n            return false;\n        }\n        self.adopt(next);\n        true","if !engine() {\n            return false;\n        }\n        true"),
+        ("adopt-keeps-the-pending-present","self.surface = next;\n        self.present_pending = false;","self.surface = next;"),
+        ("adopt-keeps-the-old-lifecycle","self.surface = next;\n        self.present_pending = false;","self.present_pending = false;"),
+        ("superseded-keeps-the-frame","pub fn frame_superseded(&mut self)\n        ensures coordinator_surface(*final(self))==coordinator_surface(*old(self)), !coordinator_pending(*final(self)), surface_coordinator_step(*old(self),*final(self)),\n    { reveal(coordinator_surface); reveal(coordinator_pending); reveal(surface_coordinator_step); reveal(surface_step);\n        self.present_pending = false;","pub fn frame_superseded(&mut self)\n        ensures coordinator_surface(*final(self))==coordinator_surface(*old(self)), !coordinator_pending(*final(self)), surface_coordinator_step(*old(self),*final(self)),\n    { reveal(coordinator_surface); reveal(coordinator_pending); reveal(surface_coordinator_step); reveal(surface_step);\n"),
+        ("render-ignores-the-gate","if !self.surface.render_allowed(caller, generation) {\n            return false;\n        }\n        self.present_pending = true;","self.present_pending = true;"),
+        ("render-marks-nothing","self.present_pending = true;\n        true","true"),
+        ("present-ignores-the-gate","if !self.surface.render_allowed(caller, generation) || !self.present_pending {","if !self.present_pending {"),
+        ("present-without-a-frame","if !self.surface.render_allowed(caller, generation) || !self.present_pending {","if !self.surface.render_allowed(caller, generation) {"),
+        ("present-keeps-the-frame","self.present_pending = false;\n        true\n    }\n\n    fn adopt","true\n    }\n\n    fn adopt"),
+    ],
+    "precondition_mutations":_COORD_PRES+[
+        ("close-engine-runs-after-a-refusal","if !next.retire_current(caller) {\n            return false;\n        }","if !next.retire_current(caller) {\n            let _ = engine();\n            return false;\n        }"),
+    ],
+    # Weakening the step must break the trace theorems, so they are not vacuous.
+    # 放宽一环必须破坏轨迹定理，说明它们不是空真。
+    "refused_mutations":[
+        ("a-move-may-keep-the-pending-present","|| (surface_step(o.surface,n.surface) && !n.present_pending)","|| surface_step(o.surface,n.surface)","assertion failed"),
+        ("a-mark-may-move-the-lifecycle","n.surface==o.surface && o.surface.state is Active && n.present_pending\n}","surface_step(o.surface,n.surface) && o.surface.state is Active && n.present_pending\n}","postcondition not satisfied"),
+        ("a-mark-may-come-from-any-state","n.surface==o.surface && o.surface.state is Active && n.present_pending\n}","n.surface==o.surface && n.present_pending\n}","postcondition not satisfied"),
+    ],
+}
 HANDLE_PRELUDE = r"""
 pub closed spec fn handle_slots(a: HandleAllocator) -> Seq<u32> { a.slots@ }
 pub closed spec fn handle_capacity(a: HandleAllocator) -> u32 { a.capacity }

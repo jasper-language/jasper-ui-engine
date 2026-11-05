@@ -15,7 +15,7 @@
     "ui-update-next": "8c815cd78d43311906ab3a2d625ee1f156d2f0247bf31bdb807a2c3ad5c17679"
   },
   "proof_sha256": "def00edcec11d7ee687603f6e9f25dc585cf6b65bf8f089b9c21d59a4a4d443f",
-  "runner_sha256": "9ced6ae49e9658441f6dc330138939658e4197302cc350bce10ab58f93398a0e",
+  "runner_sha256": "87e78a874bbd1658d2b5878212e71fad81fb990ebec88e8b5166bce17e256ab1",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/verus/verus",

@@ -272,3 +272,69 @@ fn same_extent_dpi_reconfigure_invalidates_the_host_pixel_copy() {
         "the newly acquired host Surface needs the complete frame"
     );
 }
+
+#[test]
+fn every_step_refuses_as_the_lifecycle_does_before_the_view_is_touched() {
+    let source = scene();
+    let mut host = HostRenderer::new(OWNER, &source, &font(), 320, 200).unwrap();
+    let version = source.version();
+    let active = host.surface_status(OWNER).unwrap();
+    let mut focus_events = 0;
+    let mut count = |_| focus_events += 1;
+
+    // A stale generation on a surface that is not suspended is stale first, as in the lifecycle.
+    // 非暂停 Surface 上的过期代数先报过期，与生命周期一致。
+    assert_eq!(
+        host.resume(OWNER, active.generation + 1, 320, 200, 1.0),
+        Err(HostRenderError::Lifecycle(
+            SurfaceLifecycleError::StaleGeneration
+        ))
+    );
+    assert_eq!(
+        host.resume(OWNER, active.generation, 320, 200, 1.0),
+        Err(HostRenderError::Lifecycle(
+            SurfaceLifecycleError::WrongState
+        ))
+    );
+    assert_eq!(
+        host.suspend(OWNER + 1, version, active.generation, &mut count),
+        Err(HostRenderError::Lifecycle(
+            SurfaceLifecycleError::WrongOwner
+        ))
+    );
+    assert_eq!(host.surface_status(OWNER), Some(active));
+    assert!(host.snapshot_identity(OWNER).is_some());
+
+    // The engine's refusal of a stale version leaves the lifecycle where it was.
+    // 引擎拒绝过期版本时，生命周期保持原状。
+    assert_eq!(
+        host.suspend(OWNER, version + 1, active.generation, &mut count),
+        Err(HostRenderError::ViewRetired)
+    );
+    assert_eq!(host.surface_status(OWNER), Some(active));
+    assert_eq!(
+        host.retire(OWNER, version + 1, active.generation, &mut count),
+        Err(HostRenderError::ViewRetired)
+    );
+    assert_eq!(host.surface_status(OWNER), Some(active));
+    assert!(!host.close(OWNER, version + 1, &mut count));
+    assert_eq!(host.surface_status(OWNER), Some(active));
+
+    // A suspended surface still retires, and retiring twice is the lifecycle's refusal.
+    // 暂停的 Surface 仍可退休；重复退休由生命周期拒绝。
+    let suspended = host
+        .suspend(OWNER, version, active.generation, &mut count)
+        .unwrap();
+    host.retire(OWNER, version, suspended, &mut count).unwrap();
+    let retired = host.surface_status(OWNER).unwrap();
+    assert_eq!(retired.state, SurfaceState::Retired);
+    assert_eq!(
+        host.retire(OWNER, version, retired.generation, &mut count),
+        Err(HostRenderError::Lifecycle(
+            SurfaceLifecycleError::WrongState
+        ))
+    );
+    assert!(!host.close(OWNER, version, &mut count));
+    assert_eq!(host.surface_status(OWNER), Some(retired));
+    assert_eq!(focus_events, 0);
+}

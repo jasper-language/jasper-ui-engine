@@ -1,0 +1,16 @@
+verification results:: 37 verified, 1 errors
+error: postcondition not satisfied
+   --> <repo>/evidence/host-surface-coordination-kernel/negative_render_marks_nothing.rs:570:13
+    |
+570 |               coordinator_pending(*final(self))==(result || coordinator_pending(*old(self))),
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+571 |               surface_coordinator_step(*old(self),*final(self)),
+572 | /     { reveal(coordinator_surface); reveal(coordinator_pending); reveal(surface_coordinator_step); reveal(surface_coordinator_mark...
+573 | |         if !self.surface.render_allowed(caller, generation) {
+574 | |             return false;
+...   |
+577 | |     }
+    | |_____- at the end of the function body
+
+error: aborting due to 1 previous error
+

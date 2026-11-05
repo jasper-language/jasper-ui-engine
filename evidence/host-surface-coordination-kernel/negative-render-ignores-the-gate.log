@@ -1,0 +1,27 @@
+verification results:: 37 verified, 1 errors
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+   --> <repo>/evidence/host-surface-coordination-kernel/negative_render_ignores_the_gate.rs:567:5
+    |
+567 |     pub fn texture_rendered(&mut self,caller:u64,generation:u64)->(result:bool)
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: postcondition not satisfied
+   --> <repo>/evidence/host-surface-coordination-kernel/negative_render_ignores_the_gate.rs:568:17
+    |
+568 |         ensures result==surface_live(coordinator_surface(*old(self)),caller,generation),
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+574 |         true
+    |         ---- at the end of the function body
+
+error: postcondition not satisfied
+   --> <repo>/evidence/host-surface-coordination-kernel/negative_render_ignores_the_gate.rs:571:13
+    |
+571 |             surface_coordinator_step(*old(self),*final(self)),
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+574 |         true
+    |         ---- at the end of the function body
+
+error: aborting due to 2 previous errors
+

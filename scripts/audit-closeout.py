@@ -233,6 +233,8 @@ PROOF_BACKLOG = {
             "evidence/window-xvfb-presentation/report.json",
             "evidence/surface-lifecycle-kernel/report.json",
             "evidence/surface-lifecycle-chain/report.json",
+            "evidence/host-surface-coordination-kernel/report.json",
+            "evidence/host-surface-coordination-chain/report.json",
         ],
     },
     "CP-07": {
