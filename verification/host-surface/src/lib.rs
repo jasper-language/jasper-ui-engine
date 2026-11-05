@@ -5,6 +5,12 @@ mod actual {
 }
 pub use actual::*;
 
+/// The production capability matrix, for its table tests. No Cargo feature is on in this crate.
+/// 生产能力矩阵，用于判定表测试。本 crate 不开任何 Cargo feature。
+pub mod capabilities {
+    include!(concat!(env!("OUT_DIR"), "/capabilities.rs"));
+}
+
 /// Reaches the crate-private compatibility retirement for the fuzz target, unchanged.
 /// 让 fuzz 目标原样调用 crate 内部的兼容退休路径。
 pub fn retire_current(surface: &mut SurfaceLifecycle, caller: u64) -> bool {

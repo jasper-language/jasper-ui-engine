@@ -16,7 +16,7 @@
     "surface-render-gate": "1165373689740b4071d5eea4c6c4d54d6414a05b2a88495149cf695b548b773c"
   },
   "proof_sha256": "5cad9965ac88ff8e19b8f4956780d10d1a07d25942bf93b27ad8056d9e9e7edd",
-  "runner_sha256": "132fdd41bb257ebc8abee2244b70a8328c8cf803a73836e38da0c421e24bb98b",
+  "runner_sha256": "9aac303c7b1f05df3ecb673001616a8910a6155452fbb2496f5190611d039d6d",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/verus/verus",

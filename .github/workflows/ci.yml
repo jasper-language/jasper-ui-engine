@@ -14,6 +14,8 @@ jobs:
         run: cargo test --all-targets
       - name: Test closeout audit tooling
         run: python3 scripts/test-audit-closeout.py
+      - name: Check render TCB register
+        run: python3 scripts/check-render-tcb.py && python3 scripts/test-render-tcb.py
 
   ui-validation:
     runs-on: ubuntu-24.04

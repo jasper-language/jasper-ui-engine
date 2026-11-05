@@ -21,7 +21,7 @@
     "surface-rendered-pixels-type": "567ae0aafd83fd1c76bae6a1541795c52192c6856bab234626247b0cd6a0997d"
   },
   "proof_sha256": "c7fe3590cdcc79a22fc61e0399d984a1f24458f631592832076b251acf73e7d0",
-  "runner_sha256": "132fdd41bb257ebc8abee2244b70a8328c8cf803a73836e38da0c421e24bb98b",
+  "runner_sha256": "9aac303c7b1f05df3ecb673001616a8910a6155452fbb2496f5190611d039d6d",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/verus/verus",

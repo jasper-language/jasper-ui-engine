@@ -932,3 +932,15 @@ CP-02 仍无判定：只选一个断言（切片后 30 个 VCC）在 45 分钟�
 - 门处拒绝（外来归属者、过期代数、非活动状态）行为不变：引擎不被调用，待呈现帧保留。
 
 未覆盖：引擎闭包内部做了什么；公开入口与门的对应只有测试和阅读，没有证明。硬件 Surface、合成器、垂直同步、设备丢失、真实平台休眠恢复、能力矩阵与 wgpu/Vello TCB 登记仍没有证据，CP-06 仍未闭合。定点通过，等批次全量。
+
+## 2026-11-05：能力矩阵与渲染 TCB 登记（CP-06 子性质）
+
+`HostCapabilityMatrix` 的判定表有 Verus 全域证明，范围见 `verification.md` 的 UI-HOST-CAPABILITY-MATRIX-001；第三方渲染代码登记在 `render-tcb.md`，由脚本对照 `Cargo.toml` 与 `Cargo.lock` 检查。
+
+核对时发现矩阵有三处声明与实际不符，已修正，都是报告结果的**行为变化**：
+
+- `compiled()` 在开启 `native-blitz-pending` 时仍报 DPI、字体、生命周期为 `FeatureGated`，与 `host-rendering.md` 矛盾。现在报 `NativeContract`；`native()` 返回相同结果。
+- `cpu_rgba8_surface` 原先看 `native-blitz-cpu-pending`，而入口的门控是 `cpu-pending`，所以只开 `gpu-pending` 时入口已编译却报 `FeatureGated`。现在看 `cpu-pending`。
+- `gpu_device_loss_recovery` 原先是 `Unverified`（含义是已实现、未验收），但仓库没有任何设备丢失代码。现在是 `Unsupported`；`gpu.md` 的重建路径改标为目标，未实现。
+
+未覆盖：矩阵只说明声明与构建一致，不说明入口行为正确。硬件 Surface、合成器、垂直同步、设备丢失（未实现）、真实平台休眠恢复仍没有证据，这些需要真实硬件或新实现，CP-06 仍未闭合。定点通过，等批次全量。

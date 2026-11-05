@@ -1,0 +1,173 @@
+{
+  "property": "UI-HOST-CAPABILITY-MATRIX-001",
+  "backlog_item": "CP-06",
+  "status": "subproperty_scoped_checks_passed",
+  "cp06_closed": false,
+  "production": {
+    "file": "src/host_capabilities.rs",
+    "type": "HostCapabilityMatrix",
+    "functions": [
+      "for_features"
+    ],
+    "file_sha256": "79a91a99925d848742696adab797dce54d5ffd701f1f8893d00dcada3991b0be",
+    "kernel_sha256": "e3eee5089cb05f2cba8576830afd20f0c112c68a28a73ccfb0c86a3c6987b4ca"
+  },
+  "specification": "For all eight feature combinations: the three lifecycle and resource claims are native exactly when native_scene is on, cpu_rgba8_surface exactly when cpu_surface is on, gpu_texture_view exactly when gpu_texture is on, gated otherwise. Surface acquire, present and vsync are host owned, hardware present is unverified, device-loss recovery and the system host are unsupported, whatever the features.",
+  "behavior_change": [
+    "compiled() now reports native_contract for the lifecycle, DPI and font claims when native-blitz-pending is on; it reported feature_gated, contradicting docs/host-rendering.md",
+    "cpu_rgba8_surface follows cpu-pending, the cfg its entries use; under gpu-pending alone it reported feature_gated although the entries compiled",
+    "gpu_device_loss_recovery is unsupported instead of unverified, because no device-loss code exists; unverified means implemented without acceptance evidence",
+    "native() returns the same report as compiled()"
+  ],
+  "assumptions": [
+    "Verus, Z3 and the Rust compiler",
+    "cfg! values reach for_features through compiled(), which is checked by tests, not proved"
+  ],
+  "tools": {
+    "verus": "Version: 0.2026.10.18.7d82994",
+    "z3": "Z3 version 4.16.0 - 64 bit",
+    "nightly": "nightly-2026-10-17"
+  },
+  "config": {
+    "PROPTEST_RNG_SEED": "not applicable to this slice",
+    "fuzz_seconds_per_target": 20
+  },
+  "stages": {
+    "Verus+Z3": {
+      "result": "passed",
+      "verified": 4,
+      "errors": 0,
+      "negative_controls": [
+        {
+          "name": "native-claim-ignores-its-feature",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "cpu-keyed-on-the-native-feature",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "gpu-keyed-on-the-cpu-feature",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "reconfigure-keyed-on-nothing",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "fonts-always-gated",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "lifecycle-always-gated",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "engine-claims-surface-acquire",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "engine-claims-present",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "claims-hardware-present",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "claims-device-loss-exists",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "engine-claims-vsync",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "claims-the-system-host",
+          "rejected": true,
+          "exit_code": 1
+        }
+      ],
+      "model_note": "The count includes the re-verified dependencies."
+    },
+    "Proptest": {
+      "result": "N/A",
+      "reason": "the input domain is three booleans",
+      "alternative": "every_feature_combination_follows_the_table and no_combination_claims_what_a_build_cannot_show check all eight values against a table written apart from production, in verification/host-surface (16 tests in that crate, 2 new) and in the library"
+    },
+    "Miri": {
+      "result": "passed",
+      "harness": "the same two tests in verification/host-surface, 11 tests in that crate, 2 new",
+      "note": "the module has no unsafe"
+    },
+    "cargo-fuzz": {
+      "result": "N/A",
+      "reason": "no input beyond the eight values the table test already enumerates; no fuzz target added",
+      "existing_targets_runs": {
+        "read_boundary": 12600,
+        "batch_decode": 1288428,
+        "ui_plugin_gate": 37958,
+        "host_surface": 103678,
+        "host_coordination": 742250,
+        "host_render": 1163063
+      }
+    },
+    "Kani": {
+      "result": "Kani：发版时验证"
+    },
+    "Loom": {
+      "result": "N/A",
+      "reason": "a const function over values, with no shared state, atomics or synchronization",
+      "alternative": "existing Loom scenarios in the chain passed and are unrelated to this slice"
+    }
+  },
+  "real_path_test": {
+    "file": "tests/host_capability_claims.rs",
+    "feature_sets": [
+      "none",
+      "native-blitz-pending",
+      "native-blitz-cpu-pending",
+      "gpu-pending"
+    ],
+    "each_result": "2 passed, 0 failed; entries for the enabled features compile",
+    "hand_mutations": {
+      "caught": 7,
+      "survived": 0,
+      "names": [
+        "native-on-cpu-key",
+        "cpu-on-old-key",
+        "gpu-on-cpu-key",
+        "native-alias-differs",
+        "cpu-entry-regated",
+        "gpu-entry-removed",
+        "lifecycle-entry-renamed"
+      ]
+    }
+  },
+  "tcb_register": {
+    "document": "docs/render-tcb.md",
+    "check": "scripts/check-render-tcb.py",
+    "drift_test": "scripts/test-render-tcb.py, 9 kinds of drift reported",
+    "evidence": "evidence/render-tcb/report.json"
+  },
+  "not_covered": [
+    "hardware Surface",
+    "compositor",
+    "vsync",
+    "device-loss behaviour and recovery, which are not implemented",
+    "real platform suspend and resume",
+    "the correctness of any crate in the register",
+    "that a native claim means the entry behaves correctly; the test only shows the entry exists under that feature"
+  ]
+}

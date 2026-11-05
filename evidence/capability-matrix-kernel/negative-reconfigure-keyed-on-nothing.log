@@ -1,0 +1,18 @@
+verification results:: 3 verified, 1 errors
+error: postcondition not satisfied
+   --> <repo>/evidence/capability-matrix-kernel/negative_reconfigure_keyed_on_nothing.rs:65:13
+    |
+ 65 |               result.dpi_and_extent_reconfigure == capability_gated(features.native_scene),
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+ 81 | /         Self {
+ 82 | |             cpu_rgba8_surface: if features.cpu_surface {
+ 83 | |                 CapabilityStatus::NativeContract
+ 84 | |             } else {
+...   |
+100 | |             jasper_os_host_integration: CapabilityStatus::Unsupported,
+101 | |         }
+    | |_________- at the end of the function body
+
+error: aborting due to 1 previous error
+

@@ -1,10 +1,9 @@
 use std::{env, fs, path::PathBuf};
 
-fn main() {
-    let root = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap());
-    let source = root.join("../../src/surface_lifecycle.rs");
+fn copy(root: &std::path::Path, source: &str, output: &str) {
+    let source = root.join(source);
     println!("cargo:rerun-if-changed={}", source.display());
-    let output = PathBuf::from(env::var_os("OUT_DIR").unwrap()).join("actual.rs");
+    let output = PathBuf::from(env::var_os("OUT_DIR").unwrap()).join(output);
     let extracted = fs::read_to_string(source)
         .unwrap()
         .lines()
@@ -12,4 +11,10 @@ fn main() {
         .collect::<Vec<_>>()
         .join("\n");
     fs::write(output, extracted).unwrap();
+}
+
+fn main() {
+    let root = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap());
+    copy(&root, "../../src/surface_lifecycle.rs", "actual.rs");
+    copy(&root, "../../src/host_capabilities.rs", "capabilities.rs");
 }

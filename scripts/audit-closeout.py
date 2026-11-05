@@ -237,6 +237,9 @@ PROOF_BACKLOG = {
             "evidence/host-surface-coordination-chain/report.json",
             "evidence/host-render-outcome-kernel/report.json",
             "evidence/host-render-outcome-chain/report.json",
+            "evidence/capability-matrix-kernel/report.json",
+            "evidence/capability-matrix-chain/report.json",
+            "evidence/render-tcb/report.json",
         ],
     },
     "CP-07": {

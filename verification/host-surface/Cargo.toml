@@ -10,4 +10,4 @@ publish = false
 proptest = { version = "=1.12.0", default-features = false, features = ["std"] }
 
 [lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(kani)'] }
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(kani)', 'cfg(feature, values("native-blitz-pending", "cpu-pending", "gpu-pending"))'] }

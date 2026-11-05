@@ -21,11 +21,12 @@ Surface/TextureView/device/queue/present。它不是第二套渲染器，也不�
 ## 编译期能力矩阵
 
 `host_capabilities::HostCapabilityMatrix::compiled()` 报告本次构建的声明，不等于设备枚举或
-平台验收。
+平台验收。`native()` 返回相同结果。判定表的证明见 `verification.md` 的
+UI-HOST-CAPABILITY-MATRIX-001，第三方边界见 `render-tcb.md`。
 
 | 能力 | 归属 |
 |---|---|
-| CPU RGBA8 注入 Surface | `native-blitz-cpu-pending` 下原生契约 |
+| CPU RGBA8 注入 Surface | `cpu-pending` 下原生契约（`native-blitz-cpu-pending`、`gpu-pending` 都包含它） |
 | DPI/尺寸重配 | `native-blitz-pending` 下原生契约 |
 | 显式字体与资源代数 | `native-blitz-pending` 下原生契约 |
 | 暂停/恢复/退休 | `native-blitz-pending` 下原生契约 |
@@ -33,7 +34,7 @@ Surface/TextureView/device/queue/present。它不是第二套渲染器，也不�
 | GPU Surface 获取/配置 | 宿主 |
 | GPU present | 宿主 |
 | 硬件 GPU 呈现 | 未验收 |
-| GPU device-loss 恢复 | 未验收 |
+| GPU device-loss 恢复 | 未提供 |
 | vsync | 宿主 |
 | jasper-os 宿主接入 | 未提供 |
 

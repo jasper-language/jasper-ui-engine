@@ -56,7 +56,9 @@
 
 2026-11-05 闭合 UI-HOST-RENDER-OUTCOME-001：`HostRenderer` 的五个渲染入口改为经过真实 `SurfaceCoordinator::render`。对任意归属者、代数、状态、结果类型与引擎闭包：引擎只在恰为当前活动代数时才会被调用；拒绝不改变状态；生命周期不因渲染迁移；渲染之后可确认呈现，当且仅当这一次渲染成功写入宿主纹理，因此失败的渲染会撤销等待呈现的帧。反例被拒，见 `evidence/host-render-outcome-chain/report.json`；Kani：发版时验证。
 
-仍未覆盖：引擎闭包内部、各公开入口与门的对应关系（靠阅读与集成测试）、硬件 Surface、合成器、垂直同步、设备丢失、真实平台休眠恢复、能力矩阵，以及 wgpu/Vello TCB 登记。
+2026-11-05 闭合 UI-HOST-CAPABILITY-MATRIX-001：真实 `HostCapabilityMatrix::for_features` 的判定表。对全部 feature 组合：五项构建相关的声明恰在各自 feature 开启时为原生契约，其余六项固定且不是原生契约。反例被拒，见 `evidence/capability-matrix-chain/report.json`；`cfg!` 与公开入口的绑定只有 `tests/host_capability_claims.rs` 的测试。Kani：发版时验证。同日修正了三处与实际不符的声明，其中设备丢失恢复改为不支持。wgpu/Vello 等第三方代码登记在 `render-tcb.md`，由 `scripts/check-render-tcb.py` 对照锁文件检查，见 `evidence/render-tcb/report.json`；登记不是验证。
+
+仍未覆盖：引擎闭包内部、各公开入口与门的对应关系（靠阅读与集成测试）、硬件 Surface、合成器、垂直同步、设备丢失（未实现）、真实平台休眠恢复。
 
 ### CP-07
 

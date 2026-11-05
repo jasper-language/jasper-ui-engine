@@ -108,7 +108,7 @@ for target in FUZZ_TARGETS:
     for seed in (ROOT / "fuzz/seeds" / target).iterdir():
         shutil.copyfile(seed, corpora / target / seed.name)
 kernels = ["version", "decode-range", "transaction-gate", "byte-read", "cursor-read",
-           "scalar-read", "header-read", "bounded-payload", "surface-row", "surface-span", "surface-borrow", "surface-write", "surface-segment", "surface-view", "pixel-pack", "pixel-convert", "canvas-import", "canvas-pixel", "color-construct", "desktop-pointer", "desktop-pointer-state", "handle", "font-order", "font-weight", "font-family", "bold-alias", "glyph-skew", "frame-reuse", "damage-span", "damage-rect", "frame-tick", "frame-pace", "text-offset", "text-range", "access-actions", "access-change", "access-request", "gpu-readback", "resource-gate", "role-activation", "bytes-slot", "command-modifier", "text-class", "focus-cleanup", "keyboard-focus", "focus-select", "input-retire", "hover-update", "hover-retire", "pointer-order", "capture-query", "scene-update-admission", "scene-frame-completion", "scene-frame-order", "scene-batch-stage", "scene-node-remove", "scene-node-find", "scene-patch", "scene-unique-ids", "scene-checked-patch", "scene-batch-unique", "scene-batch-commit", "scene-interaction-restore", "component-update-admission", "ui-plugin-rect", "ui-plugin-count", "ui-plugin-reloc", "surface-render-gate", "surface-transition", "surface-coordination", "surface-render-outcome"]
+           "scalar-read", "header-read", "bounded-payload", "surface-row", "surface-span", "surface-borrow", "surface-write", "surface-segment", "surface-view", "pixel-pack", "pixel-convert", "canvas-import", "canvas-pixel", "color-construct", "desktop-pointer", "desktop-pointer-state", "handle", "font-order", "font-weight", "font-family", "bold-alias", "glyph-skew", "frame-reuse", "damage-span", "damage-rect", "frame-tick", "frame-pace", "text-offset", "text-range", "access-actions", "access-change", "access-request", "gpu-readback", "resource-gate", "role-activation", "bytes-slot", "command-modifier", "text-class", "focus-cleanup", "keyboard-focus", "focus-select", "input-retire", "hover-update", "hover-retire", "pointer-order", "capture-query", "scene-update-admission", "scene-frame-completion", "scene-frame-order", "scene-batch-stage", "scene-node-remove", "scene-node-find", "scene-patch", "scene-unique-ids", "scene-checked-patch", "scene-batch-unique", "scene-batch-commit", "scene-interaction-restore", "component-update-admission", "ui-plugin-rect", "ui-plugin-count", "ui-plugin-reloc", "surface-render-gate", "surface-transition", "surface-coordination", "surface-render-outcome", "capability-matrix"]
 if a.kani_full:
     # Sequential whole-library run keeps the shared lock and memory ceiling; the per-harness clock does not apply.
     # 整库顺序运行保留共享锁与内存上限；单 harness 时钟不适用。
@@ -257,8 +257,8 @@ for stage in report["stages"]:
     log_path = out / (stage["name"].replace("+", "-") + ".log")
     output = log_path.read_text()
     required = {
-        "Proptest": [("test result: ok. 2 passed", 3), ("test result: ok. 3 passed", 1), ("test result: ok. 60 passed", 1), ("test result: ok. 8 passed", 1), ("test result: ok. 14 passed", 1)],
-        "Miri": [("test result: ok. 2 passed", 4), ("test result: ok. 3 passed", 2), ("test result: ok. 6 passed", 1), ("test result: ok. 9 passed", 1)],
+        "Proptest": [("test result: ok. 2 passed", 3), ("test result: ok. 3 passed", 1), ("test result: ok. 60 passed", 1), ("test result: ok. 8 passed", 1), ("test result: ok. 16 passed", 1)],
+        "Miri": [("test result: ok. 2 passed", 4), ("test result: ok. 3 passed", 2), ("test result: ok. 6 passed", 1), ("test result: ok. 11 passed", 1)],
         "Kani": [("VERIFICATION:- SUCCESSFUL", 70)],
         "Loom": [("test result: ok. 1 passed", 1)],
     }

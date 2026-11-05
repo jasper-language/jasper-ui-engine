@@ -19,7 +19,7 @@
     "surface-coordinator-storage-type": "49d643d9ad3e0820ccc67d510b887ef20c8c80c11f463cade70f0ac97fd0657e"
   },
   "proof_sha256": "af679003fba5231512cfd18edacf9614679ec5afb6fd93c592e76cac008c710f",
-  "runner_sha256": "132fdd41bb257ebc8abee2244b70a8328c8cf803a73836e38da0c421e24bb98b",
+  "runner_sha256": "9aac303c7b1f05df3ecb673001616a8910a6155452fbb2496f5190611d039d6d",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/verus/verus",

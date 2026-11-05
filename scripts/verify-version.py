@@ -4206,6 +4206,50 @@ KERNELS["surface-render-outcome"] = {
         ("engine-runs-without-the-gate",_RENDER_GATE,""),
     ],
 }
+_CAP_NATIVE = "let native = if features.native_scene {"
+_CAP_CPU = "cpu_rgba8_surface: if features.cpu_surface {"
+_CAP_GPU = "gpu_texture_view: if features.gpu_texture {"
+KERNELS["capability-status-type"] = {"source":"src/host_capabilities.rs","marker":"CAPABILITY STATUS","suffix":"TYPE","signature":None,"depends":[],"internal_only":True}
+KERNELS["capability-matrix-storage-type"] = {"source":"src/host_capabilities.rs","marker":"CAPABILITY MATRIX STORAGE","suffix":"TYPE","signature":None,"depends":["capability-status-type"],"internal_only":True}
+KERNELS["capability-features-type"] = {"source":"src/host_capabilities.rs","marker":"CAPABILITY FEATURES","suffix":"TYPE","signature":None,"depends":[],"internal_only":True}
+KERNELS["capability-matrix"] = {
+    "source":"src/host_capabilities.rs", "marker":"CAPABILITY MATRIX",
+    "property":"UI-HOST-CAPABILITY-MATRIX-001",
+    "signature":"pub(crate) const fn for_features(features: CompiledFeatures) -> Self {",
+    "spec_prelude":"""pub open spec fn capability_gated(on: bool) -> CapabilityStatus {
+    if on { CapabilityStatus::NativeContract } else { CapabilityStatus::FeatureGated }
+}""",
+    "contract":"""pub(crate) const fn for_features(features: CompiledFeatures) -> (result: Self)
+        ensures
+            result.cpu_rgba8_surface == capability_gated(features.cpu_surface),
+            result.dpi_and_extent_reconfigure == capability_gated(features.native_scene),
+            result.injected_font_resources == capability_gated(features.native_scene),
+            result.surface_pause_resume_retire == capability_gated(features.native_scene),
+            result.gpu_texture_view == capability_gated(features.gpu_texture),
+            result.gpu_surface_acquire_and_configure == CapabilityStatus::HostOwned,
+            result.gpu_present == CapabilityStatus::HostOwned,
+            result.gpu_hardware_present == CapabilityStatus::Unverified,
+            result.gpu_device_loss_recovery == CapabilityStatus::Unsupported,
+            result.host_vsync == CapabilityStatus::HostOwned,
+            result.jasper_os_host_integration == CapabilityStatus::Unsupported,
+    {""",
+    "function_count":1, "depends":["capability-matrix-storage-type","capability-features-type"], "evidence":"capability-matrix-kernel",
+    "scope":"HostCapabilityMatrix::for_features over all feature combinations: each of the five build-dependent claims is native exactly when its own feature is on and gated otherwise; the six others are fixed and never native. Not that the cfg! values reach it, nor that the claimed entries exist, nor any device or platform behaviour",
+    "mutations":[
+        ("native-claim-ignores-its-feature",_CAP_NATIVE,"let native = if true {"),
+        ("cpu-keyed-on-the-native-feature",_CAP_CPU,"cpu_rgba8_surface: if features.native_scene {"),
+        ("gpu-keyed-on-the-cpu-feature",_CAP_GPU,"gpu_texture_view: if features.cpu_surface {"),
+        ("reconfigure-keyed-on-nothing","dpi_and_extent_reconfigure: native","dpi_and_extent_reconfigure: CapabilityStatus::NativeContract"),
+        ("fonts-always-gated","injected_font_resources: native","injected_font_resources: CapabilityStatus::FeatureGated"),
+        ("lifecycle-always-gated","surface_pause_resume_retire: native","surface_pause_resume_retire: CapabilityStatus::FeatureGated"),
+        ("engine-claims-surface-acquire","gpu_surface_acquire_and_configure: CapabilityStatus::HostOwned","gpu_surface_acquire_and_configure: CapabilityStatus::NativeContract"),
+        ("engine-claims-present","gpu_present: CapabilityStatus::HostOwned","gpu_present: CapabilityStatus::NativeContract"),
+        ("claims-hardware-present","gpu_hardware_present: CapabilityStatus::Unverified","gpu_hardware_present: CapabilityStatus::NativeContract"),
+        ("claims-device-loss-exists","gpu_device_loss_recovery: CapabilityStatus::Unsupported","gpu_device_loss_recovery: CapabilityStatus::Unverified"),
+        ("engine-claims-vsync","host_vsync: CapabilityStatus::HostOwned","host_vsync: CapabilityStatus::NativeContract"),
+        ("claims-the-system-host","jasper_os_host_integration: CapabilityStatus::Unsupported","jasper_os_host_integration: CapabilityStatus::Unverified"),
+    ],
+}
 HANDLE_PRELUDE = r"""
 pub closed spec fn handle_slots(a: HandleAllocator) -> Seq<u32> { a.slots@ }
 pub closed spec fn handle_capacity(a: HandleAllocator) -> u32 { a.capacity }

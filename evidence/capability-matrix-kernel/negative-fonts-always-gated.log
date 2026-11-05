@@ -1,0 +1,18 @@
+verification results:: 3 verified, 1 errors
+error: postcondition not satisfied
+   --> <repo>/evidence/capability-matrix-kernel/negative_fonts_always_gated.rs:66:13
+    |
+ 66 |               result.injected_font_resources == capability_gated(features.native_scene),
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+ 81 | /         Self {
+ 82 | |             cpu_rgba8_surface: if features.cpu_surface {
+ 83 | |                 CapabilityStatus::NativeContract
+ 84 | |             } else {
+...   |
+100 | |             jasper_os_host_integration: CapabilityStatus::Unsupported,
+101 | |         }
+    | |_________- at the end of the function body
+
+error: aborting due to 1 previous error
+

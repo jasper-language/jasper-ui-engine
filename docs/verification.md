@@ -1219,6 +1219,23 @@ Kani 未得出结论的形状（都在链外，已撤下；构建机与其他构
 
 假设与未覆盖：引擎闭包内部做了什么没有规格；公开入口与门的对应只靠测试和阅读，`render_gpu` 与 `render_gpu_to_host_view` 的门没有做变异；wgpu、Vello 属第三方 TCB；硬件 Surface、合成器、垂直同步、设备丢失、真实平台休眠恢复与能力矩阵都没有证据。证据见 `evidence/host-render-outcome-chain/report.json`。
 
+## UI-HOST-CAPABILITY-MATRIX-001：能力矩阵判定表（CP-06 子性质，2026-11-05）
+
+真实 `src/host_capabilities.rs` 的 `HostCapabilityMatrix::for_features`，`compiled()` 把 `cfg!` 的值传给它。行为变化见 `status.md` 同日条目。
+
+| 阶段 | 范围 | 结果 |
+|---|---|---|
+| Verus/Z3 | 全部 feature 组合：DPI、字体、生命周期三项恰在 `native_scene` 开启时为原生契约，CPU 恰在 `cpu_surface` 开启时，GPU TextureView 恰在 `gpu_texture` 开启时，否则为门控；Surface 获取、present、vsync 恒为宿主持有，硬件呈现恒为未验收，设备丢失恢复与系统宿主恒为不支持 | 4 verified/0 errors（含依赖）；12 个错误实现全部被拒 |
+| Proptest | N/A：输入域只有三个布尔值。替代证据：两项表测试穷举全部 8 个值，对照与生产分开写出的判定表 | 不计 PASS |
+| Miri | `verification/host-surface` 中同样两项 | 通过（该 crate 共 11 项）；模块没有 unsafe |
+| cargo-fuzz | N/A：没有表测试之外的输入，未增加目标。替代证据同上 | 不计 PASS；链中既有目标无崩溃：`read_boundary` 12600、`batch_decode` 1288428、`ui_plugin_gate` 37958、`host_surface` 103678、`host_coordination` 742250、`host_render` 1163063，各 20 秒，虚拟机与其他任务共用 |
+| Kani | | Kani：发版时验证 |
+| Loom | N/A：对值的 const 函数，没有共享状态、原子量或同步原语 | 不计 PASS；链中既有 Loom 场景通过，与本切片无关 |
+
+`cfg!` 的值确实传到判定表、声明原生契约的公开入口确实存在，这两点由 `tests/host_capability_claims.rs` 检查，这是测试，不是证明。它在四组 feature（无、`native-blitz-pending`、`native-blitz-cpu-pending`、`gpu-pending`）下都通过；7 个手动变异（4 个改声明、3 个改入口）都让它失败。
+
+假设与未覆盖：入口存在不等于行为正确；矩阵不描述任何设备或平台；硬件 Surface、合成器、垂直同步、设备丢失（未实现）与真实平台休眠恢复都没有证据。第三方边界见 `render-tcb.md`，登记不等于验证。证据见 `evidence/capability-matrix-chain/report.json`、`evidence/render-tcb/report.json`。
+
 ## 发版清单补充
 
 `ui_plugin_gate` 的三个内核加入发版 Kani 时的候选 harness，现在未编写，`Kani：发版时验证`。
