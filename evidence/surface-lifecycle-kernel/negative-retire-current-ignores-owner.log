@@ -1,0 +1,12 @@
+verification results:: 18 verified, 1 errors
+error: postcondition not satisfied
+   --> <repo>/evidence/surface-lifecycle-kernel/negative_retire_current_ignores_owner.rs:272:17
+    |
+272 |         ensures surface_retired_current(*old(self),*final(self),caller,result),
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+282 |         true
+    |         ---- at the end of the function body
+
+error: aborting due to 1 previous error
+

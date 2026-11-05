@@ -1,0 +1,16 @@
+verification results:: 18 verified, 1 errors
+error: postcondition not satisfied
+   --> <repo>/evidence/surface-lifecycle-kernel/negative_require_ignores_generation.rs:299:17
+    |
+299 |           ensures match surface_refusal(*self,caller,expected_generation) {
+    |  _________________^
+300 | |             Some(e)=>result==Err::<(),SurfaceLifecycleError>(e),
+301 | |             None=>result is Ok,
+302 | |         },
+    | |_________^ failed this postcondition
+...
+307 |                   Ok(())
+    |                   ------ at the end of the function body
+
+error: aborting due to 1 previous error
+

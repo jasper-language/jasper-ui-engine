@@ -81,7 +81,7 @@ for file, markers in [
     ("src/native_adapter/native_scene.rs", ["SCENE UPDATE ERROR TYPE KERNEL", "SCENE FRAME COMPLETION KERNEL", "SCENE FRAME ORDER KERNEL", "SCENE INTERACTION RESTORE KERNEL"]),
     ("src/resource.rs", ["RESOURCE GATE KERNEL", "BYTES SLOT KERNEL"]),
     ("src/ui_plugin_gate.rs", ["UI PLUGIN RECT KERNEL", "UI PLUGIN COUNT KERNEL", "UI PLUGIN RELOC KERNEL"]),
-    ("src/surface_lifecycle.rs", ["SURFACE STATE TYPE", "SURFACE LIFECYCLE STORAGE TYPE", "SURFACE RENDER GATE KERNEL"]),
+    ("src/surface_lifecycle.rs", ["SURFACE STATE TYPE", "SURFACE STATUS TYPE", "SURFACE LIFECYCLE ERROR TYPE", "SURFACE LIFECYCLE STORAGE TYPE", "SURFACE RENDER GATE KERNEL", "SURFACE TRANSITION KERNEL"]),
     ("src/input.rs", ["MODIFIERS TYPE", "KEY PHASE TYPE", "KEY EVENT TYPE", "POINTER ID TYPE", "POINTER ORDER KERNEL", "POINTER KIND TYPES", "POINTER EVENT TYPE", "POINTER TRACKER TYPE"]),
     ("src/semantics.rs", ["ROLE TYPE", "FOCUS STORAGE TYPE", "FOCUS CLEANUP KERNEL", "FOCUS ERROR TYPE", "FOCUS SELECT KERNEL"]),
     ("src/keyboard.rs", ["ROLE ACTIVATION KERNEL", "COMMAND MODIFIER KERNEL", "KEYBOARD STORAGE TYPE", "KEYBOARD FOCUS KERNEL", "INPUT RETIRE KERNEL"]),
@@ -99,7 +99,8 @@ for file, markers in [
 (out / "production.rs").write_text("".join(regions))
 report["production_regions_sha256"] = hashlib.sha256((out / "production.rs").read_bytes()).hexdigest()
 manifest = "verification/read-boundary/Cargo.toml"
-FUZZ_TARGETS = ["read_boundary", "batch_decode", "ui_plugin_gate"]
+host_surface_manifest = "verification/host-surface/Cargo.toml"
+FUZZ_TARGETS = ["read_boundary", "batch_decode", "ui_plugin_gate", "host_surface"]
 corpora = out / "corpora"
 for target in FUZZ_TARGETS:
     (corpora / target).mkdir(parents=True, exist_ok=True)
@@ -107,7 +108,7 @@ for target in FUZZ_TARGETS:
     for seed in (ROOT / "fuzz/seeds" / target).iterdir():
         shutil.copyfile(seed, corpora / target / seed.name)
 kernels = ["version", "decode-range", "transaction-gate", "byte-read", "cursor-read",
-           "scalar-read", "header-read", "bounded-payload", "surface-row", "surface-span", "surface-borrow", "surface-write", "surface-segment", "surface-view", "pixel-pack", "pixel-convert", "canvas-import", "canvas-pixel", "color-construct", "desktop-pointer", "desktop-pointer-state", "handle", "font-order", "font-weight", "font-family", "bold-alias", "glyph-skew", "frame-reuse", "damage-span", "damage-rect", "frame-tick", "frame-pace", "text-offset", "text-range", "access-actions", "access-change", "access-request", "gpu-readback", "resource-gate", "role-activation", "bytes-slot", "command-modifier", "text-class", "focus-cleanup", "keyboard-focus", "focus-select", "input-retire", "hover-update", "hover-retire", "pointer-order", "capture-query", "scene-update-admission", "scene-frame-completion", "scene-frame-order", "scene-batch-stage", "scene-node-remove", "scene-node-find", "scene-patch", "scene-unique-ids", "scene-checked-patch", "scene-batch-unique", "scene-batch-commit", "scene-interaction-restore", "component-update-admission", "ui-plugin-rect", "ui-plugin-count", "ui-plugin-reloc", "surface-render-gate"]
+           "scalar-read", "header-read", "bounded-payload", "surface-row", "surface-span", "surface-borrow", "surface-write", "surface-segment", "surface-view", "pixel-pack", "pixel-convert", "canvas-import", "canvas-pixel", "color-construct", "desktop-pointer", "desktop-pointer-state", "handle", "font-order", "font-weight", "font-family", "bold-alias", "glyph-skew", "frame-reuse", "damage-span", "damage-rect", "frame-tick", "frame-pace", "text-offset", "text-range", "access-actions", "access-change", "access-request", "gpu-readback", "resource-gate", "role-activation", "bytes-slot", "command-modifier", "text-class", "focus-cleanup", "keyboard-focus", "focus-select", "input-retire", "hover-update", "hover-retire", "pointer-order", "capture-query", "scene-update-admission", "scene-frame-completion", "scene-frame-order", "scene-batch-stage", "scene-node-remove", "scene-node-find", "scene-patch", "scene-unique-ids", "scene-checked-patch", "scene-batch-unique", "scene-batch-commit", "scene-interaction-restore", "component-update-admission", "ui-plugin-rect", "ui-plugin-count", "ui-plugin-reloc", "surface-render-gate", "surface-transition"]
 if a.kani_full:
     # Sequential whole-library run keeps the shared lock and memory ceiling; the per-harness clock does not apply.
     # 整库顺序运行保留共享锁与内存上限；单 harness 时钟不适用。
@@ -127,6 +128,7 @@ stages = [
                   ["cargo", "test", "--locked", "--test", "bytes_slot"],
                   ["cargo", "test", "--locked", "--test", "scene_batch_transaction"],
                   ["cargo", "test", "--locked", "--test", "ui_plugin_gate"],
+                  ["cargo", "test", "--locked", "--manifest-path", host_surface_manifest],
                   ["cargo", "test", "--locked", "--manifest-path", manifest, "properties::"],
                   ["cargo", "test", "--locked", "--features", "desktop", "--lib", "desktop::tests"]]),
     ("Miri", [["cargo", "+" + a.nightly, "miri", "--version"], ["cargo", "+" + a.nightly, "miri", "test", "--locked", "--no-default-features", "--test", "batch_memory"],
@@ -137,7 +139,10 @@ stages = [
                ["cargo", "+" + a.nightly, "miri", "test", "--locked", "--no-default-features", "--test", "handle_table"],
                ["cargo", "+" + a.nightly, "miri", "test", "--locked", "--no-default-features", "--test", "handle_alloc_failure"],
                ["cargo", "+" + a.nightly, "miri", "test", "--locked", "--no-default-features", "--test", "scene_batch_transaction"],
-               ["cargo", "+" + a.nightly, "miri", "test", "--locked", "--no-default-features", "--test", "ui_plugin_gate"]]),
+               ["cargo", "+" + a.nightly, "miri", "test", "--locked", "--no-default-features", "--test", "ui_plugin_gate"],
+               ["cargo", "+" + a.nightly, "miri", "test", "--locked", "--manifest-path", host_surface_manifest, "--",
+                "--skip", "any_state_follows_the_table", "--skip", "a_live_generation_names_one_state_along_any_trace",
+                "--skip", "successful_cycles_stay_active_and_monotone"]]),
     ("cargo-fuzz", [["cargo", "fuzz", "--version"]] + [
         ["cargo", "+" + a.nightly, "fuzz", "run", target, str(corpora / target), "--",
          "-max_total_time=" + str(a.fuzz_seconds), "-max_len=4096", "-rss_limit_mb=1024",
@@ -250,8 +255,8 @@ for stage in report["stages"]:
     log_path = out / (stage["name"].replace("+", "-") + ".log")
     output = log_path.read_text()
     required = {
-        "Proptest": [("test result: ok. 2 passed", 3), ("test result: ok. 3 passed", 1), ("test result: ok. 60 passed", 1), ("test result: ok. 8 passed", 1)],
-        "Miri": [("test result: ok. 2 passed", 4), ("test result: ok. 3 passed", 2), ("test result: ok. 6 passed", 1)],
+        "Proptest": [("test result: ok. 2 passed", 3), ("test result: ok. 3 passed", 1), ("test result: ok. 60 passed", 1), ("test result: ok. 8 passed", 1), ("test result: ok. 7 passed", 1)],
+        "Miri": [("test result: ok. 2 passed", 4), ("test result: ok. 3 passed", 2), ("test result: ok. 6 passed", 1), ("test result: ok. 4 passed", 1)],
         "Kani": [("VERIFICATION:- SUCCESSFUL", 70)],
         "Loom": [("test result: ok. 1 passed", 1)],
     }

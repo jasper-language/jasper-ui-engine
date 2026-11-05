@@ -1,0 +1,17 @@
+verification results:: 18 verified, 1 errors
+error: postcondition not satisfied
+  --> <repo>/evidence/surface-lifecycle-kernel/negative_a_step_may_keep_the_generation.rs:88:9
+   |
+88 |           t[j]==t[i] || t[j].generation>t[i].generation || t[j].state is Retired,
+   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+92 | /     if i<j {
+93 | |         surface_trace_holds(t,i,j-1);
+94 | |         let k=j-1;
+95 | |         assert(surface_step(t[k],t[k+1]));
+96 | |         assert(k+1==j);
+97 | |     }
+   | |_____- at the end of the function body
+
+error: aborting due to 1 previous error
+

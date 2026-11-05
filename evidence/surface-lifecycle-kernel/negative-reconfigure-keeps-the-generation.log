@@ -1,0 +1,38 @@
+verification results:: 18 verified, 1 errors
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+   --> <repo>/evidence/surface-lifecycle-kernel/negative_reconfigure_keeps_the_generation.rs:209:5
+    |
+209 |     pub fn reconfigure(&mut self,caller:u64,expected_generation:u64,width:u32,height:u32)->(result:Result<u64,SurfaceLifecycleError>)
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: postcondition not satisfied
+   --> <repo>/evidence/surface-lifecycle-kernel/negative_reconfigure_keeps_the_generation.rs:210:17
+    |
+210 |           ensures surface_reconfigured(*old(self),*final(self),caller,expected_generation,width,height,result),
+    |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+211 |               surface_step(*old(self),*final(self)),
+212 | /     { reveal(surface_reconfigured); reveal(surface_refusal); reveal(surface_advanced); reveal(surface_step);
+213 | |         self.require_active(caller, expected_generation)?;
+214 | |         let next = self.next_generation()?;
+215 | |         self.width = width;
+216 | |         self.height = height;
+217 | |         Ok(next)
+218 | |     }
+    | |_____- at the end of the function body
+
+error: postcondition not satisfied
+   --> <repo>/evidence/surface-lifecycle-kernel/negative_reconfigure_keeps_the_generation.rs:211:13
+    |
+211 |               surface_step(*old(self),*final(self)),
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+212 | /     { reveal(surface_reconfigured); reveal(surface_refusal); reveal(surface_advanced); reveal(surface_step);
+213 | |         self.require_active(caller, expected_generation)?;
+214 | |         let next = self.next_generation()?;
+215 | |         self.width = width;
+216 | |         self.height = height;
+217 | |         Ok(next)
+218 | |     }
+    | |_____- at the end of the function body
+
+error: aborting due to 2 previous errors
+

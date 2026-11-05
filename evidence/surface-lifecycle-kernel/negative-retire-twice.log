@@ -1,0 +1,38 @@
+verification results:: 18 verified, 1 errors
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+   --> <repo>/evidence/surface-lifecycle-kernel/negative_retire_twice.rs:254:5
+    |
+254 |     pub fn retire(&mut self,caller:u64,expected_generation:u64)->(result:Result<(),SurfaceLifecycleError>)
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: postcondition not satisfied
+   --> <repo>/evidence/surface-lifecycle-kernel/negative_retire_twice.rs:255:17
+    |
+255 |           ensures surface_retired(*old(self),*final(self),caller,expected_generation,result),
+    |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+256 |               surface_step(*old(self),*final(self)),
+257 | /     { reveal(surface_retired); reveal(surface_refusal); reveal(surface_closed); reveal(surface_step);
+258 | |         self.require(caller, expected_generation)?;
+259 | |                 if self.generation < u64::MAX {
+260 | |             self.generation += 1;
+...   |
+263 | |         Ok(())
+264 | |     }
+    | |_____- at the end of the function body
+
+error: postcondition not satisfied
+   --> <repo>/evidence/surface-lifecycle-kernel/negative_retire_twice.rs:256:13
+    |
+256 |               surface_step(*old(self),*final(self)),
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+257 | /     { reveal(surface_retired); reveal(surface_refusal); reveal(surface_closed); reveal(surface_step);
+258 | |         self.require(caller, expected_generation)?;
+259 | |                 if self.generation < u64::MAX {
+260 | |             self.generation += 1;
+...   |
+263 | |         Ok(())
+264 | |     }
+    | |_____- at the end of the function body
+
+error: aborting due to 2 previous errors
+

@@ -1,0 +1,17 @@
+verification results:: 18 verified, 1 errors
+error: postcondition not satisfied
+   --> <repo>/evidence/surface-lifecycle-kernel/negative_reconfigure_keeps_the_extent.rs:210:17
+    |
+210 |           ensures surface_reconfigured(*old(self),*final(self),caller,expected_generation,width,height,result),
+    |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+211 |               surface_step(*old(self),*final(self)),
+212 | /     { reveal(surface_reconfigured); reveal(surface_refusal); reveal(surface_advanced); reveal(surface_step);
+213 | |         self.require_active(caller, expected_generation)?;
+214 | |         let next = self.next_generation()?;
+215 | |         self.generation = next;
+216 | |         Ok(next)
+217 | |     }
+    | |_____- at the end of the function body
+
+error: aborting due to 1 previous error
+

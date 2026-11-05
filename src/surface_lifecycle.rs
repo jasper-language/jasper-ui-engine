@@ -18,6 +18,7 @@ pub enum SurfaceState {
 }
 // END VERIFIED SURFACE STATE TYPE
 
+// BEGIN VERIFIED SURFACE STATUS TYPE
 /// Current extent and generation visible to the owning host.
 /// 所属宿主可见的当前尺寸与代数。
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -27,7 +28,9 @@ pub struct SurfaceStatus {
     pub width: u32,
     pub height: u32,
 }
+// END VERIFIED SURFACE STATUS TYPE
 
+// BEGIN VERIFIED SURFACE LIFECYCLE ERROR TYPE
 /// Why a lifecycle transition was rejected. Rejections leave the transition state unchanged.
 /// 生命周期迁移被拒原因；拒绝时迁移状态保持不变。
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -37,6 +40,7 @@ pub enum SurfaceLifecycleError {
     StaleGeneration,
     GenerationExhausted,
 }
+// END VERIFIED SURFACE LIFECYCLE ERROR TYPE
 
 impl std::fmt::Display for SurfaceLifecycleError {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -64,6 +68,26 @@ pub struct SurfaceLifecycle {
 }
 // END VERIFIED SURFACE LIFECYCLE STORAGE TYPE
 
+// BEGIN VERIFIED SURFACE RENDER GATE KERNEL
+impl SurfaceLifecycle {
+    /// True only for the exact live generation of the owning host.
+    /// 仅当宿主身份与当前活动代数精确匹配时为真。
+    pub fn render_allowed(&self, caller: u64, generation: u64) -> bool {
+        caller == self.owner
+            && matches!(self.state, SurfaceState::Active)
+            && self.generation == generation
+    }
+
+    /// True while the owning host may submit work without carrying an epoch. Public rendering
+    /// entry points use this compatibility view; generation-checked entry points are preferred.
+    /// 所属宿主无需携带代数即可提交工作时的兼容视图；优先使用携带代数的渲染入口。
+    pub(crate) fn active_for_owner(&self, caller: u64) -> bool {
+        caller == self.owner && matches!(self.state, SurfaceState::Active)
+    }
+}
+// END VERIFIED SURFACE RENDER GATE KERNEL
+
+// BEGIN VERIFIED SURFACE TRANSITION KERNEL
 impl SurfaceLifecycle {
     /// Initial active host surface generation.
     /// 初始活动宿主 Surface 代数。
@@ -88,28 +112,7 @@ impl SurfaceLifecycle {
             height: self.height,
         })
     }
-}
 
-// BEGIN VERIFIED SURFACE RENDER GATE KERNEL
-impl SurfaceLifecycle {
-    /// True only for the exact live generation of the owning host.
-    /// 仅当宿主身份与当前活动代数精确匹配时为真。
-    pub fn render_allowed(&self, caller: u64, generation: u64) -> bool {
-        caller == self.owner
-            && matches!(self.state, SurfaceState::Active)
-            && self.generation == generation
-    }
-
-    /// True while the owning host may submit work without carrying an epoch. Public rendering
-    /// entry points use this compatibility view; generation-checked entry points are preferred.
-    /// 所属宿主无需携带代数即可提交工作时的兼容视图；优先使用携带代数的渲染入口。
-    pub(crate) fn active_for_owner(&self, caller: u64) -> bool {
-        caller == self.owner && matches!(self.state, SurfaceState::Active)
-    }
-}
-// END VERIFIED SURFACE RENDER GATE KERNEL
-
-impl SurfaceLifecycle {
     /// Replace the host extent. The old generation immediately becomes stale.
     /// 替换宿主尺寸；旧代数立即失效。
     pub fn reconfigure(
@@ -151,7 +154,7 @@ impl SurfaceLifecycle {
         height: u32,
     ) -> Result<u64, SurfaceLifecycleError> {
         self.require(caller, expected_generation)?;
-        if self.state != SurfaceState::Suspended {
+        if !matches!(self.state, SurfaceState::Suspended) {
             return Err(SurfaceLifecycleError::WrongState);
         }
         let next = self.next_generation()?;
@@ -170,7 +173,7 @@ impl SurfaceLifecycle {
         expected_generation: u64,
     ) -> Result<(), SurfaceLifecycleError> {
         self.require(caller, expected_generation)?;
-        if self.state == SurfaceState::Retired {
+        if matches!(self.state, SurfaceState::Retired) {
             return Err(SurfaceLifecycleError::WrongState);
         }
         if self.generation < u64::MAX {
@@ -183,7 +186,7 @@ impl SurfaceLifecycle {
     /// Public owner/state retirement compatibility path. It has no generation guard.
     /// 公开 owner/state 兼容退休路径；不携带代数保护。
     pub(crate) fn retire_current(&mut self, caller: u64) -> bool {
-        if caller != self.owner || self.state == SurfaceState::Retired {
+        if caller != self.owner || matches!(self.state, SurfaceState::Retired) {
             return false;
         }
         if self.generation < u64::MAX {
@@ -199,7 +202,7 @@ impl SurfaceLifecycle {
         expected_generation: u64,
     ) -> Result<(), SurfaceLifecycleError> {
         self.require(caller, expected_generation)?;
-        if self.state != SurfaceState::Active {
+        if !matches!(self.state, SurfaceState::Active) {
             return Err(SurfaceLifecycleError::WrongState);
         }
         Ok(())
@@ -221,6 +224,7 @@ impl SurfaceLifecycle {
             .ok_or(SurfaceLifecycleError::GenerationExhausted)
     }
 }
+// END VERIFIED SURFACE TRANSITION KERNEL
 
 #[cfg(test)]
 mod tests {
@@ -271,7 +275,173 @@ mod tests {
         assert_eq!(surface.status(8), None);
     }
 
+    const OWNER: u64 = 7;
+    const STATES: [SurfaceState; 3] = [
+        SurfaceState::Active,
+        SurfaceState::Suspended,
+        SurfaceState::Retired,
+    ];
+
+    fn at(state: SurfaceState, generation: u64) -> SurfaceLifecycle {
+        SurfaceLifecycle {
+            owner: OWNER,
+            state,
+            generation,
+            width: 3,
+            height: 5,
+        }
+    }
+
+    // A decision table written out apart from the production checks: which state each transition
+    // requires, which state it enters, and whether it replaces the extent.
+    // 与生产检查分开写出的判定表：每个迁移要求的状态、进入的状态、是否替换尺寸。
+    fn check_against_table(mut surface: SurfaceLifecycle, op: u8, caller: u64, expected: u64) {
+        let before = surface;
+        let (from_active, from_suspended, enters, replaces) = match op % 4 {
+            0 => (true, false, SurfaceState::Active, true),
+            1 => (true, false, SurfaceState::Suspended, false),
+            2 => (false, true, SurfaceState::Active, true),
+            _ => (true, true, SurfaceState::Retired, false),
+        };
+        let admitted = match before.state {
+            SurfaceState::Active => from_active,
+            SurfaceState::Suspended => from_suspended,
+            SurfaceState::Retired => false,
+        };
+        let retiring = op % 4 == 3;
+        let refusal = if caller != OWNER {
+            Some(SurfaceLifecycleError::WrongOwner)
+        } else if expected != before.generation {
+            Some(SurfaceLifecycleError::StaleGeneration)
+        } else if !admitted {
+            Some(SurfaceLifecycleError::WrongState)
+        } else if !retiring && before.generation == u64::MAX {
+            Some(SurfaceLifecycleError::GenerationExhausted)
+        } else {
+            None
+        };
+        let result = match op % 4 {
+            0 => surface.reconfigure(caller, expected, 11, 13),
+            1 => surface.suspend(caller, expected),
+            2 => surface.resume(caller, expected, 11, 13),
+            _ => surface
+                .retire(caller, expected)
+                .map(|()| surface.generation),
+        };
+        match refusal {
+            Some(error) => {
+                assert_eq!(result, Err(error));
+                assert_eq!(surface, before);
+            }
+            None => {
+                let generation = before.generation.saturating_add(1);
+                assert_eq!(result, Ok(generation));
+                assert_eq!(surface.owner, OWNER);
+                assert_eq!(surface.state, enters);
+                assert_eq!(surface.generation, generation);
+                let extent = if replaces { (11, 13) } else { (3, 5) };
+                assert_eq!((surface.width, surface.height), extent);
+            }
+        }
+        for probe in [expected, before.generation, surface.generation] {
+            for who in [OWNER, OWNER + 1] {
+                assert_eq!(
+                    surface.render_allowed(who, probe),
+                    who == OWNER
+                        && surface.state == SurfaceState::Active
+                        && probe == surface.generation
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn every_transition_follows_the_table_at_the_generation_edges() {
+        for state in STATES {
+            for generation in [0, 1, 2, u64::MAX - 1, u64::MAX] {
+                for op in 0..4 {
+                    for caller in [OWNER, OWNER + 1] {
+                        for expected in [generation, generation.wrapping_add(1)] {
+                            check_against_table(at(state, generation), op, caller, expected);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn the_compatibility_retirement_ignores_the_generation_only() {
+        for state in STATES {
+            for generation in [1, u64::MAX] {
+                let before = at(state, generation);
+                let mut foreign = before;
+                assert!(!foreign.retire_current(OWNER + 1));
+                assert_eq!(foreign, before);
+                let mut surface = before;
+                let accepted = surface.retire_current(OWNER);
+                assert_eq!(accepted, state != SurfaceState::Retired);
+                if accepted {
+                    assert_eq!(surface.state, SurfaceState::Retired);
+                    assert_eq!(surface.generation, generation.saturating_add(1));
+                    assert_eq!((surface.width, surface.height), (3, 5));
+                } else {
+                    assert_eq!(surface, before);
+                }
+            }
+        }
+    }
+
     proptest! {
+        #[test]
+        fn any_state_follows_the_table(
+            state in 0usize..3,
+            generation in prop_oneof![Just(u64::MAX), Just(u64::MAX - 1), any::<u64>()],
+            op in any::<u8>(),
+            foreign in any::<bool>(),
+            stale in any::<bool>(),
+        ) {
+            check_against_table(
+                at(STATES[state], generation),
+                op,
+                if foreign { OWNER + 1 } else { OWNER },
+                if stale { generation.wrapping_add(1) } else { generation },
+            );
+        }
+
+        // Along any trace, a generation that may render names one state, and retirement is final.
+        // 任意轨迹上，可渲染的代数只对应一个状态，退休不可撤销。
+        #[test]
+        fn a_live_generation_names_one_state_along_any_trace(
+            steps in proptest::collection::vec((0u8..4, any::<bool>(), any::<bool>(), 1u32..4), 0..32),
+        ) {
+            let mut surface = SurfaceLifecycle::new(OWNER, 3, 5);
+            let mut seen = vec![surface];
+            for (op, foreign, stale, extent) in steps {
+                let caller = if foreign { OWNER + 1 } else { OWNER };
+                let generation = surface.generation + u64::from(stale);
+                let before = surface;
+                let _ = match op {
+                    0 => surface.reconfigure(caller, generation, extent, extent),
+                    1 => surface.suspend(caller, generation),
+                    2 => surface.resume(caller, generation, extent, extent),
+                    _ => surface.retire(caller, generation).map(|()| 0),
+                };
+                if before.state == SurfaceState::Retired {
+                    prop_assert_eq!(surface, before);
+                }
+                prop_assert!(surface.generation >= before.generation);
+                for earlier in &seen {
+                    if surface.render_allowed(OWNER, earlier.generation)
+                        && earlier.render_allowed(OWNER, earlier.generation)
+                    {
+                        prop_assert_eq!(surface, *earlier);
+                    }
+                }
+                seen.push(surface);
+            }
+        }
+
         #[test]
         fn successful_cycles_stay_active_and_monotone(
             owner in any::<u64>(),

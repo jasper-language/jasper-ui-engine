@@ -50,6 +50,10 @@
 
 **宿主 GPU Surface、device-loss、vsync 与能力矩阵。** Xvfb/llvmpipe 的软件 X11 和 TextureView 证据不等于硬件 Surface、合成器、垂直同步、休眠恢复或设备丢失验收。第三方 wgpu/Vello TCB 仍需明确登记。
 
+2026-11-05 闭合 UI-SURFACE-LIFECYCLE-001：真实 `SurfaceLifecycle` 的全部迁移与任意轨迹。对任意归属者、调用者、代数、尺寸与状态：拒绝按固定顺序判定且不改变状态；成功代数加一并进入判定表写明的状态；同一代数可渲染的两个时刻是同一状态；退休后不再变化。反例被拒，见 `evidence/surface-lifecycle-chain/report.json`；Kani：发版时验证。
+
+仍未覆盖：`HostRenderer` 对状态机的编排、硬件 Surface、合成器、垂直同步、设备丢失、真实平台休眠恢复、能力矩阵，以及 wgpu/Vello TCB 登记。
+
 ### CP-07
 
 **活外部 IME、无障碍服务与组合生命周期。** 焦点/绑定/预编辑/取消/AccessKit 转换和注入服务集成已通过；仍缺活编辑器/IME 服务、平台无障碍桥及迟到事件、重绑定、外部取消回执、宿主捕获组合的形式化证明。

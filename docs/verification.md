@@ -1168,6 +1168,23 @@ Kani 未得出结论的形状（都在链外，已撤下；构建机与其他构
 
 假设与未覆盖：`jaso` crate 由 jasper-os 自己的验证链负责，此处按第三方边界对待；`map_image` 的裸写、`mmap`/`mprotect`、`transmute` 与跨 FFI 调用只有上面的真实路径测试，没有证明也没有 Miri；`load_inner` 的步骤顺序靠阅读与测试；没有对 `ui_plugin_host.rs` 做手动变异；只在 x86_64 Linux 测试；插件进程内运行无隔离，见 `abi.md` 第 10.5 节；层绘制的混合与光栅由 Vello 负责；`render_cpu_with_paint_layers` 的拒绝路径有测试，无证明。
 
+## UI-SURFACE-LIFECYCLE-001：Surface 生命周期迁移（CP-06 子性质，2026-11-05）
+
+真实 `src/surface_lifecycle.rs` 的迁移内核，生产逻辑不变：`==` 比较改写为 `matches!`，渲染门区域移到迁移之前，行为不变靠阅读与测试。
+
+| 阶段 | 范围 | 结果 |
+|---|---|---|
+| Verus/Z3 | 任意归属者、调用者、代数、尺寸与状态：拒绝按错误归属者、过期代数、错误状态、代数耗尽的顺序判定，拒绝不改变状态；成功代数加一，进入判定表写明的状态，只有 `reconfigure`、`resume` 替换尺寸；退休不因耗尽失败，代数饱和，只靠状态关闭；`retire_current` 与 `retire` 的差别只是不带代数。任意轨迹上归属不变、代数不回退；同一代数可渲染的两个时刻是同一状态，尺寸也相同；退休后不再变化 | 19 verified/0 errors（含依赖）；12 个错误实现和 2 个放宽的轨迹步骤全部被拒，后者说明轨迹定理不是空真 |
+| Proptest | `verification/host-surface`：与生产检查分开写出的判定表，覆盖代数边界和任意状态、调用者、代数；长度 32 以内的任意轨迹；crate 内部的 `retire_current` | 7 项通过（属性各 256 例，`PROPTEST_RNG_SEED=12345`） |
+| Miri | 同 crate 的 4 个非属性测试 | 通过；3 个属性测试不在 Miri 内。模块没有 unsafe |
+| cargo-fuzz | `host_surface` 首次进入验证链；对照判定表检查每次拒绝、状态、尺寸和代数，经验证 crate 的包装调用 `retire_current` | 193251 次，无崩溃（`read_boundary` 11768、`batch_decode` 1371173、`ui_plugin_gate` 31460）。代数远低于耗尽，该边界靠 Verus 合约与判定表测试 |
+| Kani | | Kani：发版时验证 |
+| Loom | N/A：类型没有共享状态、原子量或同步原语，由独占引用持有 | 不计 PASS；链中既有 Loom 场景通过，与本切片无关 |
+
+12 个错误实现逐个作用于临时副本，每个都至少让 `verification/host-surface` 的一项测试失败。
+
+假设与未覆盖：轨迹是对单个独占值的调用序列，这由 Rust 所有权保证，此处未证明；`HostRenderer` 对状态机的编排只有已有集成测试；wgpu、Vello 属第三方 TCB；硬件 Surface、合成器、垂直同步、设备丢失、真实平台休眠恢复与能力矩阵都没有证据。证据见 `evidence/surface-lifecycle-chain/report.json`。
+
 ## 发版清单补充
 
 `ui_plugin_gate` 的三个内核加入发版 Kani 时的候选 harness，现在未编写，`Kani：发版时验证`。

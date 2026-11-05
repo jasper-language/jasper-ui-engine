@@ -5,6 +5,12 @@ mod actual {
 }
 pub use actual::*;
 
+/// Reaches the crate-private compatibility retirement for the fuzz target, unchanged.
+/// 让 fuzz 目标原样调用 crate 内部的兼容退休路径。
+pub fn retire_current(surface: &mut SurfaceLifecycle, caller: u64) -> bool {
+    surface.retire_current(caller)
+}
+
 #[cfg(kani)]
 mod proofs {
     use super::*;

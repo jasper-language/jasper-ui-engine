@@ -18,7 +18,7 @@
     "scene-node-remove": "e98e2b1c9a3a0e57bcb8f8464d976ac0316807148cb696c7abd25905564cb483"
   },
   "proof_sha256": "a256383596fdd8751f3c4bb0893aed932b166ce554f93516f1fe659a9174768f",
-  "runner_sha256": "d502de70ee7889dd359226a34a649a2061cf08a2096419e0ebb2e47a0e0ca99d",
+  "runner_sha256": "9ced6ae49e9658441f6dc330138939658e4197302cc350bce10ab58f93398a0e",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/verus/verus",

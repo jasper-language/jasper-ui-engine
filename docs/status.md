@@ -908,3 +908,7 @@ CP-02 仍无判定：只选一个断言（切片后 30 个 VCC）在 45 分钟�
 `apply_batch_at` 的主体移入 `apply_unique_batch`。已有重复的树不接受任何批次；成功的非空批次版本加一，结果树无重复，且是逐补丁受检写入的轨迹终点，轨迹上每个状态都无重复；任何失败都让场景保持原值。这些有 Verus 全域证明，范围见 `verification.md` 的 UI-SCENE-BATCH-UNIQUE-001。派生克隆返回相同的值是证明中的假设，只经测试；真实 `BTreeSet` 满足契约也只经测试，整事务性质 UI-TXN-ATOMIC-001 仍是 not_verified。定点通过，等批次全量。
 
 上一次批次全量在提交 342ae26 上：`cargo test --all-features`（xvfb，注入五份字体）351 项通过、0 失败、0 忽略。本切片的合入不在其中。
+
+## 2026-11-05：Surface 生命周期迁移（CP-06 子性质）
+
+`SurfaceLifecycle` 的全部迁移（`reconfigure`、`suspend`、`resume`、`retire`、`retire_current`）与任意轨迹有 Verus 全域证明，范围见 `verification.md` 的 UI-SURFACE-LIFECYCLE-001。这只是生命周期状态机：`HostRenderer` 的编排、wgpu/Vello、硬件 Surface、合成器、垂直同步、设备丢失、真实平台休眠恢复与能力矩阵都没有覆盖，CP-06 仍未闭合。定点通过，等批次全量。

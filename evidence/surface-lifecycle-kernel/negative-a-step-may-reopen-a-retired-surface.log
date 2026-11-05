@@ -1,0 +1,17 @@
+verification results:: 18 verified, 1 errors
+error: postcondition not satisfied
+  --> <repo>/evidence/surface-lifecycle-kernel/negative_a_step_may_reopen_a_retired_surface.rs:88:9
+   |
+88 |           t[i].state is Retired ==> t[j]==t[i],
+   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+93 | /     if i<j {
+94 | |         surface_trace_holds(t,i,j-1);
+95 | |         let k=j-1;
+96 | |         assert(surface_step(t[k],t[k+1]));
+97 | |         assert(k+1==j);
+98 | |     }
+   | |_____- at the end of the function body
+
+error: aborting due to 1 previous error
+

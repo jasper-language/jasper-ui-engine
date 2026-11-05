@@ -1,0 +1,167 @@
+{
+  "property": "UI-SURFACE-LIFECYCLE-001",
+  "backlog_item": "CP-06",
+  "status": "subproperty_scoped_checks_passed",
+  "cp06_closed": false,
+  "production": {
+    "file": "src/surface_lifecycle.rs",
+    "functions": [
+      "new",
+      "status",
+      "reconfigure",
+      "suspend",
+      "resume",
+      "retire",
+      "retire_current",
+      "require_active",
+      "require",
+      "next_generation",
+      "render_allowed",
+      "active_for_owner"
+    ],
+    "file_sha256": "f117293f240801994fec91d5b2a205937aa015cb1b2ce281448e1c76fd592d55",
+    "kernel_sha256": "f82aa70f906897b7001aa81adeee500443ed51305dc11f8ff04d3b72f8b1d859",
+    "caller": "HostRenderer in src/native_adapter/render_host.rs"
+  },
+  "specification": "For any owner, caller, generation, extent and state. Each transition refuses in a fixed order: wrong owner, stale generation, wrong state, exhausted generation; every refusal leaves the lifecycle equal to what it was. A success advances the generation by one, enters the state the table names and replaces the extent only on reconfigure and resume. Retirement never fails on exhaustion: the generation saturates and the state alone closes it. retire_current differs from retire only in carrying no generation. Along any trace of these transitions the owner never changes and generations never fall; two moments where one generation may render are the same state, extent included; a retired lifecycle never changes again, so no generation renders again.",
+  "assumptions": [
+    "Traces are sequences of calls on one exclusively held value: Rust ownership, not proved here.",
+    "Verus default integer model, not a cross-platform execution test."
+  ],
+  "tools": {
+    "verus": "Verus 0.2026.10.18.7d82994",
+    "z3": "Z3 version 4.16.0 - 64 bit",
+    "nightly": "nightly-2026-10-17"
+  },
+  "config": {
+    "entry": "python3 scripts/verify-ui.py --verus <verus>",
+    "fuzz_seconds": 20,
+    "proptest_cases": 256,
+    "proptest_seed": "12345"
+  },
+  "stages": {
+    "Verus+Z3": {
+      "result": "passed",
+      "verified": 19,
+      "errors": 0,
+      "negative_controls": [
+        {
+          "name": "status-answers-a-foreign-caller",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "reconfigure-keeps-the-generation",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "reconfigure-keeps-the-extent",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "suspend-stays-active",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "resume-from-any-state",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "resume-stays-suspended",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "retire-twice",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "retire-stays-active",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "retire-current-stays-active",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "retire-current-ignores-owner",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "require-ignores-owner",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "require-ignores-generation",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "a-step-may-keep-the-generation",
+          "rejected": true,
+          "exit_code": 1
+        },
+        {
+          "name": "a-step-may-reopen-a-retired-surface",
+          "rejected": true,
+          "exit_code": 1
+        }
+      ],
+      "model_note": "The count includes the re-verified dependencies. Twelve wrong implementations and two weakened trace steps are refused; the two weakened steps show that the trace theorems are not vacuous."
+    },
+    "Proptest": {
+      "result": "passed",
+      "harness": [
+        "actual::tests in verification/host-surface"
+      ],
+      "test_count": 7,
+      "includes": "A decision table written apart from the production checks, at the generation edges and over arbitrary states, callers and generations; traces up to 32 steps; the crate-private retire_current directly."
+    },
+    "Miri": {
+      "result": "passed",
+      "test_count": 4,
+      "harness": [
+        "the four non-property tests of verification/host-surface"
+      ],
+      "note": "The three property tests are skipped under Miri. The module has no unsafe code."
+    },
+    "cargo-fuzz": {
+      "result": "passed",
+      "target": "host_surface",
+      "completed_runs": 193251,
+      "note": "New in the chain: the target now checks each refusal, state, extent and generation against a table, and reaches the compatibility retirement through a verification-crate wrapper. Generations stay far below exhaustion; that edge rests on the Verus contract and the table test."
+    },
+    "Kani": {
+      "result": "Kani：发版时验证",
+      "note": "No new harness ran in this chain."
+    },
+    "Loom": {
+      "result": "N/A",
+      "reason": "The type has no shared state, atomic or synchronization primitive and is held by exclusive reference; no concurrent execution exists to explore.",
+      "counted_as_pass": false
+    }
+  },
+  "real_path_test": {
+    "test": "verification/host-surface tests",
+    "class": "tested, not proved",
+    "mutation_checked": "The twelve wrong implementations of the kernel were each applied to a scratch copy and each failed at least one test of the crate."
+  },
+  "not_covered": [
+    "HostRenderer orchestration over this lifecycle",
+    "wgpu and Vello (third-party TCB)",
+    "hardware surfaces and compositors",
+    "vsync",
+    "device loss",
+    "suspend and resume on a real platform",
+    "the capability matrix"
+  ]
+}

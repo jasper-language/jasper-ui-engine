@@ -784,6 +784,8 @@ pub closed spec fn surface_view_model(view: &Rgba8SurfaceView) -> (Seq<u8>, u32,
                       ("target-past-image", "addend > image_size as u64 || ", "")],
     },
     "surface-state-type": {"source": "src/surface_lifecycle.rs", "marker": "SURFACE STATE", "suffix": "TYPE", "signature": None, "depends": [], "internal_only": True},
+    "surface-status-type": {"source": "src/surface_lifecycle.rs", "marker": "SURFACE STATUS", "suffix": "TYPE", "signature": None, "depends": ["surface-state-type"], "internal_only": True},
+    "surface-lifecycle-error-type": {"source": "src/surface_lifecycle.rs", "marker": "SURFACE LIFECYCLE ERROR", "suffix": "TYPE", "signature": None, "depends": [], "internal_only": True},
     "surface-lifecycle-storage-type": {"source": "src/surface_lifecycle.rs", "marker": "SURFACE LIFECYCLE STORAGE", "suffix": "TYPE", "signature": None, "depends": ["surface-state-type"], "internal_only": True},
     "surface-render-gate": {
         "source": "src/surface_lifecycle.rs", "marker": "SURFACE RENDER GATE", "property": "UI-SURFACE-RENDER-GATE-001",
@@ -3725,6 +3727,218 @@ KERNELS["native-backend-frame-import"]={
         ("swap-frame-dimensions","Canvas::from_rgba8(width,height,pixels)","Canvas::from_rgba8(height,width,pixels)")],
 }
 
+KERNELS["surface-transition"] = {
+    "source":"src/surface_lifecycle.rs", "marker":"SURFACE TRANSITION",
+    "property":"UI-SURFACE-LIFECYCLE-001",
+    "spec_prelude":"""// The checks every generation-carrying transition starts with, in the order they are made.
+// 每个携带代数的迁移一开始的检查，按先后写出。
+pub closed spec fn surface_refusal(o:SurfaceLifecycle,caller:u64,generation:u64)->Option<SurfaceLifecycleError> {
+    if caller!=o.owner { Some(SurfaceLifecycleError::WrongOwner) }
+    else if generation!=o.generation { Some(SurfaceLifecycleError::StaleGeneration) }
+    else { None }
+}
+pub closed spec fn surface_advanced(o:SurfaceLifecycle,n:SurfaceLifecycle,state:SurfaceState,width:u32,height:u32)->bool {
+    o.generation<u64::MAX && n==(SurfaceLifecycle{owner:o.owner,state:state,generation:(o.generation+1) as u64,width:width,height:height})
+}
+pub closed spec fn surface_reconfigured(o:SurfaceLifecycle,n:SurfaceLifecycle,caller:u64,generation:u64,width:u32,height:u32,r:Result<u64,SurfaceLifecycleError>)->bool {
+    match surface_refusal(o,caller,generation) {
+        Some(e)=>r==Err::<u64,SurfaceLifecycleError>(e) && n==o,
+        None=>if !(o.state is Active) { r==Err::<u64,SurfaceLifecycleError>(SurfaceLifecycleError::WrongState) && n==o }
+            else if o.generation==u64::MAX { r==Err::<u64,SurfaceLifecycleError>(SurfaceLifecycleError::GenerationExhausted) && n==o }
+            else { surface_advanced(o,n,SurfaceState::Active,width,height) && r==Ok::<u64,SurfaceLifecycleError>(n.generation) },
+    }
+}
+pub closed spec fn surface_suspended(o:SurfaceLifecycle,n:SurfaceLifecycle,caller:u64,generation:u64,r:Result<u64,SurfaceLifecycleError>)->bool {
+    match surface_refusal(o,caller,generation) {
+        Some(e)=>r==Err::<u64,SurfaceLifecycleError>(e) && n==o,
+        None=>if !(o.state is Active) { r==Err::<u64,SurfaceLifecycleError>(SurfaceLifecycleError::WrongState) && n==o }
+            else if o.generation==u64::MAX { r==Err::<u64,SurfaceLifecycleError>(SurfaceLifecycleError::GenerationExhausted) && n==o }
+            else { surface_advanced(o,n,SurfaceState::Suspended,o.width,o.height) && r==Ok::<u64,SurfaceLifecycleError>(n.generation) },
+    }
+}
+pub closed spec fn surface_resumed(o:SurfaceLifecycle,n:SurfaceLifecycle,caller:u64,generation:u64,width:u32,height:u32,r:Result<u64,SurfaceLifecycleError>)->bool {
+    match surface_refusal(o,caller,generation) {
+        Some(e)=>r==Err::<u64,SurfaceLifecycleError>(e) && n==o,
+        None=>if !(o.state is Suspended) { r==Err::<u64,SurfaceLifecycleError>(SurfaceLifecycleError::WrongState) && n==o }
+            else if o.generation==u64::MAX { r==Err::<u64,SurfaceLifecycleError>(SurfaceLifecycleError::GenerationExhausted) && n==o }
+            else { surface_advanced(o,n,SurfaceState::Active,width,height) && r==Ok::<u64,SurfaceLifecycleError>(n.generation) },
+    }
+}
+// Retirement never fails on exhaustion: the generation saturates and the state alone closes it.
+// 退休不因耗尽失败：代数饱和，只靠状态关闭。
+pub closed spec fn surface_closed(o:SurfaceLifecycle,n:SurfaceLifecycle)->bool {
+    !(o.state is Retired) && n==(SurfaceLifecycle{owner:o.owner,state:SurfaceState::Retired,
+        generation:if o.generation<u64::MAX { (o.generation+1) as u64 } else { o.generation },width:o.width,height:o.height})
+}
+pub closed spec fn surface_retired(o:SurfaceLifecycle,n:SurfaceLifecycle,caller:u64,generation:u64,r:Result<(),SurfaceLifecycleError>)->bool {
+    match surface_refusal(o,caller,generation) {
+        Some(e)=>r==Err::<(),SurfaceLifecycleError>(e) && n==o,
+        None=>if o.state is Retired { r==Err::<(),SurfaceLifecycleError>(SurfaceLifecycleError::WrongState) && n==o }
+            else { surface_closed(o,n) && r is Ok },
+    }
+}
+pub closed spec fn surface_retired_current(o:SurfaceLifecycle,n:SurfaceLifecycle,caller:u64,r:bool)->bool {
+    if caller!=o.owner || o.state is Retired { !r && n==o } else { r && surface_closed(o,n) }
+}
+pub closed spec fn surface_new(n:SurfaceLifecycle,owner:u64,width:u32,height:u32)->bool {
+    n==(SurfaceLifecycle{owner:owner,state:SurfaceState::Active,generation:1,width:width,height:height})
+}
+pub closed spec fn surface_read(o:SurfaceLifecycle,caller:u64,r:Option<SurfaceStatus>)->bool {
+    if caller!=o.owner { r is None } else { r==Some(SurfaceStatus{state:o.state,generation:o.generation,width:o.width,height:o.height}) }
+}
+// One link of any trace: nothing changed, or one successful transition.
+// 任意轨迹的一环：没有变化，或一次成功迁移。
+pub closed spec fn surface_step(o:SurfaceLifecycle,n:SurfaceLifecycle)->bool {
+    let moved = o.generation<u64::MAX && n.owner==o.owner && n.generation==o.generation+1;
+    n==o
+    || (o.state is Active && moved && n.state is Active)
+    || (o.state is Active && moved && n.state is Suspended && n.width==o.width && n.height==o.height)
+    || (o.state is Suspended && moved && n.state is Active)
+    || surface_closed(o,n)
+}
+pub closed spec fn surface_trace(t:Seq<SurfaceLifecycle>)->bool {
+    forall|k:int| 0<=k<t.len()-1 ==> #[trigger] surface_step(t[k],t[k+1])
+}
+pub closed spec fn surface_live(s:SurfaceLifecycle,caller:u64,generation:u64)->bool {
+    caller==s.owner && s.state is Active && generation==s.generation
+}
+// Generations never fall, the owner never changes, and leaving a live state cannot be undone.
+// 代数不回退，归属不变，离开活动状态后不能撤销。
+proof fn surface_trace_holds(t:Seq<SurfaceLifecycle>,i:int,j:int)
+    requires surface_trace(t), 0<=i<=j<t.len(),
+    ensures t[j].owner==t[i].owner, t[j].generation>=t[i].generation,
+        t[i].state is Retired ==> t[j]==t[i],
+        t[j]==t[i] || t[j].generation>t[i].generation || t[j].state is Retired,
+    decreases j-i,
+{
+    reveal(surface_trace); reveal(surface_step); reveal(surface_advanced); reveal(surface_closed);
+    if i<j {
+        surface_trace_holds(t,i,j-1);
+        let k=j-1;
+        assert(surface_step(t[k],t[k+1]));
+        assert(k+1==j);
+    }
+}
+// A generation names one state: two moments where it may render are the same state, extent included.
+// 一个代数只对应一个状态：它可渲染的两个时刻是同一状态，尺寸也相同。
+proof fn surface_generation_names_one_state(t:Seq<SurfaceLifecycle>,i:int,j:int,caller:u64,generation:u64)
+    requires surface_trace(t), 0<=i<=j<t.len(), surface_live(t[i],caller,generation), surface_live(t[j],caller,generation),
+    ensures t[i]==t[j],
+{
+    reveal(surface_live);
+    surface_trace_holds(t,i,j);
+}
+// Once retired, every later state is that state, so no generation renders again.
+// 一旦退休，此后都是同一状态，任何代数都不再可渲染。
+proof fn surface_retired_is_final(t:Seq<SurfaceLifecycle>,i:int,j:int,caller:u64,generation:u64)
+    requires surface_trace(t), 0<=i<=j<t.len(), t[i].state is Retired,
+    ensures t[j]==t[i], !surface_live(t[j],caller,generation),
+{
+    reveal(surface_live);
+    surface_trace_holds(t,i,j);
+}
+""",
+    "signature":"""pub const fn new(owner: u64, width: u32, height: u32) -> Self {""",
+    "contract":"""pub const fn new(owner: u64, width: u32, height: u32) -> (result: Self)
+        ensures surface_new(result,owner,width,height),
+    { reveal(surface_new);""",
+    "extra_annotations":[
+        ("""pub fn status(&self, caller: u64) -> Option<SurfaceStatus> {""",
+         """pub fn status(&self, caller: u64) -> (result: Option<SurfaceStatus>)
+        ensures surface_read(*self,caller,result),
+    { reveal(surface_read);"""),
+        ("""pub fn reconfigure(
+        &mut self,
+        caller: u64,
+        expected_generation: u64,
+        width: u32,
+        height: u32,
+    ) -> Result<u64, SurfaceLifecycleError> {""",
+         """pub fn reconfigure(&mut self,caller:u64,expected_generation:u64,width:u32,height:u32)->(result:Result<u64,SurfaceLifecycleError>)
+        ensures surface_reconfigured(*old(self),*final(self),caller,expected_generation,width,height,result),
+            surface_step(*old(self),*final(self)),
+    { reveal(surface_reconfigured); reveal(surface_refusal); reveal(surface_advanced); reveal(surface_step);"""),
+        ("""pub fn suspend(
+        &mut self,
+        caller: u64,
+        expected_generation: u64,
+    ) -> Result<u64, SurfaceLifecycleError> {""",
+         """pub fn suspend(&mut self,caller:u64,expected_generation:u64)->(result:Result<u64,SurfaceLifecycleError>)
+        ensures surface_suspended(*old(self),*final(self),caller,expected_generation,result),
+            surface_step(*old(self),*final(self)),
+    { reveal(surface_suspended); reveal(surface_refusal); reveal(surface_advanced); reveal(surface_step);"""),
+        ("""pub fn resume(
+        &mut self,
+        caller: u64,
+        expected_generation: u64,
+        width: u32,
+        height: u32,
+    ) -> Result<u64, SurfaceLifecycleError> {""",
+         """pub fn resume(&mut self,caller:u64,expected_generation:u64,width:u32,height:u32)->(result:Result<u64,SurfaceLifecycleError>)
+        ensures surface_resumed(*old(self),*final(self),caller,expected_generation,width,height,result),
+            surface_step(*old(self),*final(self)),
+    { reveal(surface_resumed); reveal(surface_refusal); reveal(surface_advanced); reveal(surface_step);"""),
+        ("""pub fn retire(
+        &mut self,
+        caller: u64,
+        expected_generation: u64,
+    ) -> Result<(), SurfaceLifecycleError> {""",
+         """pub fn retire(&mut self,caller:u64,expected_generation:u64)->(result:Result<(),SurfaceLifecycleError>)
+        ensures surface_retired(*old(self),*final(self),caller,expected_generation,result),
+            surface_step(*old(self),*final(self)),
+    { reveal(surface_retired); reveal(surface_refusal); reveal(surface_closed); reveal(surface_step);"""),
+        ("""pub(crate) fn retire_current(&mut self, caller: u64) -> bool {""",
+         """pub(crate) fn retire_current(&mut self,caller:u64)->(result:bool)
+        ensures surface_retired_current(*old(self),*final(self),caller,result),
+            surface_step(*old(self),*final(self)),
+    { reveal(surface_retired_current); reveal(surface_closed); reveal(surface_step);"""),
+        ("""fn require_active(
+        &self,
+        caller: u64,
+        expected_generation: u64,
+    ) -> Result<(), SurfaceLifecycleError> {""",
+         """fn require_active(&self,caller:u64,expected_generation:u64)->(result:Result<(),SurfaceLifecycleError>)
+        ensures match surface_refusal(*self,caller,expected_generation) {
+            Some(e)=>result==Err::<(),SurfaceLifecycleError>(e),
+            None=>if self.state is Active { result is Ok } else { result==Err::<(),SurfaceLifecycleError>(SurfaceLifecycleError::WrongState) },
+        },
+    { reveal(surface_refusal);"""),
+        ("""fn require(&self, caller: u64, expected_generation: u64) -> Result<(), SurfaceLifecycleError> {""",
+         """fn require(&self,caller:u64,expected_generation:u64)->(result:Result<(),SurfaceLifecycleError>)
+        ensures match surface_refusal(*self,caller,expected_generation) {
+            Some(e)=>result==Err::<(),SurfaceLifecycleError>(e),
+            None=>result is Ok,
+        },
+    { reveal(surface_refusal);"""),
+        ("""fn next_generation(&self) -> Result<u64, SurfaceLifecycleError> {""",
+         """fn next_generation(&self)->(result:Result<u64,SurfaceLifecycleError>)
+        ensures if self.generation<u64::MAX { result==Ok::<u64,SurfaceLifecycleError>((self.generation+1) as u64) }
+            else { result==Err::<u64,SurfaceLifecycleError>(SurfaceLifecycleError::GenerationExhausted) },
+    {"""),
+    ],
+    "function_count":11, "depends":["surface-status-type","surface-lifecycle-error-type","surface-render-gate"], "evidence":"surface-lifecycle-kernel",
+    "scope":"every transition of the real SurfaceLifecycle over all owners, generations, extents and states, and any trace of them: refusals leave the state equal; a generation that may render names one state; retirement is final. Not HostRenderer orchestration, wgpu, the native surface, device loss, vsync or suspend on a real platform",
+    "mutations":[
+        ("status-answers-a-foreign-caller","if caller != self.owner {\n            return None;\n        }\n",""),
+        ("reconfigure-keeps-the-generation","self.generation = next;\n        self.width = width;\n        self.height = height;\n        Ok(next)","self.width = width;\n        self.height = height;\n        Ok(next)"),
+        ("reconfigure-keeps-the-extent","self.width = width;\n        self.height = height;\n        Ok(next)","Ok(next)"),
+        ("suspend-stays-active","self.state = SurfaceState::Suspended;\n",""),
+        ("resume-from-any-state","if !matches!(self.state, SurfaceState::Suspended) {\n            return Err(SurfaceLifecycleError::WrongState);\n        }\n",""),
+        ("resume-stays-suspended","self.state = SurfaceState::Active;\n",""),
+        ("retire-twice","if matches!(self.state, SurfaceState::Retired) {\n            return Err(SurfaceLifecycleError::WrongState);\n        }\n",""),
+        ("retire-stays-active","self.state = SurfaceState::Retired;\n        Ok(())","Ok(())"),
+        ("retire-current-stays-active","self.state = SurfaceState::Retired;\n        true","true"),
+        ("retire-current-ignores-owner","if caller != self.owner || matches!(self.state, SurfaceState::Retired) {","if matches!(self.state, SurfaceState::Retired) {"),
+        ("require-ignores-owner","if caller != self.owner {\n            return Err(SurfaceLifecycleError::WrongOwner);\n        }\n",""),
+        ("require-ignores-generation","if expected_generation != self.generation {\n            return Err(SurfaceLifecycleError::StaleGeneration);\n        }\n",""),
+    ],
+    # Weakening the trace step must break the two trace theorems, so they are not vacuous.
+    # 放宽轨迹步骤必须破坏两条轨迹定理，说明它们不是空真。
+    "refused_mutations":[
+        ("a-step-may-keep-the-generation","n.generation==o.generation+1;","n.generation>=o.generation;","postcondition not satisfied"),
+        ("a-step-may-reopen-a-retired-surface","    || surface_closed(o,n)\n}","    || surface_closed(o,n)\n    || (o.state is Retired && moved && n.state is Active)\n}","postcondition not satisfied"),
+    ],
+}
 HANDLE_PRELUDE = r"""
 pub closed spec fn handle_slots(a: HandleAllocator) -> Seq<u32> { a.slots@ }
 pub closed spec fn handle_capacity(a: HandleAllocator) -> u32 { a.capacity }

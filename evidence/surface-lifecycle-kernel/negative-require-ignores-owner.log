@@ -1,0 +1,35 @@
+verification results:: 18 verified, 1 errors
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+   --> <repo>/evidence/surface-lifecycle-kernel/negative_require_ignores_owner.rs:298:5
+    |
+298 |     fn require(&self,caller:u64,expected_generation:u64)->(result:Result<(),SurfaceLifecycleError>)
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: postcondition not satisfied
+   --> <repo>/evidence/surface-lifecycle-kernel/negative_require_ignores_owner.rs:299:17
+    |
+299 |           ensures match surface_refusal(*self,caller,expected_generation) {
+    |  _________________^
+300 | |             Some(e)=>result==Err::<(),SurfaceLifecycleError>(e),
+301 | |             None=>result is Ok,
+302 | |         },
+    | |_________^ failed this postcondition
+...
+307 |           Ok(())
+    |           ------ at the end of the function body
+
+error: postcondition not satisfied
+   --> <repo>/evidence/surface-lifecycle-kernel/negative_require_ignores_owner.rs:299:17
+    |
+299 |           ensures match surface_refusal(*self,caller,expected_generation) {
+    |  _________________^
+300 | |             Some(e)=>result==Err::<(),SurfaceLifecycleError>(e),
+301 | |             None=>result is Ok,
+302 | |         },
+    | |_________^ failed this postcondition
+...
+305 |               return Err(SurfaceLifecycleError::StaleGeneration);
+    |               -------------------------------------------------- at this exit
+
+error: aborting due to 2 previous errors
+

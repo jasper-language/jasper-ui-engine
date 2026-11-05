@@ -1,0 +1,27 @@
+verification results:: 18 verified, 1 errors
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+   --> <repo>/evidence/surface-lifecycle-kernel/negative_retire_current_stays_active.rs:271:5
+    |
+271 |     pub(crate) fn retire_current(&mut self,caller:u64)->(result:bool)
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: postcondition not satisfied
+   --> <repo>/evidence/surface-lifecycle-kernel/negative_retire_current_stays_active.rs:272:17
+    |
+272 |         ensures surface_retired_current(*old(self),*final(self),caller,result),
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+281 |         true
+    |         ---- at the end of the function body
+
+error: postcondition not satisfied
+   --> <repo>/evidence/surface-lifecycle-kernel/negative_retire_current_stays_active.rs:273:13
+    |
+273 |             surface_step(*old(self),*final(self)),
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+281 |         true
+    |         ---- at the end of the function body
+
+error: aborting due to 2 previous errors
+

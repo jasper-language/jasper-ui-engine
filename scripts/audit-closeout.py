@@ -231,6 +231,8 @@ PROOF_BACKLOG = {
         "evidence": [
             "evidence/native-gpu-host-target-pending/report.json",
             "evidence/window-xvfb-presentation/report.json",
+            "evidence/surface-lifecycle-kernel/report.json",
+            "evidence/surface-lifecycle-chain/report.json",
         ],
     },
     "CP-07": {

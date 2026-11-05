@@ -1,0 +1,17 @@
+verification results:: 18 verified, 1 errors
+error: postcondition not satisfied
+   --> <repo>/evidence/surface-lifecycle-kernel/negative_status_answers_a_foreign_caller.rs:194:17
+    |
+194 |           ensures surface_read(*self,caller,result),
+    |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+195 |       { reveal(surface_read);
+196 | /                 Some(SurfaceStatus {
+197 | |             state: self.state,
+198 | |             generation: self.generation,
+199 | |             width: self.width,
+200 | |             height: self.height,
+201 | |         })
+    | |__________- at the end of the function body
+
+error: aborting due to 1 previous error
+

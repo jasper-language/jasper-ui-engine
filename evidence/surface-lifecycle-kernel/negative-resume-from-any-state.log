@@ -1,0 +1,33 @@
+verification results:: 18 verified, 1 errors
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+   --> <repo>/evidence/surface-lifecycle-kernel/negative_resume_from_any_state.rs:236:5
+    |
+236 |     pub fn resume(&mut self,caller:u64,expected_generation:u64,width:u32,height:u32)->(result:Result<u64,SurfaceLifecycleError>)
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: postcondition not satisfied
+   --> <repo>/evidence/surface-lifecycle-kernel/negative_resume_from_any_state.rs:237:17
+    |
+237 |         ensures surface_resumed(*old(self),*final(self),caller,expected_generation,width,height,result),
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+241 |                 let next = self.next_generation()?;
+    |                                                  - at this exit
+
+error: postcondition not satisfied
+   --> <repo>/evidence/surface-lifecycle-kernel/negative_resume_from_any_state.rs:237:17
+    |
+237 |           ensures surface_resumed(*old(self),*final(self),caller,expected_generation,width,height,result),
+    |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+238 |               surface_step(*old(self),*final(self)),
+239 | /     { reveal(surface_resumed); reveal(surface_refusal); reveal(surface_advanced); reveal(surface_step);
+240 | |         self.require(caller, expected_generation)?;
+241 | |                 let next = self.next_generation()?;
+242 | |         self.generation = next;
+...   |
+246 | |         Ok(next)
+247 | |     }
+    | |_____- at the end of the function body
+
+error: aborting due to 2 previous errors
+

@@ -1,0 +1,17 @@
+verification results:: 18 verified, 1 errors
+error: postcondition not satisfied
+   --> <repo>/evidence/surface-lifecycle-kernel/negative_suspend_stays_active.rs:224:17
+    |
+224 |           ensures surface_suspended(*old(self),*final(self),caller,expected_generation,result),
+    |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+225 |               surface_step(*old(self),*final(self)),
+226 | /     { reveal(surface_suspended); reveal(surface_refusal); reveal(surface_advanced); reveal(surface_step);
+227 | |         self.require_active(caller, expected_generation)?;
+228 | |         let next = self.next_generation()?;
+229 | |         self.generation = next;
+230 | |                 Ok(next)
+231 | |     }
+    | |_____- at the end of the function body
+
+error: aborting due to 1 previous error
+
