@@ -1,12 +1,14 @@
 {
   "schema_version": 1,
   "kind": "jasper-ui-closeout-audit",
-  "generated_at": "2026-11-04T18:59:33.008550+00:00",
+  "generated_at": "2026-11-05T11:02:08.325486+00:00",
   "claim": "audit only; no checklist completion or whole-engine acceptance is claimed",
   "git": {
-    "branch": "dev/ui38-batch-unique",
-    "commit": "8b83c399c0922d92832ee114eb9fff067f22708c",
-    "dirty_paths": []
+    "branch": "dev/ui39-surface-lifecycle",
+    "commit": "d668b6202ad67ed89ce7c57a3f3d1c3b381c9803",
+    "dirty_paths": [
+      " M evidence/final-checklist-audit/report.json"
+    ]
   },
   "final_audit": {
     "path": "evidence/final-checklist-audit/report.json",
@@ -14,19 +16,9 @@
     "error": null,
     "recorded_status": "complete",
     "recorded_completed_items": 6,
-    "covers_head": false,
-    "basis_commit": "f4577355b199ebd0d3f3e35dabb13a026b802231",
-    "material_changed_since_basis": [
-      "docs/status.md",
-      "docs/verification.md",
-      "fuzz/fuzz_targets/read_boundary.rs",
-      "scripts/audit-closeout.py",
-      "scripts/verify-ui.py",
-      "scripts/verify-version.py",
-      "src/scene.rs",
-      "verification/read-boundary/build.rs",
-      "verification/read-boundary/src/lib.rs"
-    ],
+    "covers_head": true,
+    "basis_commit": "d668b6202ad67ed89ce7c57a3f3d1c3b381c9803",
+    "material_changed_since_basis": [],
     "references": [
       {
         "path": "evidence/component-update-error-contract-chain/report.json",
@@ -88,12 +80,12 @@
     "missing_references": []
   },
   "audit_inputs": {
-    "scripts/audit-closeout.py": "b07f364e92c6b89391634021ca6af7916a79ded55e21acddcc9373319d05ad8e",
+    "scripts/audit-closeout.py": "c6f34702f61e3fadc3b38b5fd7553cb256368c277f2f4acfd0fce210040398ad",
     "scripts/closeout-baseline.sh": "795348ae338977f144bbadfae72c7e729f2c0d88f20c344cd08b56f8b0abbba4",
     "scripts/test-audit-closeout.py": "34fa073556b494d37030b4d0372260030a205ec2dfd38bf47022c01dea546e3a",
-    "docs/claude-closeout-proof-backlog.md": "a8d47d120c9b031ba7cf21922b85d5961f57bc74ebe2ed3156fb7adc137f71a6",
+    "docs/claude-closeout-proof-backlog.md": "34f83cebe6eb45868954bbd0967500ed6044d4068ee000d06c590de126f560fe",
     "docs/closeout.md": "a25c5809261e484384943ffcdfa715f519b74919733b8df82462ebfa560666a6",
-    "scripts/verify-ui.py": "87d9e8f5343d31c78fceaa28dfa1a5a37c559678844c41e703c27281392767dc",
+    "scripts/verify-ui.py": "d5622e2315845bf8729d78691533292926b01fefdfc9846914f24cf4e68b2dad",
     "scripts/verify-in-vm.sh": "cc88cbb9afde9788d8154b4bb8501e975ffef039c96e452e355836e50ac4c3ba",
     ".github/workflows/ci.yml": "bf0529c8601c8a0d57ca6ea2d22c7aeb41a7855ebbd54d20518497f10e5427d0",
     "Cargo.toml": "5b9dbf1d93861ef79376fa701decf112e64f6297a34d1a6732867a367c88f83b",
@@ -102,7 +94,7 @@
   "evidence_index": [
     {
       "path": "evidence/access-actions-kernel/report.json",
-      "sha256": "62b6828e187f17ace9da635d8569ae09ce4857ab5584752154747106a1325c6d",
+      "sha256": "6d4fcf0054a17312e230ee176fca1f4b9eaed41ac36e20a1ffa1fdf2c307da14",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -110,7 +102,7 @@
     },
     {
       "path": "evidence/access-change-kernel/report.json",
-      "sha256": "d45211fa9e2734729c0dc1a28007ec6d312d5c9ebd5e3164445cf0f04156530f",
+      "sha256": "b05eda9f1ce1e3ecddf3643eff28b46df98f617ee7952c303c15ad42ae9c1d44",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -118,7 +110,7 @@
     },
     {
       "path": "evidence/access-request-kernel/report.json",
-      "sha256": "00ca371a491b1121a99307b09fce1bab23e04f73135b2b7d5fa43315ed469423",
+      "sha256": "5f12f8943e972a0ed69f6ba0f5779498361c057984ea53ffc2a6a6664caf5391",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2171,7 +2163,7 @@
     },
     {
       "path": "evidence/bold-alias-kernel/report.json",
-      "sha256": "0960a1b044e62c277626d80255e39b43b9e860f8055ab81c394ec48813eb7169",
+      "sha256": "6089c7d91e5a29af82cde7d6b2b670479d252e127f1dd82f495010ecc3b257e2",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2179,7 +2171,7 @@
     },
     {
       "path": "evidence/bounded-payload-kernel/report.json",
-      "sha256": "6c616951ada1e1090b79077927f07bacdc1b61d26a9dc650bd0561f8045b24a5",
+      "sha256": "f6e3850bed673924cebcae3b83587fb0fb76074cf05077cc06443b14eef33fe8",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2187,7 +2179,7 @@
     },
     {
       "path": "evidence/byte-read-kernel/report.json",
-      "sha256": "82d4275eb4558f98318919c32df8baed5b8a55efbb37221627cf297f4c61eeea",
+      "sha256": "d45a65a781564352167def2bcbd3a5d6899c593bdbb509b1088db3e943c6d9f5",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2195,7 +2187,7 @@
     },
     {
       "path": "evidence/bytes-slot-kernel/report.json",
-      "sha256": "2cdcfb4396844871530a7e868dfe734392bd948e68d030bafbc28e9f408920c5",
+      "sha256": "17dd147da4af6726a5689fb569120d07b6a0bec95f1aa68fbf61c206106a32a2",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2203,7 +2195,7 @@
     },
     {
       "path": "evidence/canvas-import-kernel/report.json",
-      "sha256": "f313c4a143818573bdf97506e369185db14e070502b16df5d27209f12cfb7c99",
+      "sha256": "c612712cbcd606b179a0c43280263af31138f93dc60e955ce43d9bc43e2b4738",
       "status": "proved",
       "recorded_sources": 3,
       "stale_or_missing_sources": [],
@@ -2211,7 +2203,7 @@
     },
     {
       "path": "evidence/canvas-pixel-kernel/report.json",
-      "sha256": "b157fe9b84ee8a2cdf87ed45864bb18dbac071d0fac8560f3d7faf3bf93b8e0f",
+      "sha256": "6e56de88d263b5405de4bb4fdf105f43a4dc85f58a44c4b02e5fe976155a4bed",
       "status": "proved",
       "recorded_sources": 4,
       "stale_or_missing_sources": [],
@@ -2280,7 +2272,7 @@
     },
     {
       "path": "evidence/capture-query-kernel/report.json",
-      "sha256": "bdf83dae0b201e5ffa80319e0257976bb08bb3a62ad96ab59af7de1579543c4a",
+      "sha256": "4a7c958cc317f274e0658307de6da4ca7d1ba47bec95eaea9559c8e21ad652f6",
       "status": "proved",
       "recorded_sources": 4,
       "stale_or_missing_sources": [],
@@ -2406,7 +2398,7 @@
     },
     {
       "path": "evidence/color-construct-kernel/report.json",
-      "sha256": "5e2c4a140b4a2939efba586f7bfb32c7abf9b1881995e0cd810ffecf5a49a188",
+      "sha256": "d27b026a785526a9647b305fe3044e11580bc379a7925cc43bf9f62f4ec5ecc5",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2414,7 +2406,7 @@
     },
     {
       "path": "evidence/command-modifier-kernel/report.json",
-      "sha256": "e4d5d706d26a46f27173e9750423f09fffe3c4c1f6d89ff25af29e4debc004a0",
+      "sha256": "52c434d6038f5748fcffe5c435b7923fe5b2d9299a40020b62c91899b344bd31",
       "status": "proved",
       "recorded_sources": 2,
       "stale_or_missing_sources": [],
@@ -2422,7 +2414,7 @@
     },
     {
       "path": "evidence/component-update-admission-kernel/report.json",
-      "sha256": "2b30bd62c7fc98416eeb073f3c85231bee858031a04e200ade948036e34a1757",
+      "sha256": "01904057283c62821182e594167d0e1bb50333886deda037759bd6528740dabf",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2551,7 +2543,7 @@
     },
     {
       "path": "evidence/cursor-read-kernel/report.json",
-      "sha256": "73eb92d141b9bf189ac95f10e1133f2950e60cb3cbd1b119a274edbd6aa43921",
+      "sha256": "bb076cf119dabc0d17178d809ef061e3ddecb6f89285111db862f8aae1fac390",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2559,7 +2551,7 @@
     },
     {
       "path": "evidence/damage-rect-kernel/report.json",
-      "sha256": "2ce6cf019f20eda1f9265e34df8946cc5eabe5650a70fd82e480e9b96f7a6b0a",
+      "sha256": "b9eba4bea4d43a1a455a0c6d550d4f56d3ab0d3d8809d091b5a1f59bd9fc10e7",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2567,7 +2559,7 @@
     },
     {
       "path": "evidence/damage-span-kernel/report.json",
-      "sha256": "1c4f8ba204ea8a9b625776dd5e3f664788a01b605ca9d89ae7b6d5cb2d8c61c4",
+      "sha256": "25d24e1b6b16ded964b3ffa166b6ad6fc871898bf6b25193d9dfebb9b2807d40",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2583,7 +2575,7 @@
     },
     {
       "path": "evidence/decode-range-kernel/report.json",
-      "sha256": "233f0f41c986b8e26fea53247e431e642e1ea789d5ef51b9a8b7e9e85e537d6e",
+      "sha256": "fbad978ad6ce5140f8d50bcea15207c1d2873c488eac766af1cc20d91832b20a",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2621,7 +2613,7 @@
     },
     {
       "path": "evidence/desktop-pointer-kernel/report.json",
-      "sha256": "fd24c93f1a914f8992c785a706006db60183723062008ebb63fdb9c0f4031cb7",
+      "sha256": "5873c95e1c88dba5f537ddfd5e8ebac052fb099249405ce1e9a0651e066d7fbc",
       "status": "proved",
       "recorded_sources": 3,
       "stale_or_missing_sources": [],
@@ -2629,7 +2621,7 @@
     },
     {
       "path": "evidence/desktop-pointer-state-kernel/report.json",
-      "sha256": "b51e416cdfdce527b6ab2dff3f1ed0efac8334ff7c547d7a001d15041460cf19",
+      "sha256": "e89e6360abaa7c57f00ec0ea5f8ac847d024d7d6274f71c1f977d11f9bdeca10",
       "status": "proved",
       "recorded_sources": 3,
       "stale_or_missing_sources": [],
@@ -2645,13 +2637,10 @@
     },
     {
       "path": "evidence/final-checklist-audit/report.json",
-      "sha256": "8f61bebe247aceabd92c39b0b6e2eb40fbfd1f2eacfeea405904776a5afd2031",
+      "sha256": "8ee5a0ecb38750f57a6950e8dbdc697a76acd472225c31056e995c224693f9a3",
       "status": "complete",
       "recorded_sources": 37,
-      "stale_or_missing_sources": [
-        "scripts/audit-closeout.py",
-        "src/scene.rs"
-      ],
+      "stale_or_missing_sources": [],
       "completion_flags": {
         "checklist_item_1_complete": true,
         "checklist_item_2_complete": true,
@@ -2671,7 +2660,7 @@
     },
     {
       "path": "evidence/final-closeout-audit/report.json",
-      "sha256": "adfc4586a156cd8c7b7b463061e07e77f4d2016fa41aaed3840d8729018df672",
+      "sha256": "10f114f9dc6dc0b785a3c62b3c59f0b76f1621ea1f8b27dcff2895e85f370199",
       "status": "unspecified",
       "recorded_sources": 0,
       "stale_or_missing_sources": [],
@@ -2679,7 +2668,7 @@
     },
     {
       "path": "evidence/focus-cleanup-kernel/report.json",
-      "sha256": "dd6a3631cf5ac994289379548c92e41f8b7d4f9d925cde2dd157aa973316ab2b",
+      "sha256": "c466662f40803989a4d03dd00ad13fdd2a5cca56762ffc439c8a6fac87148672",
       "status": "proved",
       "recorded_sources": 2,
       "stale_or_missing_sources": [],
@@ -2740,7 +2729,7 @@
     },
     {
       "path": "evidence/focus-select-kernel/report.json",
-      "sha256": "d8a386c859db871c3e6e5bb7aac1c19f1ff0a2fcefaa3ce5b7e998e523c8adff",
+      "sha256": "c0cbe944e84eec205381ced028979b0a878a2bef374e30e0d124854f413f5508",
       "status": "proved",
       "recorded_sources": 2,
       "stale_or_missing_sources": [],
@@ -2748,7 +2737,7 @@
     },
     {
       "path": "evidence/font-family-kernel/report.json",
-      "sha256": "fb4df3cb9a84daca2c1d3db708b3aaceb551e0bde1256b28a4a99a4f15807f1e",
+      "sha256": "518b9b8799e58f52738d6745dc819d663babd2fee79228728db4bbd2c047d64c",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2756,7 +2745,7 @@
     },
     {
       "path": "evidence/font-order-kernel/report.json",
-      "sha256": "14bb1b2cf83edeb5265b9e6aa93e62dd63512909a48549f4f1cb6d32c09fb0dc",
+      "sha256": "8eaf5dadf7e74484101146eb86ad84c19198928d5c61eca9f241b71cbf69193a",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2764,7 +2753,7 @@
     },
     {
       "path": "evidence/font-weight-kernel/report.json",
-      "sha256": "0f0ab489f894a74f9c4c7a5497c580e0439da60e5c30e2043773f4770990ca90",
+      "sha256": "8f29594f3c695d613bdc8a1285bc031bfb1de35d95fa21ee908827a489480295",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2772,7 +2761,7 @@
     },
     {
       "path": "evidence/frame-pace-kernel/report.json",
-      "sha256": "613dd035bcf73f4c1fa28565da2c02686cab66a9573d89259121eb62c96a8818",
+      "sha256": "1e6e379ec4d92ce201a1ea08fb671dbb07530c5e73f855e85d805cab2775f2e0",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2780,7 +2769,7 @@
     },
     {
       "path": "evidence/frame-reuse-kernel/report.json",
-      "sha256": "f82a60c9d54f00a60e45b4bfdae4c2fd7f0810e56e3415f3b58493ed9ab491c9",
+      "sha256": "58cddd0547a654c6ea7b44e7e1d5d4fc3a2b59e5658e506645ea17b528d1647e",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2788,7 +2777,7 @@
     },
     {
       "path": "evidence/frame-tick-kernel/report.json",
-      "sha256": "0fd8e907925dd619508bb2fc83dc773ad269787584a04515d18cbadefe218d0b",
+      "sha256": "be1941767333fe3e56e3a06e6180e9b67f114322834e42868392dcebf443c731",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2809,7 +2798,7 @@
     },
     {
       "path": "evidence/glyph-skew-kernel/report.json",
-      "sha256": "dd937b2ea06849cdaa61e467d2ce504b4a2f2766b691523db3a380a191edad18",
+      "sha256": "7d9398ea01488a89c48a94d6a115631f70831600dd4842a16c1de736e9b39875",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2817,7 +2806,7 @@
     },
     {
       "path": "evidence/gpu-readback-kernel/report.json",
-      "sha256": "ef286265bdfe129de6978ae84ee4c92b49855caae8f209d6fed96b387c199088",
+      "sha256": "43f8a367e71dece2fa431e9073576e9c80c5cd52781fc8600b258daa2278c24a",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2825,7 +2814,7 @@
     },
     {
       "path": "evidence/handle-kernel/report.json",
-      "sha256": "ccdac716058d23724daa950f1f8f283c66de05cff494fedb8557b7f0a557dd62",
+      "sha256": "1a92170301ec84f4fb45285a560b408990be1957730df9d75835b451d1d3c12c",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2833,7 +2822,7 @@
     },
     {
       "path": "evidence/header-read-kernel/report.json",
-      "sha256": "f8de6b65a7b98e81c89e19ed67da2af31323369ce7de99d96700ae0d9b296b32",
+      "sha256": "df0e0f0daa31091741366380a1003f8b97a3ce05316681103889864c9e946c3e",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -2862,7 +2851,7 @@
     },
     {
       "path": "evidence/hover-retire-kernel/report.json",
-      "sha256": "78ac199611983de7b6cc047a16f77b7a3c6bf9bcd4b02242173bc112e9775452",
+      "sha256": "9228e2f29a9bafc327467d9d492bc2303e132dfab3c810f221a91ab4a7dcda91",
       "status": "proved",
       "recorded_sources": 3,
       "stale_or_missing_sources": [],
@@ -2881,7 +2870,7 @@
     },
     {
       "path": "evidence/hover-update-kernel/report.json",
-      "sha256": "c2170455afd7487d9b51da2a42271d470448df4eda99768557289467ea9ff080",
+      "sha256": "4923a8b298c2169ffd909310012470fb67388202182789a976634eeaa60642cf",
       "status": "proved",
       "recorded_sources": 2,
       "stale_or_missing_sources": [],
@@ -2921,7 +2910,7 @@
     },
     {
       "path": "evidence/input-retire-kernel/report.json",
-      "sha256": "01911a143860baa6e389074c19cc124733e2e7f22027a6b21e7ee7c6c994a55e",
+      "sha256": "d5c6c0efb48cc95dfb6de7fcd6294a8cfa2fc9148c540831180783c6337373ca",
       "status": "proved",
       "recorded_sources": 4,
       "stale_or_missing_sources": [],
@@ -2968,7 +2957,7 @@
     },
     {
       "path": "evidence/keyboard-focus-kernel/report.json",
-      "sha256": "2c3c2be7c878aaba05500fd7978fa83040b505c6d504429a5c5fa7d95a5b5777",
+      "sha256": "bf01a09caea94d1fa66205631e781db9235f1d228b754f2c1662dcc1448e25f4",
       "status": "proved",
       "recorded_sources": 3,
       "stale_or_missing_sources": [],
@@ -3289,12 +3278,14 @@
         "examples/window.rs",
         "fuzz/Cargo.lock",
         "fuzz/Cargo.toml",
+        "fuzz/fuzz_targets/host_surface.rs",
         "scripts/capture-window-xvfb.sh",
         "src/host_capabilities.rs",
         "src/native_adapter/render_host.rs",
         "src/surface_lifecycle.rs",
         "tests/native_gpu_host_view.rs",
-        "tests/native_host_renderer.rs"
+        "tests/native_host_renderer.rs",
+        "verification/host-surface/src/lib.rs"
       ],
       "completion_flags": {
         "checklist_item_3_complete": false
@@ -3432,7 +3423,7 @@
     },
     {
       "path": "evidence/pixel-convert-kernel/report.json",
-      "sha256": "99e8f79b6743c6be7fde4b7b38ec2cd885953a3b3646b0474215127a03d030a3",
+      "sha256": "e88c288cc43ee73f7fdc31ef47e11c7b2b4b6ab530d234779947f6e8d1abca1a",
       "status": "proved",
       "recorded_sources": 2,
       "stale_or_missing_sources": [],
@@ -3440,7 +3431,7 @@
     },
     {
       "path": "evidence/pixel-pack-kernel/report.json",
-      "sha256": "d3028739341b3e95bde12df7219c16dbb03a2cddbcd16949f9dc6d491b6e73bd",
+      "sha256": "35e93413fb8251dd827ffefdf8879a0ad954ced141180b626b3ee26f1c3d06e6",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3456,7 +3447,7 @@
     },
     {
       "path": "evidence/pointer-order-kernel/report.json",
-      "sha256": "44b9bcb0919bd27795334ea498028aa2d8e999ac81535260614bb60f37797df4",
+      "sha256": "f9d91b975dd4e1fa59aed9d687ff03e5e7d2e1289cbad30661282f22b49c3963",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3488,7 +3479,7 @@
     },
     {
       "path": "evidence/resource-gate-kernel/report.json",
-      "sha256": "82dd5d8bc5fe69f6fbe3cf77544d1eb087b5e048bf5d945041273d7f9a4c5269",
+      "sha256": "083ccb2c04a7f8128cea3ac8c0b6aca84b6e0488bdd0b3bf665182fcdaaf4813",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3504,7 +3495,7 @@
     },
     {
       "path": "evidence/role-activation-kernel/report.json",
-      "sha256": "fa7ff43c37e2f69e95d34718aef1542b32826f1ac91b074c5d85a259dd9cc078",
+      "sha256": "0deddc72eac03541c77906f75ac5d99eebbab612a04fdb75ffdda8e4a9ad41b3",
       "status": "proved",
       "recorded_sources": 2,
       "stale_or_missing_sources": [],
@@ -3512,7 +3503,7 @@
     },
     {
       "path": "evidence/scalar-read-kernel/report.json",
-      "sha256": "5e4b7dfc921f18b0cac69f687aefc60e82ef624850653721f44b6ec000d8f0a0",
+      "sha256": "da0a7efdf5ebccb354bd88e484b9dcdb527c0422e38361fe1038501629348389",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3528,7 +3519,7 @@
     },
     {
       "path": "evidence/scene-batch-commit-kernel/report.json",
-      "sha256": "6dbdaffeb4177ccf81a56e33fbf187c7c36ac45f6f9db917ad73c4856c043823",
+      "sha256": "b0a3f64a52f67304e77f57db21d54db5036251952bb06109ef53be84af347e7a",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3544,7 +3535,7 @@
     },
     {
       "path": "evidence/scene-batch-stage-kernel/report.json",
-      "sha256": "0de8cddd1f9972bc2d5138ccd3cddd8d399e75fd011e0b77d0b2a33a9fde0bcf",
+      "sha256": "684b558d0e2c10d6cb34fb5b4fba0fb3b4a61736cea70c4b3bd4905f48aca904",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3552,7 +3543,7 @@
     },
     {
       "path": "evidence/scene-batch-unique-chain/report.json",
-      "sha256": "6b407b24316a870b2729e9fcf261a24c5da0696b47856058cee188d8554f2b10",
+      "sha256": "b9a3da46369cd21ad4243a0c569a07272bfe88ce31743804be34ae9dbcb6504e",
       "status": "subproperty_scoped_checks_passed",
       "recorded_sources": 0,
       "stale_or_missing_sources": [],
@@ -3560,7 +3551,7 @@
     },
     {
       "path": "evidence/scene-batch-unique-kernel/report.json",
-      "sha256": "3d073b5cc0182fc18f73b183e6602d4ac378f24b862dda4dfb4a52ac7bd9836d",
+      "sha256": "dad2c8d75f525b5d93ecf4dc2f66b18ca76a6c4028224410b0da102285aa6227",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3576,7 +3567,7 @@
     },
     {
       "path": "evidence/scene-checked-patch-kernel/report.json",
-      "sha256": "7b4db6403222b46efef198a1fe3d956ad57da2f71d3c7afa28080fbb0f94ce4b",
+      "sha256": "0e827424c207cc3c06842ff6152159def5ed9dd936d19df95d46d9a1e0379c4c",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3598,7 +3589,7 @@
     },
     {
       "path": "evidence/scene-frame-completion-kernel/report.json",
-      "sha256": "6517b30ab788a9fb799cc4a6b323e6de97ea26a791b6e5a8605101bb29e55e14",
+      "sha256": "0fbad559d6ae2f8798bbc7673d187afab793e28cb81f89b22976c621a2c21033",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3614,7 +3605,7 @@
     },
     {
       "path": "evidence/scene-frame-order-kernel/report.json",
-      "sha256": "f3e4253c3811bfed74aa639cd9495721cf9381fe9da80e00381e63c175ad779d",
+      "sha256": "668c981623c7a4df74686729d3eaa659a77fdb67c0160543810297cbac3ab77d",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3703,7 +3694,7 @@
     },
     {
       "path": "evidence/scene-interaction-restore-kernel/report.json",
-      "sha256": "3f7ece7440aa91cd26879779f74783a31f54e7f357b725989e27246428827d24",
+      "sha256": "099c91ad15e9cf1f8ef396daf0610853a98b6213fdadd3a2d9070b21a59703a9",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3719,7 +3710,7 @@
     },
     {
       "path": "evidence/scene-node-find-kernel/report.json",
-      "sha256": "b645c4b2629878b7a5aa7673691f637394144243c25e65a051edc76ad9f42acb",
+      "sha256": "b7feb404a804ddea4682dd43e9e912d803b8884282bd93c16a8e031841dd6c73",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3735,7 +3726,7 @@
     },
     {
       "path": "evidence/scene-node-remove-kernel/report.json",
-      "sha256": "5f667d258e83936b9295ad27227b60cd135ab7ef286768c45459f3f01192066e",
+      "sha256": "8f8bb695a1432ca8144db8dbb0477f5ed631a11a1bec35f1817ee4d572b77d8a",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3751,7 +3742,7 @@
     },
     {
       "path": "evidence/scene-patch-kernel/report.json",
-      "sha256": "08519dad2db4ca7ee1e7178e39b55a1eeb912ee16ab9df917ef614ce0ad36f6d",
+      "sha256": "eab8daebbdeac1892a9a8d82ff21b07ed7b7700ead974eb73fda54adb074f245",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3806,7 +3797,7 @@
     },
     {
       "path": "evidence/scene-unique-ids-kernel/report.json",
-      "sha256": "7cae9665f6868e10047afeb7eb54abef0f97933cd4af97ee9de7729bdf1ff355",
+      "sha256": "6873fded80ab80163a2b460c7cbd099d0e146ddec0159a381d3c09f30f396641",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -3829,7 +3820,7 @@
     },
     {
       "path": "evidence/scene-update-admission-kernel/report.json",
-      "sha256": "c23f345c33c4fbccb67ec7ffe7db6c086ad41ac0f8b24362752cc92417a0cc58",
+      "sha256": "3ceb0a18dfc045239a4d2ce81e4d96c0cd101de40555a65940a495f15de69bd1",
       "status": "proved",
       "recorded_sources": 2,
       "stale_or_missing_sources": [],
@@ -4008,7 +3999,23 @@
     },
     {
       "path": "evidence/surface-borrow-kernel/report.json",
-      "sha256": "9cbbcec6256aef9dab26f7ef988afe120e8cb013e8e444920a6d38375914652b",
+      "sha256": "6104bd70d48fd726479f50a9ce9f710ac3f041230ccc1ee4024245d2384a284a",
+      "status": "proved",
+      "recorded_sources": 1,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/surface-lifecycle-chain/report.json",
+      "sha256": "02a72e6b98400d03717b181d0a6db2ccbe6e3d9cdbc99508003ba3f69bcfcfe6",
+      "status": "subproperty_scoped_checks_passed",
+      "recorded_sources": 0,
+      "stale_or_missing_sources": [],
+      "completion_flags": {}
+    },
+    {
+      "path": "evidence/surface-lifecycle-kernel/report.json",
+      "sha256": "e77cfaece9f287d51bd9b45f1f4401a46c7cd3090f4ea2993713dd515da2cae2",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -4016,7 +4023,7 @@
     },
     {
       "path": "evidence/surface-render-gate-kernel/report.json",
-      "sha256": "99a7b08db37f9777f669c4607d30b16869fa5ea958240f239b2328d90c421bd7",
+      "sha256": "d06de34ff9737c29bcf00b583f7826497797b1b169ccee78f41dd1a784ee6364",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -4024,7 +4031,7 @@
     },
     {
       "path": "evidence/surface-row-kernel/report.json",
-      "sha256": "2b203c633bb542e7b1ef7a9fb877979aae6484eb9fbb0d0f55d67e4c23b9ea2b",
+      "sha256": "4d3cf84982defdab361a4562be5d0eb5650c3cc6301d8865afe1944d9d561e4d",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -4032,7 +4039,7 @@
     },
     {
       "path": "evidence/surface-segment-kernel/report.json",
-      "sha256": "83e08bee61bfb7cc73b8fbc8210cef4b895fe9073a0639169a344a1cd9bf3c56",
+      "sha256": "8b003d5308bb7ab333f16793ce9dcd618da43562fc16af40c032540bc7f6b6e9",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -4040,7 +4047,7 @@
     },
     {
       "path": "evidence/surface-span-kernel/report.json",
-      "sha256": "b28e7b2192dbe3a30ef836f0ac90e850ce27780a478191f78df7f3805c5cb5d6",
+      "sha256": "76584d163bccff8848f5b25482ff1e86f96b53e648084d7948de68fde1acc4c8",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -4048,7 +4055,7 @@
     },
     {
       "path": "evidence/surface-view-kernel/report.json",
-      "sha256": "ef0747524ff8bfc0152004a05219deca3e2fdb7fe603cdb186633cbd85fb4606",
+      "sha256": "15f5ccf493256b0ef9064eb534b0cd95b1b93747154ba3c11776ec97266ed9d6",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -4056,7 +4063,7 @@
     },
     {
       "path": "evidence/surface-write-kernel/report.json",
-      "sha256": "c83e6380da1c788c31b4b8d729a62dc8650db15488f5b4b8f67ffd150c020300",
+      "sha256": "20bd7c3a95038e71d19b2dca64feca256c338d6bd389da1c8ef99a9494f17ff1",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -4064,7 +4071,7 @@
     },
     {
       "path": "evidence/text-class-kernel/report.json",
-      "sha256": "29a6fdaadcb471b6e069d9f364beb741a3fe9278423bb2de946ba9433e2832a8",
+      "sha256": "007f7c7c261d3f294f364a04499b2019176a4dcc8814954b13776d10b95a61ee",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -4152,7 +4159,7 @@
     },
     {
       "path": "evidence/text-offset-kernel/report.json",
-      "sha256": "c881419ab65cbfb9a77badd06d7eb8795599080be37b011505f0fa45376fe864",
+      "sha256": "be7a76c176cdfd1e48db57b8a187f3b26f9f182732ca47c6b8dee582d824997b",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -4160,7 +4167,7 @@
     },
     {
       "path": "evidence/text-range-kernel/report.json",
-      "sha256": "cfab37d7b5231bede97edcd7178ec454eca9b7f353d73a8f1dac824877a53100",
+      "sha256": "6af08a4f20ca687540f4ea8be86ee4920314fa18c6f81d131bb8c3e9bb50d654",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -4168,7 +4175,7 @@
     },
     {
       "path": "evidence/transaction-gate-kernel/report.json",
-      "sha256": "3094d3402269cd06060aefada7c7aec5c5172b78e1de13efda45d5219353d1ba",
+      "sha256": "ed07d1d9a55ffeaf0ad9b514b1a2606e3916483ad9f8b03660716d5625c286ab",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -4306,7 +4313,7 @@
     },
     {
       "path": "evidence/ui-plugin-count-kernel/report.json",
-      "sha256": "ad2bbed84c126ae5097a166c1b6f54611fd5bf60137182837637697f80165c7d",
+      "sha256": "35a338b07333a3e2dca27948c76caeedf9fd7266b64fcb092e4ed28d3fa941d1",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -4314,7 +4321,7 @@
     },
     {
       "path": "evidence/ui-plugin-rect-kernel/report.json",
-      "sha256": "de961d6d35b49e795e472b75be3e39551e47af33388bf4b894554b9eb565b671",
+      "sha256": "34266afa87609e626de4e8311f850df7e02bcd35f4d22e527ca2ffcbe21dd2e9",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -4322,7 +4329,7 @@
     },
     {
       "path": "evidence/ui-plugin-reloc-kernel/report.json",
-      "sha256": "122e16c9d0b96af198051da211c502262366d16c20c603b901bc4ab6b9cc1ba8",
+      "sha256": "5658b67f77a4c395b3ccb52bd6b6117aa1c5abe42f44e129fa519b65890611d8",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -4577,7 +4584,7 @@
     },
     {
       "path": "evidence/validation-chain/report.json",
-      "sha256": "8b2992c9f5eb95c1f07aad1097bb9c3a16dbd706a35f483e77950db8740545cf",
+      "sha256": "804f968492dfa74642b3c84363088490ec22d493cf369a1c9e3e638f803d2bdb",
       "status": "unspecified",
       "recorded_sources": 245,
       "stale_or_missing_sources": [],
@@ -4619,7 +4626,7 @@
     },
     {
       "path": "evidence/version-kernel/report.json",
-      "sha256": "7974beb5eccd14c5a215f486e0cd0d2d455cdf33bc0a3704645d510a5384cda0",
+      "sha256": "1e139da0fcc774ff0a0b37d4fe490679763e76051b8d2a571b9a48b9ebc16d87",
       "status": "proved",
       "recorded_sources": 1,
       "stale_or_missing_sources": [],
@@ -4639,8 +4646,8 @@
     }
   ],
   "evidence_index_summary": {
-    "reports": 423,
-    "with_stale_or_missing_recorded_sources": 242,
+    "reports": 425,
+    "with_stale_or_missing_recorded_sources": 241,
     "with_explicit_completion": 10
   },
   "checklist": {
@@ -4662,7 +4669,7 @@
           {
             "path": "src/scene.rs",
             "exists": true,
-            "sha256": "4fec934706b83b205e1e1be66ace19a852b1ca6bf9693eed585c08fe8df47556"
+            "sha256": "05d5de1f8763acb66df5749bebf5613f79ebc4af0415280a76f5cd6316439a36"
           },
           {
             "path": "src/batch.rs",
@@ -4781,9 +4788,9 @@
                 "field": "sources",
                 "path": "scripts/audit-closeout.py",
                 "exists": true,
-                "expected_sha256": "c35818886196c06b4a0b1f2a029d073464fa454bfecce365d15c6ff3fe4ec99b",
-                "actual_sha256": "b07f364e92c6b89391634021ca6af7916a79ded55e21acddcc9373319d05ad8e",
-                "status": "stale",
+                "expected_sha256": "c6f34702f61e3fadc3b38b5fd7553cb256368c277f2f4acfd0fce210040398ad",
+                "actual_sha256": "c6f34702f61e3fadc3b38b5fd7553cb256368c277f2f4acfd0fce210040398ad",
+                "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
               {
@@ -4997,17 +5004,17 @@
                 "field": "sources",
                 "path": "src/scene.rs",
                 "exists": true,
-                "expected_sha256": "6d2d8d9bfe6eec311a29d2ba0c6163d0bb263fea3f874b9710b7ff990a81ae3e",
-                "actual_sha256": "4fec934706b83b205e1e1be66ace19a852b1ca6bf9693eed585c08fe8df47556",
-                "status": "stale",
+                "expected_sha256": "05d5de1f8763acb66df5749bebf5613f79ebc4af0415280a76f5cd6316439a36",
+                "actual_sha256": "05d5de1f8763acb66df5749bebf5613f79ebc4af0415280a76f5cd6316439a36",
+                "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
                 "path": "src/surface_lifecycle.rs",
                 "exists": true,
-                "expected_sha256": "1c9ffecb5ca8cda1dee857ecddc95cf81a57ad08e1de01f1c22d03f76e0354fd",
-                "actual_sha256": "1c9ffecb5ca8cda1dee857ecddc95cf81a57ad08e1de01f1c22d03f76e0354fd",
+                "expected_sha256": "f117293f240801994fec91d5b2a205937aa015cb1b2ce281448e1c76fd592d55",
+                "actual_sha256": "f117293f240801994fec91d5b2a205937aa015cb1b2ce281448e1c76fd592d55",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -5077,27 +5084,8 @@
           }
         ],
         "source_correspondence": {
-          "status": "stale_or_missing",
-          "issues": [
-            {
-              "field": "sources",
-              "path": "scripts/audit-closeout.py",
-              "exists": true,
-              "expected_sha256": "c35818886196c06b4a0b1f2a029d073464fa454bfecce365d15c6ff3fe4ec99b",
-              "actual_sha256": "b07f364e92c6b89391634021ca6af7916a79ded55e21acddcc9373319d05ad8e",
-              "status": "stale",
-              "report": "evidence/final-checklist-audit/report.json"
-            },
-            {
-              "field": "sources",
-              "path": "src/scene.rs",
-              "exists": true,
-              "expected_sha256": "6d2d8d9bfe6eec311a29d2ba0c6163d0bb263fea3f874b9710b7ff990a81ae3e",
-              "actual_sha256": "4fec934706b83b205e1e1be66ace19a852b1ca6bf9693eed585c08fe8df47556",
-              "status": "stale",
-              "report": "evidence/final-checklist-audit/report.json"
-            }
-          ]
+          "status": "current",
+          "issues": []
         }
       },
       "2": {
@@ -5245,9 +5233,9 @@
                 "field": "sources",
                 "path": "scripts/audit-closeout.py",
                 "exists": true,
-                "expected_sha256": "c35818886196c06b4a0b1f2a029d073464fa454bfecce365d15c6ff3fe4ec99b",
-                "actual_sha256": "b07f364e92c6b89391634021ca6af7916a79ded55e21acddcc9373319d05ad8e",
-                "status": "stale",
+                "expected_sha256": "c6f34702f61e3fadc3b38b5fd7553cb256368c277f2f4acfd0fce210040398ad",
+                "actual_sha256": "c6f34702f61e3fadc3b38b5fd7553cb256368c277f2f4acfd0fce210040398ad",
+                "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
               {
@@ -5461,17 +5449,17 @@
                 "field": "sources",
                 "path": "src/scene.rs",
                 "exists": true,
-                "expected_sha256": "6d2d8d9bfe6eec311a29d2ba0c6163d0bb263fea3f874b9710b7ff990a81ae3e",
-                "actual_sha256": "4fec934706b83b205e1e1be66ace19a852b1ca6bf9693eed585c08fe8df47556",
-                "status": "stale",
+                "expected_sha256": "05d5de1f8763acb66df5749bebf5613f79ebc4af0415280a76f5cd6316439a36",
+                "actual_sha256": "05d5de1f8763acb66df5749bebf5613f79ebc4af0415280a76f5cd6316439a36",
+                "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
                 "path": "src/surface_lifecycle.rs",
                 "exists": true,
-                "expected_sha256": "1c9ffecb5ca8cda1dee857ecddc95cf81a57ad08e1de01f1c22d03f76e0354fd",
-                "actual_sha256": "1c9ffecb5ca8cda1dee857ecddc95cf81a57ad08e1de01f1c22d03f76e0354fd",
+                "expected_sha256": "f117293f240801994fec91d5b2a205937aa015cb1b2ce281448e1c76fd592d55",
+                "actual_sha256": "f117293f240801994fec91d5b2a205937aa015cb1b2ce281448e1c76fd592d55",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -5541,27 +5529,8 @@
           }
         ],
         "source_correspondence": {
-          "status": "stale_or_missing",
-          "issues": [
-            {
-              "field": "sources",
-              "path": "scripts/audit-closeout.py",
-              "exists": true,
-              "expected_sha256": "c35818886196c06b4a0b1f2a029d073464fa454bfecce365d15c6ff3fe4ec99b",
-              "actual_sha256": "b07f364e92c6b89391634021ca6af7916a79ded55e21acddcc9373319d05ad8e",
-              "status": "stale",
-              "report": "evidence/final-checklist-audit/report.json"
-            },
-            {
-              "field": "sources",
-              "path": "src/scene.rs",
-              "exists": true,
-              "expected_sha256": "6d2d8d9bfe6eec311a29d2ba0c6163d0bb263fea3f874b9710b7ff990a81ae3e",
-              "actual_sha256": "4fec934706b83b205e1e1be66ace19a852b1ca6bf9693eed585c08fe8df47556",
-              "status": "stale",
-              "report": "evidence/final-checklist-audit/report.json"
-            }
-          ]
+          "status": "current",
+          "issues": []
         }
       },
       "3": {
@@ -5615,7 +5584,7 @@
           {
             "path": "src/surface_lifecycle.rs",
             "exists": true,
-            "sha256": "1c9ffecb5ca8cda1dee857ecddc95cf81a57ad08e1de01f1c22d03f76e0354fd"
+            "sha256": "f117293f240801994fec91d5b2a205937aa015cb1b2ce281448e1c76fd592d55"
           },
           {
             "path": "src/host_capabilities.rs",
@@ -5724,9 +5693,9 @@
                 "field": "sources",
                 "path": "scripts/audit-closeout.py",
                 "exists": true,
-                "expected_sha256": "c35818886196c06b4a0b1f2a029d073464fa454bfecce365d15c6ff3fe4ec99b",
-                "actual_sha256": "b07f364e92c6b89391634021ca6af7916a79ded55e21acddcc9373319d05ad8e",
-                "status": "stale",
+                "expected_sha256": "c6f34702f61e3fadc3b38b5fd7553cb256368c277f2f4acfd0fce210040398ad",
+                "actual_sha256": "c6f34702f61e3fadc3b38b5fd7553cb256368c277f2f4acfd0fce210040398ad",
+                "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
               {
@@ -5940,17 +5909,17 @@
                 "field": "sources",
                 "path": "src/scene.rs",
                 "exists": true,
-                "expected_sha256": "6d2d8d9bfe6eec311a29d2ba0c6163d0bb263fea3f874b9710b7ff990a81ae3e",
-                "actual_sha256": "4fec934706b83b205e1e1be66ace19a852b1ca6bf9693eed585c08fe8df47556",
-                "status": "stale",
+                "expected_sha256": "05d5de1f8763acb66df5749bebf5613f79ebc4af0415280a76f5cd6316439a36",
+                "actual_sha256": "05d5de1f8763acb66df5749bebf5613f79ebc4af0415280a76f5cd6316439a36",
+                "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
                 "path": "src/surface_lifecycle.rs",
                 "exists": true,
-                "expected_sha256": "1c9ffecb5ca8cda1dee857ecddc95cf81a57ad08e1de01f1c22d03f76e0354fd",
-                "actual_sha256": "1c9ffecb5ca8cda1dee857ecddc95cf81a57ad08e1de01f1c22d03f76e0354fd",
+                "expected_sha256": "f117293f240801994fec91d5b2a205937aa015cb1b2ce281448e1c76fd592d55",
+                "actual_sha256": "f117293f240801994fec91d5b2a205937aa015cb1b2ce281448e1c76fd592d55",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -6020,27 +5989,8 @@
           }
         ],
         "source_correspondence": {
-          "status": "stale_or_missing",
-          "issues": [
-            {
-              "field": "sources",
-              "path": "scripts/audit-closeout.py",
-              "exists": true,
-              "expected_sha256": "c35818886196c06b4a0b1f2a029d073464fa454bfecce365d15c6ff3fe4ec99b",
-              "actual_sha256": "b07f364e92c6b89391634021ca6af7916a79ded55e21acddcc9373319d05ad8e",
-              "status": "stale",
-              "report": "evidence/final-checklist-audit/report.json"
-            },
-            {
-              "field": "sources",
-              "path": "src/scene.rs",
-              "exists": true,
-              "expected_sha256": "6d2d8d9bfe6eec311a29d2ba0c6163d0bb263fea3f874b9710b7ff990a81ae3e",
-              "actual_sha256": "4fec934706b83b205e1e1be66ace19a852b1ca6bf9693eed585c08fe8df47556",
-              "status": "stale",
-              "report": "evidence/final-checklist-audit/report.json"
-            }
-          ]
+          "status": "current",
+          "issues": []
         }
       },
       "4": {
@@ -6218,9 +6168,9 @@
                 "field": "sources",
                 "path": "scripts/audit-closeout.py",
                 "exists": true,
-                "expected_sha256": "c35818886196c06b4a0b1f2a029d073464fa454bfecce365d15c6ff3fe4ec99b",
-                "actual_sha256": "b07f364e92c6b89391634021ca6af7916a79ded55e21acddcc9373319d05ad8e",
-                "status": "stale",
+                "expected_sha256": "c6f34702f61e3fadc3b38b5fd7553cb256368c277f2f4acfd0fce210040398ad",
+                "actual_sha256": "c6f34702f61e3fadc3b38b5fd7553cb256368c277f2f4acfd0fce210040398ad",
+                "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
               {
@@ -6434,17 +6384,17 @@
                 "field": "sources",
                 "path": "src/scene.rs",
                 "exists": true,
-                "expected_sha256": "6d2d8d9bfe6eec311a29d2ba0c6163d0bb263fea3f874b9710b7ff990a81ae3e",
-                "actual_sha256": "4fec934706b83b205e1e1be66ace19a852b1ca6bf9693eed585c08fe8df47556",
-                "status": "stale",
+                "expected_sha256": "05d5de1f8763acb66df5749bebf5613f79ebc4af0415280a76f5cd6316439a36",
+                "actual_sha256": "05d5de1f8763acb66df5749bebf5613f79ebc4af0415280a76f5cd6316439a36",
+                "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
                 "path": "src/surface_lifecycle.rs",
                 "exists": true,
-                "expected_sha256": "1c9ffecb5ca8cda1dee857ecddc95cf81a57ad08e1de01f1c22d03f76e0354fd",
-                "actual_sha256": "1c9ffecb5ca8cda1dee857ecddc95cf81a57ad08e1de01f1c22d03f76e0354fd",
+                "expected_sha256": "f117293f240801994fec91d5b2a205937aa015cb1b2ce281448e1c76fd592d55",
+                "actual_sha256": "f117293f240801994fec91d5b2a205937aa015cb1b2ce281448e1c76fd592d55",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -6514,27 +6464,8 @@
           }
         ],
         "source_correspondence": {
-          "status": "stale_or_missing",
-          "issues": [
-            {
-              "field": "sources",
-              "path": "scripts/audit-closeout.py",
-              "exists": true,
-              "expected_sha256": "c35818886196c06b4a0b1f2a029d073464fa454bfecce365d15c6ff3fe4ec99b",
-              "actual_sha256": "b07f364e92c6b89391634021ca6af7916a79ded55e21acddcc9373319d05ad8e",
-              "status": "stale",
-              "report": "evidence/final-checklist-audit/report.json"
-            },
-            {
-              "field": "sources",
-              "path": "src/scene.rs",
-              "exists": true,
-              "expected_sha256": "6d2d8d9bfe6eec311a29d2ba0c6163d0bb263fea3f874b9710b7ff990a81ae3e",
-              "actual_sha256": "4fec934706b83b205e1e1be66ace19a852b1ca6bf9693eed585c08fe8df47556",
-              "status": "stale",
-              "report": "evidence/final-checklist-audit/report.json"
-            }
-          ]
+          "status": "current",
+          "issues": []
         }
       },
       "5": {
@@ -6668,9 +6599,9 @@
                 "field": "sources",
                 "path": "scripts/audit-closeout.py",
                 "exists": true,
-                "expected_sha256": "c35818886196c06b4a0b1f2a029d073464fa454bfecce365d15c6ff3fe4ec99b",
-                "actual_sha256": "b07f364e92c6b89391634021ca6af7916a79ded55e21acddcc9373319d05ad8e",
-                "status": "stale",
+                "expected_sha256": "c6f34702f61e3fadc3b38b5fd7553cb256368c277f2f4acfd0fce210040398ad",
+                "actual_sha256": "c6f34702f61e3fadc3b38b5fd7553cb256368c277f2f4acfd0fce210040398ad",
+                "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
               {
@@ -6884,17 +6815,17 @@
                 "field": "sources",
                 "path": "src/scene.rs",
                 "exists": true,
-                "expected_sha256": "6d2d8d9bfe6eec311a29d2ba0c6163d0bb263fea3f874b9710b7ff990a81ae3e",
-                "actual_sha256": "4fec934706b83b205e1e1be66ace19a852b1ca6bf9693eed585c08fe8df47556",
-                "status": "stale",
+                "expected_sha256": "05d5de1f8763acb66df5749bebf5613f79ebc4af0415280a76f5cd6316439a36",
+                "actual_sha256": "05d5de1f8763acb66df5749bebf5613f79ebc4af0415280a76f5cd6316439a36",
+                "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
               {
                 "field": "sources",
                 "path": "src/surface_lifecycle.rs",
                 "exists": true,
-                "expected_sha256": "1c9ffecb5ca8cda1dee857ecddc95cf81a57ad08e1de01f1c22d03f76e0354fd",
-                "actual_sha256": "1c9ffecb5ca8cda1dee857ecddc95cf81a57ad08e1de01f1c22d03f76e0354fd",
+                "expected_sha256": "f117293f240801994fec91d5b2a205937aa015cb1b2ce281448e1c76fd592d55",
+                "actual_sha256": "f117293f240801994fec91d5b2a205937aa015cb1b2ce281448e1c76fd592d55",
                 "status": "current",
                 "report": "evidence/final-checklist-audit/report.json"
               },
@@ -7038,27 +6969,8 @@
           }
         ],
         "source_correspondence": {
-          "status": "stale_or_missing",
-          "issues": [
-            {
-              "field": "sources",
-              "path": "scripts/audit-closeout.py",
-              "exists": true,
-              "expected_sha256": "c35818886196c06b4a0b1f2a029d073464fa454bfecce365d15c6ff3fe4ec99b",
-              "actual_sha256": "b07f364e92c6b89391634021ca6af7916a79ded55e21acddcc9373319d05ad8e",
-              "status": "stale",
-              "report": "evidence/final-checklist-audit/report.json"
-            },
-            {
-              "field": "sources",
-              "path": "src/scene.rs",
-              "exists": true,
-              "expected_sha256": "6d2d8d9bfe6eec311a29d2ba0c6163d0bb263fea3f874b9710b7ff990a81ae3e",
-              "actual_sha256": "4fec934706b83b205e1e1be66ace19a852b1ca6bf9693eed585c08fe8df47556",
-              "status": "stale",
-              "report": "evidence/final-checklist-audit/report.json"
-            }
-          ]
+          "status": "current",
+          "issues": []
         }
       }
     }
@@ -7317,6 +7229,14 @@
           {
             "path": "evidence/window-xvfb-presentation/report.json",
             "exists": true
+          },
+          {
+            "path": "evidence/surface-lifecycle-kernel/report.json",
+            "exists": true
+          },
+          {
+            "path": "evidence/surface-lifecycle-chain/report.json",
+            "exists": true
           }
         ]
       },
@@ -7372,13 +7292,13 @@
     "items_1_to_5_with_explicit_completion": 5,
     "completion_claimed": false,
     "static_audit_complete": true,
-    "final_report_covers_head": false,
-    "final_report_basis": "f4577355b199ebd0d3f3e35dabb13a026b802231",
-    "material_paths_changed_since_final_report_basis": 9,
+    "final_report_covers_head": true,
+    "final_report_basis": "d668b6202ad67ed89ce7c57a3f3d1c3b381c9803",
+    "material_paths_changed_since_final_report_basis": 0,
     "missing_required_sources": 0,
     "missing_required_evidence": 0,
     "missing_final_report_references": 0,
-    "stale_or_missing_source_correspondence": 10,
+    "stale_or_missing_source_correspondence": 0,
     "unresolved_item_blockers": 0
   },
   "baseline_regression": {
@@ -7388,9 +7308,8 @@
   "final_gate": {
     "ready": false,
     "failures": [
-      "evidence source hashes are stale or missing",
-      "final audit does not cover HEAD",
-      "VM baseline regression did not pass"
+      "VM baseline regression did not pass",
+      "worktree is dirty"
     ],
     "note": "Default audits may be incomplete; --require-ready enforces this exact list."
   }
