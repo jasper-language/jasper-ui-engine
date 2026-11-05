@@ -1,14 +1,12 @@
 {
   "schema_version": 1,
   "kind": "jasper-ui-closeout-audit",
-  "generated_at": "2026-11-05T11:02:08.325486+00:00",
+  "generated_at": "2026-11-05T11:03:26.115634+00:00",
   "claim": "audit only; no checklist completion or whole-engine acceptance is claimed",
   "git": {
     "branch": "dev/ui39-surface-lifecycle",
-    "commit": "d668b6202ad67ed89ce7c57a3f3d1c3b381c9803",
-    "dirty_paths": [
-      " M evidence/final-checklist-audit/report.json"
-    ]
+    "commit": "f33394f3e1bc8d95ac2df68144b11a758e9c2e3a",
+    "dirty_paths": []
   },
   "final_audit": {
     "path": "evidence/final-checklist-audit/report.json",
@@ -2660,7 +2658,7 @@
     },
     {
       "path": "evidence/final-closeout-audit/report.json",
-      "sha256": "10f114f9dc6dc0b785a3c62b3c59f0b76f1621ea1f8b27dcff2895e85f370199",
+      "sha256": "12cece90c34de044679b1f688650808ae424c86611628b6536fde24b88b498a4",
       "status": "unspecified",
       "recorded_sources": 0,
       "stale_or_missing_sources": [],
@@ -7302,15 +7300,22 @@
     "unresolved_item_blockers": 0
   },
   "baseline_regression": {
-    "status": "not_run",
-    "reason": "use --run-baseline after work is integrated; heavy checks stay inside the VM"
+    "status": "passed",
+    "started_at": "2026-11-05T11:02:22.284832+00:00",
+    "finished_at": "2026-11-05T11:03:25.815514+00:00",
+    "command": [
+      "<repo>/scripts/verify-in-vm.sh",
+      "env",
+      "bash",
+      "scripts/closeout-baseline.sh"
+    ],
+    "returncode": 0,
+    "log": "evidence/final-closeout-audit/baseline.log",
+    "log_sha256": "46d609521f8dc64976432ce098e912901cc6667dde3f267ee83b093e355a3d68"
   },
   "final_gate": {
-    "ready": false,
-    "failures": [
-      "VM baseline regression did not pass",
-      "worktree is dirty"
-    ],
+    "ready": true,
+    "failures": [],
     "note": "Default audits may be incomplete; --require-ready enforces this exact list."
   }
 }
