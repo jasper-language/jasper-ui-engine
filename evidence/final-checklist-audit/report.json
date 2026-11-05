@@ -19,7 +19,7 @@
     "src/engine.rs": "453869dfd4f651a16cde03ac81d49db857793f18bfcaa620cf67c51f330f9efe",
     "src/backend.rs": "9625248bbf8874d7fbc02c1f238ec7ff1dc541eb1b8dce53d667f864fbb8a268",
     "src/surface_lifecycle.rs": "c8a703f4bc7e5cc35c2b801b014aab3cfd29173b7df5965783625f5a0fb125d8",
-    "src/host_capabilities.rs": "440db7bbb769ffe01da0d5ef848a3ff09c6a9495a0da5b3eac715430a235a2d6",
+    "src/host_capabilities.rs": "79a91a99925d848742696adab797dce54d5ffd701f1f8893d00dcada3991b0be",
     "src/native_adapter/native_scene.rs": "071092371c3d5c70594bc66d4b03cee651491bc1ad1a93ab4c0d7ac35e323ea4",
     "src/native_adapter/native_view.rs": "9871dc3155d4ad6e4428fbea08610ad8f7b396cfa798380e64a9bd1522124a6e",
     "src/native_adapter/facade.rs": "161a346a0f75737964b2ce017b6fe6693c07895a6e7af8b857df56616b6b4538",
@@ -46,8 +46,8 @@
     "tests/native_interaction_closure.rs": "ed6fc7345b46656e27bedfa59b9c8240427954eb7888b50299bf5d5bd3bd2d79",
     "tests/native_accesskit_bridge.rs": "a252859061116da97dac80f37d5b1721275a92c558cb6d6655fb39b679d6228d",
     "tests/native_gpu_host_view.rs": "d39549a4cfc696830d6995da6fa4051d7b59b50162a5ad091a4bad030b00bb02",
-    "scripts/audit-closeout.py": "4c3bd1e42720760eee29a120c3c4f498cda37c8489b86691eb7c3f58d7bee4fa",
-    "scripts/closeout-baseline.sh": "795348ae338977f144bbadfae72c7e729f2c0d88f20c344cd08b56f8b0abbba4",
+    "scripts/audit-closeout.py": "696127c2a6988dc93994aaed81570c8917a90c6c7b213253f7c2ddbe18722482",
+    "scripts/closeout-baseline.sh": "48d890c8bc7ef0e132ff491b8f09814ba4e0596fa873d6231cbde6bf2a34b3cc",
     "src/desktop.rs": "298bea8e2dc8c62581025782419a948c3e5715bc494f0e174591aa8f1644bb28",
     "src/handle.rs": "f623079e05ca9787f4f2a05359c52ea8784107e8c83ff999e27cfce316cff88e"
   },
@@ -81,7 +81,8 @@
     "98ad9682fa0cc30a5ac24b40d4787bf7e713693c rebind final audit after the batch uniqueness kernel (validate and apply_batch_at bodies moved into generic functions, apply_detached renamed, new unit test and proof; verification scripts, docs and evidence otherwise)",
     "d668b6202ad67ed89ce7c57a3f3d1c3b381c9803 rebind final audit after the Surface lifecycle kernel (render gate region moved, == rewritten as matches!, new unit tests and proof; host_surface fuzz target joins the chain; verification scripts, docs and evidence updated; no behavior change)",
     "1498ab75a46d5c1d5e78ccca3a8a194aac40060f rebind final audit after the host surface coordination kernel (HostRenderer lifecycle steps and pending present moved into SurfaceCoordinator, preflights removed, refusal order aligned with the lifecycle as listed in docs/status.md, new unit tests and proof; host_coordination fuzz target joins the chain; verification scripts, docs and evidence updated)",
-    "e298a92c363a8135004343379ce94df7c41ea052 rebind final audit after the render outcome kernel (the five HostRenderer render entries moved behind SurfaceCoordinator::render; a render failing after the gate withdraws a pending present and leaves the view dirty, new unit and integration tests and proof; host_render fuzz target; item 5 public path re-run with identical pixels)"
+    "e298a92c363a8135004343379ce94df7c41ea052 rebind final audit after the render outcome kernel (the five HostRenderer render entries moved behind SurfaceCoordinator::render; a render failing after the gate withdraws a pending present and leaves the view dirty, new unit and integration tests and proof; host_render fuzz target; item 5 public path re-run with identical pixels)",
+    "bc01327f0030d3c7c386fa8dd8ed0ec12fe71918 rebind final audit after the capability matrix kernel (three claims corrected, for_features split out, TCB register and its check added to the baseline; native code paths unchanged)"
   ],
   "items": {
     "1_public_contracts": {
