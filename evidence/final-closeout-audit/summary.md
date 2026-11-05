@@ -2,8 +2,8 @@
 
 This report is an audit snapshot, not a delivery acceptance record.
 
-- branch: `dev/ui39-host-coordination`
-- commit: `66e0e1858a209808dfbde8993a31785408dfdf93`
+- branch: `dev/ui39-render-outcome`
+- commit: `64d45b9ff9de85d64a344281e94fc76fe19e06e3`
 - explicit item 1-5 completions: 5/5
 - final report materially covers HEAD: `true`
 - missing required evidence: 0
@@ -11,7 +11,7 @@ This report is an audit snapshot, not a delivery acceptance record.
 - stale/missing recorded source hashes: 0
 - branch refs included: `included`
 - tool configuration: `passed`
-- evidence reports indexed: 427
+- evidence reports indexed: 429
 
 ## Checklist readings
 
