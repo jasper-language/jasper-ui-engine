@@ -1005,12 +1005,11 @@ Windows 10 LTSC x86_64 虚拟机参考宿主已完成运行验收：单窗口与
 - Metal 适配器 `Apple M2`，`Bgra8UnormSrgb`，`AutoVsync`；960×640 逻辑 = 1920×1280 物理，`scale=2`。
 - 每帧从呈现用 drawable 读回 PPM：首帧背景 2,140,111 / 按钮 293,924 / 文字与抗锯齿
   23,565 像素，两次运行逐字节一致。
-- 字体：与 Android/Windows 相同的有序栈 `DejaVuSans` + `DroidSansFallbackFull`，按钮为中文
-  `激活 Activate`；`--cjk-tofu` 去掉回退字面后墨迹降到 15,349，两帧 SHA-256 不同。
+- 中文：与 Android/Windows 相同的有序栈 `DejaVuSans` + `DroidSansFallbackFull`，中文行与
+  按钮 `激活 Activate` 均为真实字形（墨迹 23,565 像素）；`--cjk-tofu` 去掉回退字面后同位置
+  是缺字框（15,349 像素），两帧 SHA-256 不同。截图与 PPM 留在证据目录。
 - 真实 WindowServer 输入：`CGEvent` 在按钮中心 `734,484` 投放，同样触发激活与版本化重绘；
   两轮运行 `frames=4 activations=2` 稳定复现。
-- 中文渲染：宿主自带的有序栈渲染中文行与中文按钮正确（墨迹 23,565 像素），去掉 CJK 字面时是
-  同位置缺字框（15,349 像素）；截图与 PPM 留在证据目录。
 - 修复并记录一个真实缺陷：AccessKit 的 bounds 是物理像素，`accesskit_macos` 会除以
   `backingScaleFactor`；宿主若直接传逻辑 bounds，AX 帧会缩小一半并整体偏移。参考宿主改为
   `Affine::scale(scale)`，并把该单位约定写进 `docs/macos.md`。
