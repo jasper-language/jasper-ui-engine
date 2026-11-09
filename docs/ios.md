@@ -64,8 +64,11 @@ winit 的 iOS 后端在 `EventLoop::run_app` 内调用 `UIApplicationMain`。宿
 | 真机运行时 | **未验收**：缺开发签名证书（Xcode 账号已添加，尚未生成 Apple Development 证书） |
 | 真机 | 一台已配对 iPhone（iOS 26.6.2，USB）可被 `devicectl` 识别；iPad 之后也被识别；无签名身份，`ios/install-device.sh` 明确输出 `device_install=blocked reason=no_signing_identity` |
 
-运行时验收需要其中之一：安装 Simulator 运行时后执行
-`xcrun simctl install/launch`，或用开发签名身份在真机安装。证据文件
+真机签名需要在本机 Xcode 完成**登录**（Settings → Accounts → 添加 Apple ID 并完成双重认证），
+再在 Manage Certificates 里生成带私钥的 Apple Development 证书：
+仅添加账号条目或下载证书（没有私钥）时，`security find-identity` 仍为 0，`xcodebuild` 会报
+`No Accounts` / `No profiles for 'org.jasper.ui.ios'`。iOS 16+ 还需在设备上打开
+Developer Mode。证据文件
 `evidence/ios-reference-host/report.json` 记录静态检查输出、可移植规则结果与适配器演练数据，
 并明确标注运行时未验收。
 

@@ -64,6 +64,11 @@ jobs:
         run: cargo build --locked --manifest-path macos/Cargo.toml
       - name: Test iOS host portable rules
         run: cargo test --locked --manifest-path ios/Cargo.toml
+      - name: Validate the Xcode app project
+        run: |
+          plutil -lint ios/app/JasperUI.xcodeproj/project.pbxproj
+          plutil -lint ios/app/Info.plist
+          xcodebuild -list -project ios/app/JasperUI.xcodeproj
       - name: Build iOS bundles and verify their structure
         env:
           JASPER_UI_SKIP_ADAPTER_EXERCISE: "1"
