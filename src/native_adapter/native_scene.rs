@@ -2202,6 +2202,7 @@ fn style_properties(
         ("margin-left", style.margin.left),
         ("gap", style.gap),
         ("border-width", style.border_width),
+        ("border-radius", style.border_radius),
         ("font-size", style.font_size),
     ] {
         if !value.is_finite() || value < 0.0 || (key == "font-size" && value == 0.0) {

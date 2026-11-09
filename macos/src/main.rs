@@ -24,7 +24,7 @@ use jasper_ui_engine::native::host::{GpuRenderer, HostRenderer, SurfaceState};
 use jasper_ui_engine::native::{EventReply, PointerAction};
 use jasper_ui_engine::scene::{Node, NodeId, Scene, ScenePatch};
 use jasper_ui_engine::semantics::{Role, Semantics};
-use jasper_ui_engine::style::{Align, Color, FlexDirection, Justify, Length, Style};
+use jasper_ui_engine::style::{Align, Color, FlexDirection, FontStyle, Justify, Length, Style};
 use winit::application::ApplicationHandler;
 use winit::event::StartCause;
 use winit::event::WindowEvent;
@@ -83,6 +83,24 @@ struct Options {
     /// Add the Chinese line without a CJK font, to measure the fallback difference.
     /// 只加中文行、不注入中日韩字体，用于测量回退差异。
     cjk_tofu: bool,
+    /// Which single screen to render.
+    /// 渲染哪一个界面。
+    scene: SceneKind,
+    /// Logical window size.
+    /// 逻辑窗口尺寸。
+    size: (f32, f32),
+}
+
+/// Selectable single-screen scenes.
+/// 可选的单屏界面。
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum SceneKind {
+    /// Reference acceptance screen (title, Chinese line, button).
+    /// 参考验收界面（标题、中文行、按钮）。
+    Reference,
+    /// High-fidelity macOS-style settings mockup.
+    /// 高保真 macOS 风格设置界面原型。
+    Mockup,
 }
 
 fn parse_args() -> Result<(Options, Vec<u8>), String> {
@@ -98,6 +116,8 @@ fn parse_args() -> Result<(Options, Vec<u8>), String> {
         spin: false,
         cjk_font: None,
         cjk_tofu: false,
+        scene: SceneKind::Reference,
+        size: (960.0, 640.0),
     };
     let mut args = std::env::args().skip(1);
     while let Some(arg) = args.next() {
@@ -106,6 +126,24 @@ fn parse_args() -> Result<(Options, Vec<u8>), String> {
             "--tap" => options.tap = true,
             "--spin" => options.spin = true,
             "--cjk-tofu" => options.cjk_tofu = true,
+            "--scene" => {
+                let value = args.next().ok_or("--scene needs reference|mockup")?;
+                options.scene = match value.as_str() {
+                    "reference" => SceneKind::Reference,
+                    "mockup" => SceneKind::Mockup,
+                    other => return Err(format!("unknown scene: {other}")),
+                };
+            }
+            "--size" => {
+                let value = args.next().ok_or("--size needs WIDTHxHEIGHT")?;
+                let (width, height) = value
+                    .split_once('x')
+                    .ok_or("--size needs WIDTHxHEIGHT")?;
+                options.size = (
+                    width.parse().map_err(|_| "invalid --size width")?,
+                    height.parse().map_err(|_| "invalid --size height")?,
+                );
+            }
             "--cjk-font" => {
                 options.cjk_font = Some(args.next().ok_or("--cjk-font needs a path")?);
             }
@@ -142,6 +180,375 @@ fn parse_args() -> Result<(Options, Vec<u8>), String> {
     let font_path = font_path.ok_or("usage: jasper-ui FONT [--once] [options]")?;
     let font = std::fs::read(&font_path).map_err(|error| format!("font {font_path}: {error}"))?;
     Ok((options, font))
+}
+
+
+// ----- High-fidelity macOS-style mockup -------------------------------------
+// ----- 高保真 macOS 风格界面原型 ---------------------------------------------
+
+const M_CONTENT: Color = Color::rgb(245, 245, 247);
+const M_SIDEBAR: Color = Color::rgb(233, 233, 236);
+const M_CARD: Color = Color::rgb(255, 255, 255);
+const M_BORDER: Color = Color::rgb(227, 227, 230);
+const M_TEXT: Color = Color::rgb(29, 29, 31);
+const M_SECONDARY: Color = Color::rgb(110, 110, 115);
+const M_ACCENT: Color = Color::rgb(10, 132, 255);
+const M_GREEN: Color = Color::rgb(52, 199, 89);
+const M_DIVIDER: Color = Color::rgb(237, 237, 240);
+const M_SWITCH_OFF: Color = Color::rgb(233, 233, 235);
+
+fn edge(top: f32, right: f32, bottom: f32, left: f32) -> Edges {
+    Edges {
+        top,
+        right,
+        bottom,
+        left,
+    }
+}
+
+fn m_text(id: u64, value: &str, size: f32, color: Color, weight: u16) -> Node {
+    Node::text(NodeId(id), value).with_style(
+        Style::default()
+            .width(Length::Auto)
+            .height(Length::Auto)
+            .text(size, color)
+            .font(weight, FontStyle::Normal),
+    )
+}
+
+fn m_traffic_light(id: u64, color: Color) -> Node {
+    Node::container(NodeId(id)).with_style(
+        Style::default()
+            .size(Length::Px(12.0), Length::Px(12.0))
+            .background(color)
+            .rounded(6.0),
+    )
+}
+
+/// One sidebar row: colored icon tile plus label.
+fn m_sidebar_item(id: u64, icon: Color, label: &str, selected: bool) -> Node {
+    let foreground = if selected { Color::WHITE } else { M_TEXT };
+    Node::container(NodeId(id))
+        .with_style(
+            Style::default()
+                .width(Length::Percent(100.0))
+                .height(Length::Px(32.0))
+                .direction(FlexDirection::Row)
+                .align_items(Align::Center)
+                .gap(10.0)
+                .padding(edge(0.0, 8.0, 0.0, 8.0))
+                .background(if selected { M_ACCENT } else { Color::TRANSPARENT })
+                .rounded(8.0),
+        )
+        .child(Node::container(NodeId(id * 100 + 1)).with_style(
+            Style::default()
+                .size(Length::Px(18.0), Length::Px(18.0))
+                .background(if selected { Color::WHITE.with_alpha(235) } else { icon })
+                .rounded(5.0),
+        ))
+        .child(m_text(id * 100 + 2, label, 13.0, foreground, 500))
+}
+
+fn m_divider(id: u64) -> Node {
+    Node::container(NodeId(id)).with_style(
+        Style::default()
+            .width(Length::Percent(100.0))
+            .height(Length::Px(1.0))
+            .background(M_DIVIDER),
+    )
+}
+
+/// A settings row inside a card: title on the left, detail on the right.
+fn m_row(id: u64, title: &str, detail: &str, accent: bool) -> Node {
+    Node::container(NodeId(id))
+        .with_style(
+            Style::default()
+                .width(Length::Percent(100.0))
+                .height(Length::Px(48.0))
+                .direction(FlexDirection::Row)
+                .align_items(Align::Center)
+                .justify_content(Justify::SpaceBetween)
+                .padding(edge(0.0, 16.0, 0.0, 16.0)),
+        )
+        .child(m_text(id * 100 + 1, title, 13.0, M_TEXT, 400))
+        .child(m_text(
+            id * 100 + 2,
+            detail,
+            12.0,
+            if accent { M_ACCENT } else { M_SECONDARY },
+            400,
+        ))
+}
+
+/// A card container with the standard Apple surface.
+fn m_card(id: u64) -> Node {
+    Node::container(NodeId(id)).with_style(
+        Style::default()
+            .width(Length::Percent(100.0))
+            .direction(FlexDirection::Column)
+            .background(M_CARD)
+            .border(1.0, M_BORDER)
+            .rounded(12.0),
+    )
+}
+
+fn mockup_scene() -> Scene {
+    let sidebar = Node::container(NodeId(2))
+        .with_style(
+            Style::default()
+                .width(Length::Px(262.0))
+                .height(Length::Percent(100.0))
+                .direction(FlexDirection::Column)
+                .padding(edge(16.0, 14.0, 16.0, 14.0))
+                .gap(4.0)
+                .background(M_SIDEBAR)
+                .border(1.0, Color::rgb(222, 222, 226)),
+        )
+        .child(
+            Node::container(NodeId(3))
+                .with_style(
+                    Style::default()
+                        .width(Length::Percent(100.0))
+                        .direction(FlexDirection::Row)
+                        .gap(8.0)
+                        .margin(edge(0.0, 0.0, 14.0, 0.0)),
+                )
+                .child(m_traffic_light(4, Color::rgb(255, 95, 87)))
+                .child(m_traffic_light(5, Color::rgb(254, 188, 46)))
+                .child(m_traffic_light(6, Color::rgb(40, 200, 64))),
+        )
+        .child(
+            Node::container(NodeId(7))
+                .with_style(
+                    Style::default()
+                        .width(Length::Percent(100.0))
+                        .height(Length::Px(30.0))
+                        .direction(FlexDirection::Row)
+                        .align_items(Align::Center)
+                        .justify_content(Justify::SpaceBetween),
+                )
+                .child(m_text(8, "系统设置", 15.0, M_TEXT, 600))
+                .child(m_text(9, "⌘,", 12.0, M_SECONDARY, 400)),
+        )
+        .child(
+            Node::container(NodeId(10))
+                .with_style(
+                    Style::default()
+                        .width(Length::Percent(100.0))
+                        .height(Length::Px(30.0))
+                        .direction(FlexDirection::Row)
+                        .align_items(Align::Center)
+                        .padding(edge(0.0, 8.0, 0.0, 8.0))
+                        .margin(edge(6.0, 0.0, 10.0, 0.0))
+                        .background(M_CARD)
+                        .border(1.0, M_BORDER)
+                        .rounded(8.0),
+                )
+                .child(m_text(11, "搜索", 12.0, M_SECONDARY, 400)),
+        )
+        .child(m_text(12, "控制中心", 11.0, M_SECONDARY, 600))
+        .child(m_sidebar_item(13, Color::rgb(10, 132, 255), "Wi-Fi", true))
+        .child(m_sidebar_item(14, Color::rgb(0, 122, 255), "蓝牙", false))
+        .child(m_sidebar_item(15, Color::rgb(142, 142, 147), "网络", false))
+        .child(m_sidebar_item(16, Color::rgb(255, 149, 0), "通知", false))
+        .child(m_sidebar_item(17, Color::rgb(255, 45, 85), "声音", false))
+        .child(m_text(18, "其他", 11.0, M_SECONDARY, 600))
+        .child(m_sidebar_item(19, Color::rgb(88, 86, 214), "外观", false))
+        .child(m_sidebar_item(20, Color::rgb(48, 176, 199), "控制中心", false))
+        .child(m_sidebar_item(21, Color::rgb(162, 132, 94), "桌面与程序坞", false));
+
+    let content = Node::container(NodeId(40))
+        .with_style(
+            Style::default()
+                .flex_grow(1.0)
+                .height(Length::Percent(100.0))
+                .direction(FlexDirection::Column)
+                .padding(edge(26.0, 30.0, 26.0, 30.0))
+                .gap(18.0)
+                .background(M_CONTENT),
+        )
+        .child(
+            Node::container(NodeId(41))
+                .with_style(
+                    Style::default()
+                        .width(Length::Percent(100.0))
+                        .direction(FlexDirection::Column)
+                        .gap(4.0),
+                )
+                .child(m_text(42, "Wi-Fi", 26.0, M_TEXT, 700))
+                .child(m_text(43, "已连接「Jasper 5G」", 12.0, M_SECONDARY, 400)),
+        )
+        .child(
+            m_card(50)
+                .child(
+                    Node::container(NodeId(51))
+                        .with_style(
+                            Style::default()
+                                .width(Length::Percent(100.0))
+                                .height(Length::Px(58.0))
+                                .direction(FlexDirection::Row)
+                                .align_items(Align::Center)
+                                .justify_content(Justify::SpaceBetween)
+                                .padding(edge(0.0, 16.0, 0.0, 16.0)),
+                        )
+                        .child(
+                            Node::container(NodeId(52))
+                                .with_style(
+                                    Style::default()
+                                        .direction(FlexDirection::Column)
+                                        .gap(2.0),
+                                )
+                                .child(m_text(53, "Wi-Fi", 13.0, M_TEXT, 500))
+                                .child(m_text(54, "已打开", 12.0, M_SECONDARY, 400)),
+                        )
+                        .child(
+                            Node::container(NodeId(55))
+                                .with_style(
+                                    Style::default()
+                                        .size(Length::Px(44.0), Length::Px(26.0))
+                                        .direction(FlexDirection::Row)
+                                        .justify_content(Justify::End)
+                                        .align_items(Align::Center)
+                                        .padding(edge(0.0, 2.0, 0.0, 2.0))
+                                        .background(M_GREEN)
+                                        .rounded(13.0),
+                                )
+                                .child(Node::container(NodeId(56)).with_style(
+                                    Style::default()
+                                        .size(Length::Px(22.0), Length::Px(22.0))
+                                        .background(Color::WHITE)
+                                        .rounded(11.0),
+                                )),
+                        ),
+                )
+                .child(m_divider(57))
+                .child(m_row(58, "已知网络", "›", false)),
+        )
+        .child(
+            m_card(60)
+                .child(m_row(61, "Jasper 5G", "已连接", true))
+                .child(m_divider(62))
+                .child(m_row(63, "Jasper-Guest", "未连接", false))
+                .child(m_divider(64))
+                .child(m_row(65, "办公室", "自动加入", false)),
+        )
+        .child(
+            m_card(70).child(
+                Node::container(NodeId(71))
+                    .with_style(
+                        Style::default()
+                            .width(Length::Percent(100.0))
+                            .direction(FlexDirection::Column)
+                            .gap(12.0)
+                            .padding(edge(14.0, 16.0, 14.0, 16.0)),
+                    )
+                    .child(m_text(72, "自动加入网络", 12.0, M_SECONDARY, 400))
+                    .child(
+                        Node::container(NodeId(73))
+                            .with_style(
+                                Style::default()
+                                    .width(Length::Percent(100.0))
+                                    .height(Length::Px(32.0))
+                                    .direction(FlexDirection::Row)
+                                    .gap(2.0)
+                                    .padding(edge(3.0, 3.0, 3.0, 3.0))
+                                    .background(Color::rgb(233, 233, 235))
+                                    .rounded(9.0),
+                            )
+                            .child(
+                                Node::container(NodeId(74))
+                                    .with_style(
+                                        Style::default()
+                                            .flex_grow(1.0)
+                                            .height(Length::Px(26.0))
+                                            .align_items(Align::Center)
+                                            .justify_content(Justify::Center)
+                                            .background(M_CARD)
+                                            .rounded(7.0),
+                                    )
+                                    .child(m_text(75, "自动", 12.0, M_TEXT, 500)),
+                            )
+                            .child(
+                                Node::container(NodeId(76))
+                                    .with_style(
+                                        Style::default()
+                                            .flex_grow(1.0)
+                                            .height(Length::Px(26.0))
+                                            .align_items(Align::Center)
+                                            .justify_content(Justify::Center),
+                                    )
+                                    .child(m_text(77, "手动", 12.0, M_SECONDARY, 400)),
+                            )
+                            .child(
+                                Node::container(NodeId(78))
+                                    .with_style(
+                                        Style::default()
+                                            .flex_grow(1.0)
+                                            .height(Length::Px(26.0))
+                                            .align_items(Align::Center)
+                                            .justify_content(Justify::Center),
+                                    )
+                                    .child(m_text(79, "关闭", 12.0, M_SECONDARY, 400)),
+                            ),
+                    )
+                    .child(
+                        Node::container(NodeId(80))
+                            .with_style(
+                                Style::default()
+                                    .width(Length::Percent(100.0))
+                                    .height(Length::Px(18.0))
+                                    .direction(FlexDirection::Row)
+                                    .align_items(Align::Center)
+                                    .gap(10.0),
+                            )
+                            .child(m_text(81, "亮度", 12.0, M_SECONDARY, 400))
+                            .child(
+                                Node::container(NodeId(82))
+                                    .with_style(
+                                        Style::default()
+                                            .flex_grow(1.0)
+                                            .height(Length::Px(4.0))
+                                            .background(Color::rgb(217, 217, 222))
+                                            .rounded(2.0),
+                                    )
+                                    .child(
+                                        Node::container(NodeId(83)).with_style(
+                                            Style::default()
+                                                .width(Length::Percent(62.0))
+                                                .height(Length::Px(4.0))
+                                                .background(M_ACCENT)
+                                                .rounded(2.0),
+                                        ),
+                                    ),
+                            )
+                            .child(
+                                Node::container(NodeId(84)).with_style(
+                                    Style::default()
+                                        .size(Length::Px(16.0), Length::Px(16.0))
+                                        .background(M_CARD)
+                                        .border(1.0, Color::rgb(200, 200, 205))
+                                        .rounded(8.0),
+                                ),
+                            ),
+                    ),
+            ),
+        );
+
+    Scene::new(
+        Node::container(NodeId(1))
+            .with_style(
+                Style::default()
+                    // The mockup window is fixed; explicit pixels keep the root from shrinking
+                    // to its content inside Blitz's centering wrapper.
+                    // 原型窗口尺寸固定；显式像素避免根节点在 Blitz 的居中包装里收缩成内容尺寸。
+                    .width(Length::Px(1180.0))
+                    .height(Length::Px(760.0))
+                    .direction(FlexDirection::Row)
+                    .background(M_CONTENT),
+            )
+            .child(sidebar)
+            .child(content),
+    )
 }
 
 fn scene(chinese: bool) -> Scene {
@@ -268,7 +675,10 @@ impl App {
         event_proxy: EventLoopProxy<AppEvent>,
     ) -> Result<Self, String> {
         let chinese = !options.cjk_tofu;
-        let source = scene(chinese);
+        let source = match options.scene {
+            SceneKind::Reference => scene(chinese),
+            SceneKind::Mockup => mockup_scene(),
+        };
         // `--cjk-tofu` deliberately drops the fallback face to measure the difference.
         // `--cjk-tofu` 故意去掉回退字面，用于测量差异。
         let stack: Vec<&[u8]> = if options.cjk_tofu {
@@ -276,7 +686,8 @@ impl App {
         } else {
             vec![latin, cjk.unwrap_or(CJK)]
         };
-        let engine = HostRenderer::with_fonts(OWNER, &source, &stack, 960, 640)
+        let (width, height) = (options.size.0.round() as u32, options.size.1.round() as u32);
+        let engine = HostRenderer::with_fonts(OWNER, &source, &stack, width, height)
             .ok_or("native scene import rejected")?;
         let generation = engine
             .surface_status(OWNER)
@@ -344,22 +755,31 @@ impl App {
             .reconfigure(OWNER, self.generation, width, height, scale)
             .map_err(|error| format!("native viewport rejected: {error:?}"))?;
         let old = self.scene.version();
-        let patch = ScenePatch::UpdateStyle {
-            id: NodeId(1),
-            style: root_style(width as f32 / scale, height as f32 / scale),
+        // The reference screen re-centres its column on every resize; the mockup keeps its own
+        // fixed-pixel root, so patching it would overwrite the design.
+        // 参考界面在每次尺寸变化时重排居中列；原型界面保持自己的固定像素根，打补丁会覆盖设计。
+        let patches: Vec<ScenePatch> = if self.options.scene == SceneKind::Reference {
+            vec![ScenePatch::UpdateStyle {
+                id: NodeId(1),
+                style: root_style(width as f32 / scale, height as f32 / scale),
+            }]
+        } else {
+            Vec::new()
         };
-        self.scene
-            .apply_batch_at(old, std::slice::from_ref(&patch))
-            .map_err(|error| format!("macOS root resize rejected: {error:?}"))?;
-        if !self.engine.apply_with_focus_events(
-            OWNER,
-            old,
-            self.scene.version(),
-            self.generation,
-            std::slice::from_ref(&patch),
-            &mut |_| {},
-        ) {
-            return Err("native macOS root resize rejected".into());
+        if !patches.is_empty() {
+            self.scene
+                .apply_batch_at(old, &patches)
+                .map_err(|error| format!("macOS root resize rejected: {error:?}"))?;
+            if !self.engine.apply_with_focus_events(
+                OWNER,
+                old,
+                self.scene.version(),
+                self.generation,
+                &patches,
+                &mut |_| {},
+            ) {
+                return Err("native macOS root resize rejected".into());
+            }
         }
         stage(
             "viewport",
@@ -925,7 +1345,14 @@ impl App {
                 .create_window(
                     Window::default_attributes()
                         .with_title("Jasper UI · macOS")
-                        .with_inner_size(winit::dpi::LogicalSize::new(960.0, 640.0))
+                        .with_inner_size(winit::dpi::LogicalSize::new(
+                            self.options.size.0,
+                            self.options.size.1,
+                        ))
+                        // The mockup draws its own traffic lights, so it hides the native chrome;
+                        // the reference acceptance screen keeps the standard titled window.
+                        // 原型界面自绘红绿灯，因此隐藏原生窗口装饰；验收界面保留标准带标题窗口。
+                        .with_decorations(self.options.scene == SceneKind::Reference)
                         // The AccessKit adapter must exist before first visibility.
                         // AccessKit 适配器必须在首次可见之前建立。
                         .with_visible(false),

@@ -204,6 +204,9 @@ pub struct Style {
     pub background: Color,
     pub border_width: f32,
     pub border_color: Color,
+    /// Uniform corner radius in logical pixels; 0 keeps square corners.
+    /// 统一圆角半径（逻辑像素）；0 表示直角。
+    pub border_radius: f32,
     pub font_size: f32,
     /// CSS numeric weight (400 regular, 700 bold); the native path admits 1..=1000 only.
     /// CSS 数值字重（400 常规、700 粗体）；原生路径只准入 1..=1000。
@@ -236,6 +239,7 @@ impl Default for Style {
             background: Color::TRANSPARENT,
             border_width: 0.0,
             border_color: Color::TRANSPARENT,
+            border_radius: 0.0,
             font_size: 14.0,
             font_weight: 400,
             font_style: FontStyle::Normal,
@@ -311,6 +315,13 @@ impl Style {
     pub fn border(mut self, width: f32, color: Color) -> Self {
         self.border_width = width.max(0.0);
         self.border_color = color;
+        self
+    }
+
+    /// Sets a uniform corner radius, e.g. for cards, pills and switches.
+    /// 设置统一圆角半径，例如卡片、胶囊与开关。
+    pub fn rounded(mut self, radius: f32) -> Self {
+        self.border_radius = radius;
         self
     }
 
