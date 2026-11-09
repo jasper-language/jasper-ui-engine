@@ -1,0 +1,27 @@
+[package]
+name = "jasper-ui-android"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+publish = false
+
+[lib]
+name = "main"
+crate-type = ["cdylib"]
+
+[dependencies]
+jasper-ui-engine = { path = "..", default-features = false, features = [
+    "desktop",
+    "gpu-pending",
+] }
+winit = { version = "=0.30.13", features = ["android-native-activity"] }
+wgpu = "=30.0.1"
+wgpu_context = "=0.10.0"
+pollster = "=0.4.0"
+android_logger = "=0.15.1"
+log = "0.4.34"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true

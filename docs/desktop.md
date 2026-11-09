@@ -13,7 +13,24 @@
   - `Ime::Commit` / `Preedit` → `Text` / `Composition`
   - `Focused` → `FocusEvent`
   - `ModifiersChanged` → `Modifiers`
+  - `Touch` → 带稳定触控身份的 Down/Move/Up/Cancel；首个触点保持 primary，直到它结束
 - 纯映射层不创建窗口，因此可以在无头 CI 中测试。
+
+`PointerMotionCoalescer` 是平台无关的单帧移动合并器：同一指针连续的 Move/Hover 只保留
+最新样本，Down/Up/Cancel、滚轮、键盘、文本和焦点事件会先冲刷待处理移动，保证生命周期
+事件及顺序不被丢弃。Windows、macOS 和移动端适配器可以复用同一语义。
+
+`PointerMotionPredictor` 基于宿主时间戳给出短时线性外推，只用于显示提示；下一真实
+Move/Hover 必须校正。不同指针身份或生命周期事件会清空预测历史。它是宿主无关 API，
+不宣称底层平台已有事件预测/合并能力。
+
+winit 提供校准或归一化压力时，触控映射会把压力限制在 `0..=1`；平台未提供有限压力时，
+按 Down/Move=`1`、Up/Cancel=`0` 的安全默认值报告。该默认值不是压力测量。
+
+Windows Ink、Apple Pencil、Android MotionEvent 和 Linux libinput 的专用适配器应先构造
+`platform_input::RawPointerSample`，再由 `normalize_pointer` 校验坐标、压力、倾斜、扭转、
+接触面积及触摸/笔约束。失败不产生部分 `PointerEvent`。当前有该边界的单元测试，但没有
+声称物理触控笔或上述平台已运行验收。
 
 ## 原生窗口调用方（2026-11-02）
 
@@ -26,6 +43,12 @@
 - 外部文本内容只接受宿主注入的服务快照；同步预编辑窗口只显示 transient preedit，不是编辑器或 IME 引擎。
 - Xvfb 提供实际 X11 protocol Surface，已覆盖创建、呈现、重设尺寸和单帧退出；合成器、vsync、真实 session suspend/resume 与系统无障碍桥仍不属于本示例验收。
 - `scripts/interact-window-xvfb.sh FONT OUT_DIR` 通过 xdotool 点击实际 X11 窗口，调用方仅在收到激活并完成视觉更新后退出的诊断模式下必须报告 `activated=1`。
+- `--features desktop-accessibility` 在 `examples/window` 中建立 AccessKit winit 适配器；
+  Linux 经 AT-SPI，Windows 由同一可选依赖选择 UIA，macOS/Android/iOS 使用各自平台实现。
+  该特性不把 AT-SPI、UIA 或 winit 类型带入默认核心构建。
+- `examples/multiwindow` 为两个窗口分别建立场景、`HostRenderer`、Surface 代数和软缓冲后端；
+  两个 owner 不共享可变视图状态。窗口创建、焦点和呈现仍由宿主负责；
+  `--once --exercise-suspend-resume` 会释放宿主窗口/Surface、暂停两个引擎视图，重建后恢复。
 - 每次绘制用物理窗口尺寸与 DPI 更新原生 viewport；尺寸/缩放变化请求重绘，零尺寸跳过呈现。
 - 暂停释放宿主窗口/Surface 并停用原生焦点，恢复后重建宿主资源；终止退出后退休原生场景。
 - 预算/像素转换/呈现失败报告并退出，不以绘制成功冒充宿主呈现成功。
@@ -36,11 +59,15 @@
 viewport，关闭只退休一次。GPU 示例在 `Queue::present` 后确认 `gpu_presented`，present 前
 继续视为待呈现。窗口失活只清原生 hover/press/focus，不冒充 Surface 暂停。
 
+GPU 示例的 `--exercise-suspend-resume` 走 `Engine::suspend` → host device/window 重建 →
+`Engine::resume`；`--exercise-device-loss` 走 wgpu DeviceLost 事件路径。两者均在 Ubuntu
+Wayland/RTX 3060 上完成两代呈现，但恢复事件本身仍由宿主控制，不能替代真实 OS 会话冻结。
+
 ## 下一片
 
-- 真实合成器/vsync、硬件 GPU/device-loss 与平台休眠恢复验收
-- 触控/笔事件（winit `Touch` / 平台扩展）
-- 窗口生命周期与多窗口
+- vblank 截止时间与真实 OS 会话冻结验收
+- 触控笔压力/倾斜的 Linux 平台扩展；winit `Touch` 已接基础压力存在性与生命周期
+- 多窗口暂停/恢复状态保留（当前示例在会话暂停后重建窗口）
 
 ## 再下一片
 

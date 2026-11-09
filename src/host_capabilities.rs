@@ -58,9 +58,10 @@ pub(crate) struct CompiledFeatures {
 // BEGIN VERIFIED CAPABILITY MATRIX KERNEL
 impl HostCapabilityMatrix {
     /// The claims for one feature combination. A feature only moves a claim between gated and
-    /// native; nothing a build cannot show (hardware, device loss, the system host) depends on it.
-    /// 一种 feature 组合对应的声明。feature 只让声明在门控与原生之间移动；构建无法证明的项
-    /// （硬件、设备丢失、系统宿主）不依赖它。
+    /// native; device-loss support follows the GPU feature, while hardware acceptance and the
+    /// system host remain fixed claims.
+    /// 一种 feature 组合对应的声明。feature 只让声明在门控与原生之间移动；设备丢失契约随
+    /// GPU feature 切换，硬件验收和系统宿主则是固定声明。
     pub(crate) const fn for_features(features: CompiledFeatures) -> Self {
         let native = if features.native_scene {
             CapabilityStatus::NativeContract
@@ -84,7 +85,11 @@ impl HostCapabilityMatrix {
             gpu_surface_acquire_and_configure: CapabilityStatus::HostOwned,
             gpu_present: CapabilityStatus::HostOwned,
             gpu_hardware_present: CapabilityStatus::Unverified,
-            gpu_device_loss_recovery: CapabilityStatus::Unsupported,
+            gpu_device_loss_recovery: if features.gpu_texture {
+                CapabilityStatus::NativeContract
+            } else {
+                CapabilityStatus::FeatureGated
+            },
             host_vsync: CapabilityStatus::HostOwned,
             jasper_os_host_integration: CapabilityStatus::Unsupported,
         }
@@ -145,7 +150,7 @@ mod tests {
                 gpu_surface_acquire_and_configure: HostOwned,
                 gpu_present: HostOwned,
                 gpu_hardware_present: Unverified,
-                gpu_device_loss_recovery: Unsupported,
+                gpu_device_loss_recovery: gated(features.gpu_texture),
                 host_vsync: HostOwned,
                 jasper_os_host_integration: Unsupported,
             };
@@ -163,7 +168,6 @@ mod tests {
             });
             for claim in [
                 matrix.gpu_hardware_present,
-                matrix.gpu_device_loss_recovery,
                 matrix.host_vsync,
                 matrix.gpu_present,
                 matrix.gpu_surface_acquire_and_configure,

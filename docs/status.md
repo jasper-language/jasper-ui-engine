@@ -944,3 +944,42 @@ CP-02 仍无判定：只选一个断言（切片后 30 个 VCC）在 45 分钟�
 - `gpu_device_loss_recovery` 原先是 `Unverified`（含义是已实现、未验收），但仓库没有任何设备丢失代码。现在是 `Unsupported`；`gpu.md` 的重建路径改标为目标，未实现。
 
 未覆盖：矩阵只说明声明与构建一致，不说明入口行为正确。硬件 Surface、合成器、垂直同步、设备丢失（未实现）、真实平台休眠恢复仍没有证据，这些需要真实硬件或新实现，CP-06 仍未闭合。定点通过，等批次全量。
+
+## 2026-11-09：Ubuntu 参考宿主跨平台切片
+
+在 Ubuntu Wayland 真机会话完成参考宿主验证，详细结果见
+`evidence/linux-reference-host/report.json`：
+
+- `PointerMotionCoalescer` 在宿主无关输入层合并同一指针连续 Move/Hover；Down/Up/Cancel、
+  滚轮、键盘、文本和焦点事件会先冲刷待处理移动，保证生命周期顺序。
+- winit `Touch` 映射为带稳定身份的 Down/Move/Up/Cancel；第一个活动触点保持 primary，
+  其结束时下一个活动触点接任。校准/归一化 force 被限制到 `0..=1`。
+- `PointerMotionPredictor` 用宿主时间戳提供显示用短时外推；指针身份或生命周期变化会清空历史。
+- `examples/multiwindow` 为 owner 100/101 建立两个独立场景、`HostRenderer`、Surface 代数和
+  softbuffer 后端，在 Wayland 同时完成呈现；引擎状态与宿主 Window/Surface 对象分离。
+  `--exercise-suspend-resume` 实际释放两组宿主窗口/Surface、暂停引擎视图、重建后再次呈现。
+  `native_multiwindow_isolation` 验证一个 owner 的重配、暂停和退休不改变另一个 owner。
+- `host_transport::HostInbox` 提供会话/epoch、精确序号、有界背压与关闭拒绝；它不实现或冒充
+  系统 IPC，供桌面、移动和 jasper-os 内置宿主复用。
+- `desktop-accessibility` 通过固定 `accesskit_winit 0.34.2` 建立平台适配器。Ubuntu AT-SPI
+  注册表实际返回工具包名 `Jasper UI`、按钮 `Activate`、`click` 动作，`DoAction` 返回 true。
+- 同一可选依赖按目标平台选择 AT-SPI/UIA/macOS/Android/iOS；Linux 实测不扩展为其他平台已验收。
+- 真实 NVIDIA RTX 3060 Vulkan Surface 在 Wayland 合成器下选择 `Bgra8UnormSrgb` 和
+  `Fifo` present mode。设备丢失由宿主持有的 wgpu callback 报告；示例完成
+  frame 1→宿主 pending 事件→暂停→重建 device/Surface/renderer→frame 2 的恢复演练。
+  VM 测试通过真实
+  `Device::destroy()` 观察到 `DeviceLostReason::Destroyed`。驱动诱发的硬件丢失、实际
+  vblank 截止时间、真实 session suspend/resume 仍未验证。
+
+CI 新增 Ubuntu/Windows/macOS 的宿主无关核心编译与测试矩阵；这只是持续编译门，
+不代表 Windows/macOS 平台宿主已经完成运行验收。本次未修改 jasper-os。
+
+宿主无关默认核心同时通过 `cargo check --locked --lib` 的 Linux x86_64、Windows
+x86_64 GNU、macOS x86_64/AArch64、Android AArch64 与 iOS AArch64 交叉目标检查；`desktop-accessibility`
+窗口路径也通过 Windows x86_64、macOS x86_64 和 AArch64 的目标编译。该结果证明
+平台适配层可以面向这些目标编译，不证明 winit/wgpu/无障碍平台实现已在对应系统运行。
+
+内置宿主 loopback 参考已接通：`HostInbox` 接收版本化场景更新、CPU 帧和退休命令，
+对满队列执行回压，更新后的帧包含声明颜色，退休后继续渲染被拒绝。示例和测试不链接
+winit/wgpu；真实系统 IPC、认证与 jasper-os 宿主仍未实现。结果：
+`host_loopback=pass session=41 epoch=3 version=2`，对应测试 1/1 通过。

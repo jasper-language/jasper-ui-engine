@@ -44,7 +44,8 @@ Jasper UI 的 **宿主无关 Native 引擎底座**（Rust）。它只负责底�
 - `RenderBackend` / `PlatformHost` trait + Headless 后端
 - 统一指针事件模型：鼠标 / 触摸 / 触控笔（多点、压力、倾斜、扭转、接触面积、笔擦）
 - **命中测试 + 指针路由**：布局树命中、root→target 路径、按 pointer 的 capture
-- **语义树 + 焦点管理**：角色/标签/值/禁用/可聚焦，Tab/Shift+Tab 焦点遍历（AccessKit 后续）
+- **语义树 + 焦点管理**：角色/标签/值/禁用/可聚焦，Tab/Shift+Tab 焦点遍历；可选
+  AccessKit 转换与 winit 平台适配（Linux AT-SPI 已实测）
 - **场景版本 + 原子批量补丁**：成功才推进版本；过期批次拒绝；失败不半应用
 - **参考手势层**：tap / long-press / pan / pinch / cancel，接在指针路由/capture 上
 - **溢出裁剪 + 滚动偏移**：`Overflow::Hidden/Scroll` 裁剪子树；`Node::scroll` 平移子节点
@@ -62,7 +63,8 @@ Jasper UI 的 **宿主无关 Native 引擎底座**（Rust）。它只负责底�
 ## v0.1 明确未实现
 
 - 真实文字光栅化（`DrawText` 在 Headless 后端返回 `Unsupported`；需要 Parley/字体后端）
-- 硬件 GPU 验收、device-loss 恢复、系统无障碍桥、图片/SVG 解码（winit 软件 Surface 与 llvmpipe Vulkan TextureView 路径已实现并实测）
+- Windows/macOS/移动端无障碍运行验收、图片/SVG 解码；Ubuntu 已完成硬件 GPU、
+  device-loss 恢复演练与 AT-SPI 桥实测
 - Jasper ABI、Jasper UI Framework、UI IR、状态/事件/动画/路由
 - Web HTML/CSS/JS/WASM 输出
 - 完整文本编辑与 IME 往返、过冲回弹、系统无障碍桥（文本/组合事件映射与焦点路由已有实现）
@@ -86,6 +88,43 @@ JASPER_UI_VM_RUN=/path/to/vm-entry.sh scripts/verify-in-vm.sh env CARGO_PROFILE_
 `cargo run --locked --features desktop,native-engine-cpu --example window -- FONT [--once|--once-after-activation]`
 现将指针、滚轮、命令键、IME 预编辑/提交和失焦恢复送入同一公共入口；点击触发的视觉补丁保留焦点，窗口缩放和 Surface 失败在宿主层报告。外部文本仍是同步注入的服务夹具，不宣称连接了真实编辑器/IME 服务。
 `scripts/interact-window-xvfb.sh FONT OUT_DIR` 用 Xvfb+xdotool 执行真实 X11 点击，并要求窗口进程以 `activated=1` 和已完成退休退出。
+
+Linux 平台无障碍参考宿主：
+
+```bash
+cargo run --locked --features desktop-accessibility --example window -- FONT --once
+```
+
+该特性通过 AccessKit 窗口适配器连接 AT-SPI；相同的可选适配器在 Windows 选择 UIA，
+macOS/Android/iOS 选择各自平台实现。默认核心构建不会依赖这些平台 API。
+
+双窗口参考宿主：
+
+```bash
+cargo run --locked --features desktop,native-engine-cpu --example multiwindow -- FONT --once
+```
+
+两个窗口各自持有独立 owner、场景、Surface 代数和呈现后端；窗口编排仍归宿主所有。
+
+Android ARM64 参考宿主：
+
+```bash
+bash android/build-apk.sh
+adb install -r android/target/apk/jasper-ui.apk
+```
+
+Android 使用 NativeActivity、winit、wgpu GLES 和正式 `HostRenderer`；构建与真机验收限制见
+[android/README.md](android/README.md)。
+
+GPU 设备丢失恢复演练：
+
+```bash
+JASPER_UI_PRESENT_MODE=fifo \
+  cargo run --locked --features desktop,gpu-pending --example gpu_window -- FONT --once --exercise-device-loss
+```
+
+默认选择宿主支持的 `Fifo` present mode；演练沿真实宿主管恢复生命周期重建设备与 Surface，
+但不会把合成的恢复事件冒充驱动诱发的硬件丢失。
 
 要求 Rust 1.89+（以 `Cargo.toml` 为准）。
 
@@ -136,6 +175,16 @@ LegacyEngine (explicit compatibility only)
 | Web | 不使用本引擎 | 浏览器 DOM/JS/WASM | 由 Jasper Web 后端负责 |
 
 本仓库的 trait 设计保证：**内置宿主与自带宿主共用同一套引擎核心，但平台/窗口/渲染实现可替换**。
+内置宿主可用 `host_transport::HostInbox` 统一约束会话 epoch、精确序号和有界背压；
+它只定义宿主中立传输语义，不实现系统 IPC。
+
+无窗口的内置宿主参考：
+
+```bash
+cargo run --locked --features native-engine-cpu --example host_loopback -- FONT OUTPUT.ppm
+```
+
+该示例经 `HostInbox` 消费场景更新、CPU 帧与退休命令，不链接 winit/wgpu。
 
 ## 许可证
 

@@ -74,6 +74,9 @@ pinned exactly (`=x.y.z`, or a fixed git revision for Blitz).
 | fontique | =0.12.0 | Apache-2.0 OR MIT | https://github.com/linebender/parley |
 | keyboard-types | =0.8.3 | MIT OR Apache-2.0 | https://github.com/rust-windowing/keyboard-types |
 | accesskit | =0.25.2 | MIT OR Apache-2.0 | https://github.com/AccessKit/accesskit |
+| accesskit_winit | =0.34.2 | MIT OR Apache-2.0 | https://github.com/AccessKit/accesskit |
+| android_logger (Android host) | =0.15.1 | MIT OR Apache-2.0 | https://github.com/rust-mobile/android_logger |
+| DejaVu Sans (Android host font) | system DejaVu 2.37 package | Bitstream Vera / DejaVu Fonts License | https://dejavu-fonts.github.io/License.html |
 | jaso (jasper-os, git rev 0f1e5c1) | 0.1.0 | Apache-2.0 | https://github.com/jasper-language/jasper-os |
 | libc | =0.2.191 | MIT OR Apache-2.0 | https://github.com/rust-lang/libc |
 | sha2 (via jaso) | =0.11.1 | MIT OR Apache-2.0 | https://github.com/RustCrypto/hashes |

@@ -2,9 +2,9 @@
   "check": "scripts/check-render-tcb.py",
   "status": "register_matches_lock",
   "sources": {
-    "Cargo.toml": "5b9dbf1d93861ef79376fa701decf112e64f6297a34d1a6732867a367c88f83b",
-    "Cargo.lock": "7f5d2a1a2dd065f2175182e0775a3eb22c47dda25666f463916b850585774425",
-    "docs/render-tcb.md": "8a40737dd688912f3981e7899e2129246b0e27aa267d0de80b442a536d099249"
+    "Cargo.toml": "bde17d39cf791736f6246164fb14a2718ee76b2791c69959a7fb89c6314fb153",
+    "Cargo.lock": "d0154c349a28d83c6f3cc67f1220175754f3fa3d7981f771e8a62f52a2bb8d82",
+    "docs/render-tcb.md": "5ddb3cd0342ce02e1594fb29ecb072f6e45b8fe4653bb6d71ac1dc8466934067"
   },
   "limits": "Cargo.lock closure over all platforms and optional paths, so wider than any one build; a listed crate is trusted, not verified",
   "direct": [
@@ -56,6 +56,6 @@
     "keyboard-types": "0.8.3",
     "rustc-hash": "2.1.3"
   },
-  "closure_count": 337,
-  "closure_sha256": "492f85ab600ab2ad24db2743cbb99534e6986ce27f6c6b97af21bc6c025477e8"
+  "closure_count": 338,
+  "closure_sha256": "c7101c226f002ae54295174ca3ee8a295df0e0cffb19c18f7fad1720ff4515c7"
 }

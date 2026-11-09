@@ -14,7 +14,7 @@ use std::sync::Arc;
 
 use jasper_ui_engine::backend::HeadlessBackend;
 use jasper_ui_engine::desktop::{rgba_to_u32, DesktopInput};
-use jasper_ui_engine::input::{InputEvent, KeyPhase, PointerPhase};
+use jasper_ui_engine::input::{InputEvent, KeyPhase, PointerMotionCoalescer, PointerPhase};
 use jasper_ui_engine::native::host::{
     HostRenderer, SurfaceState, TextDisplayView, UiCompositionToken, UiInputBinding,
     UiInputContext, UiInputTicket,
@@ -26,8 +26,14 @@ use jasper_ui_engine::style::{Color, FlexDirection, FontStyle, Length, Style};
 use softbuffer::{Context, Surface};
 use winit::application::ApplicationHandler;
 use winit::event::WindowEvent;
-use winit::event_loop::{ActiveEventLoop, EventLoop};
+use winit::event_loop::{ActiveEventLoop, EventLoop, EventLoopProxy};
 use winit::window::{Window, WindowId};
+
+#[cfg(feature = "desktop-accessibility")]
+type AppEvent = accesskit_winit::Event;
+#[cfg(not(feature = "desktop-accessibility"))]
+#[derive(Debug)]
+enum AppEvent {}
 
 const SCENE_OWNER: u64 = 10;
 const TEXT_OWNER: u64 = 20;
@@ -36,6 +42,8 @@ const BUTTON: NodeId = NodeId(2);
 const TEXT_TARGET: NodeId = NodeId(9);
 
 struct App {
+    #[allow(dead_code)]
+    event_proxy: EventLoopProxy<AppEvent>,
     window: Option<Arc<Window>>,
     surface: Option<Surface<Arc<Window>, Arc<Window>>>,
     engine: HostRenderer,
@@ -44,6 +52,9 @@ struct App {
     backend: HeadlessBackend,
     scene: Scene,
     input: DesktopInput,
+    motion: PointerMotionCoalescer,
+    #[cfg(feature = "desktop-accessibility")]
+    accessibility: Option<accesskit_winit::Adapter>,
     text: TextDisplayView,
     text_binding: UiInputBinding,
     text_context: UiInputContext,
@@ -111,6 +122,7 @@ impl App {
         once: bool,
         exit_after_activation: bool,
         font: &[u8],
+        event_proxy: EventLoopProxy<AppEvent>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let source = scene();
         let mut engine = HostRenderer::new(SCENE_OWNER, &source, font, 640, 360)
@@ -146,6 +158,7 @@ impl App {
         }
 
         Ok(Self {
+            event_proxy,
             window: None,
             surface: None,
             engine,
@@ -154,6 +167,9 @@ impl App {
             backend: HeadlessBackend::new(1, 1),
             scene: source,
             input: DesktopInput::new(),
+            motion: PointerMotionCoalescer::new(),
+            #[cfg(feature = "desktop-accessibility")]
+            accessibility: None,
             text,
             text_binding,
             text_context: context,
@@ -509,6 +525,35 @@ impl App {
         Ok(())
     }
 
+    fn dispatch_inputs(
+        &mut self,
+        inputs: Vec<InputEvent>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        for input in inputs {
+            self.dispatch_input(input)?;
+        }
+        Ok(())
+    }
+
+    #[cfg(feature = "desktop-accessibility")]
+    fn update_accessibility(&mut self) {
+        let Some(adapter) = self.accessibility.as_mut() else {
+            return;
+        };
+        let Some(tree) =
+            self.engine
+                .accessibility_tree(SCENE_OWNER, self.scene.version(), self.generation)
+        else {
+            return;
+        };
+        let Some(update) =
+            tree.to_accesskit(jasper_ui_engine::native::host::accesskit::Affine::IDENTITY)
+        else {
+            return;
+        };
+        adapter.update_if_active(|| update);
+    }
+
     fn shutdown(&mut self) {
         if self.closed {
             return;
@@ -533,14 +578,30 @@ impl App {
     }
 }
 
-impl ApplicationHandler for App {
+impl ApplicationHandler<AppEvent> for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         if self.window.is_some() || self.closed {
             return;
         }
         let result = (|| -> Result<(), Box<dyn std::error::Error>> {
-            let attributes = Window::default_attributes().with_title("Jasper UI Engine");
+            #[allow(unused_mut)]
+            let mut attributes = Window::default_attributes().with_title("Jasper UI Engine");
+            #[cfg(feature = "desktop-accessibility")]
+            {
+                // AccessKit requires the platform adapter to exist before first visibility.
+                // AccessKit 要求平台适配器在窗口首次可见前建立。
+                attributes = attributes.with_visible(false);
+            }
             let window = Arc::new(event_loop.create_window(attributes)?);
+            #[cfg(feature = "desktop-accessibility")]
+            {
+                self.accessibility = Some(accesskit_winit::Adapter::with_event_loop_proxy(
+                    event_loop,
+                    &window,
+                    self.event_proxy.clone(),
+                ));
+                window.set_visible(true);
+            }
             let size = window.inner_size();
             let scale = window.scale_factor() as f32;
             let state = self
@@ -569,6 +630,8 @@ impl ApplicationHandler for App {
             self.restore_text_focus()?;
             self.window = Some(window.clone());
             self.surface = Some(surface);
+            #[cfg(feature = "desktop-accessibility")]
+            self.update_accessibility();
             window.request_redraw();
             Ok(())
         })();
@@ -596,6 +659,10 @@ impl ApplicationHandler for App {
         self.viewport = None;
         self.surface = None;
         self.window = None;
+        #[cfg(feature = "desktop-accessibility")]
+        {
+            self.accessibility = None;
+        }
     }
 
     fn window_event(
@@ -607,12 +674,25 @@ impl ApplicationHandler for App {
         if self.window.as_ref().map(|window| window.id()) != Some(window_id) {
             return;
         }
+        #[cfg(feature = "desktop-accessibility")]
+        if let (Some(adapter), Some(window)) = (self.accessibility.as_mut(), self.window.as_ref()) {
+            adapter.process_event(window, &event);
+        }
         match event {
             WindowEvent::CloseRequested => {
                 self.shutdown();
                 event_loop.exit();
             }
             WindowEvent::RedrawRequested => {
+                #[cfg(feature = "desktop-accessibility")]
+                self.update_accessibility();
+                let pending_motion = self.motion.flush();
+                if let Err(error) = self.dispatch_inputs(pending_motion) {
+                    self.presentation_error = Some(error.to_string());
+                    eprintln!("input failed: {error}");
+                    event_loop.exit();
+                    return;
+                }
                 if let Err(error) = self.render() {
                     self.presentation_error = Some(error.to_string());
                     eprintln!("presentation failed: {error}");
@@ -633,18 +713,66 @@ impl ApplicationHandler for App {
                 if inputs.is_empty() {
                     return;
                 }
+                let mut ready = Vec::new();
                 for input in inputs {
-                    if let Err(error) = self.dispatch_input(input) {
-                        self.presentation_error = Some(error.to_string());
-                        eprintln!("input failed: {error}");
-                        event_loop.exit();
-                        return;
-                    }
+                    ready.extend(self.motion.push(input));
+                }
+                if let Err(error) = self.dispatch_inputs(ready) {
+                    self.presentation_error = Some(error.to_string());
+                    eprintln!("input failed: {error}");
+                    event_loop.exit();
+                    return;
                 }
                 if let Some(window) = &self.window {
                     window.request_redraw();
                 }
             }
+        }
+    }
+
+    fn user_event(&mut self, event_loop: &ActiveEventLoop, event: AppEvent) {
+        #[cfg(feature = "desktop-accessibility")]
+        {
+            if self.window.as_ref().map(|window| window.id()) != Some(event.window_id) {
+                return;
+            }
+            match event.window_event {
+                accesskit_winit::WindowEvent::InitialTreeRequested => {
+                    self.update_accessibility();
+                }
+                accesskit_winit::WindowEvent::ActionRequested(request) => {
+                    let mut activated = false;
+                    let admitted = self.engine.accesskit_action(
+                        SCENE_OWNER,
+                        self.scene.version(),
+                        self.generation,
+                        &request,
+                        &mut |_| {},
+                        &mut |_| activated = true,
+                    );
+                    if admitted {
+                        self.update_accessibility();
+                    }
+                    if activated {
+                        if let Err(error) = self.apply_visual_switch() {
+                            self.presentation_error = Some(error.to_string());
+                            event_loop.exit();
+                            return;
+                        }
+                    }
+                    if admitted {
+                        if let Some(window) = &self.window {
+                            window.request_redraw();
+                        }
+                    }
+                }
+                accesskit_winit::WindowEvent::AccessibilityDeactivated => {}
+            }
+        }
+        #[cfg(not(feature = "desktop-accessibility"))]
+        {
+            let _ = event_loop;
+            match event {}
         }
     }
 }
@@ -662,8 +790,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err("expected FONT [--once|--once-after-activation]".into());
     }
     let font = std::fs::read(font_path)?;
-    let event_loop = EventLoop::new()?;
-    let mut app = App::new(once, exit_after_activation, &font)?;
+    let event_loop = EventLoop::<AppEvent>::with_user_event().build()?;
+    let event_proxy = event_loop.create_proxy();
+    let mut app = App::new(once, exit_after_activation, &font, event_proxy)?;
     let result = event_loop.run_app(&mut app);
     app.shutdown();
     result?;

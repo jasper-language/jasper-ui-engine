@@ -56,9 +56,10 @@ pub(crate) struct CompiledFeatures {
 
 impl HostCapabilityMatrix {
     /// The claims for one feature combination. A feature only moves a claim between gated and
-    /// native; nothing a build cannot show (hardware, device loss, the system host) depends on it.
-    /// 一种 feature 组合对应的声明。feature 只让声明在门控与原生之间移动；构建无法证明的项
-    /// （硬件、设备丢失、系统宿主）不依赖它。
+    /// native; device-loss support follows the GPU feature, while hardware acceptance and the
+    /// system host remain fixed claims.
+    /// 一种 feature 组合对应的声明。feature 只让声明在门控与原生之间移动；设备丢失契约随
+    /// GPU feature 切换，硬件验收和系统宿主则是固定声明。
     pub(crate) const fn for_features(features: CompiledFeatures) -> (result: Self)
         ensures
             result.cpu_rgba8_surface == capability_gated(features.cpu_surface),
@@ -69,7 +70,7 @@ impl HostCapabilityMatrix {
             result.gpu_surface_acquire_and_configure == CapabilityStatus::HostOwned,
             result.gpu_present == CapabilityStatus::HostOwned,
             result.gpu_hardware_present == CapabilityStatus::Unverified,
-            result.gpu_device_loss_recovery == CapabilityStatus::Unsupported,
+            result.gpu_device_loss_recovery == capability_gated(features.gpu_texture),
             result.host_vsync == CapabilityStatus::HostOwned,
             result.jasper_os_host_integration == CapabilityStatus::Unsupported,
     {
@@ -95,7 +96,11 @@ impl HostCapabilityMatrix {
             gpu_surface_acquire_and_configure: CapabilityStatus::HostOwned,
             gpu_present: CapabilityStatus::HostOwned,
             gpu_hardware_present: CapabilityStatus::NativeContract,
-            gpu_device_loss_recovery: CapabilityStatus::Unsupported,
+            gpu_device_loss_recovery: if features.gpu_texture {
+                CapabilityStatus::NativeContract
+            } else {
+                CapabilityStatus::FeatureGated
+            },
             host_vsync: CapabilityStatus::HostOwned,
             jasper_os_host_integration: CapabilityStatus::Unsupported,
         }

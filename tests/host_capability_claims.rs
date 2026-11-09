@@ -44,7 +44,7 @@ fn claims_a_build_cannot_show_stay_fixed() {
     assert_eq!(matrix.gpu_hardware_present, CapabilityStatus::Unverified);
     assert_eq!(
         matrix.gpu_device_loss_recovery,
-        CapabilityStatus::Unsupported
+        gated(cfg!(feature = "gpu-pending"))
     );
     assert_eq!(
         matrix.jasper_os_host_integration,

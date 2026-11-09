@@ -2,6 +2,11 @@
 
 目标：像 Windows 的“图形设置”一样，**每个应用可以自己选 GPU**，并且能在运行时切换。
 
+宿主设备丢失契约：`GpuRenderer::set_device_lost_callback` 把 wgpu 的真实
+`DeviceLostReason` 交给宿主。宿主必须先 suspend 引擎视图，再释放旧 Surface/device/
+renderer，重建后调用 `resume` 并重绘。`examples/gpu_window --exercise-device-loss`
+执行同一宿主恢复路径；驱动诱发的真实丢失仍需各平台设备验证。
+
 ## 用户可见选项
 
 | 选项 | 含义 |

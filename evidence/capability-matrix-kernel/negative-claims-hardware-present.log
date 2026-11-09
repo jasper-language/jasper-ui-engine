@@ -1,17 +1,17 @@
 verification results:: 3 verified, 1 errors
 error: postcondition not satisfied
-   --> <repo>/evidence/capability-matrix-kernel/negative_claims_hardware_present.rs:71:13
+   --> <repo>/evidence/capability-matrix-kernel/negative_claims_hardware_present.rs:72:13
     |
- 71 |               result.gpu_hardware_present == CapabilityStatus::Unverified,
+ 72 |               result.gpu_hardware_present == CapabilityStatus::Unverified,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
 ...
- 81 | /         Self {
- 82 | |             cpu_rgba8_surface: if features.cpu_surface {
- 83 | |                 CapabilityStatus::NativeContract
- 84 | |             } else {
+ 82 | /         Self {
+ 83 | |             cpu_rgba8_surface: if features.cpu_surface {
+ 84 | |                 CapabilityStatus::NativeContract
+ 85 | |             } else {
 ...   |
-100 | |             jasper_os_host_integration: CapabilityStatus::Unsupported,
-101 | |         }
+105 | |             jasper_os_host_integration: CapabilityStatus::Unsupported,
+106 | |         }
     | |_________- at the end of the function body
 
 error: aborting due to 1 previous error

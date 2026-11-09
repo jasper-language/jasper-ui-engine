@@ -27,6 +27,8 @@
 | [verification.md](verification.md) | 数学证明硬门槛、性质登记、执行与信任边界 |
 | [batch-boundaries.md](batch-boundaries.md) | 语义更新/绘制/传输及内置/自带宿主边界 |
 | [host-rendering.md](host-rendering.md) | Surface 代数、DPI/尺寸、暂停/恢复/退休、GPU TextureView/present 与能力矩阵 |
+| [platform-hosts.md](platform-hosts.md) | 跨平台宿主责任、Linux/Windows/macOS/移动端与 jasper-os 边界 |
+| [android.md](android.md) | Android NativeActivity、GPU Surface、触摸与前后台生命周期 |
 | [render-tcb.md](render-tcb.md) | 渲染路径第三方信任边界登记、设备丢失现状与能力矩阵的绑定 |
 | [size.md](size.md) | release 体积基线（rlib / 示例 / strip） |
 

@@ -28,6 +28,14 @@ pub enum GpuFrameError {
     Readback(String),
 }
 
+/// Device-loss notification delivered by the host-owned wgpu device.
+/// 宿主持有的 wgpu 设备发出的设备丢失通知。
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GpuDeviceLost {
+    pub reason: wgpu::DeviceLostReason,
+    pub message: String,
+}
+
 const TARGET_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm;
 
 struct Target {
@@ -100,6 +108,18 @@ impl GpuRenderer {
     pub fn adapter_info(&self) -> (String, String) {
         let info = self.device.adapter.get_info();
         (info.name, format!("{:?}", info.backend))
+    }
+
+    /// Register the host callback for a lost device. The host must recreate the device, Surface
+    /// and renderer before drawing again; the engine view remains alive and dirty.
+    /// 注册宿主设备丢失回调；宿主必须重建设备、Surface 与渲染器后才能继续绘制，引擎视图
+    /// 保持存活且待重绘。
+    pub fn set_device_lost_callback(&self, callback: impl Fn(GpuDeviceLost) + Send + 'static) {
+        self.device
+            .device
+            .set_device_lost_callback(move |reason, message| {
+                callback(GpuDeviceLost { reason, message });
+            });
     }
     /// Paint `draw` into a fresh scene of `width`×`height`, render it and read it back.
     /// Callers admit the extent; dimensions above the device texture limit are rejected.
@@ -382,4 +402,52 @@ fn read_back(
         ));
     }
     Ok(pixels)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::mpsc;
+    use std::time::Duration;
+
+    #[test]
+    fn device_destroy_notifies_the_host_once() {
+        let gpu = match GpuRenderer::new_headless() {
+            Ok(gpu) => gpu,
+            Err(error) => {
+                eprintln!("GPU unavailable; device-loss callback test skipped: {error:?}");
+                return;
+            }
+        };
+        let (sender, receiver) = mpsc::sync_channel(1);
+        gpu.set_device_lost_callback(move |loss| {
+            let _ = sender.try_send(loss);
+        });
+        let GpuRenderer {
+            device,
+            renderer,
+            target,
+            images,
+            textures,
+        } = gpu;
+        drop((renderer, target, images, textures));
+        let DeviceHandle {
+            instance,
+            adapter,
+            device,
+            queue,
+        } = device;
+        device.destroy();
+        let _ = device.poll(wgpu::PollType::wait_indefinitely());
+        // Drop every remaining backend owner so the destroyed device can enqueue its callback.
+        // 释放全部后端所有者，使已销毁设备能够提交回调。
+        drop(queue);
+        drop(device);
+        drop(adapter);
+        drop(instance);
+        let loss = receiver
+            .recv_timeout(Duration::from_secs(10))
+            .expect("device destruction must notify the host");
+        assert_eq!(loss.reason, wgpu::DeviceLostReason::Destroyed);
+    }
 }

@@ -42,6 +42,7 @@ pub mod graphics;
 pub mod handle;
 pub mod hit_test;
 pub mod host_capabilities;
+pub mod host_transport;
 pub mod input;
 pub mod input_identity;
 pub mod keyboard;
@@ -49,6 +50,7 @@ pub mod layout;
 mod legacy_engine;
 pub mod paint;
 pub mod platform;
+pub mod platform_input;
 pub mod pointer;
 pub mod raster;
 pub mod resource;
@@ -88,10 +90,14 @@ pub use graphics::{
     SelectionFallback,
 };
 pub use hit_test::{hit_test as hit_test_at, hit_test_path};
-pub use input::{InputEvent, PointerEvent, PointerKind, PointerPhase, PointerTracker};
+pub use input::{
+    InputEvent, PointerEvent, PointerKind, PointerMotionCoalescer, PointerMotionPredictor,
+    PointerPhase, PointerTracker,
+};
 pub use keyboard::{CompositionRoute, KeyAction, KeyRoute, KeyboardRouter, TextRoute};
 pub use layout::{LayoutBox, LayoutEngine, LayoutError, LayoutTree, TaffyLayoutEngine};
 pub use paint::{paint, DisplayList, PaintOp};
+pub use platform_input::{normalize_pointer, RawPointerError, RawPointerSample};
 pub use pointer::{HoverChange, HoverTracker, PointerRoute, PointerRouter};
 pub use scene::{Node, NodeId, NodeKind, Scene, SceneError, ScenePatch};
 pub use scroll::{

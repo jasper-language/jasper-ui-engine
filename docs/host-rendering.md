@@ -33,8 +33,8 @@ UI-HOST-CAPABILITY-MATRIX-001，第三方边界见 `render-tcb.md`。
 | GPU TextureView 绘制 | `gpu-pending` 下原生契约 |
 | GPU Surface 获取/配置 | 宿主 |
 | GPU present | 宿主 |
-| 硬件 GPU 呈现 | 未验收 |
-| GPU device-loss 恢复 | 未提供 |
+| 硬件 GPU 呈现 | Ubuntu RTX 3060 Vulkan 已实测；其他平台未验收 |
+| GPU device-loss 恢复 | 引擎报告 callback，宿主重建 device/Surface/renderer；硬件演练已通过，驱动诱发丢失未实测 |
 | vsync | 宿主 |
 | jasper-os 宿主接入 | 未提供 |
 
@@ -43,7 +43,13 @@ UI-HOST-CAPABILITY-MATRIX-001，第三方边界见 `render-tcb.md`。
 - Xvfb X11 + softbuffer：CPU 窗口一帧，初始 800×600 与重配后 640×360 截图像素已核对。
 - Xvfb X11 + llvmpipe Vulkan：宿主创建 Surface/device/queue，Engine 绘制宿主持有的交换纹理，
   宿主 present 后正常退出。
+- Ubuntu Wayland + NVIDIA RTX 3060 Vulkan：`Bgra8UnormSrgb`/`Fifo` 完成硬件呈现，
+  `--exercise-device-loss` 经恢复生命周期创建第二代 device/Surface/renderer 并再次呈现。
 - 二者都不是硬件 GPU、系统合成器、真实休眠恢复、vsync 或 jasper-os 支持证据。
+
+`JASPER_UI_PRESENT_MODE` 可选择 `fifo`（默认）、`mailbox`、`immediate`、
+`auto-vsync` 或 `auto-no-vsync`；平台不支持时回退 `Fifo`。present mode 选择不等于
+测得真实 vblank 截止时间。
 
 证据入口：`evidence/native-host-render-lifecycle/report.json`、
 `evidence/window-xvfb-presentation/report.json`。

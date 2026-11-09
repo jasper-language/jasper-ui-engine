@@ -20,6 +20,13 @@
 - `RenderBackend` 可以先用软件光栅（本仓库的 `HeadlessBackend` 是参考实现），后续接系统合成器/GPU。
 - 不需要链接 winit/wgpu；`PlatformHost`/`RenderBackend` 由系统宿主实现。
 - 触摸/触控笔事件在系统入口规范化成 `PointerEvent`，不要退化成鼠标事件。
+- 传输队列可用 `host_transport::HostInbox` 约束会话/重连 epoch、精确序号与有界背压。
+  拒绝会返还原载荷；满队列、错会话、序号缺口和关闭状态不会被静默丢弃。该队列不实现
+  IPC、认证或平台调用，真实系统通道仍由宿主提供。
+- 可运行参考：
+  `cargo run --locked --features native-engine-cpu --example host_loopback -- FONT OUTPUT.ppm`
+  通过有界 inbox 接收场景更新、CPU 帧和退休命令，不链接 winit/wgpu。它用于验证内置宿主
+  的消费顺序与 Surface 生命周期，不冒充 jasper-os 的 IPC 或系统合成器。
 
 ## 3. 当前可直接用的部分
 

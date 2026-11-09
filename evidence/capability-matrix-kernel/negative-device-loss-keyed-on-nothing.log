@@ -1,0 +1,13 @@
+error: unexpected closing delimiter: `}`
+   --> <repo>/evidence/capability-matrix-kernel/negative_device_loss_keyed_on_nothing.rs:109:1
+    |
+  2 | verus! {
+    |        - this opening brace...
+...
+107 | }
+    | - ...matches this closing brace
+108 |
+109 | }
+    | ^ unexpected closing delimiter
+
+error: aborting due to 1 previous error

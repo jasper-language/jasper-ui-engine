@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "kind": "android-reference-host",
+  "date": "2026-11-09",
+  "status": "functional_reference_host_passed",
+  "device": {
+    "serial": "dbaccec1",
+    "model": "C66",
+    "android": "11",
+    "abi": "arm64-v8a",
+    "content_size_portrait": "720x1344"
+  },
+  "build": {
+    "target": "aarch64-linux-android",
+    "ndk": "27.2.12479018",
+    "android_platform": "35",
+    "build_tools": "35.0.0",
+    "min_sdk": 24,
+    "target_sdk": 35,
+    "activity": "android.app.NativeActivity",
+    "surface_backend": "wgpu GLES",
+    "apk_signature": ["v2", "v3"],
+    "apk_size_bytes": 19005880,
+    "apk_sha256": "2373cfd15494e6357ce077f96fe55aa89f84c482b3204e17a3729b9c3e3b3205"
+  },
+  "checks": [
+    {
+      "name": "launch_and_gpu_frame",
+      "result": "passed",
+      "log": "android_main entered; event loop built; native scene ready; wgpu GLES adapter; 720x1344 content size"
+    },
+    {
+      "name": "full_screen_layout",
+      "result": "passed",
+      "detail": "Root scene filled 720x1344 content area after DPI/content-size synchronization."
+    },
+    {
+      "name": "touch_activation",
+      "result": "passed",
+      "detail": "adb tap at 360,720 produced tap activation=1 and a versioned style patch; button changed green to orange."
+    },
+    {
+      "name": "background_foreground_lifecycle",
+      "result": "passed",
+      "detail": "KEYCODE_HOME produced suspend generation 3; Engine returned generation 4. Foreground resumed from Suspended at generation 4 and restored the orange scene without restart."
+    },
+    {
+      "name": "rotation_relayout",
+      "result": "passed",
+      "detail": "Temporary landscape rotation produced a full-width 180 logical-pixel button and preserved scene state; rotation settings were restored afterward."
+    }
+  ],
+  "screenshots": {
+    "portrait": {
+      "path": "portrait.png",
+      "sha256": "29cc81bbbc70e3c5f60f1ae0828b11d11a376a31927f8f3c2f8a6effdd3b99a5"
+    },
+    "portrait_tapped": {
+      "path": "portrait-tapped.png",
+      "sha256": "e8a54c97a77b6957450cf1cb2884177ff8baf3de12801fe3e355e6ec0c72662a"
+    },
+    "resumed": {
+      "path": "resumed.png",
+      "sha256": "e8a54c97a77b6957450cf1cb2884177ff8baf3de12801fe3e355e6ec0c72662a",
+      "note": "Identical to portrait_tapped, confirming the style state survived background/foreground recreation."
+    },
+    "landscape": {
+      "path": "landscape.png",
+      "sha256": "ffd62583d7b6d8cd119e4e99bc5f544f6da65912b60200496aa07cda3b4f249d"
+    }
+  },
+  "cross_platform_boundary": {
+    "engine": "Default engine core remains Android-independent.",
+    "host": "Android NativeActivity code lives under android/ and is a cdylib host.",
+    "input": "winit Touch is normalized by DesktopInput and routed through Engine::pointer.",
+    "font": "DejaVu Sans is embedded as an explicit host-injected font resource."
+  },
+  "limits": [
+    "Only arm64-v8a Android 11 model C66 was exercised.",
+    "No live Android IME or system accessibility service is connected yet.",
+    "No Android multi-window/split-screen, low-memory process recreation or process-isolation matrix was run.",
+    "The hardware GPU is the device's GLES-backed wgpu adapter; no vendor-specific device-loss drill was run on Android."
+  ],
+  "sources": {
+    "android/Cargo.toml": "af00540e05a03c29de33996da1f0e6c09965113c48eb220f2c8fc1f0ec1257fc",
+    "android/Cargo.lock": "c1aa5918dd91145434a8636d107fe27e05ae10c6bf2442dcda13323dd3f4e5a3",
+    "android/AndroidManifest.xml": "5510dea809e9b9a645bb0d859aa2c7ad28bfb41cb6491e3d936ae817b3ed9d86",
+    "android/src/lib.rs": "65060754bfa1bee16e5dce0829956da2efa0682ceb793988e87d842815f8c51a",
+    "android/build-apk.sh": "713d7a734a69dd9fed0aaeb562cfedbbc805130e8615a40d5377253582509a3f"
+  }
+}

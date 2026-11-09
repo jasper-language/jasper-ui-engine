@@ -191,6 +191,136 @@ pub enum InputEvent {
 }
 // END VERIFIED NORMALIZED INPUT TYPE
 
+/// Bounded per-frame pointer-motion coalescer used by platform event loops.
+/// 平台事件循环使用的单帧有界指针移动合并器。
+///
+/// Only consecutive move/hover samples from the same pointer are merged. Button, touch
+/// begin/end/cancel, wheel, keyboard, text and focus events flush the pending sample before
+/// they are returned, so ordering and lifecycle transitions are never dropped.
+/// 只合并同一指针连续的 Move/Hover；按键、触控开始/结束/取消、滚轮、键盘、文本和焦点事件
+/// 都会先冲刷待处理样本，因此顺序和生命周期转换不会被丢弃。
+#[derive(Clone, Debug, Default)]
+pub struct PointerMotionCoalescer {
+    pending: Option<PointerEvent>,
+}
+
+impl PointerMotionCoalescer {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Add one event and return events ready for the UI queue.
+    /// 添加一个事件，返回可送入 UI 队列的事件。
+    ///
+    /// The final pending motion is returned by [`Self::flush`] at the frame boundary.
+    /// 最后一个待处理移动样本由帧边界调用 [`Self::flush`] 返回。
+    pub fn push(&mut self, event: InputEvent) -> Vec<InputEvent> {
+        let InputEvent::Pointer(sample) = event else {
+            return self.flush_then(event);
+        };
+        if !matches!(sample.phase, PointerPhase::Move | PointerPhase::Hover) {
+            return self.flush_then(InputEvent::Pointer(sample));
+        }
+        let replace = self.pending.as_ref().is_some_and(|pending| {
+            pending.pointer_id == sample.pointer_id && pending.kind == sample.kind
+        });
+        if replace {
+            // The newest sample already contains every field the platform can observe.
+            // 最新样本已包含平台当前可观察的全部字段，因此直接替换旧样本。
+            self.pending = Some(sample);
+            return Vec::new();
+        }
+        let mut output = self.flush();
+        self.pending = Some(sample);
+        output.shrink_to_fit();
+        output
+    }
+
+    /// Return and clear the final pending motion sample.
+    /// 返回并清除最后一个待处理移动样本。
+    pub fn flush(&mut self) -> Vec<InputEvent> {
+        self.pending
+            .take()
+            .map(InputEvent::Pointer)
+            .into_iter()
+            .collect()
+    }
+
+    fn flush_then(&mut self, event: InputEvent) -> Vec<InputEvent> {
+        let mut output = self.flush();
+        output.push(event);
+        output
+    }
+}
+
+/// Linear short-horizon pointer predictor over host timestamps.
+/// 基于宿主时间戳的线性短时指针预测器。
+///
+/// Prediction is advisory and never replaces an authoritative sample. A platform adapter should
+/// pass only movement-derived positions into presentation, then reconcile with the next real
+/// Move/Hover sample. Different pointer identities and lifecycle events reset the history.
+/// 预测仅作提示，不能替代权威样本；平台适配器只能用于呈现，并须在下一真实 Move/Hover 到达时
+/// 校正。不同指针身份及生命周期事件会清空历史。
+#[derive(Clone, Debug, Default)]
+pub struct PointerMotionPredictor {
+    last: Option<PointerEvent>,
+    velocity_per_millisecond: Point,
+}
+
+impl PointerMotionPredictor {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Observe an authoritative sample. Only same-pointer Move/Hover contributes velocity.
+    /// 观察权威样本；只有同一指针的 Move/Hover 参与速度计算。
+    pub fn observe(&mut self, event: &PointerEvent) {
+        if !matches!(event.phase, PointerPhase::Move | PointerPhase::Hover) {
+            self.reset();
+            return;
+        }
+        if let Some(previous) = self.last.as_ref() {
+            if previous.pointer_id == event.pointer_id
+                && previous.kind == event.kind
+                && event.timestamp_millis > previous.timestamp_millis
+            {
+                let elapsed = (event.timestamp_millis - previous.timestamp_millis) as f32;
+                self.velocity_per_millisecond = Point::new(
+                    (event.position.x - previous.position.x) / elapsed,
+                    (event.position.y - previous.position.y) / elapsed,
+                );
+            } else {
+                self.velocity_per_millisecond = Point::ZERO;
+            }
+        } else {
+            self.velocity_per_millisecond = Point::ZERO;
+        }
+        self.last = Some(event.clone());
+    }
+
+    /// Return an advisory copy of the latest sample projected by `horizon_millis`.
+    /// 返回最新样本按 `horizon_millis` 外推得到的提示副本。
+    pub fn predict(&self, horizon_millis: u64) -> Option<PointerEvent> {
+        let mut predicted = self.last.clone()?;
+        let horizon = horizon_millis as f32;
+        predicted.position = Point::new(
+            predicted.position.x + self.velocity_per_millisecond.x * horizon,
+            predicted.position.y + self.velocity_per_millisecond.y * horizon,
+        );
+        predicted.timestamp_millis = predicted.timestamp_millis.saturating_add(horizon_millis);
+        Some(predicted)
+    }
+
+    pub fn velocity_per_millisecond(&self) -> Point {
+        self.velocity_per_millisecond
+    }
+
+    pub fn reset(&mut self) {
+        self.last = None;
+        self.velocity_per_millisecond = Point::ZERO;
+    }
+}
+
 /// Active pointer tracking for multi-touch and multi-pen input.
 // BEGIN VERIFIED POINTER TRACKER TYPE
 #[derive(Clone, Debug, Default)]
@@ -300,5 +430,89 @@ mod tests {
             tracker.track(pointer(9, PointerPhase::Up, PointerKind::Touch)),
             Err(InputError::UnknownPointer(PointerId(9)))
         );
+    }
+
+    fn touch_pointer(id: u64, phase: PointerPhase) -> PointerEvent {
+        PointerEvent {
+            pointer_id: PointerId(id),
+            kind: PointerKind::Touch,
+            phase,
+            position: Point::new(id as f32, 0.0),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn coalescer_keeps_lifecycle_events_and_latest_motion_per_pointer() {
+        let mut coalescer = PointerMotionCoalescer::new();
+        let down = InputEvent::Pointer(touch_pointer(1, PointerPhase::Down));
+        assert_eq!(coalescer.push(down.clone()), vec![down]);
+
+        let mut first = touch_pointer(1, PointerPhase::Move);
+        first.position = Point::new(10.0, 20.0);
+        let mut second = touch_pointer(1, PointerPhase::Move);
+        second.position = Point::new(30.0, 40.0);
+        assert!(coalescer.push(InputEvent::Pointer(first)).is_empty());
+        assert!(coalescer
+            .push(InputEvent::Pointer(second.clone()))
+            .is_empty());
+
+        let up = InputEvent::Pointer(touch_pointer(1, PointerPhase::Up));
+        assert_eq!(
+            coalescer.push(up.clone()),
+            vec![InputEvent::Pointer(second), up]
+        );
+        assert!(coalescer.flush().is_empty());
+    }
+
+    #[test]
+    fn coalescer_flushes_before_non_pointer_and_separates_pointer_identities() {
+        let mut coalescer = PointerMotionCoalescer::new();
+        let mut one = touch_pointer(1, PointerPhase::Move);
+        one.position = Point::new(1.0, 2.0);
+        let mut two = touch_pointer(2, PointerPhase::Move);
+        two.position = Point::new(3.0, 4.0);
+        assert!(coalescer.push(InputEvent::Pointer(one.clone())).is_empty());
+        assert_eq!(
+            coalescer.push(InputEvent::Pointer(two.clone())),
+            vec![InputEvent::Pointer(one)]
+        );
+        assert_eq!(
+            coalescer.push(InputEvent::Text("kept".into())),
+            vec![InputEvent::Pointer(two), InputEvent::Text("kept".into())]
+        );
+    }
+
+    #[test]
+    fn predictor_uses_same_pointer_velocity_and_resets_on_lifecycle() {
+        let mut predictor = PointerMotionPredictor::new();
+        let mut first = touch_pointer(1, PointerPhase::Move);
+        first.position = Point::new(10.0, 20.0);
+        first.timestamp_millis = 100;
+        predictor.observe(&first);
+        assert_eq!(predictor.predict(8).unwrap().position, first.position);
+
+        let mut second = touch_pointer(1, PointerPhase::Move);
+        second.position = Point::new(30.0, 40.0);
+        second.timestamp_millis = 110;
+        predictor.observe(&second);
+        assert_eq!(predictor.velocity_per_millisecond(), Point::new(2.0, 2.0));
+        let predicted = predictor.predict(5).unwrap();
+        assert_eq!(predicted.position, Point::new(40.0, 50.0));
+        assert_eq!(predicted.timestamp_millis, 115);
+
+        let mut other = touch_pointer(2, PointerPhase::Move);
+        other.position = Point::new(100.0, 100.0);
+        other.timestamp_millis = 120;
+        predictor.observe(&other);
+        assert_eq!(predictor.velocity_per_millisecond(), Point::ZERO);
+        assert_eq!(predictor.predict(5).unwrap().position, other.position);
+
+        let mut foreign = other.clone();
+        foreign.pointer_id = PointerId(1);
+        predictor.observe(&foreign);
+        assert_eq!(predictor.velocity_per_millisecond(), Point::ZERO);
+        predictor.observe(&touch_pointer(1, PointerPhase::Up));
+        assert!(predictor.predict(1).is_none());
     }
 }

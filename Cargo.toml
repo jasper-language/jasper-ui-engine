@@ -52,6 +52,10 @@ rustc-hash = { version = "=2.1.3", optional = true }
 # AccessKit bridge: tree/update conversion and action routing; no platform adapter.
 # AccessKit 桥：树/增量更新转换与动作路由；不含平台适配器。
 accesskit = { version = "=0.25.2", optional = true }
+# Native window accessibility adapters (AT-SPI on Unix, UIA on Windows, Cocoa on macOS,
+# Android/iOS adapters on their targets). This stays outside the host-neutral engine.
+# 原生窗口无障碍适配器；Linux 经 AT-SPI、Windows 经 UIA，并覆盖 macOS/Android/iOS。
+accesskit_winit = { version = "=0.34.2", optional = true }
 # Shared `.jaso` reader of jasper-os, pinned to a commit; the parser is reused, never copied.
 # jasper-os 共用的 `.jaso` 读取器，锁定到提交；复用解析器，不复制。
 jaso = { git = "https://github.com/jasper-language/jasper-os", rev = "0f1e5c1b70dea503bceee33a745c2c6f312a9824", features = ["alloc"], optional = true }
@@ -71,6 +75,12 @@ cpu-pending = ["native-blitz-pending", "dep:blitz-paint", "dep:anyrender", "dep:
 # Native GPU candidate: headless offscreen render + readback; adapter supplied by the platform.
 gpu-pending = ["cpu-pending", "dep:anyrender_vello_hybrid", "dep:vello_gpu", "dep:wgpu_context", "dep:vello_common", "dep:rustc-hash", "dep:wgpu", "dep:pollster"]
 accesskit-pending = ["native-blitz-pending", "dep:accesskit"]
+desktop-accessibility = [
+    "desktop",
+    "native-engine-cpu",
+    "accesskit-pending",
+    "dep:accesskit_winit",
+]
 # Native `ui.*` `.jaso` plugin host; renders through the CPU path only when combined with cpu-pending.
 # 原生 `ui.*` `.jaso` 插件宿主；只有与 cpu-pending 同开才经 CPU 路径参与渲染。
 ui-plugin-pending = ["dep:jaso", "dep:libc"]
@@ -96,6 +106,14 @@ required-features = ["desktop", "native-engine-cpu"]
 [[example]]
 name = "gpu_window"
 required-features = ["desktop", "gpu-pending"]
+
+[[example]]
+name = "multiwindow"
+required-features = ["desktop", "native-engine-cpu"]
+
+[[example]]
+name = "host_loopback"
+required-features = ["native-engine-cpu"]
 
 [dev-dependencies]
 proptest = { version = "=1.12.0", default-features = false, features = ["std"] }

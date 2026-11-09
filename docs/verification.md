@@ -1226,6 +1226,12 @@ Kani 未得出结论的形状（都在链外，已撤下；构建机与其他构
 | 阶段 | 范围 | 结果 |
 |---|---|---|
 | Verus/Z3 | 全部 feature 组合：DPI、字体、生命周期三项恰在 `native_scene` 开启时为原生契约，CPU 恰在 `cpu_surface` 开启时，GPU TextureView 恰在 `gpu_texture` 开启时，否则为门控；Surface 获取、present、vsync 恒为宿主持有，硬件呈现恒为未验收，设备丢失恢复与系统宿主恒为不支持 | 4 verified/0 errors（含依赖）；12 个错误实现全部被拒 |
+
+2026-11-09 更新：GPU device-loss callback 与宿主恢复路径已实现，因此能力矩阵把
+`gpu_device_loss_recovery` 改为随 `gpu_texture` feature 在原生契约/门控之间切换。
+重新验证仍为 4 verified/0 errors，12 个错误实现全部被拒；12 个负控中新增
+`device-loss-keyed-on-the-native-feature`，确认忽略 GPU feature 会被拒绝。
+该证明只覆盖判定表，不证明 wgpu 驱动、真实硬件丢失或其他平台行为。
 | Proptest | N/A：输入域只有三个布尔值。替代证据：两项表测试穷举全部 8 个值，对照与生产分开写出的判定表 | 不计 PASS |
 | Miri | `verification/host-surface` 中同样两项 | 通过（该 crate 共 11 项）；模块没有 unsafe |
 | cargo-fuzz | N/A：没有表测试之外的输入，未增加目标。替代证据同上 | 不计 PASS；链中既有目标无崩溃：`read_boundary` 12600、`batch_decode` 1288428、`ui_plugin_gate` 37958、`host_surface` 103678、`host_coordination` 742250、`host_render` 1163063，各 20 秒，虚拟机与其他任务共用 |

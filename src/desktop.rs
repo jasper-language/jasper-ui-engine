@@ -6,7 +6,7 @@ use std::time::Instant;
 use winit::dpi::PhysicalPosition;
 use winit::event::{
     ElementState, Ime, KeyEvent as WinitKeyEvent, MouseButton as WinitMouseButton,
-    MouseScrollDelta, WindowEvent,
+    MouseScrollDelta, Touch, TouchPhase, WindowEvent,
 };
 use winit::keyboard::{Key, NamedKey};
 
@@ -234,11 +234,55 @@ impl Default for DesktopPointerState {
     }
 }
 
+/// Tracks the first active touch so primary identity stays stable across a sequence.
+/// 跟踪首个活动触控，使主触控身份在同一序列中保持稳定。
+#[derive(Clone, Debug, Default)]
+pub struct DesktopTouchState {
+    // Sorted identities are cheap to scan because a window rarely has many contacts.
+    // 触控身份保持有序；单窗口接触点通常很少，线性扫描足够。
+    active: Vec<u64>,
+    primary: Option<u64>,
+}
+
+impl DesktopTouchState {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Update primary tracking and report whether this sample belongs to the primary touch.
+    /// 更新主触控跟踪，报告该样本是否属于主触控。
+    pub fn transition(&mut self, id: u64, phase: TouchPhase) -> bool {
+        match phase {
+            TouchPhase::Started => {
+                let at = self.active.partition_point(|active| *active < id);
+                if at == self.active.len() || self.active[at] != id {
+                    self.active.insert(at, id);
+                }
+                let was_primary = self.primary == Some(id);
+                if self.primary.is_none() {
+                    self.primary = Some(id);
+                }
+                was_primary || self.primary == Some(id)
+            }
+            TouchPhase::Moved => self.primary == Some(id),
+            TouchPhase::Ended | TouchPhase::Cancelled => {
+                let was_primary = self.primary == Some(id);
+                self.active.retain(|active| *active != id);
+                if was_primary {
+                    self.primary = self.active.first().copied();
+                }
+                was_primary
+            }
+        }
+    }
+}
+
 /// Stateful translator for one desktop window; the clock is read only in `now_millis`.
 /// 单窗口有状态转换器；只有 `now_millis` 读时钟。
 // BEGIN VERIFIED DESKTOP INPUT TYPE
 pub struct DesktopInput {
     pointer: DesktopPointerState,
+    touch: DesktopTouchState,
     start: Instant,
 }
 // END VERIFIED DESKTOP INPUT TYPE
@@ -253,6 +297,7 @@ impl DesktopInput {
     pub fn new() -> Self {
         Self {
             pointer: DesktopPointerState::new(),
+            touch: DesktopTouchState::new(),
             start: Instant::now(),
         }
     }
@@ -288,6 +333,7 @@ impl DesktopInput {
             }
             WindowEvent::KeyboardInput { event, .. } => self.keyboard(event),
             WindowEvent::Ime(ime) => self.ime(ime).into_iter().collect(),
+            WindowEvent::Touch(touch) => vec![InputEvent::Pointer(self.touch(touch))],
             _ => Vec::new(),
         }
     }
@@ -319,6 +365,54 @@ impl DesktopInput {
             }
         };
         ScrollEvent { delta }
+    }
+
+    /// Normalize one winit touch sample without pretending it is a mouse event.
+    /// 规范化单个 winit 触控样本，不把它伪装成鼠标事件。
+    pub fn touch(&mut self, touch: &Touch) -> PointerEvent {
+        let phase = match touch.phase {
+            TouchPhase::Started => PointerPhase::Down,
+            TouchPhase::Moved => PointerPhase::Move,
+            TouchPhase::Ended => PointerPhase::Up,
+            TouchPhase::Cancelled => PointerPhase::Cancel,
+        };
+        let is_primary = self.touch.transition(touch.id, touch.phase);
+        PointerEvent {
+            pointer_id: PointerId(touch.id),
+            kind: PointerKind::Touch,
+            phase,
+            position: Point::new(touch.location.x as f32, touch.location.y as f32),
+            // winit normalizes calibrated and already-normalized force to 0..=1. Reject
+            // non-finite values rather than passing them into layout or gesture code.
+            // winit 把校准/归一化压力归一到 0..=1；非有限值不进入布局或手势层。
+            pressure: touch.force.map_or_else(
+                || {
+                    if matches!(phase, PointerPhase::Down | PointerPhase::Move) {
+                        1.0
+                    } else {
+                        0.0
+                    }
+                },
+                |force| {
+                    let pressure = force.normalized() as f32;
+                    if pressure.is_finite() {
+                        pressure.clamp(0.0, 1.0)
+                    } else if matches!(phase, PointerPhase::Down | PointerPhase::Move) {
+                        1.0
+                    } else {
+                        0.0
+                    }
+                },
+            ),
+            tilt: Point::ZERO,
+            twist: 0.0,
+            contact: Size::ZERO,
+            is_primary,
+            eraser: false,
+            button: None,
+            modifiers: self.pointer.modifiers(),
+            timestamp_millis: self.now_millis(),
+        }
     }
 
     pub fn keyboard(&mut self, event: &WinitKeyEvent) -> Vec<InputEvent> {
@@ -491,6 +585,59 @@ mod tests {
                 cursor: Some((0, 2))
             })
         );
+    }
+
+    #[test]
+    fn touch_identity_phase_and_primary_follow_contact_lifecycle() {
+        use winit::event::{DeviceId, Force, Touch};
+
+        let mut touch = DesktopTouchState::new();
+        assert!(touch.transition(9, TouchPhase::Started));
+        assert!(!touch.transition(4, TouchPhase::Started));
+        assert!(!touch.transition(4, TouchPhase::Moved));
+        assert!(touch.transition(9, TouchPhase::Moved));
+        assert!(touch.transition(9, TouchPhase::Ended));
+        // The remaining contact becomes primary when the first contact leaves.
+        // 首个触点离开后，剩余触点成为主触控。
+        assert!(touch.transition(4, TouchPhase::Cancelled));
+
+        let mut input = DesktopInput::new();
+        let event = input.touch(&Touch {
+            device_id: DeviceId::dummy(),
+            phase: TouchPhase::Started,
+            location: PhysicalPosition::new(12.0, 34.0),
+            force: None,
+            id: 7,
+        });
+        assert_eq!(event.pointer_id, PointerId(7));
+        assert_eq!(event.kind, PointerKind::Touch);
+        assert_eq!(event.phase, PointerPhase::Down);
+        assert_eq!(event.position, Point::new(12.0, 34.0));
+        assert!(event.is_primary);
+        assert!(event.button.is_none());
+
+        let calibrated = input.touch(&Touch {
+            device_id: DeviceId::dummy(),
+            phase: TouchPhase::Moved,
+            location: PhysicalPosition::new(13.0, 35.0),
+            force: Some(Force::Calibrated {
+                force: 0.5,
+                max_possible_force: 2.0,
+                altitude_angle: None,
+            }),
+            id: 8,
+        });
+        assert_eq!(calibrated.pressure, 0.25);
+        assert!(!calibrated.is_primary);
+
+        let clamped = input.touch(&Touch {
+            device_id: DeviceId::dummy(),
+            phase: TouchPhase::Moved,
+            location: PhysicalPosition::new(14.0, 36.0),
+            force: Some(Force::Normalized(2.0)),
+            id: 8,
+        });
+        assert_eq!(clamped.pressure, 1.0);
     }
 
     #[test]

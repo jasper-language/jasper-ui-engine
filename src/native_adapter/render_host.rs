@@ -269,6 +269,24 @@ impl HostRenderer {
         self.inner.accessibility_tree(owner, version)
     }
 
+    /// Route one native accessibility action through the current live surface generation.
+    /// 通过当前活动 Surface 代数路由一个原生无障碍动作。
+    #[cfg(feature = "accesskit-pending")]
+    pub fn accesskit_action(
+        &mut self,
+        owner: u64,
+        version: u64,
+        generation: u64,
+        request: &crate::native::host::accesskit::ActionRequest,
+        focus: &mut impl FnMut(SceneFocusEvent),
+        activation: &mut impl FnMut(crate::native::SceneActivationEvent),
+    ) -> bool {
+        self.surface.render_allowed(owner, generation)
+            && self
+                .inner
+                .accesskit_action(owner, version, request, focus, activation)
+    }
+
     pub fn focus(
         &mut self,
         owner: u64,

@@ -1,20 +1,20 @@
 {
   "property": "UI-HOST-CAPABILITY-MATRIX-001",
   "status": "proved",
-  "scope": "HostCapabilityMatrix::for_features over all feature combinations: each of the five build-dependent claims is native exactly when its own feature is on and gated otherwise; the six others are fixed and never native. Not that the cfg! values reach it, nor that the claimed entries exist, nor any device or platform behaviour",
+  "scope": "HostCapabilityMatrix::for_features over all feature combinations: each of the six build-dependent claims is native exactly when its own feature is on and gated otherwise; the five others are fixed and never native. Not that the cfg! values reach it, nor that the claimed entries exist, nor any device or platform behaviour",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "79a91a99925d848742696adab797dce54d5ffd701f1f8893d00dcada3991b0be",
+  "source_sha256": "446759a2d19f519483d1ef3dd507337ee3b106bbcd77ebb1fd6f5f0b6961d073",
   "sources": {
-    "src/host_capabilities.rs": "79a91a99925d848742696adab797dce54d5ffd701f1f8893d00dcada3991b0be"
+    "src/host_capabilities.rs": "446759a2d19f519483d1ef3dd507337ee3b106bbcd77ebb1fd6f5f0b6961d073"
   },
-  "kernel_sha256": "e3eee5089cb05f2cba8576830afd20f0c112c68a28a73ccfb0c86a3c6987b4ca",
+  "kernel_sha256": "230df32741ba65a2fd9d24f0a2bcb5155471811756e663437faf4638aec1d9a1",
   "dependencies": {
     "capability-status-type": "a06ca2dd7cc0fcf0a2fae6997b7b82045df5aebed0db5aa1950e583fd2da285e",
     "capability-matrix-storage-type": "2adcf6de7704c49f6d693cde88f53cb2dafbaa770639383f2cdec9463461c4fc",
     "capability-features-type": "9ad168b769d89863ca60458dde4ba59b8f01fdf27dbb283716d99e31341c6fa9"
   },
-  "proof_sha256": "ae4775d11c8d1b46edd308be5d0fe78cbce61e986f764aadef3ae0fddd666ed5",
-  "runner_sha256": "9aac303c7b1f05df3ecb673001616a8910a6155452fbb2496f5190611d039d6d",
+  "proof_sha256": "b880efae03edf9f11f986812bf2d65341708125fb66e465426a3b68b2f467f5b",
+  "runner_sha256": "c230b1381803ed5d6cf1760c5a40df70165f493ee52815c7d3e2bf3d00793f94",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "<home>/verus/verus",
@@ -76,7 +76,7 @@
       "exit_code": 1
     },
     {
-      "name": "claims-device-loss-exists",
+      "name": "device-loss-keyed-on-the-native-feature",
       "rejected": true,
       "exit_code": 1
     },

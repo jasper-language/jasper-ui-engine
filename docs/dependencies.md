@@ -13,6 +13,7 @@
 | `wgpu` | 30.0.1 | MIT OR Apache-2.0 | GPU 实例与适配器枚举（可选特性 `gpu`） | 已锁定；`--features gpu` 测试通过 |
 | `pollster` | 0.4.0 | MIT OR Apache-2.0 | 在同步宿主里等待 wgpu 的异步适配器枚举 | 已锁定；随 `gpu` 特性 |
 | `softbuffer` | 0.4.8 | MIT OR Apache-2.0 | 桌面软件帧缓冲呈现（可选特性 `desktop`） | 已锁定；`examples/window -- --once` 实跑通过 |
+| `accesskit_winit` | 0.34.2 | MIT OR Apache-2.0 | 窗口平台无障碍适配器；Linux/AT-SPI、Windows/UIA、macOS、Android、iOS | 已锁定；`desktop-accessibility` 在 Ubuntu Wayland/AT-SPI 实测 |
 
 > `tiny-skia` 是纯 Rust 的 Skia 子集，不引入 C++/系统图形库。BSD-3-Clause 与 Apache-2.0 兼容；已有声明见仓库根目录 `THIRD_PARTY_LICENSES.md`。
 > `cosmic-text` 为可选特性；默认构建仍使用 `SimpleTextEngine` 的近似测量，开启 `real-text` 后由系统字体与真实 shaping 接管。
@@ -25,7 +26,7 @@
 |---|---|---|---|
 | `vello` / `vello_cpu` | GPU/CPU 2D 渲染候选 | 以 crate 为准（通常 Apache-2.0/MIT） | API 成熟度、功能兼容表、回退 |
 | `parley` | 富文本排版/测量 | 以 crate 为准 | 字体回退、CJK/emoji/RTL、线程 |
-| `accesskit` | 原生无障碍桥 | MIT / Apache-2.0 | 平台支持、语义树 |
+| `accesskit` | 原生无障碍桥 | MIT / Apache-2.0 | 已接入固定 0.25.2；平台窗口适配由 `accesskit_winit` 提供 |
 | `jaso`（jasper-os，锁定提交） | `.jaso` 读取、信任、模块表；可选 `ui-plugin-pending` | Apache-2.0 | 格式 beta 期间可能升号 |
 | `libc` | 插件映像 `mmap` / `mprotect`；可选 `ui-plugin-pending` | MIT / Apache-2.0 | 仅 unix |
 | `image` | 位图解码 | MIT / Apache-2.0 | 编码器范围、内存上限 |

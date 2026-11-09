@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "kind": "linux-reference-host",
+  "date": "2026-11-09",
+  "status": "functional_reference_host_passed",
+  "scope": "Ubuntu Wayland reference host for host-neutral pointer coalescing/prediction, touch force normalization, bounded built-in-host transport, independent multi-window ownership, hardware GPU presentation/device-loss recovery and the AccessKit AT-SPI adapter",
+  "environment": {
+    "os": "Ubuntu Linux x86_64",
+    "session": "Wayland",
+    "display": ":0",
+    "gpu": "NVIDIA GeForce RTX 3060 via Vulkan",
+    "compositor": "Ubuntu Wayland session",
+    "accessibility_bus": "AT-SPI registry present",
+    "input_method_service": "IBus present"
+  },
+  "checks": [
+    {
+      "name": "pointer_motion_coalescing",
+      "result": "passed",
+      "replacement": "The latest consecutive Move/Hover sample replaces the pending sample for the same pointer identity; lifecycle and non-pointer events flush it first."
+    },
+    {
+      "name": "linux_touch_normalization",
+      "result": "passed",
+      "replacement": "winit Touch maps to Down/Move/Up/Cancel with stable touch identity; calibrated or normalized force is clamped to 0..=1; the first contact remains primary until it ends."
+    },
+    {
+      "name": "host_neutral_motion_prediction",
+      "result": "passed",
+      "replacement": "PointerMotionPredictor uses host timestamps for advisory linear extrapolation and resets velocity on pointer identity changes or lifecycle events."
+    },
+    {
+      "name": "built_in_host_inbox_contract",
+      "result": "passed",
+      "replacement": "HostInbox enforces authenticated session/epoch, exact sequence, bounded backpressure, returned rejection payloads and permanent close. The host_loopback example crosses scene update, CPU frame, backpressure and retirement without winit/wgpu."
+    },
+    {
+      "name": "desktop_window_after_coalescing",
+      "command": "window DejaVuSans.ttf --once",
+      "result": "passed",
+      "output": "item5_window=pass activated=0 scene=640x360 external_snapshot_revision=1 retired=true"
+    },
+    {
+      "name": "independent_multiwindow_presentation",
+      "command": "multiwindow DejaVuSans.ttf --once",
+      "result": "passed",
+      "output": "multiwindow=pass owners=[100, 101] engine_state_separated=true suspend_resume_exercised=true",
+      "command_with_suspend_resume": "multiwindow DejaVuSans.ttf --once --exercise-suspend-resume",
+      "isolation_test": "owners_keep_independent_presentation_lifecycles passed"
+    },
+    {
+      "name": "hardware_gpu_surface_present",
+      "command": "gpu_window DejaVuSans.ttf --once",
+      "result": "passed",
+      "adapter": "NVIDIA GeForce RTX 3060",
+      "backend": "Vulkan",
+      "surface_format": "Bgra8UnormSrgb",
+      "present_mode": "Fifo",
+      "frames": 2,
+      "device_generations": 2,
+      "recovery_exercised": true,
+      "note": "A real hardware adapter rendered into the compositor-owned Wayland Surface, acknowledged the present, executed the host recovery lifecycle drill, recreated device/Surface/renderer generation 2, and presented again."
+    },
+    {
+      "name": "hardware_gpu_suspend_resume",
+      "command": "gpu_window DejaVuSans.ttf --once --exercise-suspend-resume",
+      "result": "passed",
+      "output": "gpu_window=pass frames=2 device_generation=2 recovery_exercised=false suspend_resume_exercised=true",
+      "note": "Engine suspend, host window/device/Surface recreation, engine resume and second hardware present all completed."
+    },
+    {
+      "name": "accesskit_winit_atspi_window",
+      "feature": "desktop-accessibility",
+      "result": "passed",
+      "toolkit_name": "Jasper UI",
+      "application_name": "window-accessibility",
+      "window_child_count": 1,
+      "button_name": "Activate",
+      "button_role": 43,
+      "button_interfaces": [
+        "org.a11y.atspi.Accessible",
+        "org.a11y.atspi.Action",
+        "org.a11y.atspi.Component"
+      ],
+      "actions": [
+        "click"
+      ],
+      "do_action_result": true,
+      "cleanup": "The temporary toolkit-accessibility enablement was restored to false after verification."
+    },
+    {
+      "name": "cross_target_host_neutral_core_check",
+      "result": "passed",
+      "targets": [
+        "x86_64-unknown-linux-gnu",
+        "x86_64-pc-windows-gnu",
+        "x86_64-apple-darwin",
+        "aarch64-apple-darwin",
+        "aarch64-linux-android",
+        "aarch64-apple-ios"
+      ],
+      "desktop_accessibility_targets": [
+        "x86_64-pc-windows-gnu",
+        "x86_64-apple-darwin",
+        "aarch64-apple-darwin"
+      ],
+      "note": "cargo check --locked succeeded for the host-neutral core on every target and for desktop-accessibility/example-window on Windows x86_64 plus macOS x86_64/AArch64. Android AArch64 and iOS AArch64 core targets also compile. These are compile boundary checks, not runtime acceptance."
+    },
+    {
+      "name": "gpu_device_loss_recovery",
+      "result": "passed",
+      "hardware_drill": "RTX 3060 Vulkan: frame 1 presented, host recovery event handled, device/Surface/renderer generation 2 created, frame 2 presented",
+      "callback_test": "VM wgpu test destroyed the device and observed DeviceLostReason::Destroyed",
+      "note": "The hardware drill routes through the same host lifecycle without claiming a driver-induced hardware loss."
+    }
+  ],
+  "cross_platform_boundary": {
+    "engine_contract": "PointerMotionCoalescer, PointerMotionPredictor, HostInbox and the normalized input model contain no window-system types.",
+    "linux_adapter": "winit Touch plus the AccessKit winit AT-SPI adapter.",
+    "other_platforms": "The same optional accesskit_winit dependency selects UIA, macOS, Android or iOS at compile time. No Windows, macOS or mobile runtime acceptance is claimed from Ubuntu."
+  },
+  "test_results": {
+    "default_cargo_test": "passed: 146 library tests plus all default integration tests and doctest",
+    "default_all_targets_check": "passed, including host_loopback and multiwindow examples",
+    "desktop_library": "152 passed",
+    "native_multiwindow_isolation": "1 passed",
+    "host_loopback": "1 passed; example output host_loopback=pass session=41 epoch=3 version=2",
+    "platform_input": "3 passed: pen axes, invalid ranges and pressure fallback",
+    "accesskit_bridge": "3 passed",
+    "gpu_device_lost_callback": "1 passed; observed DeviceLostReason::Destroyed",
+    "capability_matrix": "4 verified, 0 errors; 12 negative controls rejected"
+  },
+  "limits": [
+    "The application requested FIFO/Vsync and the hardware Surface accepted it; compositor-specific vblank deadline latency was not measured.",
+    "The hardware run used the host recovery drill rather than a driver-induced loss. A separate VM test destroys the wgpu device and observes the real DeviceLostReason::Destroyed callback.",
+    "Only winit force normalization is covered; raw pen tilt, twist, barrel rotation and device-specific pressure curves are not claimed.",
+    "The multi-window example preserves engine state while host Window/Surface objects are recreated; a real OS session suspend was not triggered in this run.",
+    "AT-SPI was activated temporarily; screen-reader navigation was not exercised.",
+    "The jasper-os built-in host is not part of this reference-host report."
+  ],
+  "sources": {
+    "src/input.rs": "1cd22c18a6194dd0a19ea34da5b9ee46ce5b23027fc553502bf0c30fd9216d47",
+    "src/desktop.rs": "80acf5343f32bf726a903f23ecc736ad2a0c3bd90df4f9069e89dc4a32fc4024",
+    "src/platform_input.rs": "3aca3b8ff10fbee23bbc8a7d1b3dee9df62f8bf5f7613cfdea3bb6b123441cc7",
+    "src/host_transport.rs": "e1f2e63db26e4ebef2e496f34b2c0b312f19fb3cf8898c2b052038bcf920fa0c",
+    "src/lib.rs": "7e2e22fc65734f13c7be11afe19cf2691239e813f02fca4d2113972af984f235",
+    "src/host_capabilities.rs": "446759a2d19f519483d1ef3dd507337ee3b106bbcd77ebb1fd6f5f0b6961d073",
+    "src/native_adapter/gpu_render.rs": "c2b7722a4d1ee8710496ee078d7620b0bb38cbbfab8edb0a9e6d7a445b2091a9",
+    "src/native_adapter/render_host.rs": "82c3afa8c43e62ccef0d1a6325e465a516e38fb1658fcfe8c8283b5f9bae87fc",
+    "examples/window.rs": "d6d32371e26ff2eeb188022e4e50b94acb81f5516b5344eb0a41f1d56a566198",
+    "examples/multiwindow.rs": "fd49ee5690f10b454bc80bbebb2122c4bb8f9c733de9462b1716b9b35bfff1b4",
+    "examples/gpu_window.rs": "c50cb6de86630a054a1a65d0d05daf872585d98eb2e1ad9d12aa3e3b920397e5",
+    "examples/host_loopback.rs": "fe6418bb866b77867db65a0d739d57b51c104728cd64dc31a4fe566ea2998269",
+    "tests/native_multiwindow_isolation.rs": "b6e960514b078d09ee53526dda92bcc06c259078b9a238ed9977493a1f49b307",
+    "tests/host_capability_claims.rs": "b506a1f33d77647047a8f4dbeafb1175cc6c0cd1c78937da5ab4b26e78dfbdb3",
+    "tests/host_loopback.rs": "fdb57cea0969b5f35ff9ca286be311d5ae8799e254d1b0a33173958d4fdf14d8",
+    "scripts/verify-version.py": "c230b1381803ed5d6cf1760c5a40df70165f493ee52815c7d3e2bf3d00793f94",
+    "Cargo.toml": "bde17d39cf791736f6246164fb14a2718ee76b2791c69959a7fb89c6314fb153",
+    "Cargo.lock": "d0154c349a28d83c6f3cc67f1220175754f3fa3d7981f771e8a62f52a2bb8d82"
+  }
+}

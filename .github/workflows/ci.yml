@@ -5,6 +5,51 @@ on:
   pull_request:
 
 jobs:
+  portable-core:
+    # The host-neutral engine must compile and pass its pure Rust tests on every
+    # first-class desktop OS. Platform hosts and live services are checked separately.
+    # 宿主无关核心须在首要桌面系统上编译并通过纯 Rust 测试；平台宿主另行验收。
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Check host-neutral core
+        run: cargo check --locked --lib
+      - name: Test host-neutral core
+        run: cargo test --locked --lib
+      - name: Check desktop platform adapter
+        run: cargo check --locked --features desktop --example window
+      - name: Check platform accessibility adapter
+        run: cargo check --locked --features desktop-accessibility --example window
+
+  cross-target-core:
+    # Compile the host-neutral core and desktop accessibility boundary for the
+    # non-native targets that cannot run on the Ubuntu build host.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install cross targets
+        run: >-
+          rustup target add x86_64-pc-windows-gnu x86_64-apple-darwin
+          aarch64-apple-darwin aarch64-linux-android aarch64-apple-ios
+      - name: Check host-neutral core
+        run: |
+          for target in x86_64-pc-windows-gnu x86_64-apple-darwin \
+            aarch64-apple-darwin aarch64-linux-android aarch64-apple-ios; do
+            cargo check --locked --lib --target "$target"
+          done
+      - name: Check desktop accessibility boundary
+        run: |
+          for target in x86_64-pc-windows-gnu x86_64-apple-darwin aarch64-apple-darwin; do
+            cargo check --locked --target "$target" \
+              --no-default-features --features desktop-accessibility --example window
+          done
+
   test:
     runs-on: ubuntu-latest
     steps:
@@ -12,6 +57,14 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Test
         run: cargo test --all-targets
+      - name: Install host integration test dependencies
+        run: sudo apt-get update && sudo apt-get install -y fonts-dejavu-core
+      - name: Test built-in host and multi-window isolation
+        env:
+          JASPER_UI_TEST_FONT: /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf
+        run: >-
+          cargo test --locked --no-default-features --features native-engine-cpu
+          --test host_loopback --test native_multiwindow_isolation
       - name: Test closeout audit tooling
         run: python3 scripts/test-audit-closeout.py
       - name: Check render TCB register

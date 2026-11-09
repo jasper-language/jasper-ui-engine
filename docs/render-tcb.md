@@ -4,9 +4,9 @@
 
 `python3 scripts/check-render-tcb.py` 用 `Cargo.toml` 和 `Cargo.lock` 核对本表：渲染 feature 的每个直接依赖和下表的几个必列项都必须按锁定版本列出，所列 crate 必须确实在闭包内，闭包变化会使下面的数量和摘要失配。`scripts/test-render-tcb.py` 检查这些漂移都会被报告。
 
-闭包数量：337
+闭包数量：338
 
-闭包摘要：`492f85ab600ab2ad24db2743cbb99534e6986ce27f6c6b97af21bc6c025477e8`
+闭包摘要：`c7101c226f002ae54295174ca3ee8a295df0e0cffb19c18f7fad1720ff4515c7`
 
 闭包按 `Cargo.lock` 计算，包含所有平台和可选路径，比任何一次实际构建都宽。摘要覆盖名称、版本和来源。
 
@@ -54,7 +54,12 @@
 
 ## 设备丢失
 
-没有实现。仓库内没有设备丢失回调，也没有未捕获错误处理器，所以 `gpu_device_loss_recovery` 报告 `Unsupported`。设备丢失时 `render_gpu_to_host_view` 的结果、wgpu 的默认处理与宿主如何重建都没有测试过，不能假定为可恢复。`from_wgpu` 由宿主持有设备，重建设备后须用新设备重新构造 `GpuRenderer`；这一路径同样没有测试。
+引擎提供 `GpuRenderer::set_device_lost_callback`：宿主持有的 wgpu device 报告
+`DeviceLostReason` 后，宿主必须暂停引擎视图、释放旧 Surface/device/renderer，重建后
+`resume` 并重绘。`gpu-pending` 构建把这项能力声明为原生契约，其他构建为 feature-gated。
+VM 通过真实 `Device::destroy()` 验证 callback；Ubuntu Wayland/RTX 3060 通过同一宿主
+恢复生命周期演练并完成第二代帧。驱动诱发的硬件丢失、不同 GPU 驱动行为与其他平台仍
+需要真机验收；wgpu/Vello 继续是第三方 TCB。
 
 ## 能力矩阵的绑定
 

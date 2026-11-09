@@ -1,0 +1,17 @@
+verification results:: 3 verified, 1 errors
+error: postcondition not satisfied
+   --> <repo>/evidence/capability-matrix-kernel/negative_device_loss_keyed_on_the_native_feature.rs:73:13
+    |
+ 73 |               result.gpu_device_loss_recovery == capability_gated(features.gpu_texture),
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+ 82 | /         Self {
+ 83 | |             cpu_rgba8_surface: if features.cpu_surface {
+ 84 | |                 CapabilityStatus::NativeContract
+ 85 | |             } else {
+...   |
+105 | |             jasper_os_host_integration: CapabilityStatus::Unsupported,
+106 | |         }
+    | |_________- at the end of the function body
+
+error: aborting due to 1 previous error

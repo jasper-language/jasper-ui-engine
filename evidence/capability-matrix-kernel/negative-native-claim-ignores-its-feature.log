@@ -1,38 +1,38 @@
 verification results:: 3 verified, 1 errors
 note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
-  --> <repo>/evidence/capability-matrix-kernel/negative_native_claim_ignores_its_feature.rs:62:5
+  --> <repo>/evidence/capability-matrix-kernel/negative_native_claim_ignores_its_feature.rs:63:5
    |
-62 |     pub(crate) const fn for_features(features: CompiledFeatures) -> (result: Self)
+63 |     pub(crate) const fn for_features(features: CompiledFeatures) -> (result: Self)
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-error: postcondition not satisfied
-   --> <repo>/evidence/capability-matrix-kernel/negative_native_claim_ignores_its_feature.rs:65:13
-    |
- 65 |               result.dpi_and_extent_reconfigure == capability_gated(features.native_scene),
-    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
-...
- 81 | /         Self {
- 82 | |             cpu_rgba8_surface: if features.cpu_surface {
- 83 | |                 CapabilityStatus::NativeContract
- 84 | |             } else {
-...   |
-100 | |             jasper_os_host_integration: CapabilityStatus::Unsupported,
-101 | |         }
-    | |_________- at the end of the function body
 
 error: postcondition not satisfied
    --> <repo>/evidence/capability-matrix-kernel/negative_native_claim_ignores_its_feature.rs:66:13
     |
- 66 |               result.injected_font_resources == capability_gated(features.native_scene),
+ 66 |               result.dpi_and_extent_reconfigure == capability_gated(features.native_scene),
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+ 82 | /         Self {
+ 83 | |             cpu_rgba8_surface: if features.cpu_surface {
+ 84 | |                 CapabilityStatus::NativeContract
+ 85 | |             } else {
+...   |
+105 | |             jasper_os_host_integration: CapabilityStatus::Unsupported,
+106 | |         }
+    | |_________- at the end of the function body
+
+error: postcondition not satisfied
+   --> <repo>/evidence/capability-matrix-kernel/negative_native_claim_ignores_its_feature.rs:67:13
+    |
+ 67 |               result.injected_font_resources == capability_gated(features.native_scene),
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
 ...
- 81 | /         Self {
- 82 | |             cpu_rgba8_surface: if features.cpu_surface {
- 83 | |                 CapabilityStatus::NativeContract
- 84 | |             } else {
+ 82 | /         Self {
+ 83 | |             cpu_rgba8_surface: if features.cpu_surface {
+ 84 | |                 CapabilityStatus::NativeContract
+ 85 | |             } else {
 ...   |
-100 | |             jasper_os_host_integration: CapabilityStatus::Unsupported,
-101 | |         }
+105 | |             jasper_os_host_integration: CapabilityStatus::Unsupported,
+106 | |         }
     | |_________- at the end of the function body
 
 error: aborting due to 2 previous errors
