@@ -1,1 +1,1 @@
-/Users/auth/Documents/deepseek-harness/default-workspace/jui/ios/target/app/device/JasperUI.app/Info.plist: OK
+<repo>/ios/target/app/device/JasperUI.app/Info.plist: OK

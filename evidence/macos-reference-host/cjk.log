@@ -15,4 +15,4 @@ stage=redraw requested
 stage=ax nodes=4 focused=None tree=[Container::960x640@0,0 Container::716.7969x44@121.59375,208 Container::716.7969x28@121.59375,268 Button:激活 Activate:627.2031x120@166.40625,312]
 stage=frame index=1 1920x1280 scale=2 format=Bgra8UnormSrgb background=2140111 active=293924 pressed=0 other=23565 bytes=7372817 sha256=e3f1451c55941ee5dd7f69347bea01effb0b315fe3908adae334ead641e41e53
 macos_host=pass adapter="Apple M2" backend=Metal width=1920 height=1280 scale=2 frames=1 activations=0 tapped=false retired=true elapsed_ms=1634
-readback path=/Users/auth/Documents/deepseek-harness/default-workspace/jui/evidence/macos-reference-host/cjk.ppm bytes=7372817 background=2140111 active=293924 pressed=0 other=23565 sha256=e3f1451c55941ee5dd7f69347bea01effb0b315fe3908adae334ead641e41e53
+readback path=<repo>/evidence/macos-reference-host/cjk.ppm bytes=7372817 background=2140111 active=293924 pressed=0 other=23565 sha256=e3f1451c55941ee5dd7f69347bea01effb0b315fe3908adae334ead641e41e53

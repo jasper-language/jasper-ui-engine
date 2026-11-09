@@ -1,5 +1,5 @@
 warning: field `families` is never read
-   --> /Users/auth/Documents/deepseek-harness/default-workspace/jui/src/native_adapter/native_scene.rs:161:5
+   --> <repo>/src/native_adapter/native_scene.rs:161:5
     |
 146 | pub(crate) struct NativeScene {
     |                   ----------- field in this struct
@@ -10,7 +10,7 @@ warning: field `families` is never read
     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
 
 warning: method `semantics_from_host` is never used
-   --> /Users/auth/Documents/deepseek-harness/default-workspace/jui/src/native_adapter/native_scene.rs:895:19
+   --> <repo>/src/native_adapter/native_scene.rs:895:19
     |
 165 | impl NativeScene {
     | ---------------- method in this implementation
@@ -19,25 +19,25 @@ warning: method `semantics_from_host` is never used
     |                   ^^^^^^^^^^^^^^^^^^^
 
 warning: function `source_insert_index` is never used
-    --> /Users/auth/Documents/deepseek-harness/default-workspace/jui/src/native_adapter/native_scene.rs:1902:15
+    --> <repo>/src/native_adapter/native_scene.rs:1902:15
      |
 1902 | pub(crate) fn source_insert_index(index: usize, children: usize) -> usize {
      |               ^^^^^^^^^^^^^^^^^^^
 
 warning: function `accepts_scene_update` is never used
-    --> /Users/auth/Documents/deepseek-harness/default-workspace/jui/src/native_adapter/native_scene.rs:1942:15
+    --> <repo>/src/native_adapter/native_scene.rs:1942:15
      |
 1942 | pub(crate) fn accepts_scene_update(
      |               ^^^^^^^^^^^^^^^^^^^^
 
 warning: function `semantic_role_update_preserves_tag` is never used
-    --> /Users/auth/Documents/deepseek-harness/default-workspace/jui/src/native_adapter/native_scene.rs:3767:15
+    --> <repo>/src/native_adapter/native_scene.rs:3767:15
      |
 3767 | pub(crate) fn semantic_role_update_preserves_tag(current: Role, next: Role) -> bool {
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: multiple associated items are never used
-    --> /Users/auth/Documents/deepseek-harness/default-workspace/jui/src/native_adapter/native_view.rs:122:19
+    --> <repo>/src/native_adapter/native_view.rs:122:19
      |
  100 | impl NativeTextView {
      | ------------------- associated items in this implementation
@@ -91,7 +91,7 @@ warning: multiple associated items are never used
      |                   ^^^^^^^^^^
 
 warning: variant `Button` is never constructed
-    --> /Users/auth/Documents/deepseek-harness/default-workspace/jui/src/native_adapter/native_view.rs:1462:5
+    --> <repo>/src/native_adapter/native_view.rs:1462:5
      |
 1460 | enum NativeElementKind {
      |      ----------------- variant in this enum
@@ -102,7 +102,7 @@ warning: variant `Button` is never constructed
      = note: `NativeElementKind` has a derived impl for the trait `Clone`, but this is intentionally ignored during dead code analysis
 
 warning: associated function `new` is never used
-  --> /Users/auth/Documents/deepseek-harness/default-workspace/jui/src/native_adapter/pointer_host.rs:33:19
+  --> <repo>/src/native_adapter/pointer_host.rs:33:19
    |
 32 | impl PointerHostBridge<DefaultSink> {
    | ----------------------------------- associated function in this implementation
@@ -110,7 +110,7 @@ warning: associated function `new` is never used
    |                   ^^^
 
 warning: associated function `with_sink` is never used
-  --> /Users/auth/Documents/deepseek-harness/default-workspace/jui/src/native_adapter/pointer_host.rs:40:19
+  --> <repo>/src/native_adapter/pointer_host.rs:40:19
    |
 37 | impl<F: FnMut(NativePointerEvent) -> NativeEventReply> PointerHostBridge<F> {
    | --------------------------------------------------------------------------- associated function in this implementation
@@ -119,7 +119,7 @@ warning: associated function `with_sink` is never used
    |                   ^^^^^^^^^
 
 warning: methods `up` and `focus_lost` are never used
-   --> /Users/auth/Documents/deepseek-harness/default-workspace/jui/src/native_adapter/pointer_host.rs:178:19
+   --> <repo>/src/native_adapter/pointer_host.rs:178:19
     |
  44 | / impl<
  45 | |         F: FnMut(NativePointerEvent) -> NativeEventReply,
@@ -134,7 +134,7 @@ warning: methods `up` and `focus_lost` are never used
     |                     ^^^^^^^^^^
 
 warning: `jasper-ui-engine` (lib) generated 10 warnings
-   Compiling jasper-ui-ios v0.1.0 (/Users/auth/Documents/deepseek-harness/default-workspace/jui/ios)
+   Compiling jasper-ui-ios v0.1.0 (<repo>/ios)
 warning: variants `DidEnterBackground` and `WillEnterForeground` are never constructed
   --> src/model.rs:17:5
    |
@@ -161,15 +161,15 @@ warning: linker stderr: ld: passed two min versions (10.0, 15.0) for platform iO
 
 warning: `jasper-ui-ios` (bin "jasper-ui") generated 3 warnings
     Finished `release` profile [optimized] target(s) in 32.64s
-/Users/auth/Documents/deepseek-harness/default-workspace/jui/ios/target/app/device/JasperUI.app/Info.plist: OK
+<repo>/ios/target/app/device/JasperUI.app/Info.plist: OK
 device_signing=unavailable (no code-signing identity; install requires a signed build)
-ios_app=/Users/auth/Documents/deepseek-harness/default-workspace/jui/ios/target/app/device/JasperUI.app
+ios_app=<repo>/ios/target/app/device/JasperUI.app
 ios_target=aarch64-apple-ios
 ios_platform=iPhoneOS
 ios_min_version=15.0
 ios_sdk=26.2
 ios_signature=unavailable
-/Users/auth/Documents/deepseek-harness/default-workspace/jui/ios/target/app/device/JasperUI.app/jasper-ui:
+<repo>/ios/target/app/device/JasperUI.app/jasper-ui:
 Load command 11
       cmd LC_BUILD_VERSION
   cmdsize 32
@@ -179,5 +179,5 @@ Load command 11
    ntools 1
      tool LD
   version 1230.1
-34c4ce8a94e038f9078eb96a7d40068035bfceef10f855fadd941c71dab13544  /Users/auth/Documents/deepseek-harness/default-workspace/jui/ios/target/app/device/JasperUI.app/jasper-ui
-87b50d72815927b5845bd35415832e14e0e2a12353e4ac6ccc0703c726b41183  /Users/auth/Documents/deepseek-harness/default-workspace/jui/ios/target/app/device/JasperUI.app/Info.plist
+34c4ce8a94e038f9078eb96a7d40068035bfceef10f855fadd941c71dab13544  <repo>/ios/target/app/device/JasperUI.app/jasper-ui
+87b50d72815927b5845bd35415832e14e0e2a12353e4ac6ccc0703c726b41183  <repo>/ios/target/app/device/JasperUI.app/Info.plist

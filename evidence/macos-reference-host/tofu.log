@@ -15,4 +15,4 @@ stage=redraw requested
 stage=ax nodes=4 focused=None tree=[Container::960x640@0,0 Container::716.7969x44@121.59375,208 Container::716.7969x28@121.59375,268 Button:激活 Activate:627.2031x120@166.40625,312]
 stage=frame index=1 1920x1280 scale=2 format=Bgra8UnormSrgb background=2146473 active=295778 pressed=0 other=15349 bytes=7372817 sha256=e517af6507004b056d5d473fe107ff86d3890e3203ef33ab978ffba730a195d6
 macos_host=pass adapter="Apple M2" backend=Metal width=1920 height=1280 scale=2 frames=1 activations=0 tapped=false retired=true elapsed_ms=1629
-readback path=/Users/auth/Documents/deepseek-harness/default-workspace/jui/evidence/macos-reference-host/tofu.ppm bytes=7372817 background=2146473 active=295778 pressed=0 other=15349 sha256=e517af6507004b056d5d473fe107ff86d3890e3203ef33ab978ffba730a195d6
+readback path=<repo>/evidence/macos-reference-host/tofu.ppm bytes=7372817 background=2146473 active=295778 pressed=0 other=15349 sha256=e517af6507004b056d5d473fe107ff86d3890e3203ef33ab978ffba730a195d6
