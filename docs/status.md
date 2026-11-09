@@ -983,3 +983,13 @@ x86_64 GNU、macOS x86_64/AArch64、Android AArch64 与 iOS AArch64 交叉目标
 对满队列执行回压，更新后的帧包含声明颜色，退休后继续渲染被拒绝。示例和测试不链接
 winit/wgpu；真实系统 IPC、认证与 jasper-os 宿主仍未实现。结果：
 `host_loopback=pass session=41 epoch=3 version=2`，对应测试 1/1 通过。
+
+Windows 10 LTSC x86_64 虚拟机参考宿主已完成运行验收：单窗口与双窗口 CPU Surface、
+100%/150% DPI、物理鼠标点击、中文有序字体回退、UIA 枚举与 Invoke 均通过。中文按钮
+`激活 Activate` 在 UIA 中的实际码点为 `U+6FC0 U+6D3B`；验收脚本固定 UTF-8 控制台编码，
+不再把 PowerShell 代码页的 `??` 误判成 UI 文本损坏。
+
+同一 Windows VM 的 wgpu 路径选择 DX12 `Microsoft Basic Render Driver`、
+`Bgra8UnormSrgb` 与 `Fifo`，完成单帧、Surface 重建 generation 1→2 和宿主持有 device-loss
+演练 generation 1→2。该结果证明 Windows wgpu 宿主路径可运行；虚拟机基础渲染适配器不是
+物理 GPU，也不能替代 Ubuntu RTX 3060 的硬件呈现证据。

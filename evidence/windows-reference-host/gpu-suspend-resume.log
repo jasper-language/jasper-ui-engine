@@ -1,0 +1,9 @@
+Mesa: SVGA3D; build: RELEASE;
+
+Mesa: 24.0.2
+GPU device generation 1: adapter=("Microsoft Basic Render Driver", "Dx12") format=Bgra8UnormSrgb present=Fifo
+GPU frame presented: frame=1 device_generation=1
+GPU suspend/resume drill: rebuilding generation 1 after frame 1
+GPU device generation 2: adapter=("Microsoft Basic Render Driver", "Dx12") format=Bgra8UnormSrgb present=Fifo
+gpu_window=pass frames=2 device_generation=2 recovery_exercised=false suspend_resume_exercised=true
+GPU frame presented: frame=2 device_generation=2

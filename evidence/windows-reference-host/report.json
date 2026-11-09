@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "kind": "windows-reference-host",
+  "date": "2026-11-09",
+  "status": "functional_reference_host_passed",
+  "system": {
+    "virtual_machine": "JasperUIWin10",
+    "os": "Windows 10 Enterprise LTSC 2021 Evaluation",
+    "build": "19044",
+    "cpu_count": 4,
+    "memory_mb": 6144,
+    "disk_gb": 24,
+    "display": "1024x768",
+    "dpi_tested": [96, 144],
+    "graphics_adapter": "VirtualBox Graphics Adapter (WDDM)"
+  },
+  "build": {
+    "target": "x86_64-pc-windows-gnu",
+    "linker": "x86_64-w64-mingw32-gcc",
+    "features": "desktop-accessibility",
+    "window_size_bytes": 17767039,
+    "window_sha256": "7426e799ba181a0aeead1452b59e6a2344fff4ffcc7e3d1438c3c024ee7a9010",
+    "gpu_size_bytes": 23244860,
+    "gpu_sha256": "b5c55cfce18748e7a460ccb887ec6dfac0da9c4445c1784cceb4d2e879e06e2a"
+  },
+  "font_stack": {
+    "latin": "C:\\Users\\jasper\\DejaVuSans.ttf",
+    "cjk": "C:\\Windows\\Fonts\\msyh.ttc",
+    "scene_label": "激活 Activate",
+    "console_encoding": "UTF-8",
+    "uia_codepoints": [
+      "U+6FC0",
+      "U+6D3B",
+      "U+0020",
+      "U+0041",
+      "U+0063",
+      "U+0074",
+      "U+0069",
+      "U+0076",
+      "U+0061",
+      "U+0074",
+      "U+0065"
+    ]
+  },
+  "checks": [
+    {
+      "name": "single_window_cpu",
+      "result": "passed",
+      "log": "window-once.log",
+      "detail": "640x360 scene presented and retired; external snapshot revision 1."
+    },
+    {
+      "name": "chinese_font_fallback",
+      "result": "passed",
+      "detail": "Microsoft YaHei supplied CJK glyphs alongside DejaVu Sans for `激活 Activate`; no boxes or mojibake appeared."
+    },
+    {
+      "name": "uia_tree_and_invoke",
+      "result": "passed",
+      "log": "uia.log",
+      "detail": "UIA exposed ControlType.Button with codepoints U+6FC0 U+6D3B and an Invoke pattern; two consecutive invokes changed the versioned visual state."
+    },
+    {
+      "name": "physical_pointer",
+      "result": "passed",
+      "detail": "A DPI-aware SendInput click at 160,112 changed the button background from RGB(48,160,105) to RGB(40,130,90)."
+    },
+    {
+      "name": "window_resize",
+      "result": "passed",
+      "detail": "The reference window was moved and resized from 850x520 down/up during testing; the Chinese run, layout and Surface followed the new physical size."
+    },
+    {
+      "name": "dpi_100_and_150",
+      "result": "passed",
+      "detail": "At 150% DPI the 200x52 logical button rendered 300x78 physical pixels; at 100% it returned to 200x52."
+    },
+    {
+      "name": "two_windows_suspend_resume",
+      "result": "passed",
+      "log": "multiwindow.log",
+      "detail": "Owners 100 and 101 presented independently; host window/Surface replacement preserved separate engine state."
+    },
+    {
+      "name": "gpu_present",
+      "result": "passed",
+      "log": "gpu-once.log",
+      "detail": "wgpu selected Microsoft Basic Render Driver over Dx12, Bgra8UnormSrgb and Fifo; frame 1 was presented."
+    },
+    {
+      "name": "gpu_suspend_resume",
+      "result": "passed",
+      "log": "gpu-suspend-resume.log",
+      "detail": "Generation 1 was rebuilt as generation 2 and frame 2 was presented."
+    },
+    {
+      "name": "gpu_device_loss_recovery",
+      "result": "passed",
+      "log": "gpu-device-loss.log",
+      "detail": "The host recovery drill reported device loss, rebuilt generation 2 and presented frame 2."
+    }
+  ],
+  "screenshots": {
+    "dpi100": {
+      "path": "window-dpi100.png",
+      "sha256": "540fe0a0a39825b65cd9800d4290f7510c320679cfb6a5a900a7520007dd5684"
+    },
+    "dpi100_uia_invoked": {
+      "path": "window-dpi100-invoked.png",
+      "sha256": "47a4a6de39cff663c056e57ad5bacbab398d122b58b55483efe98c30012472b1"
+    },
+    "dpi100_pointer": {
+      "path": "window-dpi100-pointer.png",
+      "sha256": "fbc4e3c49a4c15db340ac071ee2a46635d80a611f0c7fe96780b00d1e9297639"
+    },
+    "dpi150": {
+      "path": "window-dpi150.png",
+      "sha256": "f16b648c4556a1d25cb6e2c84be78e4589f9d1c9e5d798b46348819f6fa6fe5d"
+    }
+  },
+  "limits": [
+    "The VM adapter is Microsoft Basic Render Driver through Dx12, not a physical GPU; physical GPU/vsync remains evidenced on Ubuntu.",
+    "Device-loss recovery used the host's recovery drill callback, not a driver-initiated hardware failure.",
+    "No Windows Ink/stylus hardware or live external IME service was connected.",
+    "Only the x86_64 Windows 10 LTSC VM was exercised; Windows 11 and ARM64 remain separate matrices."
+  ],
+  "sources": {
+    "examples/window.rs": "47d8abd9c9603dbe5d4c81778188a6cd5449b0a79b21a31351647c44e0502704",
+    "examples/multiwindow.rs": "fd49ee5690f10b454bc80bbebb2122c4bb8f9c733de9462b1716b9b35bfff1b4",
+    "windows/show-window.ps1": "7f1095a4d7e965e53ddf4a0dade2ff358f5d57fd5624a7ec5e219e36f0bf0b25",
+    "windows/uia-inspect.ps1": "c0f47fe992b61f72dc079897889ef4afd50ab317e2c9a6e53ee50f742903f76b",
+    "windows/click-at.ps1": "90fc3ef1fee8316caa40b4d67023967b3fd7864731c90f96702b78b71e510d1b",
+    "windows/win_nt6_unattended.xml": "d0796897c7082853be561a91f7db388841a447adc7546e501703f6a7849841d8"
+  }
+}

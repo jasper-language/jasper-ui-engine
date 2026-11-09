@@ -20,7 +20,7 @@ winit、wgpu、AT-SPI、UIA、Cocoa、Android 和 iOS 能力都放在显式门�
 | 目标 | 窗口/输入 | 无障碍 | 验收状态 |
 |---|---|---|---|
 | Ubuntu/Wayland | winit + softbuffer；winit Touch | `accesskit_winit` → AT-SPI | CPU 双窗口、硬件 RTX 3060 Vulkan、AT-SPI `click` 已实测 |
-| Windows | 同一 winit 边界 | `accesskit_winit` → UIA | 仅纳入跨目标核心编译；尚无 Windows 运行验收 |
+| Windows | winit + softbuffer + wgpu/Dx12 | `accesskit_winit` → UIA | Windows 10 VM 已完成 CPU 单/双窗口、物理点击、100%/150% DPI、中文回退、UIA 枚举/Invoke 与 GPU 生命周期演练 |
 | macOS | 同一 winit 边界 | `accesskit_winit` → Cocoa | Linux 交叉编译 x86_64/AArch64；尚无运行验收 |
 | Android | NativeActivity + winit + wgpu + Touch | Android 平台后端待接 | C66/Android 11/arm64 已实测 GPU、触摸、旋转与前后台恢复 |
 | iOS | 平台生命周期适配器 | `accesskit_winit` 对应平台后端 | 尚未实现或运行验收 |
@@ -36,7 +36,7 @@ winit、wgpu、AT-SPI、UIA、Cocoa、Android 和 iOS 能力都放在显式门�
 
 ## 后续平台工作
 
-- Windows：UIA 事件循环、DPI、WM_POINTER/Windows Ink、硬件 Surface/device-loss。
+- Windows：硬件 GPU/vsync、WM_POINTER/Windows Ink 设备、活外部 IME 和 Windows 11/ARM64 矩阵。
 - macOS：Cocoa 无障碍、Retina、NSView Surface、Apple Pencil 宿主。
 - Android：AccessKit/系统无障碍服务、活 IME、分屏/多窗口与更多 ABI 设备矩阵。
 - iOS：生命周期、焦点、软键盘/IME、触摸与 Pencil。
@@ -45,7 +45,7 @@ winit、wgpu、AT-SPI、UIA、Cocoa、Android 和 iOS 能力都放在显式门�
 任何平台完成运行验收前，只能声明“通过目标编译检查”，不能把 Ubuntu 结果外推为
 该平台已经可用。
 
-当前 `desktop-accessibility` + `examples/window` 已通过 Windows x86_64 GNU、
-macOS x86_64 和 macOS AArch64 的 `cargo check --locked`；Windows UIA 与 macOS
-Cocoa 无障碍服务仍需在对应真机完成运行验收。宿主无关核心另外通过 Android AArch64
-和 iOS AArch64 目标编译；移动窗口、输入和生命周期运行适配仍未实现验收。
+`desktop-accessibility` + `examples/window` 已在 Windows 10 x86_64 虚拟机中通过 UIA
+枚举、Unicode 码点匹配和 Invoke；macOS x86_64/AArch64 目前仍是目标编译状态。宿主无关
+核心另外通过 Android AArch64 和 iOS AArch64 目标编译；Apple 平台运行适配由独立 macOS
+工作流验收。

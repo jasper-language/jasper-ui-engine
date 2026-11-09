@@ -7,7 +7,7 @@
 //! deliberately injected service fixture; this example does not implement an editor or IME.
 //!
 //! Run:
-//! `cargo run --locked --features desktop,native-engine-cpu --example window -- FONT [--once|--once-after-activation]`
+//! `cargo run --locked --features desktop,native-engine-cpu --example window -- FONT [FONT...] [--once|--once-after-activation]`
 
 use std::num::NonZeroU32;
 use std::sync::Arc;
@@ -71,17 +71,18 @@ struct App {
 }
 
 fn scene() -> Scene {
-    let button = Node::text(BUTTON, "Activate")
+    let button = Node::text(BUTTON, "激活 Activate")
         .with_semantics(
             Semantics::default()
                 .role(Role::Button)
-                .label("Activate")
+                .label("激活 Activate")
                 .focusable(true),
         )
         .with_style(
             Style::default()
                 .size(Length::Px(200.0), Length::Px(52.0))
-                .background(Color::rgb(40, 130, 90)),
+                .background(Color::rgb(40, 130, 90))
+                .text(18.0, Color::WHITE),
         );
     Scene::new(
         Node::container(NodeId(1))
@@ -121,11 +122,11 @@ impl App {
     fn new(
         once: bool,
         exit_after_activation: bool,
-        font: &[u8],
+        fonts: &[&[u8]],
         event_proxy: EventLoopProxy<AppEvent>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let source = scene();
-        let mut engine = HostRenderer::new(SCENE_OWNER, &source, font, 640, 360)
+        let mut engine = HostRenderer::with_fonts(SCENE_OWNER, &source, fonts, 640, 360)
             .ok_or("native scene rejected")?;
         let generation = engine
             .surface_status(SCENE_OWNER)
@@ -147,7 +148,15 @@ impl App {
             document: 20,
             revision: 1,
         };
-        let text = TextDisplayView::new(TEXT_OWNER, context, font, "External display", 320, 120);
+        let text = TextDisplayView::with_fonts(
+            TEXT_OWNER,
+            context,
+            fonts,
+            "External display 中文",
+            320,
+            120,
+        )
+        .ok_or("external text view rejected")?;
         let mut text_binding = UiInputBinding::new(TEXT_OWNER, 1);
         let ticket = text_binding
             .bind(TEXT_OWNER, context)
@@ -175,7 +184,7 @@ impl App {
             text_context: context,
             text_ticket: Some(ticket),
             text_preedit: None,
-            text_snapshot: "External display".into(),
+            text_snapshot: "External display 中文".into(),
             external_dirty: true,
             scroll_y: 0.0,
             activated: 0,
@@ -377,7 +386,8 @@ impl App {
             style: Style::default()
                 .size(Length::Px(200.0), Length::Px(52.0))
                 .background(background)
-                .font(700, FontStyle::Normal),
+                .font(700, FontStyle::Normal)
+                .text(18.0, Color::WHITE),
         }];
         self.scene
             .apply_batch_at(old, &patches)
@@ -754,6 +764,7 @@ impl ApplicationHandler<AppEvent> for App {
                         self.update_accessibility();
                     }
                     if activated {
+                        self.activated += 1;
                         if let Err(error) = self.apply_visual_switch() {
                             self.presentation_error = Some(error.to_string());
                             event_loop.exit();
@@ -778,21 +789,30 @@ impl ApplicationHandler<AppEvent> for App {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut arguments = std::env::args().skip(1);
-    let font_path = arguments.next().ok_or("supply an injected font file")?;
-    let (once, exit_after_activation) = match arguments.next().as_deref() {
-        None => (false, false),
-        Some("--once") => (true, false),
-        Some("--once-after-activation") => (false, true),
-        _ => return Err("expected FONT [--once|--once-after-activation]".into()),
-    };
-    if arguments.next().is_some() {
-        return Err("expected FONT [--once|--once-after-activation]".into());
+    let mut font_paths = Vec::new();
+    let mut once = false;
+    let mut exit_after_activation = false;
+    for argument in std::env::args().skip(1) {
+        match argument.as_str() {
+            "--once" => once = true,
+            "--once-after-activation" => exit_after_activation = true,
+            value if value.starts_with("--") => {
+                return Err("expected FONT... [--once|--once-after-activation]".into());
+            }
+            _ => font_paths.push(argument),
+        }
     }
-    let font = std::fs::read(font_path)?;
+    if font_paths.is_empty() {
+        return Err("supply one or more injected font files".into());
+    }
+    let font_bytes = font_paths
+        .into_iter()
+        .map(std::fs::read)
+        .collect::<Result<Vec<_>, _>>()?;
+    let fonts = font_bytes.iter().map(Vec::as_slice).collect::<Vec<_>>();
     let event_loop = EventLoop::<AppEvent>::with_user_event().build()?;
     let event_proxy = event_loop.create_proxy();
-    let mut app = App::new(once, exit_after_activation, &font, event_proxy)?;
+    let mut app = App::new(once, exit_after_activation, &fonts, event_proxy)?;
     let result = event_loop.run_app(&mut app);
     app.shutdown();
     result?;

@@ -63,8 +63,9 @@ Jasper UI 的 **宿主无关 Native 引擎底座**（Rust）。它只负责底�
 ## v0.1 明确未实现
 
 - 真实文字光栅化（`DrawText` 在 Headless 后端返回 `Unsupported`；需要 Parley/字体后端）
-- Windows/macOS/移动端无障碍运行验收、图片/SVG 解码；Ubuntu 已完成硬件 GPU、
-  device-loss 恢复演练与 AT-SPI 桥实测
+- macOS/移动端无障碍运行验收、Windows 物理 GPU/vsync、图片/SVG 解码；Ubuntu 已完成
+  硬件 GPU、device-loss 恢复演练与 AT-SPI 桥实测，Windows 10 VM 已完成 UIA 与 wgpu
+  生命周期演练
 - Jasper ABI、Jasper UI Framework、UI IR、状态/事件/动画/路由
 - Web HTML/CSS/JS/WASM 输出
 - 完整文本编辑与 IME 往返、过冲回弹、系统无障碍桥（文本/组合事件映射与焦点路由已有实现）
@@ -115,6 +116,14 @@ adb install -r android/target/apk/jasper-ui.apk
 
 Android 使用 NativeActivity、winit、wgpu GLES 和正式 `HostRenderer`；构建与真机验收限制见
 [android/README.md](android/README.md)。
+
+Windows 参考宿主的构建、字体栈和 VM 验收步骤见
+[windows/README.md](windows/README.md)。Windows 示例接受一个有序字体文件列表，以同时覆盖
+拉丁与 CJK：
+
+```powershell
+window.exe DejaVuSans.ttf C:\Windows\Fonts\msyh.ttc
+```
 
 GPU 设备丢失恢复演练：
 

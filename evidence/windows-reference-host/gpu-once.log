@@ -1,0 +1,6 @@
+Mesa: SVGA3D; build: RELEASE;
+
+Mesa: 24.0.2
+GPU device generation 1: adapter=("Microsoft Basic Render Driver", "Dx12") format=Bgra8UnormSrgb present=Fifo
+GPU frame presented: frame=1 device_generation=1
+gpu_window=pass frames=1 device_generation=1 recovery_exercised=false suspend_resume_exercised=false

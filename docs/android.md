@@ -5,6 +5,8 @@ Android 参考宿主位于 [`android/`](../android/)；详细构建与设备验�
 
 它使用 NativeActivity、winit Android 后端、wgpu GLES Surface 和 Jasper UI 的正式
 `HostRenderer`。Android 专属窗口、Surface、生命周期和输入代码不进入默认核心构建。
+APK 同时嵌入 DejaVu Sans 与 Droid Sans Fallback；按钮中的 UTF-8 中文
+`中文 激活` 经有序字体栈回退后实际光栅化，而不是把缺失字形显示为方框。
 
 ## 生命周期
 
@@ -25,5 +27,7 @@ Android MotionEvent 的原文压力、倾斜、工具类型和历史点适配仍
 
 - 当前只验收 arm64-v8a。
 - 当前 APK 用 NativeActivity，不含 Java/Kotlin UI 层。
+- 当前中文验收覆盖参考按钮的 CJK 字体回退和截图，不宣称完整中文语言包、地区格式或系统
+  字体发现。
 - AccessKit/Android 系统无障碍服务、活 IME、应用进程隔离和跨进程 UI 服务尚未接入。
 - 设备旋转与前后台切换已实测；低内存杀进程恢复、分屏和多窗口仍需设备矩阵。

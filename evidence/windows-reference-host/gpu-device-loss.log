@@ -1,0 +1,10 @@
+Mesa: SVGA3D; build: RELEASE;
+
+Mesa: 24.0.2
+GPU device generation 1: adapter=("Microsoft Basic Render Driver", "Dx12") format=Bgra8UnormSrgb present=Fifo
+GPU frame presented: frame=1 device_generation=1
+GPU device-loss recovery drill: rebuilding generation 1 after frame 1
+GPU device lost: reason=Unknown message="host recovery drill"
+GPU device generation 2: adapter=("Microsoft Basic Render Driver", "Dx12") format=Bgra8UnormSrgb present=Fifo
+GPU frame presented: frame=2 device_generation=2
+gpu_window=pass frames=2 device_generation=2 recovery_exercised=true suspend_resume_exercised=false

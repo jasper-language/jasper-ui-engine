@@ -20,8 +20,8 @@
     "activity": "android.app.NativeActivity",
     "surface_backend": "wgpu GLES",
     "apk_signature": ["v2", "v3"],
-    "apk_size_bytes": 19005880,
-    "apk_sha256": "2373cfd15494e6357ce077f96fe55aa89f84c482b3204e17a3729b9c3e3b3205"
+    "apk_size_bytes": 23040440,
+    "apk_sha256": "28191e27840b6a0b9522d18d50599925245198e2a8abb1b5028313f39d2b5be4"
   },
   "checks": [
     {
@@ -35,9 +35,14 @@
       "detail": "Root scene filled 720x1344 content area after DPI/content-size synchronization."
     },
     {
+      "name": "chinese_text_fallback",
+      "result": "passed",
+      "detail": "The UTF-8 label `中文 激活` rendered as CJK glyphs through the ordered DejaVu Sans plus Droid Sans Fallback stack; no replacement boxes or mojibake were present before or after activation."
+    },
+    {
       "name": "touch_activation",
       "result": "passed",
-      "detail": "adb tap at 360,720 produced tap activation=1 and a versioned style patch; button changed green to orange."
+      "detail": "adb tap at 360,720 produced tap activation=1 and a versioned style patch; the Chinese label remained legible and the button changed green to orange."
     },
     {
       "name": "background_foreground_lifecycle",
@@ -47,33 +52,33 @@
     {
       "name": "rotation_relayout",
       "result": "passed",
-      "detail": "Temporary landscape rotation produced a full-width 180 logical-pixel button and preserved scene state; rotation settings were restored afterward."
+      "detail": "Temporary landscape rotation produced a 70%-width 180 logical-pixel button, preserved the Chinese label and activated scene state, and restored rotation settings afterward."
     }
   ],
   "screenshots": {
     "portrait": {
       "path": "portrait.png",
-      "sha256": "29cc81bbbc70e3c5f60f1ae0828b11d11a376a31927f8f3c2f8a6effdd3b99a5"
+      "sha256": "f297d723b8ce7ca2d367d4d246abbe9f2d5869427ab71dfe482155b1d5218330"
     },
     "portrait_tapped": {
       "path": "portrait-tapped.png",
-      "sha256": "e8a54c97a77b6957450cf1cb2884177ff8baf3de12801fe3e355e6ec0c72662a"
+      "sha256": "e907efdf352d521a9735bd236c948d57f8386abf4cd98d27fad44a2d74a4aa8d"
     },
     "resumed": {
       "path": "resumed.png",
-      "sha256": "e8a54c97a77b6957450cf1cb2884177ff8baf3de12801fe3e355e6ec0c72662a",
+      "sha256": "e907efdf352d521a9735bd236c948d57f8386abf4cd98d27fad44a2d74a4aa8d",
       "note": "Identical to portrait_tapped, confirming the style state survived background/foreground recreation."
     },
     "landscape": {
       "path": "landscape.png",
-      "sha256": "ffd62583d7b6d8cd119e4e99bc5f544f6da65912b60200496aa07cda3b4f249d"
+      "sha256": "e7a367e6352c7524c82236b3cc9a8aac76f2bfc62b36b414d5a8753007421086"
     }
   },
   "cross_platform_boundary": {
     "engine": "Default engine core remains Android-independent.",
     "host": "Android NativeActivity code lives under android/ and is a cdylib host.",
     "input": "winit Touch is normalized by DesktopInput and routed through Engine::pointer.",
-    "font": "DejaVu Sans is embedded as an explicit host-injected font resource."
+    "font": "DejaVu Sans and Droid Sans Fallback are embedded as an explicit host-ordered font stack."
   },
   "limits": [
     "Only arm64-v8a Android 11 model C66 was exercised.",
@@ -85,7 +90,8 @@
     "android/Cargo.toml": "af00540e05a03c29de33996da1f0e6c09965113c48eb220f2c8fc1f0ec1257fc",
     "android/Cargo.lock": "c1aa5918dd91145434a8636d107fe27e05ae10c6bf2442dcda13323dd3f4e5a3",
     "android/AndroidManifest.xml": "5510dea809e9b9a645bb0d859aa2c7ad28bfb41cb6491e3d936ae817b3ed9d86",
-    "android/src/lib.rs": "65060754bfa1bee16e5dce0829956da2efa0682ceb793988e87d842815f8c51a",
+    "android/src/lib.rs": "2a2c6fc359305c457a9b5d37c90199181f0850d10077cdf3aeaa73dcdce02e9a",
+    "android/assets/DroidSansFallbackFull.ttf": "acb6440a713d880a13a21b468ba7cd43f5a2b2934972e51be791c880730777b8",
     "android/build-apk.sh": "713d7a734a69dd9fed0aaeb562cfedbbc805130e8615a40d5377253582509a3f"
   }
 }

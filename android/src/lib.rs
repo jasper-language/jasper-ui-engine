@@ -31,6 +31,7 @@ const OWNER: u64 = 0x4a53_5045_522d_414e;
 const BUTTON: NodeId = NodeId(2);
 const BUDGET: usize = 64 * 1024 * 1024;
 const FONT: &[u8] = include_bytes!("../assets/DejaVuSans.ttf");
+const CJK_FONT: &[u8] = include_bytes!("../assets/DroidSansFallbackFull.ttf");
 
 fn window_pixels(window: &Window) -> (u32, u32) {
     let content = window.content_rect();
@@ -58,18 +59,19 @@ fn scene() -> Scene {
                     .background(Color::rgb(18, 20, 26)),
             )
             .child(
-                Node::rect(BUTTON)
+                Node::text(BUTTON, "中文 激活")
                     .with_semantics(
                         Semantics::default()
                             .role(Role::Button)
-                            .label("Jasper Android")
+                            .label("中文 激活")
                             .focusable(true),
                     )
                     .with_style(
                         Style::default()
                             .width(Length::Percent(70.0))
                             .height(Length::Px(180.0))
-                            .background(Color::rgb(40, 130, 90)),
+                            .background(Color::rgb(40, 130, 90))
+                            .text(32.0, Color::rgb(245, 247, 250)),
                     ),
             ),
     )
@@ -104,7 +106,7 @@ struct App {
 impl App {
     fn new() -> Option<Self> {
         let scene = scene();
-        let engine = HostRenderer::new(OWNER, &scene, FONT, 640, 360)?;
+        let engine = HostRenderer::with_fonts(OWNER, &scene, &[FONT, CJK_FONT], 640, 360)?;
         let generation = engine.surface_status(OWNER)?.generation;
         Some(Self {
             window: None,
@@ -196,7 +198,8 @@ impl App {
             style: Style::default()
                 .width(Length::Percent(70.0))
                 .height(Length::Px(180.0))
-                .background(background),
+                .background(background)
+                .text(32.0, Color::rgb(245, 247, 250)),
         };
         self.scene
             .apply_batch_at(old, std::slice::from_ref(&patch))
