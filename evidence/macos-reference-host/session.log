@@ -1,0 +1,36 @@
+stage=window created pid=20477 position=510,168 logical=960x640
+stage=adapter name="Apple M2" backend=metal
+stage=viewport width=1920 height=1280 scale=2 generation=2
+stage=ax nodes=4 focused=Some(NodeId(2)) tree=[Container::960x640@0,0 Container::716.7969x44@121.59375,208 Container::716.7969x28@121.59375,268 Button:激活 Activate:627.2031x120@166.40625,312]
+stage=redraw requested
+stage=ax nodes=4 focused=Some(NodeId(2)) tree=[Container::960x640@0,0 Container::716.7969x44@121.59375,208 Container::716.7969x28@121.59375,268 Button:激活 Activate:627.2031x120@166.40625,312]
+stage=surface not available yet attempt=1
+stage=redraw requested
+stage=ax nodes=4 focused=None tree=[Container::960x640@0,0 Container::716.7969x44@121.59375,208 Container::716.7969x28@121.59375,268 Button:激活 Activate:627.2031x120@166.40625,312]
+stage=surface not available yet attempt=2
+stage=redraw requested
+stage=ax nodes=4 focused=None tree=[Container::960x640@0,0 Container::716.7969x44@121.59375,208 Container::716.7969x28@121.59375,268 Button:激活 Activate:627.2031x120@166.40625,312]
+stage=surface not available yet attempt=3
+stage=redraw requested
+stage=ax nodes=4 focused=None tree=[Container::960x640@0,0 Container::716.7969x44@121.59375,208 Container::716.7969x28@121.59375,268 Button:激活 Activate:627.2031x120@166.40625,312]
+stage=frame index=1 1920x1280 scale=2 format=Bgra8UnormSrgb background=2140111 active=293924 pressed=0 other=23565 bytes=7372817 sha256=e3f1451c55941ee5dd7f69347bea01effb0b315fe3908adae334ead641e41e53
+stage=ax event=InitialTreeRequested
+stage=ax nodes=4 focused=None tree=[Container::960x640@0,0 Container::716.7969x44@121.59375,208 Container::716.7969x28@121.59375,268 Button:激活 Activate:627.2031x120@166.40625,312]
+stage=ax event=ActionRequested(ActionRequest { action: Click, target_tree: TreeId(00000000-0000-0000-0000-000000000000), target_node: #2, data: None })
+stage=activate count=1 version=3
+stage=redraw requested
+stage=ax nodes=4 focused=None tree=[Container::960x640@0,0 Container::716.7969x44@121.59375,208 Container::716.7969x28@121.59375,268 Button:激活 Activate:627.2031x120@166.40625,312]
+stage=frame index=2 1920x1280 scale=2 format=Bgra8UnormSrgb background=2140111 active=0 pressed=293924 other=23565 bytes=7372817 sha256=0d8de3f686c321e6ae882f5aba8650283b8a9654fde612fd5681b9e9c38d898b
+stage=redraw requested
+stage=ax nodes=4 focused=None tree=[Container::960x640@0,0 Container::716.7969x44@121.59375,208 Container::716.7969x28@121.59375,268 Button:激活 Activate:627.2031x120@166.40625,312]
+stage=frame index=3 1920x1280 scale=2 format=Bgra8UnormSrgb background=2140111 active=0 pressed=293924 other=23565 bytes=7372817 sha256=0d8de3f686c321e6ae882f5aba8650283b8a9654fde612fd5681b9e9c38d898b
+stage=activate count=2 version=4
+stage=redraw requested
+stage=ax nodes=4 focused=None tree=[Container::960x640@0,0 Container::716.7969x44@121.59375,208 Container::716.7969x28@121.59375,268 Button:激活 Activate:627.2031x120@166.40625,312]
+stage=frame index=4 1920x1280 scale=2 format=Bgra8UnormSrgb background=2140111 active=293924 pressed=0 other=23565 bytes=7372817 sha256=e3f1451c55941ee5dd7f69347bea01effb0b315fe3908adae334ead641e41e53
+stage=exit graceful host exit requested
+macos_host=pass adapter="Apple M2" backend=Metal width=1920 height=1280 scale=2 frames=4 activations=2 tapped=false retired=true elapsed_ms=12008
+readback path=/Users/auth/Documents/deepseek-harness/default-workspace/jui/evidence/macos-reference-host/latest.ppm bytes=7372817 background=2140111 active=293924 pressed=0 other=23565 sha256=e3f1451c55941ee5dd7f69347bea01effb0b315fe3908adae334ead641e41e53
+readback path=/Users/auth/Documents/deepseek-harness/default-workspace/jui/evidence/macos-reference-host/latest.ppm bytes=7372817 background=2140111 active=0 pressed=293924 other=23565 sha256=0d8de3f686c321e6ae882f5aba8650283b8a9654fde612fd5681b9e9c38d898b
+readback path=/Users/auth/Documents/deepseek-harness/default-workspace/jui/evidence/macos-reference-host/latest.ppm bytes=7372817 background=2140111 active=0 pressed=293924 other=23565 sha256=0d8de3f686c321e6ae882f5aba8650283b8a9654fde612fd5681b9e9c38d898b
+readback path=/Users/auth/Documents/deepseek-harness/default-workspace/jui/evidence/macos-reference-host/latest.ppm bytes=7372817 background=2140111 active=293924 pressed=0 other=23565 sha256=e3f1451c55941ee5dd7f69347bea01effb0b315fe3908adae334ead641e41e53

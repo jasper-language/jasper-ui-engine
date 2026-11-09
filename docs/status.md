@@ -993,3 +993,43 @@ Windows 10 LTSC x86_64 虚拟机参考宿主已完成运行验收：单窗口与
 `Bgra8UnormSrgb` 与 `Fifo`，完成单帧、Surface 重建 generation 1→2 和宿主持有 device-loss
 演练 generation 1→2。该结果证明 Windows wgpu 宿主路径可运行；虚拟机基础渲染适配器不是
 物理 GPU，也不能替代 Ubuntu RTX 3060 的硬件呈现证据。
+
+## 2026-11-09：macOS 与 iOS/iPadOS 参考宿主
+
+`macos/` 与 `ios/` 两个平台适配器落地；宿主持有窗口、Metal Surface、设备/队列与平台生命周期，
+引擎仍只接收自有场景值、规范化输入与 Surface 代数。文档见 [macos.md](macos.md)、
+[ios.md](ios.md)。
+
+**macOS（真机实测）。** Apple M2 / macOS 15.7.5 / Xcode 26.3 上 `scripts/verify-macos-host.sh`：
+
+- Metal 适配器 `Apple M2`，`Bgra8UnormSrgb`，`AutoVsync`；960×640 逻辑 = 1920×1280 物理，`scale=2`。
+- 每帧从呈现用 drawable 读回 PPM：首帧背景 2,140,111 / 按钮 293,924 / 文字与抗锯齿
+  23,565 像素，两次运行逐字节一致。
+- 字体：与 Android/Windows 相同的有序栈 `DejaVuSans` + `DroidSansFallbackFull`，按钮为中文
+  `激活 Activate`；`--cjk-tofu` 去掉回退字面后墨迹降到 15,349，两帧 SHA-256 不同。
+- 真实 WindowServer 输入：`CGEvent` 在按钮中心 `734,484` 投放，同样触发激活与版本化重绘；
+  两轮运行 `frames=4 activations=2` 稳定复现。
+- 中文渲染：宿主自带的有序栈渲染中文行与中文按钮正确（墨迹 23,565 像素），去掉 CJK 字面时是
+  同位置缺字框（15,349 像素）；截图与 PPM 留在证据目录。
+- 修复并记录一个真实缺陷：AccessKit 的 bounds 是物理像素，`accesskit_macos` 会除以
+  `backingScaleFactor`；宿主若直接传逻辑 bounds，AX 帧会缩小一半并整体偏移。参考宿主改为
+  `Affine::scale(scale)`，并把该单位约定写进 `docs/macos.md`。
+
+**iOS/iPadOS（构建与静态验证通过，运行未验收）。** 同一二进制声明 `UIDeviceFamily [1,2]`：
+
+- `aarch64-apple-ios` 与 `aarch64-apple-ios-sim` 均完成 `cargo build` 链接，链接
+  UIKit/Metal/QuartzCore；`-Wl,-platform_version` 产出 `LC_BUILD_VERSION`
+  （`IOS` / `IOSSIMULATOR`，`minos 15.0`）。参考宿主导入 `bundle` 的 `Info.plist` 由
+  `ios/Info.plist.in` 按目标替换平台字段。
+- 静态验证：`plutil` 声明、`UIDeviceFamily [1,2]`、Mach-O 平台、框架链接、simulator 的
+  ad-hoc 签名 `codesign --verify --deep --strict`、二进制与 plist 哈希。
+- 可移植规则 `ios/src/model.rs` 7/7：完整生命周期循环、重复/乱序通知幂等、终止终态、
+  后台直接激活、iPad 安全区换算、非法内缩、主触点移交。
+- `--features host-on-macos` 把同一宿主模块编译进 macOS 构建演练：iPhone 视口（390×844）与
+  iPad 视口（834×1194，安全区 24/0/20/0）都呈现两帧，iPad 配置下按按钮中心点击产生一次激活。
+- **运行未验收**：验证机没有安装 Simulator 运行时，也没有代码签名身份，因此没有 iOS 运行时
+  启动画面、UIKit 生命周期实测或真机安装。`scripts/verify-ios-app.sh` 在有运行时的机器上会
+  自动安装并启动，当前明确输出 `simulator_run=skipped reason=no_runtime`。
+
+未完成：macOS 的 Metal 设备丢失、vsync 截止时间、活 IME、公证与 Intel 运行验收；iOS 的运行时
+与真机验收、`UIView.safeAreaInsets` 查询、系统无障碍、软键盘/IME、Pencil 与设备矩阵。

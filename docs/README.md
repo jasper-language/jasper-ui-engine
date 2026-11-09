@@ -29,6 +29,8 @@
 | [host-rendering.md](host-rendering.md) | Surface 代数、DPI/尺寸、暂停/恢复/退休、GPU TextureView/present 与能力矩阵 |
 | [platform-hosts.md](platform-hosts.md) | 跨平台宿主责任、Linux/Windows/macOS/移动端与 jasper-os 边界 |
 | [android.md](android.md) | Android NativeActivity、GPU Surface、触摸与前后台生命周期 |
+| [macos.md](macos.md) | macOS Cocoa/Metal 宿主、AccessKit Cocoa 坐标单位与真机验收 |
+| [ios.md](ios.md) | iOS/iPadOS UIKit/Metal 宿主、生命周期、安全区与验收状态 |
 | [render-tcb.md](render-tcb.md) | 渲染路径第三方信任边界登记、设备丢失现状与能力矩阵的绑定 |
 | [size.md](size.md) | release 体积基线（rlib / 示例 / strip） |
 

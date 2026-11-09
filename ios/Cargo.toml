@@ -1,0 +1,33 @@
+[package]
+name = "jasper-ui-ios"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+publish = false
+
+[[bin]]
+name = "jasper-ui"
+path = "src/main.rs"
+
+[dependencies]
+# The iOS/iPadOS host consumes only the application-facing native engine surface.
+# iOS/iPadOS 宿主只消费面向应用的原生引擎入口。
+jasper-ui-engine = { path = "..", default-features = false, features = [
+    "desktop",
+    "gpu-pending",
+] }
+winit = "=0.30.13"
+wgpu = "=30.0.1"
+wgpu_context = "=0.10.0"
+pollster = "=0.4.0"
+log = "0.4.34"
+
+[features]
+# Compile the same adapter for a macOS build to exercise its logic without a Simulator runtime.
+# 把同一份适配器编译到 macOS 构建，在没有模拟器运行时的情况下演练其逻辑。
+host-on-macos = []
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true

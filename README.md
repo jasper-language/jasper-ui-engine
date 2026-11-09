@@ -56,6 +56,11 @@ Jasper UI 的 **宿主无关 Native 引擎底座**（Rust）。它只负责底�
 - **桌面窗口**：`--features desktop,native-engine-cpu --example window -- FONT [--once]` 使用根原生 CPU 候选，经宿主持有的 winit/softbuffer 呈现；Xvfb 下已实测一帧、缩放和点击，硬件/平台生命周期仍待验收
 - **宿主渲染生命周期**：`native::host::HostRenderer` 绑定尺寸/DPI/Surface 代数，协调暂停、恢复、退休和 GPU present 确认；见 [host-rendering.md](docs/host-rendering.md)
 - **GPU 选择**：`--features gpu` 用 wgpu 枚举真实适配器，套用自动/集成/独立/指定/纯软件策略
+- **macOS 参考宿主**：Cocoa winit 窗口 + Metal `CAMetalLayer` Surface + AccessKit Cocoa 适配器；
+  Retina 2x、drawable 读回、`AXPress` 与真实 CGEvent 点击、CJK 字体注入已在 Apple M2 真机实测
+- **iOS/iPadOS 参考宿主**：winit UIKit 窗口 + Metal Surface，同一二进制覆盖 iPhone 与 iPad
+  （`UIDeviceFamily [1,2]`）；完成交叉链接、`.app` 打包/签名静态验证与可移植规则单测，
+  运行验收仍缺模拟器运行时或签名身份
 - 正式原生流水线：场景更新 → Blitz 树/样式/布局/事件 → Parley/Vello → 宿主后端或 Surface
 - 旧兼容流水线：场景 → Taffy 布局 → PaintOp → UiBatch → 后端，仅由 `LegacyEngine` 显式调用
 - 测试与可运行示例
@@ -63,9 +68,9 @@ Jasper UI 的 **宿主无关 Native 引擎底座**（Rust）。它只负责底�
 ## v0.1 明确未实现
 
 - 真实文字光栅化（`DrawText` 在 Headless 后端返回 `Unsupported`；需要 Parley/字体后端）
-- macOS/移动端无障碍运行验收、Windows 物理 GPU/vsync、图片/SVG 解码；Ubuntu 已完成
-  硬件 GPU、device-loss 恢复演练与 AT-SPI 桥实测，Windows 10 VM 已完成 UIA 与 wgpu
-  生命周期演练
+- 移动端系统无障碍、Windows 物理 GPU/vsync、图片/SVG 解码；Ubuntu 已完成硬件 GPU、
+  device-loss 恢复演练与 AT-SPI 桥实测，Windows 10 VM 已完成 UIA 与 wgpu 生命周期演练，
+  macOS 已完成 Cocoa 无障碍与 Metal 呈现实测
 - Jasper ABI、Jasper UI Framework、UI IR、状态/事件/动画/路由
 - Web HTML/CSS/JS/WASM 输出
 - 完整文本编辑与 IME 往返、过冲回弹、系统无障碍桥（文本/组合事件映射与焦点路由已有实现）
@@ -124,6 +129,27 @@ Windows 参考宿主的构建、字体栈和 VM 验收步骤见
 ```powershell
 window.exe DejaVuSans.ttf C:\Windows\Fonts\msyh.ttc
 ```
+
+macOS 参考宿主：
+
+```bash
+bash macos/build-app.sh
+bash scripts/verify-macos-host.sh
+```
+
+macOS 使用 Cocoa 窗口、Metal Surface、AccessKit Cocoa 适配器；构建、命令行与验收限制见
+[macos/README.md](macos/README.md)。
+
+iOS / iPadOS 参考宿主：
+
+```bash
+rustup target add aarch64-apple-ios aarch64-apple-ios-sim
+bash ios/build-app.sh simulator
+bash scripts/verify-ios-app.sh
+```
+
+同一二进制覆盖 iPhone 与 iPad；当前只完成构建、链接、bundle/签名静态验证与可移植规则单测，
+运行验收需要模拟器运行时或设备签名身份，见 [ios/README.md](ios/README.md)。
 
 GPU 设备丢失恢复演练：
 

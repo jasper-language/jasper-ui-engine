@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "kind": "macos-reference-host",
+  "date": "2026-11-09",
+  "status": "functional_reference_host_passed",
+  "scope": "macOS Cocoa/Metal reference host: Retina physical viewport, CAMetalLayer drawable presentation and readback, AccessKit Cocoa tree with physical-pixel bounds, AXPress and real WindowServer CGEvent activation, ordered Latin+CJK font stack, graceful retirement and an ad-hoc signed .app bundle",
+  "environment": {
+    "os": "macOS 15.7.5 (24G624) arm64",
+    "hardware": "Apple M2, 8 GB",
+    "xcode": "26.3 (17C529)",
+    "gpu_adapter": "Apple M2",
+    "gpu_backend": "Metal",
+    "surface_format": "Bgra8UnormSrgb",
+    "present_mode": "AutoVsync",
+    "logical_viewport": "960x640",
+    "physical_viewport": "1920x1280",
+    "scale_factor": 2,
+    "metric_source": "sw_vers, xcodebuild -version, host stage logs and drawable readback"
+  },
+  "build": {
+    "crate": "macos/ (jasper-ui-macos)",
+    "target": "aarch64-apple-darwin",
+    "profile": "release",
+    "bundle": "macos/target/app/Jasper UI.app",
+    "bundle_id": "org.jasper.ui.macos",
+    "minimum_macos": "11.0",
+    "signature": "ad-hoc",
+    "binary_arch": "arm64",
+    "binary_bytes": 21526064,
+    "binary_sha256": "5b9c33e521c4a9290e6e75db5a7152721d40bd56dd2c24603d9c818ea180a949",
+    "plist_sha256": "a32397106a9c3758c06c128e294efa712058d8dbdec934c4b255f7a4a9071c57",
+    "codesign_verify": "codesign --verify --deep --strict passes"
+  },
+  "checks": [
+    {
+      "name": "metal_surface_present",
+      "result": "passed",
+      "detail": "winit creates the Cocoa window and CAMetalLayer surface; wgpu selects the Apple M2 Metal adapter; Queue::present is confirmed by gpu_presented on every frame."
+    },
+    {
+      "name": "retina_viewport",
+      "result": "passed",
+      "detail": "960x640 logical points map to a 1920x1280 physical drawable; the engine receives the physical extent and scale 2 and lays the root scene out in logical points."
+    },
+    {
+      "name": "drawable_readback",
+      "result": "passed",
+      "frames": [
+        {
+          "index": 1,
+          "state": "idle",
+          "background_px": 2140111,
+          "button_px": 293924,
+          "text_and_aa_px": 23565,
+          "sha256": "e3f1451c55941ee5dd7f69347bea01effb0b315fe3908adae334ead641e41e53"
+        },
+        {
+          "index": 2,
+          "state": "after_ax_press",
+          "background_px": 2140111,
+          "button_px": 293924,
+          "pressed_px": 293924,
+          "text_and_aa_px": 23565,
+          "sha256": "0d8de3f686c321e6ae882f5aba8650283b8a9654fde612fd5681b9e9c38d898b"
+        },
+        {
+          "index": 4,
+          "state": "after_os_click",
+          "background_px": 2140111,
+          "button_px": 293924,
+          "text_and_aa_px": 23565,
+          "sha256": "e3f1451c55941ee5dd7f69347bea01effb0b315fe3908adae334ead641e41e53"
+        }
+      ],
+      "detail": "Each presented drawable is copied to a staging buffer and written as a PPM; the declared linear colors are counted after sRGB encoding (18,20,26 -> 75,79,90; 40,130,90 -> 110,189,160; 190,92,52 -> 247,166,128). Two independent runs produced identical counts and digests."
+    },
+    {
+      "name": "accesskit_cocoa_tree",
+      "result": "passed",
+      "detail": "The real AX API exposes AXButton title \"激活 Activate\" at screen frame 421,424 627x120, matching the engine node bounds after the host scales logical bounds into physical pixels for AccessKit.",
+      "node": "AXButton 激活 Activate @421,424 627x120 actions=[AXPress]"
+    },
+    {
+      "name": "accesskit_press_activation",
+      "result": "passed",
+      "detail": "AXUIElementPerformAction(AXPress) returns success, reaches the app as AccessKit ActionRequested(Click), activates the scene button and repaints."
+    },
+    {
+      "name": "windowserver_pointer_click",
+      "result": "passed",
+      "detail": "A CGEvent left click posted at the button centre 734,484 is delivered by NSApplication to winit, routes through DesktopInput and Engine::pointer, and produces a second versioned activation and repaint."
+    },
+    {
+      "name": "chinese_font_stack",
+      "result": "passed",
+      "detail": "The host injects the same ordered stack as Android/Windows (DejaVuSans then DroidSansFallbackFull). The Chinese title line and the 激活 Activate button render with real glyphs (23,565 text pixels); --cjk-tofu drops the fallback face and the same area becomes missing-glyph boxes (15,349 text pixels) with a different frame digest.",
+      "cjk_text_px": 23565,
+      "tofu_text_px": 15349,
+      "cjk_frame_sha256": "e3f1451c55941ee5dd7f69347bea01effb0b315fe3908adae334ead641e41e53",
+      "tofu_frame_sha256": "e517af6507004b056d5d473fe107ff86d3890e3203ef33ab978ffba730a195d6"
+    },
+    {
+      "name": "bundle_executable",
+      "result": "passed",
+      "detail": "The release binary inside the signed .app runs directly and presents the identical first frame (sha256 e3f1451c...) to the debug verification build."
+    },
+    {
+      "name": "graceful_retirement",
+      "result": "passed",
+      "detail": "retired=true; the host deactivates and retires the native view before exiting the event loop and the process exits 0."
+    },
+    {
+      "name": "launchservices_open",
+      "result": "not_verified",
+      "reason": "`open` cannot launch apps in this sandboxed session: `open -W` reports GetProcessPID() failure for the Jasper bundle, and the same failure hangs for a control bundle wrapping /usr/bin/true. The bundle is therefore verified by structure, signature and direct execution, not by LaunchServices."
+    }
+  ],
+  "screenshots": {
+    "final_frame": {
+      "path": "frame.png",
+      "sha256": "f028f58578cf978e8574e26a201df1d334cf091546def45c0429acf5691947d2"
+    },
+    "chinese_frame": {
+      "path": "frame-cjk.png",
+      "sha256": "f028f58578cf978e8574e26a201df1d334cf091546def45c0429acf5691947d2"
+    },
+    "tofu_frame": {
+      "path": "frame-tofu.png",
+      "sha256": "8cce1e398f9687ea98ec4303c96a087fd135096b74dc400383a1bf6790a20acf"
+    },
+    "chinese_line_crop": {
+      "path": "cjk-text.png",
+      "sha256": "b744d438f2f3ce223e3216a804ca816c12d7aad43c47948c9337b2a2792ac714"
+    },
+    "tofu_line_crop": {
+      "path": "tofu-text.png",
+      "sha256": "029fbea9ea7edefdf6557ad85712d77111048ced3db6f12e94686314d0fe6bc3"
+    }
+  },
+  "cross_platform_boundary": {
+    "engine": "The default engine core stays macOS-independent; the host consumes jasper-ui-engine public modules only.",
+    "host": "macos/ is a binary crate that owns the Cocoa window, CAMetalLayer surface, Metal device/queue, AccessKit Cocoa adapter and .app packaging.",
+    "coordinates": "The engine viewport and pointer routing use logical points; the drawable and AccessKit bounds use physical pixels, and the host converts between them.",
+    "input": "winit mouse/keyboard/IME events -> DesktopInput -> Engine; the verification adds a live AXPress and a WindowServer CGEvent click."
+  },
+  "limits": [
+    "No Metal device-loss handling (the engine reports device-loss recovery as Unsupported).",
+    "No measured vsync deadline, compositor frame pacing or hardware-independent timing claim.",
+    "No live system IME composition round trip; IME events are forwarded when macOS delivers them.",
+    "No automated window resize/occlusion/multi-display exercise.",
+    "No notarization, hardened runtime or App Store distribution; the bundle is ad-hoc signed.",
+    "No Intel (x86_64) runtime acceptance; --universal is compile-time only.",
+    "LaunchServices launch could not be verified in this sandboxed session."
+  ],
+  "sources": {
+    "macos/src/main.rs": "b77a4dcdf455568ee18934564b5027d31f3df94bb8bb150a6d7c15ebdc1042dc",
+    "macos/Cargo.toml": "20ae6a9fd467967850b8a6d979589bb31bb186bde43944eeb53276172124019c",
+    "macos/Info.plist.in": "c5de83c4c8082d258d7dbe5d3d004ea21bd1622b72af48359898dc8283a8b659",
+    "macos/build-app.sh": "2aa31c4884f2af72cb3be22b734ef18f6dc2154c46565be89697df58aeefe59e",
+    "macos/tools/ax-probe.swift": "ee3428351305acfa884b6a79a8346d3b4e1382efe2da597b54319da738f8de7b",
+    "macos/tools/os-click.swift": "aa088bce76e1aca78ce1cfe80904b56d50e3c88fb08438be97252d9f8b36fe5d",
+    "macos/README.md": "b79ee67937953ef9cf5da019cc3e56ce18b0066387c78381529e8adf22a9080f",
+    "docs/macos.md": "fa3e33cefb3cdd3ef3c9c9b37fb712ef20f4f04c60ac98e58d490e28fa9b2663",
+    "scripts/verify-macos-host.sh": "13d4db9e4869eb7085081562aacf0e883185fdb391605fb35eac57617ba32141"
+  }
+}

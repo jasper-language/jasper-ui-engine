@@ -1,0 +1,9 @@
+stage=lifecycle Activate state=Active
+stage=window created pid=21036 physical=780x1652 scale=2
+stage=adapter name="Apple M2" backend=metal
+stage=viewport physical=780x1652 scale=2 logical=390.0x826.0 content=390.0x826.0@0.0,0.0 generation=2
+stage=frame index=1 780x1652 format=Bgra8UnormSrgb background=1098625 active=167784 pressed=0 other=22151 bytes=3865696 sha256=e7e798d5e36448ba954c827488812f6e9c533d0a8bc31fe040ce1428cb9ca0bb
+stage=frame index=2 780x1652 format=Bgra8UnormSrgb background=1098625 active=167784 pressed=0 other=22151 bytes=3865696 sha256=e7e798d5e36448ba954c827488812f6e9c533d0a8bc31fe040ce1428cb9ca0bb
+ios_host=pass adapter="Apple M2" backend=Metal viewport=780x1652@2 frames=2 activations=0 tapped=false retired=true elapsed_ms=1847
+readback path=/Users/auth/Documents/deepseek-harness/default-workspace/jui/evidence/ios-reference-host/adapter-phone.ppm bytes=3865696 background=1098625 active=167784 pressed=0 other=22151 sha256=e7e798d5e36448ba954c827488812f6e9c533d0a8bc31fe040ce1428cb9ca0bb
+readback path=/Users/auth/Documents/deepseek-harness/default-workspace/jui/evidence/ios-reference-host/adapter-phone.ppm bytes=3865696 background=1098625 active=167784 pressed=0 other=22151 sha256=e7e798d5e36448ba954c827488812f6e9c533d0a8bc31fe040ce1428cb9ca0bb

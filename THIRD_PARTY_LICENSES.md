@@ -76,8 +76,8 @@ pinned exactly (`=x.y.z`, or a fixed git revision for Blitz).
 | accesskit | =0.25.2 | MIT OR Apache-2.0 | https://github.com/AccessKit/accesskit |
 | accesskit_winit | =0.34.2 | MIT OR Apache-2.0 | https://github.com/AccessKit/accesskit |
 | android_logger (Android host) | =0.15.1 | MIT OR Apache-2.0 | https://github.com/rust-mobile/android_logger |
-| DejaVu Sans (Android host font) | system DejaVu 2.37 package | Bitstream Vera / DejaVu Fonts License | https://dejavu-fonts.github.io/License.html |
-| Droid Sans Fallback (Android CJK host font) | system fonts-droid-fallback package | Apache-2.0 | https://android.googlesource.com/platform/frameworks/base/ |
+| DejaVu Sans (reference host Latin font) | system DejaVu 2.37 package | Bitstream Vera / DejaVu Fonts License | https://dejavu-fonts.github.io/License.html |
+| Droid Sans Fallback (reference host CJK font) | system fonts-droid-fallback package | Apache-2.0 | https://android.googlesource.com/platform/frameworks/base/ |
 | VirtualBox Windows unattended template (test VM) | VirtualBox 7.2.22 | GPL-3.0-only | https://www.virtualbox.org/ |
 | jaso (jasper-os, git rev 0f1e5c1) | 0.1.0 | Apache-2.0 | https://github.com/jasper-language/jasper-os |
 | libc | =0.2.191 | MIT OR Apache-2.0 | https://github.com/rust-lang/libc |

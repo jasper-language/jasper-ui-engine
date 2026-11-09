@@ -1,0 +1,1 @@
+/Users/auth/Documents/deepseek-harness/default-workspace/jui/ios/target/app/simulator/JasperUI.app/Info.plist: OK

@@ -21,9 +21,9 @@ winit、wgpu、AT-SPI、UIA、Cocoa、Android 和 iOS 能力都放在显式门�
 |---|---|---|---|
 | Ubuntu/Wayland | winit + softbuffer；winit Touch | `accesskit_winit` → AT-SPI | CPU 双窗口、硬件 RTX 3060 Vulkan、AT-SPI `click` 已实测 |
 | Windows | winit + softbuffer + wgpu/Dx12 | `accesskit_winit` → UIA | Windows 10 VM 已完成 CPU 单/双窗口、物理点击、100%/150% DPI、中文回退、UIA 枚举/Invoke 与 GPU 生命周期演练 |
-| macOS | 同一 winit 边界 | `accesskit_winit` → Cocoa | Linux 交叉编译 x86_64/AArch64；尚无运行验收 |
+| macOS | winit + Metal Surface（`CAMetalLayer`） | `accesskit_winit` → Cocoa | Apple M2 / macOS 15.7.5 真机：Metal 呈现与 drawable 读回、Retina 2x、AX 树与 AXPress、真实 CGEvent 点击、中文回退与字体注入 |
 | Android | NativeActivity + winit + wgpu + Touch | Android 平台后端待接 | C66/Android 11/arm64 已实测 GPU、触摸、旋转与前后台恢复 |
-| iOS | 平台生命周期适配器 | `accesskit_winit` 对应平台后端 | 尚未实现或运行验收 |
+| iOS / iPadOS | winit UIKit 窗口 + Metal Surface | 无（钉住的 AccessKit 无 iOS 后端） | 交叉编译与链接、`.app` bundle/签名静态验证、可移植规则单测；本机无模拟器运行时与签名身份，**运行未验收** |
 | jasper-os 内置宿主 | 系统窗口/输入服务 | 系统无障碍服务 | 不属于 Ubuntu 参考宿主；尚未接入 |
 
 `desktop-accessibility` 特性只是在参考宿主中启用平台适配器，不把平台 API
@@ -37,15 +37,18 @@ winit、wgpu、AT-SPI、UIA、Cocoa、Android 和 iOS 能力都放在显式门�
 ## 后续平台工作
 
 - Windows：硬件 GPU/vsync、WM_POINTER/Windows Ink 设备、活外部 IME 和 Windows 11/ARM64 矩阵。
-- macOS：Cocoa 无障碍、Retina、NSView Surface、Apple Pencil 宿主。
+- macOS：Metal 设备丢失、vsync 截止时间、活 IME、窗口重设/遮挡自动化、公证与 Intel 运行验收。
 - Android：AccessKit/系统无障碍服务、活 IME、分屏/多窗口与更多 ABI 设备矩阵。
-- iOS：生命周期、焦点、软键盘/IME、触摸与 Pencil。
+- iOS/iPadOS：模拟器或真机运行验收、`UIView.safeAreaInsets` 查询、系统无障碍、软键盘/IME、
+  Pencil 压力与倾斜、设备矩阵。
 - jasper-os：系统窗口/显示/输入/无障碍服务及其 IPC。
 
 任何平台完成运行验收前，只能声明“通过目标编译检查”，不能把 Ubuntu 结果外推为
 该平台已经可用。
 
 `desktop-accessibility` + `examples/window` 已在 Windows 10 x86_64 虚拟机中通过 UIA
-枚举、Unicode 码点匹配和 Invoke；macOS x86_64/AArch64 目前仍是目标编译状态。宿主无关
-核心另外通过 Android AArch64 和 iOS AArch64 目标编译；Apple 平台运行适配由独立 macOS
-工作流验收。
+枚举、Unicode 码点匹配和 Invoke；Cocoa 无障碍服务也已在 macOS 真机经
+`scripts/verify-macos-host.sh` 实测（AX 树、AXPress 与真实 CGEvent 点击）。宿主无关核心
+另外通过 Android AArch64 和 iOS AArch64 目标编译，iOS 参考宿主也已针对
+`aarch64-apple-ios` 与 `aarch64-apple-ios-sim` 完成 `cargo build` 链接与 `.app`
+打包/签名静态验证；iOS 运行验收仍缺模拟器运行时或签名身份。

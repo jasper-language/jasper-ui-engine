@@ -14,3 +14,7 @@ __pycache__/
 *.py[cod]
 /third_party/*/dist/
 /third_party/*/target/
+
+# Built platform bundles (macOS .app, iOS .app) are produced by the build scripts.
+/macos/target/
+/ios/target/

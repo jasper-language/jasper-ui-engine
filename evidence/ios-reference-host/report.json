@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "kind": "ios-reference-host",
+  "date": "2026-11-09",
+  "status": "build_and_packaging_passed_runtime_unverified",
+  "scope": "iOS/iPadOS reference host: cross-compile and link for device and Simulator slices, .app bundling with iPhone/iPad device families, ad-hoc Simulator signature, portable lifecycle/viewport rule tests, ordered Latin+CJK font stack, and an identical-adapter exercise on the macOS build",
+  "environment": {
+    "os": "macOS 15.7.5 (24G624) arm64",
+    "hardware": "Apple M2, 8 GB",
+    "xcode": "26.3 (17C529)",
+    "ios_sdk": "26.2",
+    "simulator_runtimes": 0,
+    "code_signing_identities": 0,
+    "metric_source": "xcodebuild -version, xcrun --show-sdk-version, simctl list runtimes, security find-identity"
+  },
+  "build": {
+    "device_target": "aarch64-apple-ios",
+    "simulator_target": "aarch64-apple-ios-sim",
+    "minimum_ios": "15.0",
+    "bundle_id": "org.jasper.ui.ios",
+    "device_family": [
+      1,
+      2
+    ],
+    "linker_platform_commands": {
+      "device": {
+        "cmd": "LC_BUILD_VERSION",
+        "platform": "IOS",
+        "minos": "15.0"
+      },
+      "simulator": {
+        "cmd": "LC_BUILD_VERSION",
+        "platform": "IOSSIMULATOR",
+        "minos": "15.0"
+      }
+    },
+    "frameworks": [
+      "UIKit",
+      "Metal",
+      "QuartzCore",
+      "CoreGraphics",
+      "Foundation"
+    ],
+    "device_signature": "unavailable (no code-signing identity)",
+    "simulator_signature": "ad-hoc",
+    "device_binary_sha256": "34c4ce8a94e038f9078eb96a7d40068035bfceef10f855fadd941c71dab13544",
+    "simulator_binary_sha256": "8de6e6871d0d4e4fb206b9c0092078106bf52580eb7eb7612b4391ad55a5b862",
+    "device_plist_sha256": "87b50d72815927b5845bd35415832e14e0e2a12353e4ac6ccc0703c726b41183",
+    "simulator_plist_sha256": "569609b2cb008a4e83d7d764c8a33e3af1abd11ccb09cd01a364da6f6a06883a",
+    "fonts": [
+      "DejaVuSans.ttf (Latin)",
+      "DroidSansFallbackFull.ttf (CJK fallback)"
+    ]
+  },
+  "checks": [
+    {
+      "name": "device_cross_link",
+      "result": "passed",
+      "command": "bash ios/build-app.sh device",
+      "detail": "cargo build --release --target aarch64-apple-ios linked the host against UIKit/Metal; vtool reports LC_BUILD_VERSION platform IOS minos 15.0."
+    },
+    {
+      "name": "simulator_cross_link",
+      "result": "passed",
+      "command": "bash ios/build-app.sh simulator",
+      "detail": "cargo build --release --target aarch64-apple-ios-sim linked the host; vtool reports platform IOSSIMULATOR minos 15.0; codesign --verify --deep --strict passes with an ad-hoc signature."
+    },
+    {
+      "name": "bundle_declarations",
+      "result": "passed",
+      "detail": "plutil -lint OK; UIDeviceFamily [1,2]; CFBundleSupportedPlatforms iPhoneOS / iPhoneSimulator; DTSDKName iphoneos26.2 / iphonesimulator26.2; UILaunchScreen present."
+    },
+    {
+      "name": "portable_rules",
+      "result": "passed",
+      "command": "cargo test --locked --manifest-path ios/Cargo.toml",
+      "detail": "7/7: lifecycle cycle, duplicate notifications, termination finality, background activation, iPad safe area, invalid insets, primary-contact handoff."
+    },
+    {
+      "name": "adapter_exercise_phone",
+      "result": "passed",
+      "command": "cargo run --features host-on-macos -- --size 390,844 --frames 2 --spin",
+      "output": "ios_host=pass adapter=\"Apple M2\" backend=Metal viewport=780x1652@2 frames=2 retired=true",
+      "detail": "The identical host module rendered two Metal frames for a 390x844 logical phone viewport, with the Chinese title line and 激活 Activate button using the bundled ordered font stack."
+    },
+    {
+      "name": "adapter_exercise_ipad_safe_area_and_tap",
+      "result": "passed",
+      "command": "cargo run --features host-on-macos -- --size 834,1194 --insets 24,0,20,0 --frames 2 --tap center",
+      "output": "viewport physical=1668x1658 scale=2 logical=834.0x829.0 content=834.0x785.0@0.0,24.0; tap x=417.0 y=438.5 activated=true; frames=2 activations=1; frame1 active=394368 other=169672; frame2 pressed=394368",
+      "detail": "The safe-area insets shrank the root scene content without changing the surface extent; the mapped button centre activated and repainted the pressed color."
+    },
+    {
+      "name": "simulator_runtime_launch",
+      "result": "not_verified",
+      "reason": "No Simulator runtime is installed on the verification host and no code-signing identity is available, so the app could not be installed or launched. scripts/verify-ios-app.sh performs install+launch automatically when a runtime exists and reports simulator_run=skipped reason=no_runtime here."
+    }
+  ],
+  "screenshots": {
+    "phone_adapter": {
+      "path": "adapter-phone.png",
+      "sha256": "58c6ee16cf4106f1903920bdbf763ef5b548f8ece0ba9845009ac8c03400c295"
+    },
+    "ipad_adapter_tapped": {
+      "path": "adapter-ipad.png",
+      "sha256": "7f2ec7e92dea3eaa64a70a3f47bdd5998660f934df63205545b1caad3a6b0547"
+    }
+  },
+  "cross_platform_boundary": {
+    "engine": "The default engine core stays iOS-independent; the host consumes only jasper-ui-engine public modules.",
+    "host": "ios/ is a binary crate; it links winit's UIKit backend and wgpu's Metal backend, and owns UIApplicationMain through winit's run_app.",
+    "input": "winit Touch -> DesktopInput -> Engine::pointer, with host-side primary-contact tracking.",
+    "safe_area": "ios/src/model.rs converts physical size, scale and insets into the logical content rectangle; the adapter currently takes insets from --insets because UIView.safeAreaInsets is not queried yet.",
+    "adapter_exercise": "--features host-on-macos compiles the same host module for macOS; it is not an iOS runtime and covers no UIKit lifecycle delivery."
+  },
+  "limits": [
+    "Runtime launch on Simulator and on a device is not verified on this host.",
+    "No code-signing identity or provisioning profile was available; the device bundle is unsigned.",
+    "UIView.safeAreaInsets is not queried; safe-area insets are host-supplied.",
+    "No iOS accessibility bridge (the pinned AccessKit has no iOS backend).",
+    "No live software keyboard/IME composition, Pencil pressure/tilt, device-loss or thermal/power matrix.",
+    "No icons, storyboards, App Store packaging or provisioning automation."
+  ],
+  "sources": {
+    "ios/src/main.rs": "045ebadea5feab08af2063183dcf23e7de494cca1678149ac9db8a1b704b5650",
+    "ios/src/model.rs": "1fe858bc3f636e6ca3465ad96e4aa94b5284221cf4d8448c5d72cbf5d84d1b9d",
+    "ios/Cargo.toml": "66e50b8581eaeaa69ddb278df682485a632ae9c33ca74d9d2396e3f6e01cc18c",
+    "ios/Info.plist.in": "4ee1972ca292448f60a473e9ef9dba4a5df6b46aa5cf68901f6cea1464adb48e",
+    "ios/build-app.sh": "a2fec2453c55cb16bba9c4a12509958218bbc69004f500b3eedee91e9a274b50",
+    "ios/README.md": "27ce8bde886bd52a858ac781363e44ccb544486cb4b33787616eb375d1e7f565",
+    "docs/ios.md": "45879a5886f9d2522f5499dfc1dceb740e51bae885e4185105a53acefb348581",
+    "scripts/verify-ios-app.sh": "86ed2f162d9d9b3324d506863174a5c5005545dd72ae89e69d951b61ba979d25"
+  }
+}

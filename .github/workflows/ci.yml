@@ -50,6 +50,25 @@ jobs:
               --no-default-features --features desktop-accessibility --example window
           done
 
+  apple-hosts:
+    # The macOS/iOS platform adapters build and statically verify on an Apple runner. Runtime
+    # acceptance needs a desktop session (macOS) or a Simulator runtime/signing identity (iOS),
+    # so it stays a local, evidence-producing step rather than a CI claim.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install Apple targets
+        run: rustup target add aarch64-apple-ios aarch64-apple-ios-sim
+      - name: Build macOS reference host
+        run: cargo build --locked --manifest-path macos/Cargo.toml
+      - name: Test iOS host portable rules
+        run: cargo test --locked --manifest-path ios/Cargo.toml
+      - name: Build iOS bundles and verify their structure
+        env:
+          JASPER_UI_SKIP_ADAPTER_EXERCISE: "1"
+        run: bash scripts/verify-ios-app.sh
+
   test:
     runs-on: ubuntu-latest
     steps:

@@ -1,0 +1,2 @@
+os_click ax_trusted=true activate_requested=true frontmost=20477 target=20477
+os_click=posted point=734,484
