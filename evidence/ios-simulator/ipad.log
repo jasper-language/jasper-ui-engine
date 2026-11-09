@@ -1,11 +1,11 @@
 stage=lifecycle Activate state=Active
-stage=window created pid=33465 physical=2064x2648 scale=2
+stage=window created pid=3104 physical=2064x2648 scale=2
 stage=adapter name="Apple iOS simulator GPU" backend=metal
-stage=viewport physical=2064x2648 scale=2 logical=1032.0x1324.0 content=1032.0x1324.0@0.0,0.0 generation=2
-stage=frame index=1 2064x2648 format=Bgra8UnormSrgb background=4945816 active=496804 pressed=0 other=22852 bytes=16396433 sha256=0e17450f2af7a668a4e73597c331326be2bbf34df3a77763698866956d269b12
+stage=viewport physical=2064x2648 scale=2 logical=1032.0x1324.0 content=1032.0x1272.0@0.0,32.0 insets=32.0,0.0,20.0,0.0 generation=2
+stage=frame index=1 2064x2648 format=Bgra8UnormSrgb background=4967957 active=479077 pressed=0 other=18438 bytes=16396433 sha256=571adc545e17b3237c5ea6b6bf5d0cc18c8814dcd973ca8659129e2b87253905
 stage=activate count=1 version=3
-stage=tap x=516.0 y=708.0 activated=true
-stage=frame index=2 2064x2648 format=Bgra8UnormSrgb background=4945816 active=0 pressed=496804 other=22852 bytes=16396433 sha256=e3eb394c1d65f946676603320bb809f01597a26b7e96b302fa2ef99b3cceefc1
-ios_host=pass adapter="Apple iOS simulator GPU" backend=Metal viewport=2064x2648@2 frames=2 activations=1 tapped=true retired=true elapsed_ms=495
-readback path=<container>/frame-1794250042.ppm bytes=16396433 background=4945816 active=496804 pressed=0 other=22852 sha256=0e17450f2af7a668a4e73597c331326be2bbf34df3a77763698866956d269b12
-readback path=<container>/frame-1794250042.ppm bytes=16396433 background=4945816 active=0 pressed=496804 other=22852 sha256=e3eb394c1d65f946676603320bb809f01597a26b7e96b302fa2ef99b3cceefc1
+stage=tap x=516.0 y=708.8 activated=true
+stage=frame index=2 2064x2648 format=Bgra8UnormSrgb background=4967957 active=0 pressed=479077 other=18438 bytes=16396433 sha256=100496f82ca4d6a2970ae97e1a19e6b8a6e1e33417fde583e6a5c7113f6dd374
+ios_host=pass adapter="Apple iOS simulator GPU" backend=Metal viewport=2064x2648@2 frames=2 activations=1 tapped=true retired=true elapsed_ms=778
+readback path=<container>/f4-1794251649.ppm bytes=16396433 background=4967957 active=479077 pressed=0 other=18438 sha256=571adc545e17b3237c5ea6b6bf5d0cc18c8814dcd973ca8659129e2b87253905
+readback path=<container>/f4-1794251649.ppm bytes=16396433 background=4967957 active=0 pressed=479077 other=18438 sha256=100496f82ca4d6a2970ae97e1a19e6b8a6e1e33417fde583e6a5c7113f6dd374

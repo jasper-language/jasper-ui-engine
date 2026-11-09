@@ -21,9 +21,10 @@ UIKit 生命周期处理和一个最小参考场景。iPhone 与 iPad 共用同�
   the stable primary contact and forwards Down/Move/Up/Cancel to `Engine::pointer`.
 - The host owns the `CAMetalLayer` surface, the wgpu Metal device/queue and `present`; the engine
   only paints into the host texture.
-- iPad safe area: `Viewport` accepts physical size, scale factor and UIKit insets and derives the
-  logical content rectangle used for the root scene node. The current adapter has no UIKit
-  inset query yet, so the host passes the insets given by `--insets` (zero by default).
+- Safe area: the host reads `UIView.safeAreaInsets` through the live window handle (`objc2` +
+  `raw-window-handle`) and feeds those point values into `Viewport`; the root fills the viewport
+  and turns the insets into padding. `--insets top,right,bottom,left` overrides the query.
+  Measured: iPhone 17 Pro simulator 62/0/34/0, iPad Pro 13-inch (M5) 32/0/20/0.
 - Fonts: the same ordered stack as Android/Windows and the macOS host — `DejaVuSans` then
   `DroidSansFallbackFull` — so the Chinese title, line and `激活 Activate` button render with real
   glyphs. `--cjk-tofu` drops the fallback face as a control.
@@ -144,7 +145,6 @@ security, or real device metrics.
   names, UDIDs and serial numbers are deliberately kept out of this public repository.
 - The launch argument is optional: the Latin face and the CJK fallback are compiled into the
   binary, so `jasper-ui --frames 2` works without injecting font files.
-- The adapter does not query `UIView.safeAreaInsets` yet; insets are host-supplied.
 - No iOS accessibility bridge (AccessKit has no iOS adapter in the pinned version).
 - No live software keyboard / IME composition round trip.
 - No Metal device-loss handling and no thermal/power device matrix.

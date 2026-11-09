@@ -1494,7 +1494,9 @@ version = "0.1.0"
 dependencies = [
  "jasper-ui-engine",
  "log",
+ "objc2 0.6.5",
  "pollster",
+ "raw-window-handle",
  "wgpu",
  "wgpu_context",
  "winit",

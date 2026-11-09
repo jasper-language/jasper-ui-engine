@@ -24,55 +24,51 @@
   },
   "checks": [
     {
-      "name": "ipad_launch_and_metal_frame",
+      "name": "ipad_launch_metal_frame_safe_area",
       "result": "passed",
       "device": "iPad Pro 13-inch (M5) simulator",
-      "detail": "Lifecycle Activate, window 2064x2648 physical at scale 2, Metal adapter 'Apple iOS simulator GPU', frame 1 readback background=4945816 button=496804 text=22852 pixels.",
-      "frame_sha256": "0e17450f2af7a668a4e73597c331326be2bbf34df3a77763698866956d269b12"
+      "detail": "UIView.safeAreaInsets now query through the live window handle: top 32, bottom 20 points; root fills the viewport and uses the insets as padding. Metal frame read back from the drawable."
     },
     {
-      "name": "ipad_activation_repaint",
-      "result": "passed",
-      "detail": "Engine-level tap at the button centre (516,708) activated the scene; the host rendered the pressed frame deterministically from about_to_wait instead of waiting for a UIKit RedrawRequested that a Metal-backed view may not deliver.",
-      "pressed_frame_sha256": "e3eb394c1d65f946676603320bb809f01597a26b7e96b302fa2ef99b3cceefc1"
-    },
-    {
-      "name": "iphone_launch_and_activation",
+      "name": "iphone_launch_metal_frame_safe_area",
       "result": "passed",
       "device": "iPhone 17 Pro simulator",
-      "detail": "Window 1206x2334 at scale 3 (402x778 logical); frame 1 background=2376118 button=393088 text=45598 pixels; tap at (201,435) activated and repainted; ios_host=pass frames=2 activations=1 retired=true.",
-      "frame_sha256": "37e3f5e68d3abb669548ec5c8e856863bd001c1bd44711e6b885f913edcc0c5d",
-      "pressed_frame_sha256": "1388ff5201fb9f0ef64e875669d802ae3ff0b019bb826183dfd8473d9e00a1f7"
+      "detail": "Safe area top 62, bottom 34 points on the Dynamic Island phone; content 402x682 at y=62. Metal frame read back from the drawable."
+    },
+    {
+      "name": "activation_and_deterministic_repaint",
+      "result": "passed",
+      "detail": "Engine-level tap at the button centre activates the scene; the host renders the pressed frame from about_to_wait because a CAMetalLayer view may not deliver another UIKit RedrawRequested. Both devices report frames=2 activations=1 retired=true."
+    },
+    {
+      "name": "narrow_screen_text_layout",
+      "result": "passed",
+      "detail": "Auto-height text nodes replaced fixed heights after the first iPhone run showed the Chinese line wrapping over the button; the final iPhone frame renders the title, the Chinese line and the 激活 Activate button without overlap."
     },
     {
       "name": "chinese_font_stack",
       "result": "passed",
-      "detail": "The screenshots show the Chinese title line and the 激活 Activate button rendered with real glyphs from the compiled-in DejaVuSans + DroidSansFallbackFull stack; text ink is counted separately from background and button pixels."
-    },
-    {
-      "name": "graceful_retirement",
-      "result": "passed",
-      "detail": "The host writes its summary (ios_host=pass ... retired=true) to the log file and terminates the process; winit documents ActiveEventLoop::exit as a no-op on iOS, so the reference host ends scripted runs explicitly."
+      "detail": "Compiled-in DejaVuSans + DroidSansFallbackFull render the Chinese title/line/button with real glyphs on both devices."
     }
   ],
   "screenshots": {
     "ipad": {
       "path": "ipad.png",
-      "sha256": "464391ab3b24c42a5c1ca39d1da4c156e5db8b3d4322e7eb73f5f2de060aa79d"
+      "sha256": "7504db8bcd1095800432de707e279ca05a343cd6ce77a8ae3b0748962876e1fc"
     },
     "iphone": {
       "path": "iphone.png",
-      "sha256": "14b48e051ca18ec454a57767005b25bc5b7ff7177dd01aa8f1e60fe1bad99db9"
+      "sha256": "5b7e9b391a77b202243f9499bec9c2b6c9de8c0393a776de917d55dc14ab8b0a"
     }
   },
   "logs": {
     "ipad": {
       "path": "ipad.log",
-      "sha256": "635a0a2be4115d4e44daa362431a1950c498b10b10ed43013f239766e80ffc51"
+      "sha256": "2e7db5ae0816b1dd6bc61f5f374c3ee526d43b02434e7b3c8055654670558449"
     },
     "iphone": {
       "path": "iphone.log",
-      "sha256": "8a1f9416bdac850d70252d3751b77b3f5e02476824c7e0d3a07c3ecd397b3f27"
+      "sha256": "89cac1d368a6df40b09ec27cbe04028b4bc060575b17abd361ba9677a3e54b92"
     }
   },
   "limits": [
@@ -80,5 +76,15 @@
     "No Apple Pencil session was exercised (the Simulator does not deliver calibrated Pencil force).",
     "UIView.safeAreaInsets is not queried; the Simulator device has zero insets.",
     "Simulator GPU is the host Metal adapter reported as 'Apple iOS simulator GPU', not device silicon."
-  ]
+  ],
+  "devices": {
+    "ipad": {
+      "physical": "2064x2648",
+      "summary": "ios_host=pass adapter=\"Apple iOS simulator GPU\" backend=Metal viewport=2064x2648@2 frames=2 activations=1 tapped=true retired=true elapsed_ms=778"
+    },
+    "iphone": {
+      "physical": "1206x2334",
+      "summary": "ios_host=pass adapter=\"Apple iOS simulator GPU\" backend=Metal viewport=1206x2334@3 frames=2 activations=1 tapped=true retired=true elapsed_ms=621"
+    }
+  }
 }

@@ -32,6 +32,12 @@ log = "0.4.34"
 # 把同一份适配器编译到 macOS 构建，在没有模拟器运行时的情况下演练其逻辑。
 host-on-macos = []
 
+[target.'cfg(target_os = "ios")'.dependencies]
+# Query UIView.safeAreaInsets through the live window handle; versions match winit 0.30.
+# 通过活动窗口句柄查询 UIView.safeAreaInsets；版本与 winit 0.30 对齐。
+objc2 = "0.6"
+raw-window-handle = "0.6"
+
 [profile.release]
 lto = "thin"
 codegen-units = 1

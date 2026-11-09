@@ -1030,6 +1030,8 @@ Windows 10 LTSC x86_64 虚拟机参考宿主已完成运行验收：单窗口与
   `model::pencil_sample`：笔轴压力除以 `sin(高度角)` 得到垂直屏幕压力并归一，高度角向上暴露，
   平放不做除法、NaN 回退到按下/抬起默认值；宿主每个 Touch 记录 `stage=pencil`。新增 4 项
   单测（合计 11/11）。该值目前停在宿主边界——原生 `Engine::pointer` 不消费压力/倾角。
+- **安全区已接通**：宿主用 `objc2`+`raw-window-handle` 查询 `UIView.safeAreaInsets`，根节点
+  铺满视口、安全区转 padding；iPhone 17 Pro 模拟器实测 62/0/34/0，iPad Pro 13-inch 32/0/20/0。
 - **模拟器运行已验收**：安装 iOS 26.3.1 平台后，Xcode 工程构建的 app 在 iPad Pro 13-inch (M5)
   与 iPhone 17 Pro 模拟器上启动并呈现 Metal 帧（iPad 2064×2648@2、iPhone 1206×2334@3），
   首帧后点击按钮触发激活与按下色重绘，`ios_host=pass frames=2 activations=1 retired=true`；
@@ -1042,5 +1044,4 @@ Windows 10 LTSC x86_64 虚拟机参考宿主已完成运行验收：单窗口与
   自动安装并启动，当前明确输出 `simulator_run=skipped reason=no_runtime`。
 
 未完成：macOS 的 Metal 设备丢失、vsync 截止时间、活 IME、公证与 Intel 运行验收；iOS 的运行时
-与真机验收、`UIView.safeAreaInsets` 查询、系统无障碍、软键盘/IME、Pencil 压感进入原生场景
-与设备矩阵。
+与真机验收、系统无障碍、软键盘遮挡与 IME、Pencil 压感进入原生场景与设备矩阵。

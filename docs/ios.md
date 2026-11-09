@@ -35,8 +35,10 @@ winit 的 iOS 后端在 `EventLoop::run_app` 内调用 `UIApplicationMain`。宿
   属引擎侧缺口，不声称场景已响应压感。
 - `Viewport` 由物理尺寸、scale 与安全区内缩推导逻辑内容矩形，根场景使用内容矩形；
   整个视口仍是引擎 Surface 尺寸。
-- 当前适配器尚未查询 `UIView.safeAreaInsets`，安全区由 `--insets top,right,bottom,left`
-  由宿主给出（默认 0）。这是与真机集成的明确缺口，不冒充已实现。
+- 宿主通过活动窗口句柄查询 `UIView.safeAreaInsets`（`objc2` + `raw-window-handle`，版本与
+  winit 0.30 对齐），把四个 `CGFloat` 点值直接作为逻辑点使用；根节点铺满视口，安全区转成
+  padding，卡片因此避开刘海、灵动岛与 Home 指示条。`--insets top,right,bottom,left` 可覆盖。
+  实测 iPhone 17 Pro 模拟器为 62/0/34/0、iPad Pro 13-inch (M5) 为 32/0/20/0。
 
 ## 打包与签名
 
@@ -58,6 +60,7 @@ winit 的 iOS 后端在 `EventLoop::run_app` 内调用 `UIApplicationMain`。宿
 | 可移植规则 | `cargo test --manifest-path ios/Cargo.toml` 11/11（含 4 项 Pencil 压力/高度角） |
 | 适配器演练 | `--features host-on-macos` 把同一宿主模块编译进 macOS 构建，跑 iPhone 与 iPad 视口（含安全区内缩和点击激活） |
 | 模拟器运行时 | **通过**：iOS 26.3.1 模拟器上 iPad Pro 13-inch (M5) 与 iPhone 17 Pro 均启动、呈现 Metal 帧、点击激活并重绘、干净退出 |
+| 安全区 | **通过**：iPhone 17 Pro 模拟器 62/0/34/0、iPad Pro 13-inch 32/0/20/0，内容矩形随之收缩 |
 | 真机运行时 | **未验收**：缺开发签名证书（Xcode 账号已添加，尚未生成 Apple Development 证书） |
 | 真机 | 一台已配对 iPhone（iOS 26.6.2，USB）可被 `devicectl` 识别；iPad 之后也被识别；无签名身份，`ios/install-device.sh` 明确输出 `device_install=blocked reason=no_signing_identity` |
 
@@ -69,7 +72,7 @@ winit 的 iOS 后端在 `EventLoop::run_app` 内调用 `UIApplicationMain`。宿
 ## 未完成
 
 - 真机运行启动与画面验收（模拟器已完成）。
-- `UIView.safeAreaInsets` 查询与软键盘遮挡处理。
+- 软键盘遮挡处理（安全区已接通）。
 - 系统无障碍（钉住的 AccessKit 无 iOS 后端）、活 IME/软键盘组合、Pencil 压感进入原生场景
   （目前只到宿主边界）、倾斜/方位角与预测点。
 - Metal 设备丢失、热/功耗设备矩阵、App Store 打包与图标。

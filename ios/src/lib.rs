@@ -51,8 +51,8 @@ mod host {
     use winit::window::{Window, WindowId};
 
     use crate::model::{
-        pencil_sample, CalibratedForce, Content, Insets, Lifecycle, LifecycleAction,
-        PrimaryContact, Viewport,
+        pencil_sample, CalibratedForce, Insets, Lifecycle, LifecycleAction, PrimaryContact,
+        Viewport,
     };
 
     const OWNER: u64 = 0x4a53_5045_522d_494f; // "JASPER-IO"
@@ -117,6 +117,9 @@ mod host {
         /// Logical window size for the macOS adapter exercise; UIKit ignores it on device.
         /// macOS 适配器演练用的逻辑窗口尺寸；真机上 UIKit 会忽略它。
         size: Option<(f32, f32)>,
+        /// Safe-area override; `None` queries UIKit on iOS and uses zero elsewhere.
+        /// 安全区覆盖值；`None` 表示在 iOS 上查询 UIKit，其他平台为 0。
+        insets_override: Option<Insets>,
         /// Optional CJK font file injected after the Latin font by the host.
         /// 宿主在拉丁字体之后注入的可选中日韩字体文件。
         cjk_font: Option<String>,
@@ -131,6 +134,7 @@ mod host {
             frames: None,
             readback: None,
             insets: Insets::default(),
+            insets_override: None,
             timeout_ms: None,
             exit_after_ms: None,
             tap: None,
@@ -161,6 +165,7 @@ mod host {
                         return Err("--insets needs four comma-separated values".into());
                     }
                     options.insets = Insets::new(parts[0], parts[1], parts[2], parts[3]);
+                    options.insets_override = Some(options.insets);
                 }
                 "--timeout-ms" => {
                     let value = args.next().ok_or("--timeout-ms needs a number")?;
@@ -227,6 +232,60 @@ mod host {
         Ok((options, font))
     }
 
+    /// Query UIKit's safe-area insets for the live view.
+    ///
+    /// `UIView.safeAreaInsets` returns a `UIEdgeInsets` of four CGFloats in points; the engine
+    /// consumes logical points, so the values are forwarded without scaling.
+    /// 查询 UIKit 的安全区内缩：`UIView.safeAreaInsets` 返回四个以 point 为单位的 CGFloat，
+    /// 引擎使用逻辑点，因此按原值转发、不再乘以 scale。
+    #[cfg(target_os = "ios")]
+    fn safe_area_insets(window: &Window) -> Option<Insets> {
+        use objc2::encode::{Encode, Encoding};
+        use raw_window_handle::{HasWindowHandle, RawWindowHandle};
+
+        #[repr(C)]
+        #[derive(Clone, Copy, Debug, Default)]
+        struct UIEdgeInsets {
+            top: f64,
+            left: f64,
+            bottom: f64,
+            right: f64,
+        }
+
+        unsafe impl Encode for UIEdgeInsets {
+            const ENCODING: Encoding =
+                Encoding::Struct("UIEdgeInsets", &[f64::ENCODING; 4]);
+        }
+
+        let handle = window.window_handle().ok()?;
+        let RawWindowHandle::UiKit(uikit) = handle.as_raw() else {
+            return None;
+        };
+        let view = uikit.ui_view.as_ptr().cast::<objc2::runtime::AnyObject>();
+        // SAFETY: the pointer comes from winit's live window handle, and the query runs on the
+        // main thread inside the event loop callback.
+        // SAFETY：指针来自 winit 的活动窗口句柄，查询在事件循环回调的主线程上执行。
+        let insets: UIEdgeInsets = unsafe { objc2::msg_send![view, safeAreaInsets] };
+        if !insets.top.is_finite()
+            || !insets.left.is_finite()
+            || !insets.bottom.is_finite()
+            || !insets.right.is_finite()
+        {
+            return None;
+        }
+        Some(Insets::new(
+            insets.top as f32,
+            insets.right as f32,
+            insets.bottom as f32,
+            insets.left as f32,
+        ))
+    }
+
+    #[cfg(not(target_os = "ios"))]
+    fn safe_area_insets(_window: &Window) -> Option<Insets> {
+        None
+    }
+
     fn scene(chinese: bool) -> Scene {
         Scene::new(
             Node::container(NodeId(1))
@@ -242,26 +301,28 @@ mod host {
                         .background(BACKGROUND),
                 )
                 .child(
+                    // Auto height: the line must not overflow its box on a narrow phone.
+                    // 自动高度：窄屏上文字不能溢出固定高度的盒子。
                     Node::text(NodeId(3), "Jasper UI · iPad / iOS").with_style(
                         Style::default()
                             .background(BACKGROUND)
-                            .size(Length::Percent(80.0), Length::Px(32.0))
-                            .text(24.0, Color::rgb(230, 234, 240)),
+                            .size(Length::Percent(88.0), Length::Auto)
+                            .text(22.0, Color::rgb(230, 234, 240)),
                     ),
                 )
                 .child(if chinese {
                     Node::text(NodeId(4), "中文渲染正常，无乱码：昆斤考烫烫烫").with_style(
                         Style::default()
                             .background(BACKGROUND)
-                            .size(Length::Percent(80.0), Length::Px(28.0))
-                            .text(20.0, Color::rgb(230, 234, 240)),
+                            .size(Length::Percent(88.0), Length::Auto)
+                            .text(18.0, Color::rgb(230, 234, 240)),
                     )
                 } else {
                     Node::text(NodeId(4), "UTF-8 text check").with_style(
                         Style::default()
                             .background(BACKGROUND)
-                            .size(Length::Percent(80.0), Length::Px(28.0))
-                            .text(20.0, Color::rgb(230, 234, 240)),
+                            .size(Length::Percent(88.0), Length::Auto)
+                            .text(18.0, Color::rgb(230, 234, 240)),
                     )
                 })
                 .child(
@@ -274,20 +335,30 @@ mod host {
                         )
                         .with_style(
                             Style::default()
-                                .width(Length::Percent(80.0))
-                                .height(Length::Px(160.0))
+                                .width(Length::Percent(88.0))
+                                .height(Length::Px(140.0))
                                 .background(ACTIVE)
-                                .text(32.0, Color::rgb(245, 247, 250)),
+                                .text(28.0, Color::rgb(245, 247, 250)),
                         ),
                 ),
         )
     }
 
-    fn root_style(content: Content) -> Style {
+    /// Full-viewport root; the safe-area insets become padding so the card stays clear of the
+    /// notch, the Dynamic Island and the home indicator.
+    /// 铺满视口的根节点；安全区内缩转成 padding，卡片避开刘海、灵动岛与 Home 指示条。
+    fn root_style(viewport: Viewport) -> Style {
+        let (width, height) = viewport.logical_size();
+        let insets = viewport.insets;
         Style::default()
-            .width(Length::Px(content.width))
-            .height(Length::Px(content.height))
-            .padding(Edges::all(24.0))
+            .width(Length::Px(width))
+            .height(Length::Px(height))
+            .padding(Edges {
+                top: insets.top + 24.0,
+                right: insets.right + 24.0,
+                bottom: insets.bottom + 24.0,
+                left: insets.left + 24.0,
+            })
             .gap(16.0)
             .direction(FlexDirection::Column)
             .justify_content(Justify::Center)
@@ -388,11 +459,16 @@ mod host {
             let window = self.window.clone().ok_or("missing UIKit window")?;
             let physical = window.inner_size();
             let scale = window.scale_factor() as f32;
+            let insets = self
+                .options
+                .insets_override
+                .or_else(|| safe_area_insets(&window))
+                .unwrap_or_default();
             let viewport = Viewport::new(
                 physical.width.max(1),
                 physical.height.max(1),
                 scale,
-                self.options.insets,
+                insets,
             );
             if self.viewport == Some(viewport) {
                 return Ok(());
@@ -411,7 +487,7 @@ mod host {
             let old = self.scene.version();
             let patch = ScenePatch::UpdateStyle {
                 id: NodeId(1),
-                style: root_style(viewport.content()),
+                style: root_style(viewport),
             };
             self.scene
                 .apply_batch_at(old, std::slice::from_ref(&patch))
@@ -430,7 +506,7 @@ mod host {
             stage(
                 "viewport",
                 &format!(
-                    "physical={}x{} scale={} logical={:.1}x{:.1} content={:.1}x{:.1}@{:.1},{:.1} generation={}",
+                    "physical={}x{} scale={} logical={:.1}x{:.1} content={:.1}x{:.1}@{:.1},{:.1} insets={:.1},{:.1},{:.1},{:.1} generation={}",
                     viewport.physical_width,
                     viewport.physical_height,
                     viewport.scale,
@@ -440,6 +516,10 @@ mod host {
                     content.height,
                     content.x,
                     content.y,
+                    viewport.insets.top,
+                    viewport.insets.right,
+                    viewport.insets.bottom,
+                    viewport.insets.left,
                     self.generation
                 ),
             );
@@ -457,10 +537,10 @@ mod host {
             let patch = ScenePatch::UpdateStyle {
                 id: BUTTON,
                 style: Style::default()
-                    .width(Length::Percent(80.0))
-                    .height(Length::Px(160.0))
+                    .width(Length::Percent(88.0))
+                    .height(Length::Px(140.0))
                     .background(background)
-                    .text(32.0, Color::rgb(245, 247, 250)),
+                    .text(28.0, Color::rgb(245, 247, 250)),
             };
             self.scene
                 .apply_batch_at(old, std::slice::from_ref(&patch))
