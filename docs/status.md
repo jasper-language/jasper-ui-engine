@@ -1026,9 +1026,17 @@ Windows 10 LTSC x86_64 虚拟机参考宿主已完成运行验收：单窗口与
   后台直接激活、iPad 安全区换算、非法内缩、主触点移交。
 - `--features host-on-macos` 把同一宿主模块编译进 macOS 构建演练：iPhone 视口（390×844）与
   iPad 视口（834×1194，安全区 24/0/20/0）都呈现两帧，iPad 配置下按按钮中心点击产生一次激活。
+- **触控笔**：winit 在 iOS 上把 Apple Pencil 报成 `Force::Calibrated`（带高度角）。新增
+  `model::pencil_sample`：笔轴压力除以 `sin(高度角)` 得到垂直屏幕压力并归一，高度角向上暴露，
+  平放不做除法、NaN 回退到按下/抬起默认值；宿主每个 Touch 记录 `stage=pencil`。新增 4 项
+  单测（合计 11/11）。该值目前停在宿主边界——原生 `Engine::pointer` 不消费压力/倾角。
+- **设备探测**：`devicectl` 识别到已配对的 iPhone（iOS 26.6.2，USB）与 iPad（型号与 UDID 不入公开证据）；`security find-identity` 为 0，缺开发签名身份。新增 `ios/install-device.sh`
+  完成签名构建 → `devicectl install` → 带 `--console` 启动 → 取回容器内 PPM 的整链，当前
+  明确输出 `device_install=blocked reason=no_signing_identity`，不自称真机已验收。
 - **运行未验收**：验证机没有安装 Simulator 运行时，也没有代码签名身份，因此没有 iOS 运行时
   启动画面、UIKit 生命周期实测或真机安装。`scripts/verify-ios-app.sh` 在有运行时的机器上会
   自动安装并启动，当前明确输出 `simulator_run=skipped reason=no_runtime`。
 
 未完成：macOS 的 Metal 设备丢失、vsync 截止时间、活 IME、公证与 Intel 运行验收；iOS 的运行时
-与真机验收、`UIView.safeAreaInsets` 查询、系统无障碍、软键盘/IME、Pencil 与设备矩阵。
+与真机验收、`UIView.safeAreaInsets` 查询、系统无障碍、软键盘/IME、Pencil 压感进入原生场景
+与设备矩阵。

@@ -28,6 +28,20 @@ UIKit 生命周期处理和一个最小参考场景。iPhone 与 iPad 共用同�
   `DroidSansFallbackFull` — so the Chinese title, line and `激活 Activate` button render with real
   glyphs. `--cjk-tofu` drops the fallback face as a control.
 
+## Touch and Apple Pencil
+
+winit reports iOS force as `Force::Calibrated { force, max_possible_force, altitude_angle }`;
+only Apple Pencil carries `altitude_angle`. `ios/src/model.rs::pencil_sample` converts the
+stylus-axis force into screen-perpendicular pressure (`force / sin(altitude) / max`, clamped to
+`0..=1`), exposes the altitude in degrees, and falls back to the pressed/released default for
+non-finite input instead of leaking NaN. The host logs one `stage=pencil` line per touch with
+`stylus`, `pressure` and `altitude_deg`.
+
+The value stops at the host boundary today: the native `Engine::pointer` entry point accepts only
+position and pressed state, so the scene does not consume pressure or tilt yet. This is recorded
+as an engine-side gap; the host-side capture and normalization are unit-tested (4 tests) and can be
+verified on device from the `stage=pencil` log.
+
 ## Build
 
 Requirements: macOS 11+, Xcode with the iOS SDK, Rust 1.89+ with the Apple targets:
@@ -64,7 +78,18 @@ xcrun simctl launch --console-pty <UDID> org.jasper.ui.ios --args "" --frames 2
 ```
 
 On a device, the bundle must be signed by a development identity with a matching provisioning
-profile; an unsigned or ad-hoc device bundle installs nowhere.
+profile; an unsigned or ad-hoc device bundle installs nowhere. `ios/install-device.sh` automates
+the signed path once an identity exists:
+
+```bash
+bash ios/install-device.sh --device <UDID> --profile <path.mobileprovision>
+```
+
+The device must also have Developer Mode enabled (iOS 16+: Settings → Privacy & Security →
+Developer Mode, then reboot). It builds with the detected identity, installs with `devicectl`, launches with `--console`,
+pulls the frame the app presented from the app container and prints its SHA-256. Without an
+identity it stops with `device_install=blocked reason=no_signing_identity` and the one-time Xcode
+account setup steps.
 
 Command line (arguments reach the app through `simctl launch --args` on Simulator, or through the
 scheme/Xcode arguments on device):
@@ -95,7 +120,10 @@ security, or real device metrics.
 
 - The verification host has no Simulator runtime installed and no code-signing identity, so iOS
   runtime launch is **not** verified here; only build, link, bundle, signature and the portable
-  rules are.
+  rules are. A paired iPhone (iOS 26.6.2) and a paired iPad became visible to `devicectl`; device
+  names, UDIDs and serial numbers are deliberately kept out of this public repository.
+- The launch argument is optional: the Latin face and the CJK fallback are compiled into the
+  binary, so `jasper-ui --frames 2` works without injecting font files.
 - The adapter does not query `UIView.safeAreaInsets` yet; insets are host-supplied.
 - No iOS accessibility bridge (AccessKit has no iOS adapter in the pinned version).
 - No live software keyboard / IME composition round trip.

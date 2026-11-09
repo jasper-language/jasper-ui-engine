@@ -27,6 +27,12 @@ winit 的 iOS 后端在 `EventLoop::run_app` 内调用 `UIApplicationMain`。宿
 
 - 触摸经 winit `Touch` → `DesktopInput` → `Engine::pointer`；宿主维护稳定主触点，
   首个触点结束前保持 primary，结束后交给最早剩余触点。
+- **触控笔**：winit 在 iOS 上报 `Force::Calibrated { force, max_possible_force,
+  altitude_angle }`，只有 Apple Pencil 才带高度角。`model::pencil_sample` 把笔轴压力除以
+  `sin(高度角)` 得到垂直于屏幕的压力并归一到 `0..=1`，向上暴露高度角；非有限或越界输入回退到
+  按下/抬起默认值，平放（`sin≈0`）不做除法。宿主对每个 Touch 记录 `stage=pencil`。
+  该结果目前只到宿主边界：原生 `Engine::pointer` 只接受位置与按下状态，不消费压力/倾角，
+  属引擎侧缺口，不声称场景已响应压感。
 - `Viewport` 由物理尺寸、scale 与安全区内缩推导逻辑内容矩形，根场景使用内容矩形；
   整个视口仍是引擎 Surface 尺寸。
 - 当前适配器尚未查询 `UIView.safeAreaInsets`，安全区由 `--insets top,right,bottom,left`
@@ -49,9 +55,10 @@ winit 的 iOS 后端在 `EventLoop::run_app` 内调用 `UIApplicationMain`。宿
 |---|---|
 | 交叉编译与链接 | `aarch64-apple-ios`、`aarch64-apple-ios-sim` 均通过，链接 UIKit/Metal/QuartzCore |
 | bundle 静态验证 | `plutil`、`UIDeviceFamily [1,2]`、平台字段、Mach-O 平台、签名与哈希 |
-| 可移植规则 | `cargo test --manifest-path ios/Cargo.toml` 7/7 |
+| 可移植规则 | `cargo test --manifest-path ios/Cargo.toml` 11/11（含 4 项 Pencil 压力/高度角） |
 | 适配器演练 | `--features host-on-macos` 把同一宿主模块编译进 macOS 构建，跑 iPhone 与 iPad 视口（含安全区内缩和点击激活） |
-| 运行时 | **未验收**：验证机没有安装 Simulator 运行时，也没有设备代码签名身份 |
+| 运行时 | **未验收**：验证机没有安装 Simulator 运行时，也没有代码签名身份 |
+| 真机 | 一台已配对 iPhone（iOS 26.6.2，USB）可被 `devicectl` 识别；iPad 之后也被识别；无签名身份，`ios/install-device.sh` 明确输出 `device_install=blocked reason=no_signing_identity` |
 
 运行时验收需要其中之一：安装 Simulator 运行时后执行
 `xcrun simctl install/launch`，或用开发签名身份在真机安装。证据文件
@@ -62,5 +69,6 @@ winit 的 iOS 后端在 `EventLoop::run_app` 内调用 `UIApplicationMain`。宿
 
 - 模拟器/真机运行启动与画面验收。
 - `UIView.safeAreaInsets` 查询与软键盘遮挡处理。
-- 系统无障碍（钉住的 AccessKit 无 iOS 后端）、活 IME/软键盘组合、Pencil 压力与倾斜。
+- 系统无障碍（钉住的 AccessKit 无 iOS 后端）、活 IME/软键盘组合、Pencil 压感进入原生场景
+  （目前只到宿主边界）、倾斜/方位角与预测点。
 - Metal 设备丢失、热/功耗设备矩阵、App Store 打包与图标。

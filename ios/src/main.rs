@@ -44,12 +44,13 @@ mod host {
     use jasper_ui_engine::semantics::{Role, Semantics};
     use jasper_ui_engine::style::{Align, Color, FlexDirection, Justify, Length, Style};
     use winit::application::ApplicationHandler;
-    use winit::event::{StartCause, WindowEvent};
+    use winit::event::{Force, StartCause, TouchPhase, WindowEvent};
     use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
     use winit::window::{Window, WindowId};
 
     use crate::model::{
-        Content, Insets, Lifecycle, LifecycleAction, PrimaryContact, Viewport,
+        pencil_sample, CalibratedForce, Content, Insets, Lifecycle, LifecycleAction,
+        PrimaryContact, Viewport,
     };
 
     const OWNER: u64 = 0x4a53_5045_522d_494f; // "JASPER-IO"
@@ -176,9 +177,15 @@ mod host {
                 }
             }
         }
-        let font_path = font_path.ok_or("usage: jasper-ui FONT [options]")?;
-        let font =
-            std::fs::read(&font_path).map_err(|error| format!("font {font_path}: {error}"))?;
+        // On a device there is no convenient font path; the compiled-in Latin face is the default
+        // and the CJK fallback is compiled in as well, so launch needs no file injection.
+        // 真机上没有方便的字体路径；默认使用编译内置的拉丁字面，CJK 回退也已内置，启动不需要文件注入。
+        let font = match font_path {
+            Some(path) => {
+                std::fs::read(&path).map_err(|error| format!("font {path}: {error}"))?
+            }
+            None => LATIN.to_vec(),
+        };
         Ok((options, font))
     }
 
@@ -919,6 +926,53 @@ mod host {
                         .configure_surface()
                         .and_then(|()| self.apply_viewport())
                     {
+                        self.error = Some(error.clone());
+                        stage("error", &error);
+                        event_loop.exit();
+                        return;
+                    }
+                    if let Some(window) = &self.window {
+                        window.request_redraw();
+                    }
+                }
+                WindowEvent::Touch(touch) => {
+                    let force = match touch.force {
+                        Some(Force::Calibrated {
+                            force,
+                            max_possible_force,
+                            altitude_angle,
+                        }) => Some(CalibratedForce {
+                            force,
+                            max_possible_force,
+                            altitude_angle,
+                        }),
+                        Some(Force::Normalized(force)) => Some(CalibratedForce {
+                            force,
+                            max_possible_force: 1.0,
+                            altitude_angle: None,
+                        }),
+                        None => None,
+                    };
+                    let pressed = matches!(
+                        touch.phase,
+                        TouchPhase::Started | TouchPhase::Moved
+                    );
+                    let sample = pencil_sample(force, pressed);
+                    // Pressure and altitude are captured and normalized at the host boundary; the
+                    // native pointer entry point does not consume them yet (documented gap).
+                    // 压力与高度角在宿主边界捕获并归一；原生指针入口暂不消费（已记录缺口）。
+                    stage(
+                        "pencil",
+                        &format!(
+                            "phase={:?} stylus={} pressure={:.3} altitude_deg={:?} id={}",
+                            touch.phase, sample.stylus, sample.pressure, sample.altitude_degrees, touch.id
+                        ),
+                    );
+                    let inputs = self.input.translate(&WindowEvent::Touch(touch));
+                    if inputs.is_empty() {
+                        return;
+                    }
+                    if let Err(error) = self.dispatch_inputs(inputs) {
                         self.error = Some(error.clone());
                         stage("error", &error);
                         event_loop.exit();

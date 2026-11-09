@@ -134,7 +134,6 @@ warning: methods `up` and `focus_lost` are never used
     |                     ^^^^^^^^^^
 
 warning: `jasper-ui-engine` (lib) generated 10 warnings
-   Compiling jasper-ui-ios v0.1.0 (<repo>/ios)
 warning: variants `DidEnterBackground` and `WillEnterForeground` are never constructed
   --> src/model.rs:17:5
    |
@@ -149,18 +148,12 @@ warning: variants `DidEnterBackground` and `WillEnterForeground` are never const
    = note: `LifecycleEvent` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
 
-warning: constant `LATIN` is never used
-  --> src/main.rs:60:11
-   |
-60 |     const LATIN: &[u8] = include_bytes!("../assets/DejaVuSans.ttf");
-   |           ^^^^^
-
 warning: linker stderr: ld: passed two min versions (10.0, 15.0) for platform iOS. Using 15.0.
   |
   = note: `#[warn(linker_messages)]` on by default
 
-warning: `jasper-ui-ios` (bin "jasper-ui") generated 3 warnings
-    Finished `release` profile [optimized] target(s) in 32.64s
+warning: `jasper-ui-ios` (bin "jasper-ui") generated 2 warnings
+    Finished `release` profile [optimized] target(s) in 0.26s
 <repo>/ios/target/app/device/JasperUI.app/Info.plist: OK
 device_signing=unavailable (no code-signing identity; install requires a signed build)
 ios_app=<repo>/ios/target/app/device/JasperUI.app
@@ -179,5 +172,5 @@ Load command 11
    ntools 1
      tool LD
   version 1230.1
-34c4ce8a94e038f9078eb96a7d40068035bfceef10f855fadd941c71dab13544  <repo>/ios/target/app/device/JasperUI.app/jasper-ui
+f94cf56265dbb9c6c15b19c7c9a8d496914fe7934e7d45c54bb2e052e92589ac  <repo>/ios/target/app/device/JasperUI.app/jasper-ui
 87b50d72815927b5845bd35415832e14e0e2a12353e4ac6ccc0703c726b41183  <repo>/ios/target/app/device/JasperUI.app/Info.plist

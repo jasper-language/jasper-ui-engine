@@ -43,13 +43,13 @@
     ],
     "device_signature": "unavailable (no code-signing identity)",
     "simulator_signature": "ad-hoc",
-    "device_binary_sha256": "34c4ce8a94e038f9078eb96a7d40068035bfceef10f855fadd941c71dab13544",
-    "simulator_binary_sha256": "8de6e6871d0d4e4fb206b9c0092078106bf52580eb7eb7612b4391ad55a5b862",
+    "device_binary_sha256": "f94cf56265dbb9c6c15b19c7c9a8d496914fe7934e7d45c54bb2e052e92589ac",
+    "simulator_binary_sha256": "78250cc2782dfec85d7429fccf484673f4ef5865475c4695cd185710b5b49337",
     "device_plist_sha256": "87b50d72815927b5845bd35415832e14e0e2a12353e4ac6ccc0703c726b41183",
     "simulator_plist_sha256": "569609b2cb008a4e83d7d764c8a33e3af1abd11ccb09cd01a364da6f6a06883a",
     "fonts": [
-      "DejaVuSans.ttf (Latin)",
-      "DroidSansFallbackFull.ttf (CJK fallback)"
+      "DejaVuSans.ttf (compiled-in Latin default)",
+      "DroidSansFallbackFull.ttf (compiled-in CJK fallback)"
     ]
   },
   "checks": [
@@ -71,10 +71,26 @@
       "detail": "plutil -lint OK; UIDeviceFamily [1,2]; CFBundleSupportedPlatforms iPhoneOS / iPhoneSimulator; DTSDKName iphoneos26.2 / iphonesimulator26.2; UILaunchScreen present."
     },
     {
+      "name": "pencil_sample_normalization",
+      "result": "passed",
+      "command": "cargo test --locked --manifest-path ios/Cargo.toml",
+      "detail": "model::pencil_sample turns Apple Pencil stylus-axis force into screen-perpendicular pressure (force/sin(altitude)/max, clamped to 0..=1), reports altitude in degrees, skips the division when the pencil lies flat and falls back to the pressed/released default for NaN input. The host logs stage=pencil per touch. The native Engine::pointer entry point does not consume pressure/tilt yet."
+    },
+    {
+      "name": "device_probe",
+      "result": "partial",
+      "detail": "xcrun devicectl reports one paired wired iPhone on iOS 26.6.2 and one paired iPad, both available. Device names, UDIDs and serial numbers are deliberately not recorded in this public evidence. security find-identity reports 0 valid code-signing identities."
+    },
+    {
+      "name": "device_install",
+      "result": "not_verified",
+      "reason": "No code-signing identity exists on this Mac, so no installable device .app can be produced. ios/install-device.sh implements the signed path (build, devicectl install, console launch, frame pull) and currently stops with device_install=blocked reason=no_signing_identity; the one-time fix is adding an Apple ID in Xcode and a provisioning profile for org.jasper.ui.ios."
+    },
+    {
       "name": "portable_rules",
       "result": "passed",
       "command": "cargo test --locked --manifest-path ios/Cargo.toml",
-      "detail": "7/7: lifecycle cycle, duplicate notifications, termination finality, background activation, iPad safe area, invalid insets, primary-contact handoff."
+      "detail": "11/11: lifecycle cycle, duplicate notifications, termination finality, background activation, iPad safe area, invalid insets, primary-contact handoff, and 4 Apple Pencil pressure/altitude cases."
     },
     {
       "name": "adapter_exercise_phone",
@@ -115,20 +131,23 @@
   },
   "limits": [
     "Runtime launch on Simulator and on a device is not verified on this host.",
-    "No code-signing identity or provisioning profile was available; the device bundle is unsigned.",
+    "No code-signing identity or provisioning profile was available; the device bundle is unsigned and the paired iPhone could not receive an install.",
+    "The iPad was not visible to devicectl in this session.",
     "UIView.safeAreaInsets is not queried; safe-area insets are host-supplied.",
+    "Apple Pencil pressure/altitude are captured and normalized at the host boundary, but the native Engine::pointer path does not consume them yet.",
     "No iOS accessibility bridge (the pinned AccessKit has no iOS backend).",
-    "No live software keyboard/IME composition, Pencil pressure/tilt, device-loss or thermal/power matrix.",
+    "No live software keyboard/IME composition, Pencil tilt/azimuth/predicted points, device-loss or thermal/power matrix.",
     "No icons, storyboards, App Store packaging or provisioning automation."
   ],
   "sources": {
-    "ios/src/main.rs": "045ebadea5feab08af2063183dcf23e7de494cca1678149ac9db8a1b704b5650",
-    "ios/src/model.rs": "1fe858bc3f636e6ca3465ad96e4aa94b5284221cf4d8448c5d72cbf5d84d1b9d",
+    "ios/src/main.rs": "475427c2d21ba2b9cc7455b16931d6ba0b8412c86efa64d69145a4ac6334feb4",
+    "ios/src/model.rs": "826586775c5363ac7cea71b8c5a87f9ec4f44255df7eced0bd293475a573e86e",
     "ios/Cargo.toml": "66e50b8581eaeaa69ddb278df682485a632ae9c33ca74d9d2396e3f6e01cc18c",
     "ios/Info.plist.in": "4ee1972ca292448f60a473e9ef9dba4a5df6b46aa5cf68901f6cea1464adb48e",
     "ios/build-app.sh": "a2fec2453c55cb16bba9c4a12509958218bbc69004f500b3eedee91e9a274b50",
-    "ios/README.md": "27ce8bde886bd52a858ac781363e44ccb544486cb4b33787616eb375d1e7f565",
-    "docs/ios.md": "45879a5886f9d2522f5499dfc1dceb740e51bae885e4185105a53acefb348581",
+    "ios/install-device.sh": "4b8f1cd6e22617570af5d6b841c97e46de43acffc5e889debda877050653e317",
+    "ios/README.md": "948873bcc1bd47913eab351e8d18076b59552dacdaeebd8389f64a1adc9c0c34",
+    "docs/ios.md": "6e99762036bcd0906cb4b0b816f72b1ee267aaa70825f21841fc76ab9272b44a",
     "scripts/verify-ios-app.sh": "86ed2f162d9d9b3324d506863174a5c5005545dd72ae89e69d951b61ba979d25"
   }
 }

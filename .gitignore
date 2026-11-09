@@ -18,3 +18,11 @@ __pycache__/
 # Built platform bundles (macOS .app, iOS .app) are produced by the build scripts.
 /macos/target/
 /ios/target/
+
+# Signing material never belongs in a public repository.
+*.mobileprovision
+*.p12
+*.cer
+*.cer.pem
+ios/app/build/
+ios/app/DerivedData/

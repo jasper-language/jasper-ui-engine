@@ -274,6 +274,87 @@ impl PrimaryContact {
     }
 }
 
+
+/// Calibrated force as winit reports it for a touch or Apple Pencil sample.
+/// winit 对触控或 Apple Pencil 样本给出的校准压力。
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct CalibratedForce {
+    pub force: f64,
+    pub max_possible_force: f64,
+    /// `None` for a finger; `Some(radians)` only for a stylus (winit sets it for Pencil).
+    /// 手指为 `None`；只有触控笔（winit 对 Pencil 设置）才是 `Some(弧度)`。
+    pub altitude_angle: Option<f64>,
+}
+
+/// Host-side stylus sample derived from one touch.
+/// 由一次触控推导出的宿主侧触控笔样本。
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct PencilSample {
+    /// Force perpendicular to the screen, normalized to 0..=1.
+    /// 垂直于屏幕的压力，归一到 0..=1。
+    pub pressure: f32,
+    /// Stylus altitude above the surface in degrees; `None` for a finger.
+    /// 触控笔相对屏幕的高度角（度）；手指为 `None`。
+    pub altitude_degrees: Option<f32>,
+    pub stylus: bool,
+}
+
+fn fallback_pressure(pressed: bool) -> f32 {
+    if pressed {
+        1.0
+    } else {
+        0.0
+    }
+}
+
+/// Normalize one calibrated force sample into screen-perpendicular pressure and altitude.
+///
+/// Apple measures Pencil force along the stylus axis, so the perpendicular pressure divides by
+/// `sin(altitude)`; a finger reports no altitude and uses the raw ratio. Non-finite or
+/// out-of-range input falls back to the pressed/released default instead of leaking NaN.
+///
+/// Apple 沿笔轴测量 Pencil 压力，因此垂直压力要除以 `sin(高度角)`；手指没有高度角，直接用比值。
+/// 非有限或越界输入回退到按下/抬起默认值，不让 NaN 进入布局或手势层。
+pub fn pencil_sample(force: Option<CalibratedForce>, pressed: bool) -> PencilSample {
+    let Some(force) = force else {
+        return PencilSample {
+            pressure: fallback_pressure(pressed),
+            altitude_degrees: None,
+            stylus: false,
+        };
+    };
+    if !force.max_possible_force.is_finite() || force.max_possible_force <= 0.0 {
+        return PencilSample {
+            pressure: fallback_pressure(pressed),
+            altitude_degrees: None,
+            stylus: force.altitude_angle.is_some(),
+        };
+    }
+    let altitude = force.altitude_angle.filter(|angle| angle.is_finite() && *angle >= 0.0);
+    let perpendicular = match altitude {
+        Some(angle) => {
+            let sine = angle.sin();
+            if sine > 1e-6 {
+                force.force / sine
+            } else {
+                force.force
+            }
+        }
+        None => force.force,
+    };
+    let pressure = perpendicular / force.max_possible_force;
+    let pressure = if pressure.is_finite() {
+        pressure.clamp(0.0, 1.0) as f32
+    } else {
+        fallback_pressure(pressed)
+    };
+    PencilSample {
+        pressure,
+        altitude_degrees: altitude.map(|angle| angle.to_degrees().clamp(0.0, 90.0) as f32),
+        stylus: force.altitude_angle.is_some(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -400,5 +481,79 @@ mod tests {
         assert_eq!(contacts.primary(), Some(9));
         assert!(!contacts.ended(11));
         assert_eq!(contacts.active_count(), 1);
+    }
+
+    #[test]
+    fn pencil_pressure_is_perpendicular_to_the_screen() {
+        // 0.5 of maximum force at 30 degrees: sin(30) = 0.5, so the perpendicular pressure is 1.
+        // 30 度角下 0.5 倍最大力：sin(30)=0.5，垂直压力为 1。
+        let sample = pencil_sample(
+            Some(CalibratedForce {
+                force: 0.5,
+                max_possible_force: 1.0,
+                altitude_angle: Some(std::f64::consts::FRAC_PI_6),
+            }),
+            true,
+        );
+        assert!(sample.stylus);
+        assert!((sample.pressure - 1.0).abs() < 1e-3, "pressure={}", sample.pressure);
+        let altitude = sample.altitude_degrees.unwrap();
+        assert!((altitude - 30.0).abs() < 1e-3, "altitude={altitude}");
+    }
+
+    #[test]
+    fn finger_pressure_uses_the_raw_ratio_and_reports_no_altitude() {
+        let sample = pencil_sample(
+            Some(CalibratedForce {
+                force: 0.25,
+                max_possible_force: 1.0,
+                altitude_angle: None,
+            }),
+            true,
+        );
+        assert!(!sample.stylus);
+        assert_eq!(sample.altitude_degrees, None);
+        assert!((sample.pressure - 0.25).abs() < 1e-6);
+    }
+
+    #[test]
+    fn missing_or_invalid_force_falls_back_to_the_touch_phase() {
+        let down = pencil_sample(None, true);
+        assert_eq!(down.pressure, 1.0);
+        let up = pencil_sample(None, false);
+        assert_eq!(up.pressure, 0.0);
+        let invalid = pencil_sample(
+            Some(CalibratedForce {
+                force: f64::NAN,
+                max_possible_force: f64::NAN,
+                altitude_angle: None,
+            }),
+            true,
+        );
+        assert_eq!(invalid.pressure, 1.0);
+        assert!(!invalid.stylus);
+    }
+
+    #[test]
+    fn hard_stylus_pressure_clamps_and_flat_angle_does_not_divide_by_zero() {
+        let hard = pencil_sample(
+            Some(CalibratedForce {
+                force: 0.5,
+                max_possible_force: 1.0,
+                altitude_angle: Some(10.0_f64.to_radians()),
+            }),
+            true,
+        );
+        assert_eq!(hard.pressure, 1.0);
+        let flat = pencil_sample(
+            Some(CalibratedForce {
+                force: 0.4,
+                max_possible_force: 1.0,
+                altitude_angle: Some(0.0),
+            }),
+            true,
+        );
+        assert!((flat.pressure - 0.4).abs() < 1e-6);
+        assert_eq!(flat.altitude_degrees, Some(0.0));
     }
 }
