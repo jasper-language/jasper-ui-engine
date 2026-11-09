@@ -1036,6 +1036,9 @@ Windows 10 LTSC x86_64 虚拟机参考宿主已完成运行验收：单窗口与
   与 iPhone 17 Pro 模拟器上启动并呈现 Metal 帧（iPad 2064×2648@2、iPhone 1206×2334@3），
   首帧后点击按钮触发激活与按下色重绘，`ios_host=pass frames=2 activations=1 retired=true`；
   winit 在 iOS 上把 `ActiveEventLoop::exit` 文档化为空操作，因此参考宿主改为写日志后显式结束进程。
+- **真机验收按用户决定跳过**：开发证书已生成（`security find-identity` 可见 1 个有效身份），
+  但 `xcodebuild` 报 `No Accounts`（Xcode 账号库与命令行不同步），设备安装未执行；证据与文档
+  均不声称真机运行结果，`ios/build-xcode.sh` 与 `ios/verify-device.sh` 保持就绪。
 - **设备探测**：`devicectl` 识别到已配对的 iPhone（iOS 26.6.2，USB）与 iPad（型号与 UDID 不入公开证据）；`security find-identity` 为 0，缺开发签名身份。新增 `ios/install-device.sh`
   完成签名构建 → `devicectl install` → 带 `--console` 启动 → 取回容器内 PPM 的整链，当前
   明确输出 `device_install=blocked reason=no_signing_identity`，不自称真机已验收。

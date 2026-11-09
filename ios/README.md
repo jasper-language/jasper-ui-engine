@@ -112,6 +112,11 @@ JASPER_TEAM=XXXXXXXXXX bash ios/build-xcode.sh device    # signed, installable
 bash ios/build-xcode.sh simulator                        # no signing required
 ```
 
+Physical-device installation is not part of the recorded evidence: the development certificate
+exists, but Xcode's account store is not visible to `xcodebuild` on this machine (`No Accounts`),
+so the user skipped device acceptance. The scripts below stay ready for a machine where
+`xcodebuild` can reach the account.
+
 `bash ios/verify-device.sh [--pencil SECONDS]` builds once, then for every paired device:
 installs, launches with `--console`, pulls the presented frame from the app container and prints
 its SHA-256; with `--pencil` it keeps the app running so an Apple Pencil session can be captured

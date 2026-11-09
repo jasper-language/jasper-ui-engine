@@ -75,7 +75,8 @@
     "Simulator runtime only; the same build has not been installed on a physical device yet.",
     "No Apple Pencil session was exercised (the Simulator does not deliver calibrated Pencil force).",
     "UIView.safeAreaInsets is not queried; the Simulator device has zero insets.",
-    "Simulator GPU is the host Metal adapter reported as 'Apple iOS simulator GPU', not device silicon."
+    "Simulator GPU is the host Metal adapter reported as 'Apple iOS simulator GPU', not device silicon.",
+    "Physical-device installation was skipped by user decision on 2026-11-09; no device runtime, device frame or Apple Pencil force sample is claimed in this repository."
   ],
   "devices": {
     "ipad": {

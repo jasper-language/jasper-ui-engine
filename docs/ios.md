@@ -61,7 +61,7 @@ winit 的 iOS 后端在 `EventLoop::run_app` 内调用 `UIApplicationMain`。宿
 | 适配器演练 | `--features host-on-macos` 把同一宿主模块编译进 macOS 构建，跑 iPhone 与 iPad 视口（含安全区内缩和点击激活） |
 | 模拟器运行时 | **通过**：iOS 26.3.1 模拟器上 iPad Pro 13-inch (M5) 与 iPhone 17 Pro 均启动、呈现 Metal 帧、点击激活并重绘、干净退出 |
 | 安全区 | **通过**：iPhone 17 Pro 模拟器 62/0/34/0、iPad Pro 13-inch 32/0/20/0，内容矩形随之收缩 |
-| 真机运行时 | **未验收**：缺开发签名证书（Xcode 账号已添加，尚未生成 Apple Development 证书） |
+| 真机运行时 | **未验收（用户 2026-11-09 决定跳过）**：证书已生成，但 Xcode 账号库对 `xcodebuild` 不可见（`No Accounts`），设备安装未执行；仓库不声称任何真机运行结果 |
 | 真机 | 一台已配对 iPhone（iOS 26.6.2，USB）可被 `devicectl` 识别；iPad 之后也被识别；无签名身份，`ios/install-device.sh` 明确输出 `device_install=blocked reason=no_signing_identity` |
 
 真机签名需要在本机 Xcode 完成**登录**（Settings → Accounts → 添加 Apple ID 并完成双重认证），
