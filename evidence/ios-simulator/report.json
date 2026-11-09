@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "kind": "ios-simulator-reference-host",
+  "date": "2026-11-09",
+  "status": "runtime_verified_in_simulator",
+  "scope": "Xcode-built iOS/iPadOS reference host launched in iOS Simulator runtimes: Metal drawable presentation, ordered Latin+CJK font stack, scene activation and deterministic repaint, graceful retirement and process exit",
+  "environment": {
+    "os": "macOS 15.7.5 (24G624) arm64",
+    "xcode": "26.3 (17C529)",
+    "simulator_runtime": "iOS 26.3 (26.3.1 - 23D8133)",
+    "gpu_adapter": "Apple iOS simulator GPU",
+    "gpu_backend": "Metal",
+    "surface_format": "Bgra8UnormSrgb"
+  },
+  "build": {
+    "project": "ios/app/JasperUI.xcodeproj",
+    "scheme": "JasperUI",
+    "configuration": "Release",
+    "sdk": "iphonesimulator26.2",
+    "archs": "arm64",
+    "rust_lib": "libjasper_ui_ios.a (staticlib, aarch64-apple-ios-sim)",
+    "app": "ios/app/DerivedData/Build/Products/Release-iphonesimulator/JasperUI.app",
+    "signature": "Xcode ad-hoc simulator signature"
+  },
+  "checks": [
+    {
+      "name": "ipad_launch_and_metal_frame",
+      "result": "passed",
+      "device": "iPad Pro 13-inch (M5) simulator",
+      "detail": "Lifecycle Activate, window 2064x2648 physical at scale 2, Metal adapter 'Apple iOS simulator GPU', frame 1 readback background=4945816 button=496804 text=22852 pixels.",
+      "frame_sha256": "0e17450f2af7a668a4e73597c331326be2bbf34df3a77763698866956d269b12"
+    },
+    {
+      "name": "ipad_activation_repaint",
+      "result": "passed",
+      "detail": "Engine-level tap at the button centre (516,708) activated the scene; the host rendered the pressed frame deterministically from about_to_wait instead of waiting for a UIKit RedrawRequested that a Metal-backed view may not deliver.",
+      "pressed_frame_sha256": "e3eb394c1d65f946676603320bb809f01597a26b7e96b302fa2ef99b3cceefc1"
+    },
+    {
+      "name": "iphone_launch_and_activation",
+      "result": "passed",
+      "device": "iPhone 17 Pro simulator",
+      "detail": "Window 1206x2334 at scale 3 (402x778 logical); frame 1 background=2376118 button=393088 text=45598 pixels; tap at (201,435) activated and repainted; ios_host=pass frames=2 activations=1 retired=true.",
+      "frame_sha256": "37e3f5e68d3abb669548ec5c8e856863bd001c1bd44711e6b885f913edcc0c5d",
+      "pressed_frame_sha256": "1388ff5201fb9f0ef64e875669d802ae3ff0b019bb826183dfd8473d9e00a1f7"
+    },
+    {
+      "name": "chinese_font_stack",
+      "result": "passed",
+      "detail": "The screenshots show the Chinese title line and the 激活 Activate button rendered with real glyphs from the compiled-in DejaVuSans + DroidSansFallbackFull stack; text ink is counted separately from background and button pixels."
+    },
+    {
+      "name": "graceful_retirement",
+      "result": "passed",
+      "detail": "The host writes its summary (ios_host=pass ... retired=true) to the log file and terminates the process; winit documents ActiveEventLoop::exit as a no-op on iOS, so the reference host ends scripted runs explicitly."
+    }
+  ],
+  "screenshots": {
+    "ipad": {
+      "path": "ipad.png",
+      "sha256": "464391ab3b24c42a5c1ca39d1da4c156e5db8b3d4322e7eb73f5f2de060aa79d"
+    },
+    "iphone": {
+      "path": "iphone.png",
+      "sha256": "14b48e051ca18ec454a57767005b25bc5b7ff7177dd01aa8f1e60fe1bad99db9"
+    }
+  },
+  "logs": {
+    "ipad": {
+      "path": "ipad.log",
+      "sha256": "635a0a2be4115d4e44daa362431a1950c498b10b10ed43013f239766e80ffc51"
+    },
+    "iphone": {
+      "path": "iphone.log",
+      "sha256": "8a1f9416bdac850d70252d3751b77b3f5e02476824c7e0d3a07c3ecd397b3f27"
+    }
+  },
+  "limits": [
+    "Simulator runtime only; the same build has not been installed on a physical device yet.",
+    "No Apple Pencil session was exercised (the Simulator does not deliver calibrated Pencil force).",
+    "UIView.safeAreaInsets is not queried; the Simulator device has zero insets.",
+    "Simulator GPU is the host Metal adapter reported as 'Apple iOS simulator GPU', not device silicon."
+  ]
+}

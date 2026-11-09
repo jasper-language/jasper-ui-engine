@@ -57,7 +57,8 @@ winit 的 iOS 后端在 `EventLoop::run_app` 内调用 `UIApplicationMain`。宿
 | bundle 静态验证 | `plutil`、`UIDeviceFamily [1,2]`、平台字段、Mach-O 平台、签名与哈希 |
 | 可移植规则 | `cargo test --manifest-path ios/Cargo.toml` 11/11（含 4 项 Pencil 压力/高度角） |
 | 适配器演练 | `--features host-on-macos` 把同一宿主模块编译进 macOS 构建，跑 iPhone 与 iPad 视口（含安全区内缩和点击激活） |
-| 运行时 | **未验收**：验证机没有安装 Simulator 运行时，也没有代码签名身份 |
+| 模拟器运行时 | **通过**：iOS 26.3.1 模拟器上 iPad Pro 13-inch (M5) 与 iPhone 17 Pro 均启动、呈现 Metal 帧、点击激活并重绘、干净退出 |
+| 真机运行时 | **未验收**：缺开发签名证书（Xcode 账号已添加，尚未生成 Apple Development 证书） |
 | 真机 | 一台已配对 iPhone（iOS 26.6.2，USB）可被 `devicectl` 识别；iPad 之后也被识别；无签名身份，`ios/install-device.sh` 明确输出 `device_install=blocked reason=no_signing_identity` |
 
 运行时验收需要其中之一：安装 Simulator 运行时后执行
@@ -67,7 +68,7 @@ winit 的 iOS 后端在 `EventLoop::run_app` 内调用 `UIApplicationMain`。宿
 
 ## 未完成
 
-- 模拟器/真机运行启动与画面验收。
+- 真机运行启动与画面验收（模拟器已完成）。
 - `UIView.safeAreaInsets` 查询与软键盘遮挡处理。
 - 系统无障碍（钉住的 AccessKit 无 iOS 后端）、活 IME/软键盘组合、Pencil 压感进入原生场景
   （目前只到宿主边界）、倾斜/方位角与预测点。

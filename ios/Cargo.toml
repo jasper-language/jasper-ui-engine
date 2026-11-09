@@ -5,6 +5,11 @@ edition = "2021"
 license = "Apache-2.0"
 publish = false
 
+[lib]
+name = "jasper_ui_ios"
+crate-type = ["staticlib", "rlib"]
+path = "src/lib.rs"
+
 [[bin]]
 name = "jasper-ui"
 path = "src/main.rs"

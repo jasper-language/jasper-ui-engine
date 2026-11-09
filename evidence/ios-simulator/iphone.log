@@ -1,0 +1,11 @@
+stage=lifecycle Activate state=Active
+stage=window created pid=34365 physical=1206x2334 scale=3
+stage=adapter name="Apple iOS simulator GPU" backend=metal
+stage=viewport physical=1206x2334 scale=3 logical=402.0x778.0 content=402.0x778.0@0.0,0.0 generation=2
+stage=frame index=1 1206x2334 format=Bgra8UnormSrgb background=2376118 active=393088 pressed=0 other=45598 bytes=8444429 sha256=37e3f5e68d3abb669548ec5c8e856863bd001c1bd44711e6b885f913edcc0c5d
+stage=activate count=1 version=3
+stage=tap x=201.0 y=435.0 activated=true
+stage=frame index=2 1206x2334 format=Bgra8UnormSrgb background=2376118 active=0 pressed=393088 other=45598 bytes=8444429 sha256=1388ff5201fb9f0ef64e875669d802ae3ff0b019bb826183dfd8473d9e00a1f7
+ios_host=pass adapter="Apple iOS simulator GPU" backend=Metal viewport=1206x2334@3 frames=2 activations=1 tapped=true retired=true elapsed_ms=3623
+readback path=<container>/f2-1794250291.ppm bytes=8444429 background=2376118 active=393088 pressed=0 other=45598 sha256=37e3f5e68d3abb669548ec5c8e856863bd001c1bd44711e6b885f913edcc0c5d
+readback path=<container>/f2-1794250291.ppm bytes=8444429 background=2376118 active=0 pressed=393088 other=45598 sha256=1388ff5201fb9f0ef64e875669d802ae3ff0b019bb826183dfd8473d9e00a1f7

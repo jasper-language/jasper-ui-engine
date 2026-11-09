@@ -22,7 +22,7 @@ PATTERNS = [
     # it is indistinguishable from the git revisions this repository pins everywhere.
     # 新式设备 UDID；旧式 40 位十六进制与仓库里大量固定的 git revision 无法区分，不纳入匹配。
     ("device_udid", re.compile(r"\b[0-9A-Fa-f]{8}-[0-9A-Fa-f]{16}\b")),
-    # Certificate name carrying the team identifier, e.g. Apple Development: Jane (AB12CD34EF).
+    # Certificate name carrying the team identifier, e.g. "Apple Development: <name> (<TEAMID>)".
     ("development_certificate", re.compile(r"Apple Development:\s*[^(\n]+\([A-Z0-9]{10}\)")),
     # Machine-local home paths (the evidence sanitizer uses <home>/<repo> placeholders).
     ("home_path", re.compile(r"/Users/[A-Za-z0-9._-]+")),

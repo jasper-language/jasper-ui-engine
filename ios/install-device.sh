@@ -68,12 +68,19 @@ fi
 echo "device_install_identity=present"
 echo "device_install_device=redacted"
 
-JASPER_UI_DEVICE_PROFILE=$profile bash "$ios_root/build-app.sh" device --sign "$identity"
-app="$ios_root/target/app/device/JasperUI.app"
-
-if [[ -n "$profile" ]]; then
-    cp "$profile" "$app/embedded.mobileprovision"
-    echo "device_install_profile=$profile"
+# Xcode builds, signs and provisions the app; the manual bundle path cannot create a profile.
+# Xcode 负责构建、签名与描述文件；手工 bundle 路径无法生成描述文件。
+team=${JASPER_TEAM:-$(printf '%s' "$identity" | sed -n 's/.*(\([A-Z0-9]\{10\}\))$/\1/p')}
+if [[ -z "$team" ]]; then
+    echo "device_install=blocked reason=no_team hint=JASPER_TEAM_or_Xcode_Manage_Certificates"
+    exit 3
+fi
+bash "$ios_root/build-xcode.sh" device --team "$team" > "$out/xcode-build.log" 2>&1 \
+    || { echo "device_install=blocked reason=xcode_build_failed"; tail -20 "$out/xcode-build.log"; exit 1; }
+app="$ios_root/app/DerivedData/Build/Products/Release-iphoneos/JasperUI.app"
+if [[ ! -d "$app" ]]; then
+    echo "device_install=blocked reason=app_missing"
+    exit 1
 fi
 
 xcrun devicectl device install app --device "$device" "$app" 2>&1 \

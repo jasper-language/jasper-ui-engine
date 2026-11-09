@@ -1,0 +1,267 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		191C779AB33C099E1CFF3CF7 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 43A0A99F958BBDD25D62CFAB /* main.m */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		43A0A99F958BBDD25D62CFAB /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		E4E6D7EFB44C842A7A9609C6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9E6B883FC1FDDE4819D8590C /* JasperUI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = JasperUI.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		69BE8A4D8E4D9DA4E7DB3928 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		E50290A24C49A459B43487C5 = {
+			isa = PBXGroup;
+			children = (
+				69F8D45498D7E20DA99BB780 /* app */,
+				328EC33DF3954DC9B83FA285 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		69F8D45498D7E20DA99BB780 /* app */ = {
+			isa = PBXGroup;
+			children = (
+				43A0A99F958BBDD25D62CFAB /* main.m */,
+				E4E6D7EFB44C842A7A9609C6 /* Info.plist */,
+			);
+			path = .;
+			sourceTree = "<group>";
+		};
+		328EC33DF3954DC9B83FA285 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				9E6B883FC1FDDE4819D8590C /* JasperUI.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0E8A3AD980EC179856012B7E /* JasperUI */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B483F6EB73610DE752E457A0 /* Build configuration list for PBXNativeTarget "JasperUI" */;
+			buildPhases = (
+				E8CCBB31361503B5C1B62754 /* Build Rust static library */,
+				4E57AE888889001C06A4F7E8 /* Sources */,
+				69BE8A4D8E4D9DA4E7DB3928 /* Frameworks */,
+				D6C9E8A172005E68A1DD674F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = JasperUI;
+			productName = JasperUI;
+			productReference = 9E6B883FC1FDDE4819D8590C /* JasperUI.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		98F54143AB4E86B28C3AFEE0 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					0E8A3AD980EC179856012B7E = {
+						CreatedOnToolsVersion = 26.0;
+					};
+				};
+			};
+			buildConfigurationList = 41A2CC2D5321B7BB2E956CA5 /* Build configuration list for PBXProject "JasperUI" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = E50290A24C49A459B43487C5;
+			productRefGroup = 328EC33DF3954DC9B83FA285 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				0E8A3AD980EC179856012B7E /* JasperUI */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D6C9E8A172005E68A1DD674F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		E8CCBB31361503B5C1B62754 /* Build Rust static library */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Build Rust static library";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -euo pipefail\nif [ \"${PLATFORM_NAME}\" = \"iphonesimulator\" ]; then\n  RUST_TARGET=aarch64-apple-ios-sim\nelse\n  RUST_TARGET=aarch64-apple-ios\nfi\nCARGO=\"${JASPER_CARGO:-$(command -v cargo || true)}\"\nif [ -z \"${CARGO}\" ]; then CARGO=\"${HOME}/.cargo/bin/cargo\"; fi\nexport CARGO_TARGET_DIR=\"${SRCROOT}/../target\"\n\"${CARGO}\" build --locked --release --target \"${RUST_TARGET}\" --manifest-path \"${SRCROOT}/../Cargo.toml\"\nmkdir -p \"${SRCROOT}/../target/xcode/lib\"\ncp \"${CARGO_TARGET_DIR}/${RUST_TARGET}/release/libjasper_ui_ios.a\" \"${SRCROOT}/../target/xcode/lib/libjasper_ui_ios.a\"\necho \"rust staticlib: ${RUST_TARGET}\"";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		4E57AE888889001C06A4F7E8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				191C779AB33C099E1CFF3CF7 /* main.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		89E1FD6268CC0F221A2BE178 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				SDKROOT = iphoneos;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				SWIFT_VERSION = 5.0;
+				ONLY_ACTIVE_ARCH = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		E6DE6C99132752C914FEF632 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				SDKROOT = iphoneos;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				SWIFT_VERSION = 5.0;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		7082CC0B6FC1282FCEABD07A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "$(JASPER_TEAM)";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks");
+				LIBRARY_SEARCH_PATHS = ("$(SRCROOT)/../target/xcode/lib");
+				MARKETING_VERSION = 0.1.0;
+				OTHER_LDFLAGS = (
+					"-ljasper_ui_ios",
+					"-framework", UIKit,
+					"-framework", Metal,
+					"-framework", QuartzCore,
+					"-framework", CoreGraphics,
+					"-framework", CoreFoundation,
+					"-framework", Foundation,
+					"-liconv",
+					"-lobjc",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.jasper.ui.ios;
+				PRODUCT_NAME = JasperUI;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		639A7CA24D39909E713B47F7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "$(JASPER_TEAM)";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks");
+				LIBRARY_SEARCH_PATHS = ("$(SRCROOT)/../target/xcode/lib");
+				MARKETING_VERSION = 0.1.0;
+				OTHER_LDFLAGS = (
+					"-ljasper_ui_ios",
+					"-framework", UIKit,
+					"-framework", Metal,
+					"-framework", QuartzCore,
+					"-framework", CoreGraphics,
+					"-framework", CoreFoundation,
+					"-framework", Foundation,
+					"-liconv",
+					"-lobjc",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.jasper.ui.ios;
+				PRODUCT_NAME = JasperUI;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		41A2CC2D5321B7BB2E956CA5 /* Build configuration list for PBXProject "JasperUI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				89E1FD6268CC0F221A2BE178 /* Debug */,
+				E6DE6C99132752C914FEF632 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B483F6EB73610DE752E457A0 /* Build configuration list for PBXNativeTarget "JasperUI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7082CC0B6FC1282FCEABD07A /* Debug */,
+				639A7CA24D39909E713B47F7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 98F54143AB4E86B28C3AFEE0 /* Project object */;
+}

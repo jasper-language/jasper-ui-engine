@@ -99,6 +99,26 @@ jasper-ui FONT [--frames N] [--readback out.ppm] [--insets top,right,bottom,left
                [--size W,H] [--tap X,Y] [--timeout-ms N] [--cjk-font PATH] [--cjk-tofu]
 ```
 
+## Xcode device target
+
+`ios/app/JasperUI.xcodeproj` builds the real device app: a `Run Script` phase compiles the Rust
+host into `libjasper_ui_ios.a` (static library, `lib` target in `ios/Cargo.toml`), `main.m` calls
+`jasper_ios_main`, and Xcode owns signing, the provisioning profile and deployment. The shell path
+(`ios/build-app.sh`) stays for CI and for the standalone binary.
+
+```bash
+JASPER_TEAM=XXXXXXXXXX bash ios/build-xcode.sh device    # signed, installable
+bash ios/build-xcode.sh simulator                        # no signing required
+```
+
+`bash ios/verify-device.sh [--pencil SECONDS]` builds once, then for every paired device:
+installs, launches with `--console`, pulls the presented frame from the app container and prints
+its SHA-256; with `--pencil` it keeps the app running so an Apple Pencil session can be captured
+from the `stage=pencil` log. It never prints device names, UDIDs, certificates or team IDs.
+
+Xcode must have its iOS platform component installed (Xcode → Settings → Components → iOS,
+8.39 GB); without it `xcodebuild` reports "iOS is not installed" and no device destination matches.
+
 ## Verification
 
 ```bash
@@ -110,7 +130,7 @@ bash scripts/verify-ios-app.sh
 | Static bundle checks | `plutil` declarations, `UIDeviceFamily [1,2]`, `vtool` platform, `UIKit`/`Metal` linkage, `codesign --verify --deep --strict`, SHA-256 of binary and plist |
 | Portable rules | `cargo test --manifest-path ios/Cargo.toml` (7 tests: lifecycle, duplicate notifications, termination, background resume, iPad safe area, invalid insets, primary contact handoff) |
 | Adapter exercise | `--features host-on-macos` compiles the identical host module into a macOS build and runs the iPhone and iPad viewport profiles, including a tapped activation |
-| Runtime | Simulator install + launch, only when a Simulator runtime is installed |
+| Runtime | iOS Simulator install + launch: iPad Pro 13-inch (M5) and iPhone 17 Pro both present Metal frames, activate on tap and retire cleanly (`evidence/ios-simulator/`) |
 
 `host-on-macos` is a development aid: it exercises the host's window, surface, viewport, scene and
 input code on macOS. It is not an iOS runtime and does not cover UIKit lifecycle delivery, device

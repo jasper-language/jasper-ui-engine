@@ -1030,6 +1030,10 @@ Windows 10 LTSC x86_64 虚拟机参考宿主已完成运行验收：单窗口与
   `model::pencil_sample`：笔轴压力除以 `sin(高度角)` 得到垂直屏幕压力并归一，高度角向上暴露，
   平放不做除法、NaN 回退到按下/抬起默认值；宿主每个 Touch 记录 `stage=pencil`。新增 4 项
   单测（合计 11/11）。该值目前停在宿主边界——原生 `Engine::pointer` 不消费压力/倾角。
+- **模拟器运行已验收**：安装 iOS 26.3.1 平台后，Xcode 工程构建的 app 在 iPad Pro 13-inch (M5)
+  与 iPhone 17 Pro 模拟器上启动并呈现 Metal 帧（iPad 2064×2648@2、iPhone 1206×2334@3），
+  首帧后点击按钮触发激活与按下色重绘，`ios_host=pass frames=2 activations=1 retired=true`；
+  winit 在 iOS 上把 `ActiveEventLoop::exit` 文档化为空操作，因此参考宿主改为写日志后显式结束进程。
 - **设备探测**：`devicectl` 识别到已配对的 iPhone（iOS 26.6.2，USB）与 iPad（型号与 UDID 不入公开证据）；`security find-identity` 为 0，缺开发签名身份。新增 `ios/install-device.sh`
   完成签名构建 → `devicectl install` → 带 `--console` 启动 → 取回容器内 PPM 的整链，当前
   明确输出 `device_install=blocked reason=no_signing_identity`，不自称真机已验收。

@@ -26,3 +26,6 @@ __pycache__/
 *.cer.pem
 ios/app/build/
 ios/app/DerivedData/
+
+# Xcode derived data and signing material.
+ios/app/DerivedData/
