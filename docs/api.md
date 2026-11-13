@@ -20,6 +20,8 @@ Framework 产生 `native::SceneUpdate { expected_version, next_version, patches 
 
 **宿主接口（E13）**：`HostRenderer::node_bounds`、`activate`、`key_with_activation` 经 Surface 代数准入后转发。
 
+**扩展样式（E2 圆角、E3 阴影、E4 透明度、E9 单侧边框/外框/文字装饰、E10 命中扩展）**：`Style` 新增 `corner_radius`、`box_shadows`、`opacity`、`border_top/right/bottom/left`、`outline`、`text_decoration`、`hit_slop`，默认值与改动前逐像素一致；非法值（`Style::extended_style_valid`）整帧拒绝为 `NativeRejected`。外框、阴影、命中扩展不占布局。JUI 2 `xstyle` 键由 `Style::apply_xstyle` 解析，能力由 `native::host::style_capabilities()` 声明（供宿主 `hello`）。字段、键名、取值格式、实现与限制见 [appfw-style-e2-e10.md](appfw-style-e2-e10.md)。
+
 除兼容的 bool `TextDisplayView::update` 外，`try_update -> Result<(), ComponentUpdateError>` 在组件值变更前分类完整借用帧，明确区分归属/上下文不匹配、关闭、空帧（无更新数上限，E1 起去掉 4096 项容量）、带 expected/current 的过期序号、序号耗尽、当前视图不支持的更新和原生映射拒绝。错误不携带 Blitz 类型或更新载荷；bool 方法等价于结构化结果的 `is_ok()`。准入分类器已完成限定六阶段验收，逐值原生 setter、resolve、回调 panic 回滚和整帧组合证明仍待完成。
 
 原生 CPU 入口 `Engine::render_to_backend` 在归属/版本/存活/预算准入后，复用原生绘制并调用既有 `RenderBackend::submit_rgba8`、成功后才调用 `present`。默认后端明确返回 Unsupported；HeadlessBackend 接管已经绘制的像素，不重放 PaintOp。字节按上游输出原样保存，不提供宿主 alpha/合成转换或外部呈现回滚；旧 UiBatch 序列化格式不变。此新增编排与包装尚未完成有序证明验收。

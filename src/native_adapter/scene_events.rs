@@ -118,6 +118,14 @@ pub(crate) struct SceneEventHandler<'a, F> {
     pub parents: &'a BTreeMap<NodeId, Option<NodeId>>,
     /// Source node under the native press of this click, if any.
     pub pressed: Option<NodeId>,
+    /// E2: source subtree the sample missed through a rounded corner; its nodes are skipped
+    /// when the native chain is mapped to a source target (the event goes to the nearest
+    /// ancestor outside it).
+    /// E2：本次采样因圆角而未命中的源子树；把原生链映射为源目标时跳过其中节点（事件交给其外最近的祖先）。
+    pub exclude: Option<NodeId>,
+    /// E10: actual sample position when native targeting used a slop-steered point.
+    /// E10：原生定位使用了命中扩展修正点时的实际采样位置。
+    pub reported_position: Option<(f32, f32)>,
     pub sink: &'a mut F,
 }
 impl<F: FnMut(SceneEvent) -> NativeEventReply> blitz_dom::EventHandler
@@ -150,9 +158,14 @@ impl<F: FnMut(SceneEvent) -> NativeEventReply> blitz_dom::EventHandler
         {
             return;
         }
+        let excluded = |id: &NodeId| {
+            self.exclude
+                .is_some_and(|root| source_contains(self.parents, *id, root))
+        };
         let Some(node) = chain.iter().find_map(|target| {
             self.nodes.iter().find_map(|(id, (element, text))| {
                 ((*element == *target || *text == Some(*target))
+                    && !excluded(id)
                     && (!activation
                         || self
                             .semantics
@@ -193,7 +206,9 @@ impl<F: FnMut(SceneEvent) -> NativeEventReply> blitz_dom::EventHandler
             scene_version: self.version,
             node,
             kind,
-            position: (pointer.coords.client_x, pointer.coords.client_y),
+            position: self
+                .reported_position
+                .unwrap_or((pointer.coords.client_x, pointer.coords.client_y)),
             primary_pressed: pointer
                 .buttons
                 .contains(blitz_traits::events::MouseEventButtons::Primary),

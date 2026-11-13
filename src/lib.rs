@@ -107,7 +107,10 @@ pub use scrollbar::{
     paint_scrollbars, scrollbars, ScrollAxis, Scrollbar, ScrollbarConfig, ScrollbarDrag, Scrollbars,
 };
 pub use semantics::{FocusError, FocusManager, Role, Semantics, SemanticsNode, SemanticsTree};
-pub use style::{Align, Color, Display, FlexDirection, Justify, Length, Style};
+pub use style::{
+    Align, BorderSide, BoxShadow, Color, CornerRadii, Display, FlexDirection, Justify, Length,
+    Outline, Side, Style, TextDecoration,
+};
 pub use text::{SimpleTextEngine, TextEngine, TextMetrics};
 #[cfg(feature = "real-text")]
 pub use text_cosmic::CosmicTextEngine;
@@ -171,6 +174,9 @@ mod render_host;
 #[cfg(feature = "native-blitz-pending")]
 #[path = "native_adapter/scene_events.rs"]
 mod scene_events;
+#[cfg(feature = "native-blitz-pending")]
+#[path = "native_adapter/style_effects.rs"]
+mod style_effects;
 #[cfg(feature = "native-blitz-pending")]
 #[path = "native_adapter/text_geometry.rs"]
 mod text_geometry;

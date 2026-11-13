@@ -705,12 +705,14 @@ impl NativeScene {
             return false;
         }
         self.last_pointer = Some((x, y));
+        let adjustment = self.pointer_hit_adjustment(x, y);
+        let (target_x, target_y) = adjustment.steer.unwrap_or((x, y));
         let Some(document) = self.document.as_mut() else {
             return false;
         };
         let scroll = document.viewport_scroll();
-        let page_x = x as f64 + scroll.x;
-        let page_y = y as f64 + scroll.y;
+        let page_x = target_x as f64 + scroll.x;
+        let page_y = target_y as f64 + scroll.y;
         if !page_x.is_finite()
             || !page_y.is_finite()
             || page_x.abs() > f32::MAX as f64
@@ -737,10 +739,10 @@ impl NativeScene {
             coords: PointerCoords {
                 page_x: page_x as f32,
                 page_y: page_y as f32,
-                client_x: x,
-                client_y: y,
-                screen_x: x,
-                screen_y: y,
+                client_x: target_x,
+                client_y: target_y,
+                screen_x: target_x,
+                screen_y: target_y,
             },
             button: MouseEventButton::Main,
             buttons: if pressed {
@@ -787,6 +789,8 @@ impl NativeScene {
             semantics: &self.semantics,
             parents: &self.parents,
             pressed,
+            exclude: adjustment.exclude,
+            reported_position: adjustment.steer.map(|_| (x, y)),
             sink: &mut observe,
         };
         blitz_dom::EventDriver::new(document, handler).handle_ui_event(event);
@@ -1170,6 +1174,405 @@ impl NativeScene {
         document.resolve(0.0);
         true
     }
+    /// Opacity product of the node and its ancestors, and the intersection of the padding boxes
+    /// of the clipping ones (the node itself included when `own_clip`). None: clipped away.
+    #[cfg(feature = "cpu-pending")]
+    fn paint_context(
+        &self,
+        id: NodeId,
+        own_clip: bool,
+    ) -> Option<(f32, Option<crate::style_effects::LogicalBox>)> {
+        let mut alpha = 1.0;
+        let mut clip: Option<crate::style_effects::LogicalBox> = None;
+        let mut chain = vec![id];
+        chain.extend(self.source_ancestors(id));
+        for (index, node) in chain.into_iter().enumerate() {
+            let Some(source) = self.source.find(node) else {
+                continue;
+            };
+            alpha *= source.style.opacity;
+            if source.style.overflow != Overflow::Visible && (index > 0 || own_clip) {
+                let b = self.padding_box(node)?;
+                clip = Some(match clip {
+                    None => b,
+                    Some(c) => c.intersect(&b)?,
+                });
+            }
+        }
+        Some((alpha, clip))
+    }
+    /// Inline layout painted for a source text node and its content origin in view-local logical
+    /// px: the inline root must be the element or the anonymous box directly inside it.
+    #[cfg(feature = "cpu-pending")]
+    fn painted_text_layout(&self, id: NodeId) -> Option<(&blitz_dom::node::TextLayout, f64, f64)> {
+        let (element, Some(text)) = self.nodes.get(&id)? else {
+            return None;
+        };
+        let document = self.document.as_ref()?;
+        let root = document.get_node(*text)?.inline_root_ancestor()?;
+        if root.id != *element && root.parent != Some(*element) {
+            return None;
+        }
+        let layout = root.element_data()?.inline_layout_data.as_deref()?;
+        let rect = document.get_client_bounding_rect(root.id)?;
+        let edges = root.final_layout();
+        let x = rect.x + edges.border.left as f64 + edges.padding.left as f64;
+        let y = rect.y
+            + edges.border.top as f64
+            + edges.padding.top as f64
+            + layout.block_offset as f64;
+        (x.is_finite() && y.is_finite()).then_some((layout, x, y))
+    }
+    /// E9 text decoration of one text node: every decorating ancestor-or-self contributes its
+    /// lines in its own text colour (CSS propagation), one line per laid-out line spanning the
+    /// line's glyph runs. Geometry follows Blitz: underline at the font's underline offset,
+    /// line-through a third of the ascent above the baseline, thickness floor(metric) >= 1 px.
+    /// E9 一个文字节点的文字装饰：每个带装饰的自身或祖先以其文字颜色贡献装饰线（CSS 传播），每个排版行一条，覆盖该行
+    /// 的字形串。几何同 Blitz：下划线在字体建议位置，删除线在基线上方三分之一 ascent 处，粗细 floor(度量) 且至少 1px。
+    #[cfg(feature = "cpu-pending")]
+    fn text_decorations(&self, id: NodeId, out: &mut Vec<Overlay>) {
+        let mut decorating = Vec::new();
+        for node in std::iter::once(id).chain(self.source_ancestors(id)) {
+            if let Some(source) = self.source.find(node) {
+                if source.style.text_decoration != TextDecoration::NONE {
+                    decorating.push((source.style.text_decoration, source.style.color));
+                }
+            }
+        }
+        if decorating.is_empty() || !self.source_displayed(id) {
+            return;
+        }
+        let Some((layout, origin_x, origin_y)) = self.painted_text_layout(id) else {
+            return;
+        };
+        let Some((alpha, clip)) = self.paint_context(id, true) else {
+            return;
+        };
+        let scale = layout.layout.scale() as f64;
+        if !(scale > 0.0) || !scale.is_finite() {
+            return;
+        }
+        for line in layout.layout.lines() {
+            let mut extent: Option<(f32, f32)> = None;
+            let mut geometry = None;
+            for item in line.items() {
+                let parley::PositionedLayoutItem::GlyphRun(run) = item else {
+                    continue;
+                };
+                if run.advance() <= 0.0 {
+                    continue;
+                }
+                let (x0, x1) = (run.offset(), run.offset() + run.advance());
+                extent = Some(extent.map_or((x0, x1), |(a, b)| (a.min(x0), b.max(x1))));
+                if geometry.is_none() {
+                    geometry = Some((run.baseline(), *run.run().font_metrics()));
+                }
+            }
+            let (Some((x0, x1)), Some((baseline, metrics))) = (extent, geometry) else {
+                continue;
+            };
+            for (decoration, color) in &decorating {
+                let mut lines = Vec::new();
+                if decoration.underline {
+                    lines.push((metrics.underline_offset, metrics.underline_size));
+                }
+                if decoration.line_through {
+                    let size = metrics.strikethrough_size.floor().max(1.0);
+                    lines.push((metrics.ascent / 3.0 + size / 2.0, size));
+                }
+                for (offset, size) in lines {
+                    let size = size.floor().max(1.0);
+                    let top = baseline - offset;
+                    let a = (f32::from(color.a) * alpha).round();
+                    if a <= 0.0 {
+                        continue;
+                    }
+                    let Some(outer) = Some(crate::style_effects::LogicalBox {
+                        x: (origin_x + x0 as f64 / scale) as f32,
+                        y: (origin_y + top as f64 / scale) as f32,
+                        width: ((x1 - x0) as f64 / scale) as f32,
+                        height: (size as f64 / scale) as f32,
+                    })
+                    .filter(|b| [b.x, b.y, b.width, b.height].iter().all(|v| v.is_finite())) else {
+                        continue;
+                    };
+                    out.push(Overlay {
+                        outer,
+                        outer_radii: [0.0; 4],
+                        inner: None,
+                        rgba: [color.r, color.g, color.b, a.clamp(0.0, 255.0) as u8],
+                        clip,
+                    });
+                }
+            }
+        }
+    }
+    /// Source nodes in pre-order (paint order of siblings); explicit stack, no recursion.
+    fn source_preorder(&self) -> Vec<&Node> {
+        let mut out = Vec::new();
+        let mut stack = vec![&self.source.root];
+        while let Some(node) = stack.pop() {
+            out.push(node);
+            stack.extend(node.children.iter().rev());
+        }
+        out
+    }
+    /// Displayed (no `display: none` on the node or an ancestor); unlike `source_visible`,
+    /// semantic hiding does not hide paint. Bounded by the node count.
+    fn source_displayed(&self, id: NodeId) -> bool {
+        let mut current = Some(id);
+        let mut remaining = self.parents.len() + 1;
+        while let Some(cursor) = current {
+            if remaining == 0 || !self.displayed.get(&cursor).copied().unwrap_or(false) {
+                return false;
+            }
+            remaining -= 1;
+            current = self.parents.get(&cursor).copied().flatten();
+        }
+        true
+    }
+    /// Strict source ancestors, nearest first; bounded by the node count.
+    fn source_ancestors(&self, id: NodeId) -> Vec<NodeId> {
+        let mut out = Vec::new();
+        let mut current = self.parents.get(&id).copied().flatten();
+        while let Some(cursor) = current {
+            if out.len() > self.parents.len() {
+                break;
+            }
+            out.push(cursor);
+            current = self.parents.get(&cursor).copied().flatten();
+        }
+        out
+    }
+    /// Border box in view-local logical coordinates, including a node that is itself scrolled.
+    fn layout_box(&self, id: NodeId) -> Option<crate::style_effects::LogicalBox> {
+        let (element, _) = self.nodes.get(&id)?;
+        let document = self.document.as_ref()?;
+        let rect = document.get_client_bounding_rect(*element)?;
+        // Pinned Blitz subtracts the box's own scroll from its client origin; add it back.
+        let scroll = document.get_node(*element)?.scroll_offset();
+        let out = crate::style_effects::LogicalBox {
+            x: (rect.x + scroll.x) as f32,
+            y: (rect.y + scroll.y) as f32,
+            width: rect.width as f32,
+            height: rect.height as f32,
+        };
+        ([out.x, out.y, out.width, out.height]
+            .iter()
+            .all(|v| v.is_finite())
+            && out.width >= 0.0
+            && out.height >= 0.0)
+            .then_some(out)
+    }
+    /// Padding box (border box minus border widths): the clip of an `overflow` container.
+    fn padding_box(&self, id: NodeId) -> Option<crate::style_effects::LogicalBox> {
+        let border_box = self.layout_box(id)?;
+        let (element, _) = self.nodes.get(&id)?;
+        let border = self.document.as_ref()?.get_node(*element)?.final_layout().border;
+        border_box.outset(-border.top, -border.right, -border.bottom, -border.left)
+    }
+    fn clips(&self, id: NodeId) -> bool {
+        self.source
+            .find(id)
+            .is_some_and(|node| node.style.overflow != Overflow::Visible)
+    }
+    /// The point lies in a corner of `id` cut away by its radii.
+    fn cut_by(&self, id: NodeId, x: f32, y: f32) -> bool {
+        let Some(node) = self.source.find(id) else {
+            return false;
+        };
+        !node.style.corner_radius.is_zero()
+            && self.layout_box(id).is_some_and(|rect| {
+                crate::style_effects::in_cut_corner(rect, node.style.corner_radius, x, y)
+            })
+    }
+    /// Engine-painted overlays in paint order: every text decoration, then every outline ring.
+    #[cfg(feature = "cpu-pending")]
+    fn overlays(&self) -> Vec<Overlay> {
+        let mut rings = Vec::new();
+        let preorder = self.source_preorder();
+        if preorder
+            .iter()
+            .all(|n| n.style.outline.is_none() && n.style.text_decoration == TextDecoration::NONE)
+        {
+            return rings;
+        }
+        for node in &preorder {
+            self.text_decorations(node.id, &mut rings);
+        }
+        for node in preorder {
+            let Some(outline) = node.style.outline else {
+                continue;
+            };
+            if !self.source_displayed(node.id) {
+                continue;
+            }
+            let Some(border_box) = self.layout_box(node.id) else {
+                continue;
+            };
+            let Some((outer, outer_radii, inner)) = crate::style_effects::outline_ring(
+                border_box,
+                node.style.corner_radius,
+                outline,
+            ) else {
+                continue;
+            };
+            // The node's own overflow does not clip its outline; ancestors' does.
+            let Some((alpha, clip)) = self.paint_context(node.id, false) else {
+                continue;
+            };
+            let a = (f32::from(outline.color.a) * alpha).round();
+            if a <= 0.0 {
+                continue;
+            }
+            rings.push(Overlay {
+                outer,
+                outer_radii,
+                inner,
+                rgba: [
+                    outline.color.r,
+                    outline.color.g,
+                    outline.color.b,
+                    a.clamp(0.0, 255.0) as u8,
+                ],
+                clip,
+            });
+        }
+        rings
+    }
+    /// E2/E10 pointer targeting on top of the pinned native hit test (which ignores radii and
+    /// has no slop). Slop: a sample outside every real box, whose native target is a strict
+    /// source ancestor of a slop node, is steered to the nearest point inside that node (nearest
+    /// box wins; ties go to the later node in paint order); a real box always beats a slop.
+    /// Radius: a sample in a corner cut away from its target (or from a clipping ancestor)
+    /// skips that subtree. No slop or radius anywhere: no work and no change.
+    /// 在固定原生命中测试（忽略圆角、无扩展）之上的 E2/E10 指针定位。扩展：采样不在任何真实盒内、且原生目标是
+    /// 某扩展节点的严格源祖先时，修正到该节点内最近的点（最近者胜，相同时取绘制顺序更后者）；真实盒总优先于扩展。
+    /// 圆角：采样落在目标（或裁剪祖先）被圆角切掉的角落时跳过该子树。全场景没有扩展与圆角时不做任何事。
+    fn pointer_hit_adjustment(&self, x: f32, y: f32) -> PointerHitAdjustment {
+        let preorder = self.source_preorder();
+        let has_slop = preorder
+            .iter()
+            .any(|n| n.style.hit_slop != jasper_ui_engine::geometry::Edges::ZERO);
+        let has_radius = preorder.iter().any(|n| !n.style.corner_radius.is_zero());
+        if !has_slop && !has_radius {
+            return PointerHitAdjustment::default();
+        }
+        let Some(document) = self.document.as_ref() else {
+            return PointerHitAdjustment::default();
+        };
+        let scroll = document.viewport_scroll();
+        let mut reverse = BTreeMap::new();
+        for (id, (element, text)) in &self.nodes {
+            reverse.insert(*element, *id);
+            if let Some(text) = text {
+                reverse.insert(*text, *id);
+            }
+        }
+        let limit = self.nodes.len().saturating_mul(4).saturating_add(16);
+        let natural = |cx: f32, cy: f32| -> Option<NodeId> {
+            let hit = document.hit(
+                (cx as f64 + scroll.x) as f32,
+                (cy as f64 + scroll.y) as f32,
+            )?;
+            let mut cursor = Some(hit.node_id);
+            for _ in 0..limit {
+                let current = cursor?;
+                if let Some(id) = reverse.get(&current) {
+                    return Some(*id);
+                }
+                cursor = document.get_node(current)?.parent;
+            }
+            None
+        };
+        let target = natural(x, y);
+        if has_slop {
+            let mut best: Option<(f32, NodeId, crate::style_effects::LogicalBox)> = None;
+            for node in &preorder {
+                let slop = node.style.hit_slop;
+                if slop == jasper_ui_engine::geometry::Edges::ZERO
+                    || !self.source_displayed(node.id)
+                {
+                    continue;
+                }
+                let Some(rect) = self.layout_box(node.id) else {
+                    continue;
+                };
+                if rect.contains(x, y)
+                    || !crate::style_effects::slop_box(rect, slop).is_some_and(|b| b.contains(x, y))
+                {
+                    continue;
+                }
+                if let Some(target) = target {
+                    if target == node.id
+                        || !source_subtree_contains(&self.parents, node.id, target)
+                    {
+                        continue;
+                    }
+                }
+                if self.source_ancestors(node.id).into_iter().any(|a| {
+                    self.clips(a)
+                        && (!self.padding_box(a).is_some_and(|b| b.contains(x, y))
+                            || self.cut_by(a, x, y))
+                }) {
+                    continue;
+                }
+                let distance = rect.distance(x, y);
+                if best.is_none_or(|(d, ..)| distance <= d) {
+                    best = Some((distance, node.id, rect));
+                }
+            }
+            if let Some((_, id, rect)) = best {
+                let (mut sx, mut sy) = rect.clamp_inside(x, y, 0.5);
+                let radii = self
+                    .source
+                    .find(id)
+                    .map(|n| n.style.corner_radius)
+                    .unwrap_or_default();
+                let (cx, cy) = (rect.x + rect.width / 2.0, rect.y + rect.height / 2.0);
+                let (qx, qy) = (sx, sy);
+                for step in 1..=16 {
+                    if !crate::style_effects::in_cut_corner(rect, radii, sx, sy) {
+                        break;
+                    }
+                    let t = step as f32 / 16.0;
+                    sx = qx + (cx - qx) * t;
+                    sy = qy + (cy - qy) * t;
+                }
+                if natural(sx, sy).is_some_and(|hit| source_subtree_contains(&self.parents, hit, id))
+                {
+                    return PointerHitAdjustment {
+                        steer: Some((sx, sy)),
+                        exclude: None,
+                    };
+                }
+            }
+        }
+        let mut exclude = None;
+        if has_radius {
+            let mut current = target;
+            for _ in 0..=self.parents.len() {
+                let Some(node) = current else {
+                    break;
+                };
+                let mut cut = self.cut_by(node, x, y).then_some(node);
+                for ancestor in self.source_ancestors(node) {
+                    if self.clips(ancestor) && self.cut_by(ancestor, x, y) {
+                        cut = Some(ancestor);
+                    }
+                }
+                let Some(cut) = cut else {
+                    break;
+                };
+                exclude = Some(cut);
+                current = self.parents.get(&cut).copied().flatten();
+            }
+        }
+        PointerHitAdjustment {
+            steer: None,
+            exclude,
+        }
+    }
     /// Native client-box projection in view-local logical coordinates; no OS screen transform.
     pub(crate) fn node_bounds_from_host(
         &self,
@@ -1535,11 +1938,13 @@ impl NativeScene {
             }
         }
         let scale = document.viewport().scale_f64();
+        let rings = self.overlays();
+        let document = self.document.as_mut()?;
         let pixels = anyrender::render_to_buffer::<anyrender_vello_cpu::VelloCpuImageRenderer, _>(
             |scene| {
                 blitz_paint::paint_scene(
                     &mut crate::glyph_skew::UprightSyntheticItalic {
-                        scene,
+                        scene: &mut *scene,
                         bold_aliases: &self.bold_aliases,
                     },
                     document,
@@ -1548,7 +1953,8 @@ impl NativeScene {
                     height,
                     0,
                     0,
-                )
+                );
+                paint_overlays(scene, &rings, scale);
             },
             width,
             height,
@@ -1606,6 +2012,7 @@ impl NativeScene {
         if caller != self.owner || version != self.scene_version {
             return None;
         }
+        let rings = self.overlays();
         let document = self.document.as_mut()?;
         let (width, height) = document.viewport().window_size;
         let bytes = crate::cpu_budget::cpu_frame_bytes(width, height, max_bytes)?;
@@ -1624,6 +2031,7 @@ impl NativeScene {
                     0,
                     0,
                 );
+                paint_overlays(scene, &rings, scale);
                 for (node, commands) in &admitted {
                     for command in commands.iter() {
                         let left = f64::from(node.x) + f64::from(command.x);
@@ -1827,10 +2235,12 @@ impl NativeScene {
             }
         }
         let scale = document.viewport().scale_f64();
+        let rings = self.overlays();
+        let document = self.document.as_mut().ok_or(GpuFrameError::Rejected)?;
         let pixels = gpu.render(width, height, |scene| {
             blitz_paint::paint_scene(
                 &mut crate::glyph_skew::UprightSyntheticItalic {
-                    scene,
+                    scene: &mut *scene,
                     bold_aliases: &self.bold_aliases,
                 },
                 document,
@@ -1839,7 +2249,8 @@ impl NativeScene {
                 height,
                 0,
                 0,
-            )
+            );
+            paint_overlays(scene, &rings, scale);
         })?;
         if pixels.len() != bytes {
             return Err(GpuFrameError::Readback(format!(
@@ -2009,11 +2420,12 @@ impl NativeScene {
         crate::cpu_budget::cpu_frame_bytes(width, height, max_render_bytes)
             .ok_or(GpuFrameError::Rejected)?;
         self.invalidate_frame();
+        let rings = self.overlays();
         let document = self.document.as_mut().ok_or(GpuFrameError::Rejected)?;
         let result = gpu.render_to_host_view(width, height, format, view, |scene| {
             blitz_paint::paint_scene(
                 &mut crate::glyph_skew::UprightSyntheticItalic {
-                    scene,
+                    scene: &mut *scene,
                     bold_aliases: &self.bold_aliases,
                 },
                 document,
@@ -2022,7 +2434,8 @@ impl NativeScene {
                 height,
                 0,
                 0,
-            )
+            );
+            paint_overlays(scene, &rings, scale);
         });
         if result.is_ok() {
             // Presentation pixels live in the host's texture, not in this CPU cache.
@@ -2439,6 +2852,73 @@ fn semantic_attributes(semantics: &Semantics) -> Vec<(&'static str, String)> {
     values
 }
 
+/// One engine-painted overlay (outline ring, or a text decoration line as a hole-less box) in
+/// view-local logical units, alpha already folded in.
+#[cfg(feature = "cpu-pending")]
+struct Overlay {
+    outer: crate::style_effects::LogicalBox,
+    outer_radii: [f32; 4],
+    inner: Option<(crate::style_effects::LogicalBox, [f32; 4])>,
+    rgba: [u8; 4],
+    clip: Option<crate::style_effects::LogicalBox>,
+}
+
+/// Paint overlays after the document: above every node, inside ancestor overflow clips.
+/// Shared by the CPU and GPU paths (both paint through the same anyrender scene).
+/// 在文档之后绘制叠加层：位于全部节点之上，受祖先 overflow 裁剪。CPU 与 GPU 路径共用（同一 anyrender 场景）。
+#[cfg(feature = "cpu-pending")]
+fn paint_overlays(scene: &mut impl anyrender::PaintScene, rings: &[Overlay], scale: f64) {
+    use peniko::kurbo::{Affine, Rect, RoundedRect, RoundedRectRadii, Shape};
+    let transform = Affine::scale(scale);
+    let rect = |b: &crate::style_effects::LogicalBox| {
+        Rect::new(
+            f64::from(b.x),
+            f64::from(b.y),
+            f64::from(b.x + b.width),
+            f64::from(b.y + b.height),
+        )
+    };
+    let rounded = |b: &crate::style_effects::LogicalBox, r: &[f32; 4]| {
+        RoundedRect::from_rect(
+            rect(b),
+            RoundedRectRadii::new(
+                f64::from(r[0]),
+                f64::from(r[1]),
+                f64::from(r[2]),
+                f64::from(r[3]),
+            ),
+        )
+    };
+    for ring in rings {
+        let mut path = rounded(&ring.outer, &ring.outer_radii).to_path(0.05);
+        if let Some((inner, radii)) = &ring.inner {
+            path.extend(rounded(inner, radii).to_path(0.05));
+        }
+        if let Some(clip) = &ring.clip {
+            scene.push_clip_layer(peniko::Fill::NonZero, transform, &rect(clip));
+        }
+        let [r, g, b, a] = ring.rgba;
+        scene.fill(
+            peniko::Fill::EvenOdd,
+            transform,
+            peniko::Color::from_rgba8(r, g, b, a),
+            None,
+            &path,
+        );
+        if ring.clip.is_some() {
+            scene.pop_layer();
+        }
+    }
+}
+
+/// Result of E2/E10 pointer targeting: a steered native sample point, or a source subtree the
+/// sample misses through a rounded corner.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+struct PointerHitAdjustment {
+    steer: Option<(f32, f32)>,
+    exclude: Option<NodeId>,
+}
+
 fn style_properties(
     style: &Style,
     root: bool,
@@ -2578,7 +3058,71 @@ fn style_properties(
     ] {
         values.push((key, value.to_owned()));
     }
+    extended_style_properties(style, &mut values)?;
     Some(values)
+}
+
+/// E2/E3/E4/E9/E10 projection onto Blitz CSS. Every node states every property (defaults
+/// included), like the base subset. Outline, text decoration and hit slop have no CSS here:
+/// pinned Blitz has no `outline-offset` and propagates decorations only inside one inline
+/// formatting context (not from a flex/block ancestor), so the engine paints both after the
+/// document (`paint_overlays`); the slop is applied by pointer routing.
+/// E2/E3/E4/E9/E10 到 Blitz CSS 的投影。与基础子集一样，每个节点显式写出全部属性（含默认值）。外框、文字装饰与
+/// 命中扩展不经 CSS：固定版 Blitz 没有 `outline-offset`，且文字装饰只在同一行内格式化上下文内传播（不从 flex/块
+/// 祖先传下），因此二者由引擎在文档之后绘制（`paint_overlays`）；命中扩展由指针路由处理。
+fn extended_style_properties(style: &Style, values: &mut Vec<(&'static str, String)>) -> Option<()> {
+    use jasper_ui_engine::style::Side;
+    if !style.extended_style_valid() {
+        return None;
+    }
+    let hex = |c: jasper_ui_engine::style::Color| {
+        format!("#{:02x}{:02x}{:02x}{:02x}", c.r, c.g, c.b, c.a)
+    };
+    let r = style.corner_radius;
+    for (key, value) in [
+        ("border-top-left-radius", r.top_left),
+        ("border-top-right-radius", r.top_right),
+        ("border-bottom-right-radius", r.bottom_right),
+        ("border-bottom-left-radius", r.bottom_left),
+    ] {
+        values.push((key, format!("{value}px")));
+    }
+    // Per-side longhands follow the uniform shorthands above, so they override only their side.
+    for (side, width_key, color_key) in [
+        (Side::Top, "border-top-width", "border-top-color"),
+        (Side::Right, "border-right-width", "border-right-color"),
+        (Side::Bottom, "border-bottom-width", "border-bottom-color"),
+        (Side::Left, "border-left-width", "border-left-color"),
+    ] {
+        let border = style.border_of(side);
+        values.push((width_key, format!("{}px", border.width)));
+        values.push((color_key, hex(border.color)));
+    }
+    values.push((
+        "box-shadow",
+        if style.box_shadows.is_empty() {
+            "none".to_owned()
+        } else {
+            style
+                .box_shadows
+                .iter()
+                .map(|s| {
+                    format!(
+                        "{}{}px {}px {}px {}px {}",
+                        if s.inset { "inset " } else { "" },
+                        s.x,
+                        s.y,
+                        s.blur,
+                        s.spread,
+                        hex(s.color)
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join(", ")
+        },
+    ));
+    values.push(("opacity", style.opacity.to_string()));
+    Some(())
 }
 
 #[cfg(test)]

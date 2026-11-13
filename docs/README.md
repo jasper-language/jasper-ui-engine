@@ -19,6 +19,8 @@
 | [claude-closeout-proof-backlog.md](claude-closeout-proof-backlog.md) | Claude 复杂证明遗留与禁止降级条件 |
 | [design.md](design.md) | 分层、数据流、模块职责、宿主模式、触摸/笔、布局/绘制/后端边界 |
 | [api.md](api.md) | 当前 Rust API 与用法（含限制） |
+| [appfw-style-e2-e10.md](appfw-style-e2-e10.md) | 扩展样式 E2/E3/E4/E9/E10：字段、JUI 2 `xstyle` 键、能力声明、实现与对齐说明 |
+| [appfw-deferred-verification.md](appfw-deferred-verification.md) | 引擎能力补齐（E1–E13）暂缓的验证项登记 |
 | [abi.md](abi.md) | Jasper ↔ Rust Native ABI 草案（**未实现**） |
 | [integration.md](integration.md) | 内置宿主/自带宿主的最小集成步骤 |
 | [dependencies.md](dependencies.md) | 依赖选型、许可证、锁定策略 |
