@@ -50,3 +50,47 @@
 - cargo-fuzz / Kani：未安装。`verification/native-activation/fuzz/fuzz_targets/scene_capacity.rs` 已随新签名改写（未运行）。
 - 平台验收：AccessKit 的 heading level 采用 ARIA 的 1 起计数（AccessKit 文档称该属性 0 起，平台适配器实际按 1 起暴露标题级别），
   需在 AT-SPI / UIA 上实测确认；Live region 用 Region 承载，屏幕阅读器播报未实测。
+
+## E7 动画/过渡执行器、E8 二维变换（分支 `appfw/e7-e8`，2026-11-13）
+
+### 已重新通过（本机可执行部分）
+
+| 项 | 命令 | 结果 |
+|---|---|---|
+| 引擎默认特性 | `cargo test --locked` | 214 通过 |
+| 引擎全量（原生 CPU + AccessKit） | `cargo test --locked --features native-engine-cpu,accesskit-pending`（注入 `JASPER_UI_TEST_FONT`/`_LATIN_FONT`=DejaVuSans、`_BOLD_FONT`=DejaVuSans-Bold、`_ITALIC_FONT`=DejaVuSans-Oblique、`_CJK_FONT`=NotoSansCJK-Regular.ttc） | 395 通过 |
+| 引擎全量 + GPU（硬件 wgpu 适配器） | `cargo test --locked --features native-engine-cpu,gpu-pending,accesskit-pending`（同上字体） | 409 通过 |
+| `verification/native-activation` | `cargo test --locked` | 20 通过 |
+| `verification/read-boundary` | `cargo test --locked` | 64 通过 |
+| `scripts/check-blitz-proof-mapping.py` | 本机无 `evidence/*/report.json`，输出与 `appfw/e2-e10` 基线逐字相同（未新增失配） | 同基线 |
+
+### 证据失效、待重证（源码哈希已变）
+
+| 性质 / 内核 | 改动 | 规格影响 |
+|---|---|---|
+| `NATIVE SCENE TYPE`（`native_scene.rs`，被 `verification/native-projection` 抽取；该 crate 在 main 上即编译失败，见上） | `NativeScene` 增加字段 `motion: MotionState` | 规格不涉及新字段；需在 Verus VM 重抽取并重证类型映射 |
+
+其余已验证区段（`SCENE UPDATE ERROR TYPE`、`SCENE WORK CAPACITY`、`SCENE UPDATE ADMISSION`、`SCENE FRAME COMPLETION/ORDER`、`SCENE INTERACTION RESTORE`、
+`frame_schedule.rs` 全部内核、`COLOR TYPE/CONSTRUCT`、`SCENE HOST TYPE` 等）逐字未变（脚本比对 `BEGIN/END VERIFIED` 区段）。
+`needs_frame` 的返回值改为 `frame_dirty || 有过渡运行`：`FRAME PACE KERNEL` 本身未改，其输入语义扩展为「有未绘变化或动画在运行」，
+`docs/verification.md` 中对 `needs_frame` 的文字描述应相应读作此含义。
+
+### 新增代码，六步链全部暂缓
+
+| 项 | 位置 | 现有替代证据 |
+|---|---|---|
+| 三次贝塞尔求解（牛顿 + 二分）与端点/单调性 | `src/motion.rs::cubic_bezier` | 单元测试 8 条曲线 × 1000 点单调、端点精确、NaN 输入 |
+| 弹簧闭式解（三种阻尼）、包络与结束时刻 | `src/motion.rs::Spring` | 8 组参数 × 4 组初值无 NaN、包络约束、结束时刻在容差内、导数一致 |
+| 通道启动/续接/取消、速度继承、减少动态规则 | `src/motion.rs::MotionState` | 单元测试 + `tests/native_motion.rs` 逐帧像素 |
+| 样式插值与钳制（预乘色、阴影补层、长度单位、变换） | `src/motion.rs::{snapshot, endpoints, write}` | `interpolation_shapes`、像素中间值断言 |
+| `transform` / `transition` 的 `xstyle` 解析与规范输出 | `src/style.rs` | 解析/往返/24 种拒绝 |
+| 帧事务中的过渡状态携带（候选视图上 `retarget` + `write_presented`，失败退回目标值、不令帧失败） | `native_scene.rs::rebuild_candidate` | 原有整帧事务测试全过 + 删除重插、续接测试 |
+| `animate` / `set_reduce_motion` / `animating` 归属与关闭准入 | `native_scene.rs`、`facade.rs`、`render_host.rs` | `tests/native_motion.rs`（未覆盖：非归属方调用——与既有入口同一 `caller != owner` 模式） |
+| 合成仿射、逆矩阵（奇异判定）、视图点 ↔ 局部坐标；切角/命中扩展/叠加层在变换下的几何 | `native_scene.rs::{compose, invert, chain_matrix, to_local, to_view, paint_overlays}` | `engine_overlays_and_corner_cuts_follow_the_transform`、静态变换命中、GPU/CPU 一致 |
+| 变换投影为 Blitz CSS（恒等为 `none`、极小缩放保持可逆） | `native_scene.rs::extended_style_properties` | 恒等变换逐像素一致、缩放/旋转像素与命中 |
+
+### 未实测 / 限制
+
+- Miri、cargo-fuzz、Kani、Verus 本机均不可用（同上）；`xstyle` 解析器未做模糊测试。
+- 未在真实宿主窗口与真实 vsync 下测量动画帧耗时：每个动画帧对整份文档重新解析样式与布局（`document.resolve`），大场景下的帧预算未评估。
+- 退出过渡（删除前淡出）与插入即淡入未实现（见 `appfw-motion-e7-e8.md` §6）。
