@@ -75,6 +75,16 @@ pub const fn platform_bridge_capabilities()->PlatformBridgeCapabilities {
     }
 }
 
+/// Extended style capabilities (E2 corner radius, E3 shadow, E4 opacity, E9 border sides /
+/// outline / text decoration, E10 hit slop) this native engine implements, with the JUI 2
+/// `xstyle` keys each covers. A host lists the names in its `hello`; `Style::apply_xstyle`
+/// parses the values. Painting needs a renderer feature (`cpu-pending` / `gpu-pending`).
+/// 本原生引擎实现的扩展样式能力（E2 圆角、E3 阴影、E4 透明度、E9 单侧边框/外框/文字装饰、E10 命中扩展）及各自覆盖的
+/// JUI 2 `xstyle` 键。宿主在 `hello` 中列出这些名称；`Style::apply_xstyle` 解析取值。绘制需要渲染特性。
+pub const fn style_capabilities()->&'static [crate::style::StyleCapability] {
+    crate::style::EXTENDED_STYLE_CAPABILITIES
+}
+
 /// External-service display client; no authoritative editor document or input engine.
 // BEGIN VERIFIED TEXT DISPLAY TYPE
 pub struct TextDisplayView {inner:native_view::NativeTextView}
