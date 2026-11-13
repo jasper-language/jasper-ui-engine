@@ -48,6 +48,7 @@ pub mod input_identity;
 pub mod keyboard;
 pub mod layout;
 mod legacy_engine;
+pub mod motion;
 pub mod paint;
 pub mod platform;
 pub mod platform_input;
@@ -108,8 +109,8 @@ pub use scrollbar::{
 };
 pub use semantics::{FocusError, FocusManager, Role, Semantics, SemanticsNode, SemanticsTree};
 pub use style::{
-    Align, BorderSide, BoxShadow, Color, CornerRadii, Display, FlexDirection, Justify, Length,
-    Outline, Side, Style, TextDecoration,
+    Align, AnimatedProperties, BorderSide, BoxShadow, Color, CornerRadii, Display, Easing,
+    FlexDirection, Justify, Length, Outline, Side, Style, TextDecoration, Transform2D, Transition,
 };
 pub use text::{SimpleTextEngine, TextEngine, TextMetrics};
 #[cfg(feature = "real-text")]

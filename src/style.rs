@@ -238,6 +238,14 @@ pub struct Style {
     /// E10: pointer hit area extension per side; layout and paint are unchanged.
     /// E10：各边的指针命中区扩展；布局与绘制不变。
     pub hit_slop: Edges,
+    /// E8: 2D transform (translate, rotate, scale about an origin) applied to paint and hit
+    /// testing of the node and its subtree; layout and `node_bounds` are unchanged.
+    /// E8：二维变换（绕原点的平移、旋转、缩放），作用于节点及其子树的绘制与命中；不影响布局与 `node_bounds`。
+    pub transform: Transform2D,
+    /// E7: transitions the engine runs when a later update changes a covered property. Empty:
+    /// every change is immediate (the default, with no per-frame work).
+    /// E7：之后的更新改变所覆盖属性时由引擎执行的过渡。为空时所有变化立即生效（默认，无逐帧开销）。
+    pub transitions: Vec<Transition>,
 }
 
 impl Default for Style {
@@ -276,6 +284,8 @@ impl Default for Style {
             outline: None,
             text_decoration: TextDecoration::NONE,
             hit_slop: Edges::ZERO,
+            transform: Transform2D::IDENTITY,
+            transitions: Vec::new(),
         }
     }
 }
@@ -423,6 +433,27 @@ impl Style {
         self
     }
 
+    pub fn transform(mut self, transform: Transform2D) -> Self {
+        self.transform = transform;
+        self
+    }
+
+    /// Appends one transition rule (a later rule wins for a property both cover, as in CSS).
+    /// 追加一条过渡规则（两条规则覆盖同一属性时以后者为准，同 CSS）。
+    pub fn transition(mut self, transition: Transition) -> Self {
+        self.transitions.push(transition);
+        self
+    }
+
+    /// The rule that governs `property`: the last one covering it.
+    /// 决定 `property` 的规则：覆盖它的最后一条。
+    pub fn transition_for(&self, property: AnimatedProperties) -> Option<&Transition> {
+        self.transitions
+            .iter()
+            .rev()
+            .find(|t| t.properties.contains(property))
+    }
+
     /// Effective border of one side: the per-side override, else the uniform border.
     /// 某一侧的实际边框：单侧覆盖优先，否则为统一边框。
     pub fn border_of(&self, side: Side) -> BorderSide {
@@ -449,9 +480,10 @@ impl Style {
             .into_iter()
             .all(length)
             && self.box_shadows.len() <= MAX_BOX_SHADOWS
-            && self.box_shadows.iter().all(|s| {
-                signed(s.x) && signed(s.y) && length(s.blur) && signed(s.spread)
-            })
+            && self
+                .box_shadows
+                .iter()
+                .all(|s| signed(s.x) && signed(s.y) && length(s.blur) && signed(s.spread))
             && self.opacity.is_finite()
             && (0.0..=1.0).contains(&self.opacity)
             && [
@@ -474,6 +506,9 @@ impl Style {
             ]
             .into_iter()
             .all(length)
+            && self.transform.valid()
+            && self.transitions.len() <= MAX_TRANSITIONS
+            && self.transitions.iter().all(Transition::valid)
     }
 }
 
@@ -483,6 +518,358 @@ pub const MAX_EFFECT_EXTENT: f32 = 4096.0;
 /// Most shadow layers one node may carry.
 /// 单个节点最多的阴影层数。
 pub const MAX_BOX_SHADOWS: usize = 8;
+
+/// Bound on |translate| (logical px) of an E8 transform.
+/// E8 变换平移量绝对值的上界（逻辑像素）。
+pub const MAX_TRANSFORM_TRANSLATE: f32 = 16384.0;
+/// Bound on |scale| of an E8 transform.
+/// E8 变换缩放绝对值的上界。
+pub const MAX_TRANSFORM_SCALE: f32 = 64.0;
+/// Bound on |rotate| (degrees) of an E8 transform (ten full turns).
+/// E8 变换旋转角绝对值的上界（度，十整圈）。
+pub const MAX_TRANSFORM_ROTATE: f32 = 3600.0;
+/// Bound on |origin| (fraction of the border box) of an E8 transform.
+/// E8 变换原点绝对值的上界（边框盒的比例）。
+pub const MAX_TRANSFORM_ORIGIN: f32 = 4.0;
+
+/// E8 2D transform in CSS order: `translate(tx, ty) rotate(r) scale(sx, sy)` about the origin
+/// (`transform-origin`, as a fraction of the node's border box; 0.5/0.5 is the centre). Positive
+/// rotation is clockwise on screen (y down), in degrees. It never affects layout.
+/// E8 二维变换，CSS 顺序：绕原点（`transform-origin`，边框盒的比例；0.5/0.5 为中心）做
+/// `translate(tx, ty) rotate(r) scale(sx, sy)`。正角度为屏幕上的顺时针（y 向下），单位为度。不影响布局。
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Transform2D {
+    pub translate_x: f32,
+    pub translate_y: f32,
+    pub rotate: f32,
+    pub scale_x: f32,
+    pub scale_y: f32,
+    pub origin_x: f32,
+    pub origin_y: f32,
+}
+
+impl Default for Transform2D {
+    fn default() -> Self {
+        Self::IDENTITY
+    }
+}
+
+impl Transform2D {
+    pub const IDENTITY: Self = Self {
+        translate_x: 0.0,
+        translate_y: 0.0,
+        rotate: 0.0,
+        scale_x: 1.0,
+        scale_y: 1.0,
+        origin_x: 0.5,
+        origin_y: 0.5,
+    };
+
+    pub const fn translate(x: f32, y: f32) -> Self {
+        Self {
+            translate_x: x,
+            translate_y: y,
+            ..Self::IDENTITY
+        }
+    }
+
+    pub const fn scale(s: f32) -> Self {
+        Self {
+            scale_x: s,
+            scale_y: s,
+            ..Self::IDENTITY
+        }
+    }
+
+    pub const fn rotate(degrees: f32) -> Self {
+        Self {
+            rotate: degrees,
+            ..Self::IDENTITY
+        }
+    }
+
+    pub const fn scale_xy(mut self, x: f32, y: f32) -> Self {
+        self.scale_x = x;
+        self.scale_y = y;
+        self
+    }
+
+    pub const fn with_origin(mut self, x: f32, y: f32) -> Self {
+        self.origin_x = x;
+        self.origin_y = y;
+        self
+    }
+
+    /// No visible effect (the origin is irrelevant then).
+    /// 无可见效果（此时原点无关）。
+    pub fn is_identity(&self) -> bool {
+        self.translate_x == 0.0
+            && self.translate_y == 0.0
+            && self.rotate == 0.0
+            && self.scale_x == 1.0
+            && self.scale_y == 1.0
+    }
+
+    pub fn valid(&self) -> bool {
+        let within = |v: f32, bound: f32| v.is_finite() && v.abs() <= bound;
+        within(self.translate_x, MAX_TRANSFORM_TRANSLATE)
+            && within(self.translate_y, MAX_TRANSFORM_TRANSLATE)
+            && within(self.rotate, MAX_TRANSFORM_ROTATE)
+            && within(self.scale_x, MAX_TRANSFORM_SCALE)
+            && within(self.scale_y, MAX_TRANSFORM_SCALE)
+            && within(self.origin_x, MAX_TRANSFORM_ORIGIN)
+            && within(self.origin_y, MAX_TRANSFORM_ORIGIN)
+    }
+
+    /// Affine `[a, b, c, d, e, f]` (x' = a·x + c·y + e, y' = b·x + d·y + f) of a box whose
+    /// border box starts at (`left`, `top`) and is `width`×`height`, in the same coordinates.
+    /// 左上角在 (`left`, `top`)、尺寸 `width`×`height` 的边框盒在同一坐标系中的仿射矩阵
+    /// `[a, b, c, d, e, f]`（x' = a·x + c·y + e，y' = b·x + d·y + f）。
+    pub fn matrix(&self, left: f64, top: f64, width: f64, height: f64) -> [f64; 6] {
+        let ox = left + f64::from(self.origin_x) * width;
+        let oy = top + f64::from(self.origin_y) * height;
+        let (sin, cos) = f64::from(self.rotate).to_radians().sin_cos();
+        let (sx, sy) = (f64::from(self.scale_x), f64::from(self.scale_y));
+        // R·S
+        let (a, b, c, d) = (cos * sx, sin * sx, -sin * sy, cos * sy);
+        // Tr(o)·Tr(t)·R·S·Tr(-o)
+        let e = ox + f64::from(self.translate_x) - (a * ox + c * oy);
+        let f = oy + f64::from(self.translate_y) - (b * ox + d * oy);
+        [a, b, c, d, e, f]
+    }
+}
+
+/// Most transition rules one node may carry.
+/// 单个节点最多的过渡规则数。
+pub const MAX_TRANSITIONS: usize = 16;
+/// Bound on a transition duration or delay, in milliseconds.
+/// 过渡时长与延迟的上界（毫秒）。
+pub const MAX_TRANSITION_MS: f32 = 60_000.0;
+/// Bound on |y1|, |y2| of a cubic Bézier easing.
+/// 三次贝塞尔缓动 |y1|、|y2| 的上界。
+pub const MAX_BEZIER_Y: f32 = 8.0;
+/// Bounds on spring mass, stiffness and damping (each must also be > 0).
+/// 弹簧质量、刚度、阻尼的上界（且都须 > 0）。
+pub const MAX_SPRING_MASS: f32 = 1000.0;
+pub const MAX_SPRING_STIFFNESS: f32 = 100_000.0;
+pub const MAX_SPRING_DAMPING: f32 = 100_000.0;
+
+/// Set of animatable properties a transition rule covers.
+/// 一条过渡规则覆盖的可动画属性集合。
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct AnimatedProperties(pub u16);
+
+impl AnimatedProperties {
+    pub const NONE: Self = Self(0);
+    /// `background`
+    pub const BACKGROUND: Self = Self(1 << 0);
+    /// Text `color`.
+    pub const COLOR: Self = Self(1 << 1);
+    /// `border_color` and the colour of every per-side border.
+    pub const BORDER_COLOR: Self = Self(1 << 2);
+    pub const OPACITY: Self = Self(1 << 3);
+    pub const CORNER_RADIUS: Self = Self(1 << 4);
+    /// Every shadow layer (offsets, blur, spread, colour).
+    pub const SHADOW: Self = Self(1 << 5);
+    /// Outline width, offset and colour.
+    pub const OUTLINE: Self = Self(1 << 6);
+    /// Laid-out width (only between two `Px` or two `Percent` values).
+    pub const WIDTH: Self = Self(1 << 7);
+    pub const HEIGHT: Self = Self(1 << 8);
+    /// E8 transform (translate, rotate, scale, origin).
+    pub const TRANSFORM: Self = Self(1 << 9);
+    pub const ALL: Self = Self((1 << 10) - 1);
+    /// Properties that move or resize content; reduce-motion always makes these immediate.
+    /// 移动或改变内容尺寸的属性；减少动态下这些属性总是立即生效。
+    pub const MOVEMENT: Self = Self(Self::WIDTH.0 | Self::HEIGHT.0 | Self::TRANSFORM.0);
+
+    /// Each single property with its `xstyle` name, in canonical order.
+    /// 每个单项属性及其 `xstyle` 名称，按规范顺序。
+    pub const NAMED: [(&'static str, Self); 10] = [
+        ("background", Self::BACKGROUND),
+        ("color", Self::COLOR),
+        ("border-color", Self::BORDER_COLOR),
+        ("opacity", Self::OPACITY),
+        ("corner-radius", Self::CORNER_RADIUS),
+        ("shadow", Self::SHADOW),
+        ("outline", Self::OUTLINE),
+        ("width", Self::WIDTH),
+        ("height", Self::HEIGHT),
+        ("transform", Self::TRANSFORM),
+    ];
+
+    pub const fn union(self, other: Self) -> Self {
+        Self(self.0 | other.0)
+    }
+
+    pub const fn contains(self, other: Self) -> bool {
+        other.0 != 0 && self.0 & other.0 == other.0
+    }
+
+    pub const fn intersects(self, other: Self) -> bool {
+        self.0 & other.0 != 0
+    }
+
+    pub const fn is_empty(self) -> bool {
+        self.0 == 0
+    }
+}
+
+/// Timing of a transition.
+/// 过渡的时间曲线。
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Easing {
+    /// CSS `cubic-bezier(x1, y1, x2, y2)` over the rule's duration; x1, x2 in 0..=1.
+    /// CSS `cubic-bezier(x1, y1, x2, y2)`，持续规则时长；x1、x2 ∈ 0..=1。
+    CubicBezier { x1: f32, y1: f32, x2: f32, y2: f32 },
+    /// Damped spring (mass, stiffness, damping, all > 0) solved analytically per component;
+    /// the rule's duration is ignored: it ends when its decay envelope is within tolerance.
+    /// 阻尼弹簧（质量、刚度、阻尼，均 > 0），逐分量解析求解；忽略规则时长：衰减包络进入容差即结束。
+    Spring {
+        mass: f32,
+        stiffness: f32,
+        damping: f32,
+    },
+}
+
+impl Easing {
+    pub const LINEAR: Self = Self::CubicBezier {
+        x1: 0.0,
+        y1: 0.0,
+        x2: 1.0,
+        y2: 1.0,
+    };
+    pub const EASE: Self = Self::CubicBezier {
+        x1: 0.25,
+        y1: 0.1,
+        x2: 0.25,
+        y2: 1.0,
+    };
+    pub const EASE_IN: Self = Self::CubicBezier {
+        x1: 0.42,
+        y1: 0.0,
+        x2: 1.0,
+        y2: 1.0,
+    };
+    pub const EASE_OUT: Self = Self::CubicBezier {
+        x1: 0.0,
+        y1: 0.0,
+        x2: 0.58,
+        y2: 1.0,
+    };
+    pub const EASE_IN_OUT: Self = Self::CubicBezier {
+        x1: 0.42,
+        y1: 0.0,
+        x2: 0.58,
+        y2: 1.0,
+    };
+
+    pub const fn cubic(x1: f32, y1: f32, x2: f32, y2: f32) -> Self {
+        Self::CubicBezier { x1, y1, x2, y2 }
+    }
+
+    pub const fn spring(mass: f32, stiffness: f32, damping: f32) -> Self {
+        Self::Spring {
+            mass,
+            stiffness,
+            damping,
+        }
+    }
+
+    pub fn valid(&self) -> bool {
+        match *self {
+            Easing::CubicBezier { x1, y1, x2, y2 } => {
+                [x1, y1, x2, y2].iter().all(|v| v.is_finite())
+                    && (0.0..=1.0).contains(&x1)
+                    && (0.0..=1.0).contains(&x2)
+                    && y1.abs() <= MAX_BEZIER_Y
+                    && y2.abs() <= MAX_BEZIER_Y
+            }
+            Easing::Spring {
+                mass,
+                stiffness,
+                damping,
+            } => {
+                let positive = |v: f32, max: f32| v.is_finite() && v > 0.0 && v <= max;
+                positive(mass, MAX_SPRING_MASS)
+                    && positive(stiffness, MAX_SPRING_STIFFNESS)
+                    && positive(damping, MAX_SPRING_DAMPING)
+            }
+        }
+    }
+}
+
+/// Reduce-motion replacement of a rule: a cross-fade timing for its non-movement properties.
+/// 规则的减少动态替代：其非移动属性所用的淡入淡出时间曲线。
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ReducedTransition {
+    pub duration_ms: f32,
+    /// Cubic Bézier only; a spring is not a reduced motion.
+    /// 只能是三次贝塞尔；弹簧不算减少动态。
+    pub easing: Easing,
+}
+
+/// One transition rule: which properties, how long, which curve, after which delay.
+/// 一条过渡规则：哪些属性、多长、什么曲线、延迟多久。
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Transition {
+    pub properties: AnimatedProperties,
+    /// Milliseconds (ignored by a spring).
+    pub duration_ms: f32,
+    pub delay_ms: f32,
+    pub easing: Easing,
+    /// Used under reduce-motion for the non-movement properties; None: immediate.
+    /// 减少动态下用于非移动属性；None 表示立即生效。
+    pub reduced: Option<ReducedTransition>,
+}
+
+impl Transition {
+    pub const fn new(properties: AnimatedProperties, duration_ms: f32, easing: Easing) -> Self {
+        Self {
+            properties,
+            duration_ms,
+            delay_ms: 0.0,
+            easing,
+            reduced: None,
+        }
+    }
+
+    pub const fn spring(
+        properties: AnimatedProperties,
+        mass: f32,
+        stiffness: f32,
+        damping: f32,
+    ) -> Self {
+        Self::new(properties, 0.0, Easing::spring(mass, stiffness, damping))
+    }
+
+    pub const fn delay(mut self, delay_ms: f32) -> Self {
+        self.delay_ms = delay_ms;
+        self
+    }
+
+    pub const fn reduced(mut self, duration_ms: f32, easing: Easing) -> Self {
+        self.reduced = Some(ReducedTransition {
+            duration_ms,
+            easing,
+        });
+        self
+    }
+
+    pub fn valid(&self) -> bool {
+        let ms = |v: f32| v.is_finite() && (0.0..=MAX_TRANSITION_MS).contains(&v);
+        !self.properties.is_empty()
+            && AnimatedProperties::ALL.contains(self.properties)
+            && ms(self.duration_ms)
+            && ms(self.delay_ms)
+            && self.easing.valid()
+            && self.reduced.is_none_or(|r| {
+                ms(r.duration_ms)
+                    && matches!(r.easing, Easing::CubicBezier { .. })
+                    && r.easing.valid()
+            })
+    }
+}
 
 /// Corner radii in logical px, CSS order: top-left, top-right, bottom-right, bottom-left.
 /// Radii larger than the box are scaled down together, as CSS does.
@@ -611,9 +998,9 @@ pub struct StyleCapability {
     pub xstyle_keys: &'static [&'static str],
 }
 
-/// E2/E3/E4/E9/E10 capabilities implemented by the native engine (`native-blitz-pending`).
+/// E2/E3/E4/E7/E8/E9/E10 capabilities implemented by the native engine (`native-blitz-pending`).
 /// The legacy prototype engine ignores these fields and declares none of them.
-/// 原生引擎（`native-blitz-pending`）实现的 E2/E3/E4/E9/E10 能力；旧原型引擎忽略这些字段，不声明。
+/// 原生引擎（`native-blitz-pending`）实现的 E2/E3/E4/E7/E8/E9/E10 能力；旧原型引擎忽略这些字段，不声明。
 pub const EXTENDED_STYLE_CAPABILITIES: &[StyleCapability] = &[
     StyleCapability {
         name: "corner-radius",
@@ -642,6 +1029,14 @@ pub const EXTENDED_STYLE_CAPABILITIES: &[StyleCapability] = &[
     StyleCapability {
         name: "hit-target",
         xstyle_keys: &["hit-slop"],
+    },
+    StyleCapability {
+        name: "transform",
+        xstyle_keys: &["transform"],
+    },
+    StyleCapability {
+        name: "transition",
+        xstyle_keys: &["transition"],
     },
 ];
 
@@ -733,6 +1128,254 @@ fn format_number(v: f32) -> String {
     format!("{v}")
 }
 
+/// `<n>ms`, a plain decimal followed by the `ms` unit.
+fn parse_ms(text: &str) -> Option<f32> {
+    parse_number(text.trim().strip_suffix("ms")?)
+}
+
+/// `name(a,b,...)` → (name, args).
+fn parse_call(text: &str) -> Option<(&str, Vec<f32>)> {
+    let text = text.trim();
+    let open = text.find('(')?;
+    let args = text[open + 1..].strip_suffix(')')?;
+    let values = args
+        .split(',')
+        .map(parse_number)
+        .collect::<Option<Vec<f32>>>()?;
+    Some((text[..open].trim(), values))
+}
+
+fn parse_easing(text: &str) -> Option<Easing> {
+    Some(match text.trim() {
+        "linear" => Easing::LINEAR,
+        "ease" => Easing::EASE,
+        "ease-in" => Easing::EASE_IN,
+        "ease-out" => Easing::EASE_OUT,
+        "ease-in-out" => Easing::EASE_IN_OUT,
+        other => match parse_call(other)? {
+            ("cubic", v) if v.len() == 4 => Easing::cubic(v[0], v[1], v[2], v[3]),
+            ("spring", v) if v.len() == 3 => Easing::spring(v[0], v[1], v[2]),
+            _ => return None,
+        },
+    })
+}
+
+fn format_easing(easing: Easing) -> String {
+    match easing {
+        Easing::CubicBezier { x1, y1, x2, y2 } => format!(
+            "cubic({},{},{},{})",
+            format_number(x1),
+            format_number(y1),
+            format_number(x2),
+            format_number(y2)
+        ),
+        Easing::Spring {
+            mass,
+            stiffness,
+            damping,
+        } => format!(
+            "spring({},{},{})",
+            format_number(mass),
+            format_number(stiffness),
+            format_number(damping)
+        ),
+    }
+}
+
+fn parse_properties(text: &str) -> Option<AnimatedProperties> {
+    let mut set = AnimatedProperties::NONE;
+    for name in text.split(',').map(str::trim) {
+        let item = match name {
+            "all" => AnimatedProperties::ALL,
+            "size" => AnimatedProperties::WIDTH.union(AnimatedProperties::HEIGHT),
+            _ => {
+                AnimatedProperties::NAMED
+                    .iter()
+                    .find(|(n, _)| *n == name)?
+                    .1
+            }
+        };
+        set = set.union(item);
+    }
+    (!set.is_empty()).then_some(set)
+}
+
+fn format_properties(set: AnimatedProperties) -> String {
+    if set == AnimatedProperties::ALL {
+        return "all".to_owned();
+    }
+    AnimatedProperties::NAMED
+        .iter()
+        .filter(|(_, p)| set.contains(*p))
+        .map(|(n, _)| *n)
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
+/// `<props>:<n>ms[:<easing>]` or `<props>:spring(m,k,c)`, then optional `delay=<n>ms` and
+/// `reduce=<n>ms[/<easing>]` fields, all separated by `:`.
+fn parse_transition(text: &str) -> Option<Transition> {
+    let fields: Vec<&str> = text.split(':').map(str::trim).collect();
+    let [props, timing, rest @ ..] = fields.as_slice() else {
+        return None;
+    };
+    let properties = parse_properties(props)?;
+    let (mut rule, mut rest) = if let Some(duration) = parse_ms(timing) {
+        // An easing may follow the duration directly (default `ease`).
+        match rest.split_first() {
+            Some((easing, tail)) if !easing.contains('=') => match parse_easing(easing)? {
+                bezier @ Easing::CubicBezier { .. } => {
+                    (Transition::new(properties, duration, bezier), tail)
+                }
+                Easing::Spring { .. } => return None,
+            },
+            _ => (Transition::new(properties, duration, Easing::EASE), rest),
+        }
+    } else {
+        match parse_easing(timing)? {
+            spring @ Easing::Spring { .. } => (Transition::new(properties, 0.0, spring), rest),
+            _ => return None,
+        }
+    };
+    let (mut seen_delay, mut seen_reduce) = (false, false);
+    while let Some((field, tail)) = rest.split_first() {
+        rest = tail;
+        if let Some(delay) = field.strip_prefix("delay=") {
+            if std::mem::replace(&mut seen_delay, true) {
+                return None;
+            }
+            rule.delay_ms = parse_ms(delay)?;
+        } else if let Some(reduce) = field.strip_prefix("reduce=") {
+            if std::mem::replace(&mut seen_reduce, true) {
+                return None;
+            }
+            let (duration, easing) = match reduce.split_once('/') {
+                Some((duration, easing)) => (parse_ms(duration)?, parse_easing(easing)?),
+                None => (parse_ms(reduce)?, Easing::LINEAR),
+            };
+            rule.reduced = Some(ReducedTransition {
+                duration_ms: duration,
+                easing,
+            });
+        } else {
+            return None;
+        }
+    }
+    Some(rule)
+}
+
+fn format_transition(rule: &Transition) -> String {
+    let mut text = format_properties(rule.properties);
+    match rule.easing {
+        Easing::Spring { .. } => {
+            text.push(':');
+            text.push_str(&format_easing(rule.easing));
+        }
+        Easing::CubicBezier { .. } => {
+            text.push_str(&format!(
+                ":{}ms:{}",
+                format_number(rule.duration_ms),
+                format_easing(rule.easing)
+            ));
+        }
+    }
+    if rule.delay_ms != 0.0 {
+        text.push_str(&format!(":delay={}ms", format_number(rule.delay_ms)));
+    }
+    if let Some(r) = rule.reduced {
+        text.push_str(&format!(
+            ":reduce={}ms/{}",
+            format_number(r.duration_ms),
+            format_easing(r.easing)
+        ));
+    }
+    text
+}
+
+/// `none`, or `translate(x,y)`, `rotate(deg)`, `scale(s)` / `scale(sx,sy)`, `origin(fx,fy)`,
+/// each at most once, separated by `;` or spaces. Composition order is always CSS
+/// translate → rotate → scale about the origin, whatever the written order.
+fn parse_transform(text: &str) -> Option<Transform2D> {
+    let text = text.trim();
+    if text == "none" {
+        return Some(Transform2D::IDENTITY);
+    }
+    let mut out = Transform2D::IDENTITY;
+    let mut seen = [false; 4];
+    let mut any = false;
+    for part in text
+        .split(|c: char| c == ';' || c.is_ascii_whitespace())
+        .filter(|p| !p.is_empty())
+    {
+        any = true;
+        let (name, v) = parse_call(part)?;
+        let slot = match (name, v.as_slice()) {
+            ("translate", [x, y]) => {
+                (out.translate_x, out.translate_y) = (*x, *y);
+                0
+            }
+            ("rotate", [r]) => {
+                out.rotate = *r;
+                1
+            }
+            ("scale", [s]) => {
+                (out.scale_x, out.scale_y) = (*s, *s);
+                2
+            }
+            ("scale", [x, y]) => {
+                (out.scale_x, out.scale_y) = (*x, *y);
+                2
+            }
+            ("origin", [x, y]) => {
+                (out.origin_x, out.origin_y) = (*x, *y);
+                3
+            }
+            _ => return None,
+        };
+        if std::mem::replace(&mut seen[slot], true) {
+            return None;
+        }
+    }
+    any.then_some(out)
+}
+
+fn format_transform(t: &Transform2D) -> String {
+    let mut parts = Vec::new();
+    if t.translate_x != 0.0 || t.translate_y != 0.0 {
+        parts.push(format!(
+            "translate({},{})",
+            format_number(t.translate_x),
+            format_number(t.translate_y)
+        ));
+    }
+    if t.rotate != 0.0 {
+        parts.push(format!("rotate({})", format_number(t.rotate)));
+    }
+    if t.scale_x != 1.0 || t.scale_y != 1.0 {
+        parts.push(if t.scale_x == t.scale_y {
+            format!("scale({})", format_number(t.scale_x))
+        } else {
+            format!(
+                "scale({},{})",
+                format_number(t.scale_x),
+                format_number(t.scale_y)
+            )
+        });
+    }
+    if t.origin_x != 0.5 || t.origin_y != 0.5 {
+        parts.push(format!(
+            "origin({},{})",
+            format_number(t.origin_x),
+            format_number(t.origin_y)
+        ));
+    }
+    if parts.is_empty() {
+        "none".to_owned()
+    } else {
+        parts.join(";")
+    }
+}
+
 impl Style {
     /// Applies one JUI 2 `xstyle` pair (see `docs/appfw-style-e2-e10.md` for the grammar).
     /// On error the style is unchanged. Values are validated with `extended_style_valid`.
@@ -801,9 +1444,7 @@ impl Style {
                     if value_trimmed != "none" {
                         for line in value_trimmed.split(',').map(str::trim) {
                             match line {
-                                "underline" if !decoration.underline => {
-                                    decoration.underline = true
-                                }
+                                "underline" if !decoration.underline => decoration.underline = true,
                                 "line-through" if !decoration.line_through => {
                                     decoration.line_through = true
                                 }
@@ -816,6 +1457,20 @@ impl Style {
                 "hit-slop" => {
                     let [t, r, b, l] = parse_four(value_trimmed).ok_or_else(invalid)?;
                     next.hit_slop = Edges::new(t, r, b, l);
+                }
+                "transform" => {
+                    next.transform = parse_transform(value_trimmed).ok_or_else(invalid)?;
+                }
+                "transition" => {
+                    next.transitions = if value_trimmed == "none" {
+                        Vec::new()
+                    } else {
+                        value_trimmed
+                            .split(';')
+                            .map(parse_transition)
+                            .collect::<Option<Vec<_>>>()
+                            .ok_or_else(invalid)?
+                    };
                 }
                 _ => return Err(XStyleError::UnknownKey(key.to_owned())),
             }
@@ -881,7 +1536,10 @@ impl Style {
             ("border-left", self.border_left),
         ] {
             if let Some(b) = side {
-                pairs.push((key, format!("{},{}", format_number(b.width), format_color(b.color))));
+                pairs.push((
+                    key,
+                    format!("{},{}", format_number(b.width), format_color(b.color)),
+                ));
             }
         }
         if let Some(o) = self.outline {
@@ -913,8 +1571,23 @@ impl Style {
                 if h.top == h.right && h.top == h.bottom && h.top == h.left {
                     format_number(h.top)
                 } else {
-                    [h.top, h.right, h.bottom, h.left].map(format_number).join(",")
+                    [h.top, h.right, h.bottom, h.left]
+                        .map(format_number)
+                        .join(",")
                 },
+            ));
+        }
+        if self.transform != Transform2D::IDENTITY {
+            pairs.push(("transform", format_transform(&self.transform)));
+        }
+        if !self.transitions.is_empty() {
+            pairs.push((
+                "transition",
+                self.transitions
+                    .iter()
+                    .map(format_transition)
+                    .collect::<Vec<_>>()
+                    .join(";"),
             ));
         }
         pairs
@@ -958,8 +1631,10 @@ mod tests {
             ok.clone().opacity(1.01),
             ok.clone().opacity(-0.1),
             ok.clone().opacity(f32::INFINITY),
-            ok.clone().shadow(BoxShadow::new(0.0, 0.0, -1.0, 0.0, Color::BLACK)),
-            ok.clone().shadow(BoxShadow::new(f32::NAN, 0.0, 1.0, 0.0, Color::BLACK)),
+            ok.clone()
+                .shadow(BoxShadow::new(0.0, 0.0, -1.0, 0.0, Color::BLACK)),
+            ok.clone()
+                .shadow(BoxShadow::new(f32::NAN, 0.0, 1.0, 0.0, Color::BLACK)),
             ok.clone().border_side(
                 Side::Left,
                 Some(BorderSide {
@@ -1071,7 +1746,13 @@ mod tests {
         assert_eq!(copy, s);
 
         // `none` clears.
-        for key in ["shadow", "border-top", "border-left", "outline", "text-decoration"] {
+        for key in [
+            "shadow",
+            "border-top",
+            "border-left",
+            "outline",
+            "text-decoration",
+        ] {
             s.apply_xstyle(key, "none").unwrap();
         }
         assert!(s.box_shadows.is_empty() && s.border_top.is_none() && s.outline.is_none());
@@ -1100,7 +1781,10 @@ mod tests {
             ("hit-slop", "-4"),
         ] {
             assert!(
-                matches!(s.apply_xstyle(key, value), Err(XStyleError::InvalidValue { .. })),
+                matches!(
+                    s.apply_xstyle(key, value),
+                    Err(XStyleError::InvalidValue { .. })
+                ),
                 "{key}={value}"
             );
             assert_eq!(s, before);
@@ -1140,6 +1824,161 @@ mod tests {
             s.apply_xstyle(key, value).unwrap();
         }
         assert_eq!(s, Style::default());
+    }
+
+    #[test]
+    fn xstyle_transform_and_transition() {
+        let mut s = Style::default();
+        s.apply_xstyle("transform", "translate(4,-2) rotate(15) scale(0.96)")
+            .unwrap();
+        assert_eq!(
+            s.transform,
+            Transform2D {
+                translate_x: 4.0,
+                translate_y: -2.0,
+                rotate: 15.0,
+                scale_x: 0.96,
+                scale_y: 0.96,
+                origin_x: 0.5,
+                origin_y: 0.5,
+            }
+        );
+        s.apply_xstyle("transform", "scale(2,0.5);origin(0,1)")
+            .unwrap();
+        assert_eq!(
+            s.transform,
+            Transform2D::IDENTITY
+                .with_origin(0.0, 1.0)
+                .scale_xy(2.0, 0.5)
+        );
+        s.apply_xstyle(
+            "transition",
+            "opacity,background:200ms:cubic(0.2,0,0,1):reduce=150ms;transform:spring(1,170,26):delay=50ms",
+        )
+        .unwrap();
+        assert_eq!(
+            s.transitions,
+            vec![
+                Transition::new(
+                    AnimatedProperties::OPACITY.union(AnimatedProperties::BACKGROUND),
+                    200.0,
+                    Easing::cubic(0.2, 0.0, 0.0, 1.0)
+                )
+                .reduced(150.0, Easing::LINEAR),
+                Transition::spring(AnimatedProperties::TRANSFORM, 1.0, 170.0, 26.0).delay(50.0),
+            ]
+        );
+        assert!(s.transition_for(AnimatedProperties::TRANSFORM).is_some());
+        assert!(s.transition_for(AnimatedProperties::WIDTH).is_none());
+        // Keywords, default easing, `all`, `size` and the reduced easing.
+        let mut t = Style::default();
+        t.apply_xstyle(
+            "transition",
+            "all:120ms;size:80ms:ease-out:reduce=60ms/ease-in",
+        )
+        .unwrap();
+        assert_eq!(t.transitions[0].properties, AnimatedProperties::ALL);
+        assert_eq!(t.transitions[0].easing, Easing::EASE);
+        assert_eq!(
+            t.transitions[1],
+            Transition::new(
+                AnimatedProperties::WIDTH.union(AnimatedProperties::HEIGHT),
+                80.0,
+                Easing::EASE_OUT
+            )
+            .reduced(60.0, Easing::EASE_IN)
+        );
+        // Later rules win.
+        assert_eq!(
+            t.transition_for(AnimatedProperties::WIDTH),
+            Some(&t.transitions[1])
+        );
+        assert_eq!(
+            t.transition_for(AnimatedProperties::OPACITY),
+            Some(&t.transitions[0])
+        );
+        // Round trip through the canonical pairs.
+        for style in [&s, &t] {
+            let mut copy = Style::default();
+            for (key, value) in style.xstyle_pairs() {
+                copy.apply_xstyle(key, &value).unwrap();
+            }
+            assert_eq!(&copy, style);
+        }
+        s.apply_xstyle("transform", "none").unwrap();
+        s.apply_xstyle("transition", "none").unwrap();
+        assert_eq!(s, Style::default());
+
+        let before = Style::default().corner_radius(2.0);
+        for (key, value) in [
+            ("transform", ""),
+            ("transform", "rotate(1deg)"),
+            ("transform", "scale(1) scale(2)"),
+            ("transform", "skew(3)"),
+            ("transform", "scale(65)"),
+            ("transform", "translate(1)"),
+            ("transform", "origin(9,0)"),
+            ("transition", ""),
+            ("transition", "opacity"),
+            ("transition", "opacity:200"),
+            ("transition", "opacity:0.2s"),
+            ("transition", "glow:200ms"),
+            ("transition", "opacity:-1ms"),
+            ("transition", "opacity:60001ms"),
+            ("transition", "opacity:200ms:cubic(1.2,0,0,1)"),
+            ("transition", "opacity:200ms:cubic(0,9,0,1)"),
+            ("transition", "opacity:200ms:spring(1,170,26)"),
+            ("transition", "opacity:spring(0,170,26)"),
+            ("transition", "opacity:spring(1,170,0)"),
+            ("transition", "opacity:spring(1,170)"),
+            ("transition", "opacity:200ms:reduce=100ms/spring(1,1,1)"),
+            ("transition", "opacity:200ms:delay=1ms:delay=2ms"),
+            ("transition", "opacity:200ms:bounce"),
+            ("transition", "opacity:200ms:linear:linear"),
+        ] {
+            let mut s = before.clone();
+            assert!(
+                matches!(
+                    s.apply_xstyle(key, value),
+                    Err(XStyleError::InvalidValue { .. })
+                ),
+                "{key}={value}"
+            );
+            assert_eq!(s, before);
+        }
+        let mut many = String::new();
+        for i in 0..=MAX_TRANSITIONS {
+            if i > 0 {
+                many.push(';');
+            }
+            many.push_str("opacity:1ms");
+        }
+        assert!(Style::default().apply_xstyle("transition", &many).is_err());
+    }
+
+    #[test]
+    fn transform_matrix_matches_css_order() {
+        // rotate(90) about the centre of a 10×20 box at (100, 50): the centre is fixed and the
+        // top-left corner maps to the bottom-left side of the rotated box.
+        let m = Transform2D::rotate(90.0).matrix(100.0, 50.0, 10.0, 20.0);
+        let apply = |x: f64, y: f64| (m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]);
+        let (cx, cy) = apply(105.0, 60.0);
+        assert!((cx - 105.0).abs() < 1e-9 && (cy - 60.0).abs() < 1e-9);
+        let (x, y) = apply(100.0, 50.0);
+        assert!(
+            (x - 115.0).abs() < 1e-9 && (y - 55.0).abs() < 1e-9,
+            "({x},{y})"
+        );
+        // translate then scale about the top-left origin.
+        let t = Transform2D {
+            translate_x: 5.0,
+            ..Transform2D::scale(2.0).with_origin(0.0, 0.0)
+        };
+        let m = t.matrix(10.0, 10.0, 4.0, 4.0);
+        assert_eq!(m, [2.0, 0.0, 0.0, 2.0, -5.0, -10.0]);
+        assert!(Transform2D::IDENTITY.is_identity());
+        assert!(Transform2D::IDENTITY.with_origin(0.0, 0.0).is_identity());
+        assert!(!Transform2D::scale(0.0).is_identity());
     }
 
     #[test]
