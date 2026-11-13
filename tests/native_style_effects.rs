@@ -82,16 +82,12 @@ const RED: [u8; 4] = [220, 50, 47, 255];
 
 #[test]
 fn e2_rounded_corner_lets_background_through() {
-    let rounded = Scene::new(
-        root(FlexDirection::Column).child(
-            Node::container(NodeId(2)).with_style(
-                Style::default()
-                    .size(Length::Px(60.0), Length::Px(60.0))
-                    .background(Color::BLUE)
-                    .corner_radius(20.0),
-            ),
-        ),
-    );
+    let rounded = Scene::new(root(FlexDirection::Column).child(Node::container(NodeId(2)).with_style(
+        Style::default()
+            .size(Length::Px(60.0), Length::Px(60.0))
+            .background(Color::BLUE)
+            .corner_radius(20.0),
+    )));
     let frame = render(&rounded);
     assert_eq!(px(&frame, 20, 20), BG, "corner tip shows the background");
     assert_eq!(px(&frame, 79, 79), BG, "bottom-right tip");
@@ -102,16 +98,12 @@ fn e2_rounded_corner_lets_background_through() {
     assert_eq!(px(&render(&square), 20, 20), BLUE);
 
     // Per-corner radii: only the rounded corners are cut.
-    let mixed = Scene::new(
-        root(FlexDirection::Column).child(
-            Node::container(NodeId(2)).with_style(
-                Style::default()
-                    .size(Length::Px(60.0), Length::Px(60.0))
-                    .background(Color::BLUE)
-                    .corner_radii(CornerRadii::new(20.0, 0.0, 0.0, 0.0)),
-            ),
-        ),
-    );
+    let mixed = Scene::new(root(FlexDirection::Column).child(Node::container(NodeId(2)).with_style(
+        Style::default()
+            .size(Length::Px(60.0), Length::Px(60.0))
+            .background(Color::BLUE)
+            .corner_radii(CornerRadii::new(20.0, 0.0, 0.0, 0.0)),
+    )));
     let frame = render(&mixed);
     assert_eq!(px(&frame, 20, 20), BG);
     assert_eq!(px(&frame, 79, 20), BLUE);
@@ -134,11 +126,7 @@ fn e2_overflow_clip_follows_the_radius() {
         ),
     );
     let frame = render(&clipped);
-    assert_eq!(
-        px(&frame, 20, 20),
-        BG,
-        "child clipped by the rounded parent"
-    );
+    assert_eq!(px(&frame, 20, 20), BG, "child clipped by the rounded parent");
     assert_eq!(px(&frame, 50, 50), RED);
 }
 
@@ -147,16 +135,12 @@ fn e2_overflow_clip_follows_the_radius() {
 #[test]
 fn e3_shadow_paints_outside_the_box_without_layout() {
     let plain = Scene::new(root(FlexDirection::Column).child(boxed(2, 40.0, 40.0, Color::BLUE)));
-    let spread = Scene::new(
-        root(FlexDirection::Column).child(
-            Node::container(NodeId(2)).with_style(
-                Style::default()
-                    .size(Length::Px(40.0), Length::Px(40.0))
-                    .background(Color::BLUE)
-                    .shadow(BoxShadow::new(0.0, 0.0, 0.0, 6.0, Color::BLACK)),
-            ),
-        ),
-    );
+    let spread = Scene::new(root(FlexDirection::Column).child(Node::container(NodeId(2)).with_style(
+        Style::default()
+            .size(Length::Px(40.0), Length::Px(40.0))
+            .background(Color::BLUE)
+            .shadow(BoxShadow::new(0.0, 0.0, 0.0, 6.0, Color::BLACK)),
+    )));
     let frame = render(&spread);
     // Box spans x 20..60; a 6px spread reaches x 14.
     assert_eq!(px(&frame, 16, 40), [0, 0, 0, 255], "inside the spread");
@@ -169,39 +153,28 @@ fn e3_shadow_paints_outside_the_box_without_layout() {
     );
 
     // Offset + blur, two layers: both darken their own side.
-    let layered = Scene::new(
-        root(FlexDirection::Column).child(
-            Node::container(NodeId(2)).with_style(
-                Style::default()
-                    .size(Length::Px(40.0), Length::Px(40.0))
-                    .background(Color::BLUE)
-                    .shadow(BoxShadow::new(10.0, 10.0, 4.0, 0.0, Color::BLACK))
-                    .shadow(BoxShadow::new(-8.0, 0.0, 0.0, 0.0, Color::RED)),
-            ),
-        ),
-    );
+    let layered = Scene::new(root(FlexDirection::Column).child(Node::container(NodeId(2)).with_style(
+        Style::default()
+            .size(Length::Px(40.0), Length::Px(40.0))
+            .background(Color::BLUE)
+            .shadow(BoxShadow::new(10.0, 10.0, 4.0, 0.0, Color::BLACK))
+            .shadow(BoxShadow::new(-8.0, 0.0, 0.0, 0.0, Color::RED)),
+    )));
     let frame = render(&layered);
     let below_right = px(&frame, 65, 65);
-    assert!(
-        below_right[0] < 200,
-        "blurred offset shadow darkens {below_right:?}"
-    );
+    assert!(below_right[0] < 200, "blurred offset shadow darkens {below_right:?}");
     assert_eq!(px(&frame, 15, 40), RED, "second layer offset to the left");
 
     // Inset shadow darkens inside the box edge.
-    let inset = Scene::new(
-        root(FlexDirection::Column).child(
-            Node::container(NodeId(2)).with_style(
-                Style::default()
-                    .size(Length::Px(40.0), Length::Px(40.0))
-                    .background(Color::WHITE)
-                    .shadow(BoxShadow {
-                        inset: true,
-                        ..BoxShadow::new(0.0, 0.0, 0.0, 5.0, Color::BLACK)
-                    }),
-            ),
-        ),
-    );
+    let inset = Scene::new(root(FlexDirection::Column).child(Node::container(NodeId(2)).with_style(
+        Style::default()
+            .size(Length::Px(40.0), Length::Px(40.0))
+            .background(Color::WHITE)
+            .shadow(BoxShadow {
+                inset: true,
+                ..BoxShadow::new(0.0, 0.0, 0.0, 5.0, Color::BLACK)
+            }),
+    )));
     let frame = render(&inset);
     assert_eq!(px(&frame, 22, 40), [0, 0, 0, 255]);
     assert_eq!(px(&frame, 40, 40), BG);
@@ -211,21 +184,14 @@ fn e3_shadow_paints_outside_the_box_without_layout() {
 
 #[test]
 fn e4_opacity_blends_the_whole_subtree() {
-    let half = Scene::new(
-        root(FlexDirection::Column).child(
-            Node::container(NodeId(2)).with_style(
-                Style::default()
-                    .size(Length::Px(40.0), Length::Px(40.0))
-                    .background(Color::rgb(0, 0, 255))
-                    .opacity(0.5),
-            ),
-        ),
-    );
+    let half = Scene::new(root(FlexDirection::Column).child(Node::container(NodeId(2)).with_style(
+        Style::default()
+            .size(Length::Px(40.0), Length::Px(40.0))
+            .background(Color::rgb(0, 0, 255))
+            .opacity(0.5),
+    )));
     let p = px(&render(&half), 40, 40);
-    assert!(
-        near(p, [127, 127, 255, 255], 2),
-        "50% blue over white: {p:?}"
-    );
+    assert!(near(p, [127, 127, 255, 255], 2), "50% blue over white: {p:?}");
 
     // Group opacity: an opaque child inside a 50% parent is blended once, as one layer.
     let group = Scene::new(
@@ -246,16 +212,12 @@ fn e4_opacity_blends_the_whole_subtree() {
     let parent = px(&frame, 50, 50);
     assert!(near(parent, [127, 127, 255, 255], 2), "parent: {parent:?}");
 
-    let invisible = Scene::new(
-        root(FlexDirection::Column).child(
-            Node::container(NodeId(2)).with_style(
-                Style::default()
-                    .size(Length::Px(40.0), Length::Px(40.0))
-                    .background(Color::BLUE)
-                    .opacity(0.0),
-            ),
-        ),
-    );
+    let invisible = Scene::new(root(FlexDirection::Column).child(Node::container(NodeId(2)).with_style(
+        Style::default()
+            .size(Length::Px(40.0), Length::Px(40.0))
+            .background(Color::BLUE)
+            .opacity(0.0),
+    )));
     assert_eq!(px(&render(&invisible), 40, 40), BG);
 }
 
@@ -263,22 +225,18 @@ fn e4_opacity_blends_the_whole_subtree() {
 
 #[test]
 fn e9_single_side_border_only_on_that_side() {
-    let bottom = Scene::new(
-        root(FlexDirection::Column).child(
-            Node::container(NodeId(2)).with_style(
-                Style::default()
-                    .size(Length::Px(60.0), Length::Px(40.0))
-                    .background(Color::WHITE)
-                    .border_side(
-                        Side::Bottom,
-                        Some(BorderSide {
-                            width: 4.0,
-                            color: Color::RED,
-                        }),
-                    ),
+    let bottom = Scene::new(root(FlexDirection::Column).child(Node::container(NodeId(2)).with_style(
+        Style::default()
+            .size(Length::Px(60.0), Length::Px(40.0))
+            .background(Color::WHITE)
+            .border_side(
+                Side::Bottom,
+                Some(BorderSide {
+                    width: 4.0,
+                    color: Color::RED,
+                }),
             ),
-        ),
-    );
+    )));
     let frame = render(&bottom);
     // Box y 20..60: bottom border rows 56..60.
     assert_eq!(px(&frame, 50, 58), RED);
@@ -287,31 +245,23 @@ fn e9_single_side_border_only_on_that_side() {
     assert_eq!(px(&frame, 78, 40), BG, "no right border");
 
     // Uniform border with one side overridden.
-    let mixed = Scene::new(
-        root(FlexDirection::Column).child(
-            Node::container(NodeId(2)).with_style(
-                Style::default()
-                    .size(Length::Px(60.0), Length::Px(40.0))
-                    .background(Color::WHITE)
-                    .border(2.0, Color::GREEN)
-                    .border_side(
-                        Side::Top,
-                        Some(BorderSide {
-                            width: 6.0,
-                            color: Color::BLUE,
-                        }),
-                    ),
+    let mixed = Scene::new(root(FlexDirection::Column).child(Node::container(NodeId(2)).with_style(
+        Style::default()
+            .size(Length::Px(60.0), Length::Px(40.0))
+            .background(Color::WHITE)
+            .border(2.0, Color::GREEN)
+            .border_side(
+                Side::Top,
+                Some(BorderSide {
+                    width: 6.0,
+                    color: Color::BLUE,
+                }),
             ),
-        ),
-    );
+    )));
     let frame = render(&mixed);
     assert_eq!(px(&frame, 50, 24), BLUE, "top is 6px blue");
     assert_eq!(px(&frame, 50, 27), BG);
-    assert_eq!(
-        px(&frame, 20, 40),
-        [46, 160, 67, 255],
-        "left keeps the uniform green"
-    );
+    assert_eq!(px(&frame, 20, 40), [46, 160, 67, 255], "left keeps the uniform green");
     assert_eq!(px(&frame, 23, 40), BG);
 }
 
@@ -327,13 +277,11 @@ fn e9_outline_is_outside_the_box_and_takes_no_layout() {
     );
     let ringed = Scene::new(
         root(FlexDirection::Row)
-            .child(
-                Node::container(NodeId(2)).with_style(style.clone().outline(Some(Outline {
-                    width: 2.0,
-                    offset: 3.0,
-                    color: Color::RED,
-                }))),
-            )
+            .child(Node::container(NodeId(2)).with_style(style.clone().outline(Some(Outline {
+                width: 2.0,
+                offset: 3.0,
+                color: Color::RED,
+            }))))
             .child(boxed(3, 20.0, 20.0, Color::GREEN)),
     );
     let frame = render(&ringed);
@@ -355,20 +303,13 @@ fn e9_outline_is_outside_the_box_and_takes_no_layout() {
     }
 
     // Own overflow does not clip the ring; a clipping ancestor does.
-    let own_clip = Scene::new(
-        root(FlexDirection::Row).child(
-            Node::container(NodeId(2)).with_style(
-                style
-                    .clone()
-                    .overflow(Overflow::Hidden)
-                    .outline(Some(Outline {
-                        width: 2.0,
-                        offset: 3.0,
-                        color: Color::RED,
-                    })),
-            ),
-        ),
-    );
+    let own_clip = Scene::new(root(FlexDirection::Row).child(Node::container(NodeId(2)).with_style(
+        style.clone().overflow(Overflow::Hidden).outline(Some(Outline {
+            width: 2.0,
+            offset: 3.0,
+            color: Color::RED,
+        })),
+    )));
     assert_eq!(px(&render(&own_clip), 16, 40), RED);
     let ancestor_clip = Scene::new(
         root(FlexDirection::Row).child(
@@ -378,42 +319,38 @@ fn e9_outline_is_outside_the_box_and_takes_no_layout() {
                         .size(Length::Px(40.0), Length::Px(40.0))
                         .overflow(Overflow::Hidden),
                 )
-                .child(
-                    Node::container(NodeId(2)).with_style(style.clone().outline(Some(Outline {
+                .child(Node::container(NodeId(2)).with_style(style.clone().outline(Some(
+                    Outline {
                         width: 2.0,
                         offset: 3.0,
                         color: Color::RED,
-                    }))),
-                ),
+                    },
+                )))),
         ),
     );
     assert_eq!(px(&render(&ancestor_clip), 16, 40), BG);
 
     // Negative offset: an inset ring inside the box.
-    let inset = Scene::new(
-        root(FlexDirection::Row).child(Node::container(NodeId(2)).with_style(
-            style.clone().outline(Some(Outline {
-                width: 2.0,
-                offset: -4.0,
-                color: Color::RED,
-            })),
-        )),
-    );
+    let inset = Scene::new(root(FlexDirection::Row).child(Node::container(NodeId(2)).with_style(
+        style.clone().outline(Some(Outline {
+            width: 2.0,
+            offset: -4.0,
+            color: Color::RED,
+        })),
+    )));
     let frame = render(&inset);
     assert_eq!(px(&frame, 23, 40), RED);
     assert_eq!(px(&frame, 21, 40), BLUE);
     assert_eq!(px(&frame, 26, 40), BLUE);
 
     // Rounded ring follows the radius: the outer corner tip stays background.
-    let rounded = Scene::new(root(FlexDirection::Row).child(
-        Node::container(NodeId(2)).with_style(style.clone().corner_radius(10.0).outline(Some(
-            Outline {
-                width: 2.0,
-                offset: 2.0,
-                color: Color::RED,
-            },
-        ))),
-    ));
+    let rounded = Scene::new(root(FlexDirection::Row).child(Node::container(NodeId(2)).with_style(
+        style.clone().corner_radius(10.0).outline(Some(Outline {
+            width: 2.0,
+            offset: 2.0,
+            color: Color::RED,
+        })),
+    )));
     let frame = render(&rounded);
     assert_eq!(px(&frame, 16, 16), BG, "outer corner tip is rounded");
     assert_eq!(px(&frame, 16, 40), RED);
@@ -423,13 +360,11 @@ fn e9_outline_is_outside_the_box_and_takes_no_layout() {
         root(FlexDirection::Row).child(
             Node::container(NodeId(4))
                 .with_style(Style::default().opacity(0.5))
-                .child(
-                    Node::container(NodeId(2)).with_style(style.outline(Some(Outline {
-                        width: 2.0,
-                        offset: 3.0,
-                        color: Color::rgb(255, 0, 0),
-                    }))),
-                ),
+                .child(Node::container(NodeId(2)).with_style(style.outline(Some(Outline {
+                    width: 2.0,
+                    offset: 3.0,
+                    color: Color::rgb(255, 0, 0),
+                })))),
         ),
     );
     let p = px(&render(&faded), 16, 40);
@@ -463,10 +398,7 @@ fn e9_text_decoration_draws_lines() {
     let underlined = render(&text(TextDecoration::UNDERLINE));
     let struck = render(&text(TextDecoration::LINE_THROUGH));
     let span = 22..90;
-    assert!(
-        dark_rows(&plain, span.clone()).is_empty(),
-        "glyph gaps keep plain rows light"
-    );
+    assert!(dark_rows(&plain, span.clone()).is_empty(), "glyph gaps keep plain rows light");
     let under = dark_rows(&underlined, span.clone());
     let through = dark_rows(&struck, span.clone());
     assert!(!under.is_empty(), "underline row exists");
@@ -481,11 +413,7 @@ fn e9_text_decoration_draws_lines() {
 
 fn button(id: u64, w: f32, h: f32, style: Style) -> Node {
     Node::container(NodeId(id))
-        .with_style(
-            style
-                .size(Length::Px(w), Length::Px(h))
-                .background(Color::BLUE),
-        )
+        .with_style(style.size(Length::Px(w), Length::Px(h)).background(Color::BLUE))
         .with_semantics(
             Semantics::default()
                 .role(Role::Button)
@@ -566,23 +494,17 @@ fn e10_real_box_beats_a_neighbours_slop_and_nearest_slop_wins() {
     );
     let v = scene.version();
     let mut e = engine(&scene);
-    assert_eq!(
-        tap(&mut e, v, 71.0, 30.0).0,
-        vec![3],
-        "inside 3, within 2's slop"
-    );
+    assert_eq!(tap(&mut e, v, 71.0, 30.0).0, vec![3], "inside 3, within 2's slop");
     assert_eq!(tap(&mut e, v, 62.0, 30.0).0, vec![2], "gap, nearer 2");
     assert_eq!(tap(&mut e, v, 68.0, 30.0).0, vec![3], "gap, nearer 3");
 }
 
 #[test]
 fn e2_rounded_corner_is_not_hit() {
-    let scene = Scene::new(root(FlexDirection::Column).child(button(
-        2,
-        60.0,
-        60.0,
-        Style::default().corner_radius(30.0),
-    )));
+    let scene = Scene::new(
+        root(FlexDirection::Column)
+            .child(button(2, 60.0, 60.0, Style::default().corner_radius(30.0))),
+    );
     let v = scene.version();
     let mut e = engine(&scene);
     let (activated, down) = tap(&mut e, v, 21.0, 21.0);
@@ -620,10 +542,9 @@ fn invalid_extended_style_is_rejected_whole() {
             Err(SceneUpdateError::NativeRejected)
         );
     }
-    let invalid = Scene::new(
-        root(FlexDirection::Column)
-            .child(Node::container(NodeId(2)).with_style(Style::default().opacity(-0.5))),
-    );
+    let invalid = Scene::new(root(FlexDirection::Column).child(Node::container(NodeId(2)).with_style(
+        Style::default().opacity(-0.5),
+    )));
     assert!(Engine::with_fonts(OWNER, &invalid, &[&font()], W, H).is_none());
 
     // A valid update changes pixels, and clearing it restores the original frame.
@@ -646,13 +567,7 @@ fn invalid_extended_style_is_rejected_whole() {
         }
     ));
     let mut frame = vec![0u8; (W * H * 4) as usize];
-    assert!(e.render_to_surface(
-        OWNER,
-        scene.version(),
-        &mut frame,
-        (W * 4) as usize,
-        1 << 24
-    ));
+    assert!(e.render_to_surface(OWNER, scene.version(), &mut frame, (W * 4) as usize, 1 << 24));
     assert_eq!(px(&frame, 20, 20), BG);
     assert_ne!(frame, original);
 }
@@ -675,6 +590,7 @@ fn capabilities_are_declared_for_the_host_hello() {
         ]
     );
 }
+
 
 #[test]
 fn e9_text_decoration_propagates_from_a_container_in_its_colour() {

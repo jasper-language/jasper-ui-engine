@@ -1459,12 +1459,7 @@ impl NativeScene {
     fn padding_box(&self, id: NodeId) -> Option<crate::style_effects::LogicalBox> {
         let border_box = self.layout_box(id)?;
         let (element, _) = self.nodes.get(&id)?;
-        let border = self
-            .document
-            .as_ref()?
-            .get_node(*element)?
-            .final_layout()
-            .border;
+        let border = self.document.as_ref()?.get_node(*element)?.final_layout().border;
         border_box.outset(-border.top, -border.right, -border.bottom, -border.left)
     }
     fn clips(&self, id: NodeId) -> bool {
@@ -1517,9 +1512,11 @@ impl NativeScene {
             let Some(border_box) = self.layout_box(node.id) else {
                 continue;
             };
-            let Some((outer, outer_radii, inner)) =
-                crate::style_effects::outline_ring(border_box, style.corner_radius, outline)
-            else {
+            let Some((outer, outer_radii, inner)) = crate::style_effects::outline_ring(
+                border_box,
+                style.corner_radius,
+                outline,
+            ) else {
                 continue;
             };
             // The node's own overflow does not clip its outline; ancestors' does.
@@ -1579,7 +1576,10 @@ impl NativeScene {
         }
         let limit = self.nodes.len().saturating_mul(4).saturating_add(16);
         let natural = |cx: f32, cy: f32| -> Option<NodeId> {
-            let hit = document.hit((cx as f64 + scroll.x) as f32, (cy as f64 + scroll.y) as f32)?;
+            let hit = document.hit(
+                (cx as f64 + scroll.x) as f32,
+                (cy as f64 + scroll.y) as f32,
+            )?;
             let mut cursor = Some(hit.node_id);
             for _ in 0..limit {
                 let current = cursor?;
@@ -1615,7 +1615,8 @@ impl NativeScene {
                     continue;
                 }
                 if let Some(target) = target {
-                    if target == node.id || !source_subtree_contains(&self.parents, node.id, target)
+                    if target == node.id
+                        || !source_subtree_contains(&self.parents, node.id, target)
                     {
                         continue;
                     }
@@ -1647,8 +1648,7 @@ impl NativeScene {
                     sy = qy + (cy - qy) * t;
                 }
                 let (sx, sy) = self.to_view(id, sx, sy);
-                if natural(sx, sy)
-                    .is_some_and(|hit| source_subtree_contains(&self.parents, hit, id))
+                if natural(sx, sy).is_some_and(|hit| source_subtree_contains(&self.parents, hit, id))
                 {
                     return PointerHitAdjustment {
                         steer: Some((sx, sy)),
@@ -3323,10 +3323,7 @@ fn style_properties(
 /// E2/E3/E4/E9/E10 到 Blitz CSS 的投影。与基础子集一样，每个节点显式写出全部属性（含默认值）。外框、文字装饰与
 /// 命中扩展不经 CSS：固定版 Blitz 没有 `outline-offset`，且文字装饰只在同一行内格式化上下文内传播（不从 flex/块
 /// 祖先传下），因此二者由引擎在文档之后绘制（`paint_overlays`）；命中扩展由指针路由处理。
-fn extended_style_properties(
-    style: &Style,
-    values: &mut Vec<(&'static str, String)>,
-) -> Option<()> {
+fn extended_style_properties(style: &Style, values: &mut Vec<(&'static str, String)>) -> Option<()> {
     use jasper_ui_engine::style::Side;
     if !style.extended_style_valid() {
         return None;

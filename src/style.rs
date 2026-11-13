@@ -480,10 +480,9 @@ impl Style {
             .into_iter()
             .all(length)
             && self.box_shadows.len() <= MAX_BOX_SHADOWS
-            && self
-                .box_shadows
-                .iter()
-                .all(|s| signed(s.x) && signed(s.y) && length(s.blur) && signed(s.spread))
+            && self.box_shadows.iter().all(|s| {
+                signed(s.x) && signed(s.y) && length(s.blur) && signed(s.spread)
+            })
             && self.opacity.is_finite()
             && (0.0..=1.0).contains(&self.opacity)
             && [
@@ -1444,7 +1443,9 @@ impl Style {
                     if value_trimmed != "none" {
                         for line in value_trimmed.split(',').map(str::trim) {
                             match line {
-                                "underline" if !decoration.underline => decoration.underline = true,
+                                "underline" if !decoration.underline => {
+                                    decoration.underline = true
+                                }
                                 "line-through" if !decoration.line_through => {
                                     decoration.line_through = true
                                 }
@@ -1536,10 +1537,7 @@ impl Style {
             ("border-left", self.border_left),
         ] {
             if let Some(b) = side {
-                pairs.push((
-                    key,
-                    format!("{},{}", format_number(b.width), format_color(b.color)),
-                ));
+                pairs.push((key, format!("{},{}", format_number(b.width), format_color(b.color))));
             }
         }
         if let Some(o) = self.outline {
@@ -1571,9 +1569,7 @@ impl Style {
                 if h.top == h.right && h.top == h.bottom && h.top == h.left {
                     format_number(h.top)
                 } else {
-                    [h.top, h.right, h.bottom, h.left]
-                        .map(format_number)
-                        .join(",")
+                    [h.top, h.right, h.bottom, h.left].map(format_number).join(",")
                 },
             ));
         }
@@ -1631,10 +1627,8 @@ mod tests {
             ok.clone().opacity(1.01),
             ok.clone().opacity(-0.1),
             ok.clone().opacity(f32::INFINITY),
-            ok.clone()
-                .shadow(BoxShadow::new(0.0, 0.0, -1.0, 0.0, Color::BLACK)),
-            ok.clone()
-                .shadow(BoxShadow::new(f32::NAN, 0.0, 1.0, 0.0, Color::BLACK)),
+            ok.clone().shadow(BoxShadow::new(0.0, 0.0, -1.0, 0.0, Color::BLACK)),
+            ok.clone().shadow(BoxShadow::new(f32::NAN, 0.0, 1.0, 0.0, Color::BLACK)),
             ok.clone().border_side(
                 Side::Left,
                 Some(BorderSide {
@@ -1746,13 +1740,7 @@ mod tests {
         assert_eq!(copy, s);
 
         // `none` clears.
-        for key in [
-            "shadow",
-            "border-top",
-            "border-left",
-            "outline",
-            "text-decoration",
-        ] {
+        for key in ["shadow", "border-top", "border-left", "outline", "text-decoration"] {
             s.apply_xstyle(key, "none").unwrap();
         }
         assert!(s.box_shadows.is_empty() && s.border_top.is_none() && s.outline.is_none());
@@ -1781,10 +1769,7 @@ mod tests {
             ("hit-slop", "-4"),
         ] {
             assert!(
-                matches!(
-                    s.apply_xstyle(key, value),
-                    Err(XStyleError::InvalidValue { .. })
-                ),
+                matches!(s.apply_xstyle(key, value), Err(XStyleError::InvalidValue { .. })),
                 "{key}={value}"
             );
             assert_eq!(s, before);

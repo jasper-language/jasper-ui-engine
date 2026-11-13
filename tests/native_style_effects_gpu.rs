@@ -66,21 +66,16 @@ fn px(frame: &[u8], x: u32, y: u32) -> [u8; 4] {
 }
 
 fn near(a: [u8; 4], b: [u8; 4]) -> bool {
-    a.iter()
-        .zip(b)
-        .all(|(x, y)| (*x as i32 - y as i32).abs() <= 3)
+    a.iter().zip(b).all(|(x, y)| (*x as i32 - y as i32).abs() <= 3)
 }
 
 #[test]
 fn gpu_paints_extended_styles_like_cpu() {
     let source = scene();
     let v = source.version();
-    let mut gpu =
-        GpuRenderer::new_headless().expect("a wgpu adapter is required for GPU acceptance");
+    let mut gpu = GpuRenderer::new_headless().expect("a wgpu adapter is required for GPU acceptance");
     let mut engine = Engine::with_fonts(OWNER, &source, &[&font()], W, H).unwrap();
-    let frame = engine
-        .render_gpu(OWNER, v, &mut gpu, 1 << 24)
-        .expect("gpu frame");
+    let frame = engine.render_gpu(OWNER, v, &mut gpu, 1 << 24).expect("gpu frame");
     let mut cpu_engine = Engine::with_fonts(OWNER, &source, &[&font()], W, H).unwrap();
     let mut cpu = vec![0u8; (W * H * 4) as usize];
     assert!(cpu_engine.render_to_surface(OWNER, v, &mut cpu, (W * 4) as usize, 1 << 24));
@@ -89,36 +84,18 @@ fn gpu_paints_extended_styles_like_cpu() {
     // (22,22): outside the 12px box corner arc (centre 32,32), inside the ring's 15px hole.
     assert!(near(px(&frame, 22, 22), white), "E2 corner tip");
     assert!(near(px(&frame, 40, 40), [0, 0, 255, 255]), "E2 body");
-    assert!(
-        near(px(&frame, 40, 70), [0, 0, 0, 255]),
-        "E3 offset shadow below the box"
-    );
-    assert!(
-        near(px(&frame, 16, 40), [255, 0, 0, 255]),
-        "E9 outline ring"
-    );
+    assert!(near(px(&frame, 40, 70), [0, 0, 0, 255]), "E3 offset shadow below the box");
+    assert!(near(px(&frame, 16, 40), [255, 0, 0, 255]), "E9 outline ring");
     assert!(near(px(&frame, 18, 40), white), "E9 outline gap");
-    assert!(
-        near(px(&frame, 100, 40), [127, 127, 255, 255]),
-        "E4 50% blue"
-    );
+    assert!(near(px(&frame, 100, 40), [127, 127, 255, 255]), "E4 50% blue");
     // Same sample points as the CPU frame.
-    for (x, y) in [
-        (22, 22),
-        (20, 20),
-        (40, 40),
-        (40, 70),
-        (16, 40),
-        (18, 40),
-        (100, 40),
-    ] {
-        assert!(
-            near(px(&frame, x, y), px(&cpu, x, y)),
-            "({x},{y}) GPU vs CPU"
-        );
+    for (x, y) in [(22, 22), (20, 20), (40, 40), (40, 70), (16, 40), (18, 40), (100, 40)] {
+        assert!(near(px(&frame, x, y), px(&cpu, x, y)), "({x},{y}) GPU vs CPU");
     }
     // E9 underline: some row under the text is dark across the text span on both paths.
-    let dark_row = |f: &[u8]| (0..H).any(|y| (144..170).all(|x| px(f, x, y)[0] < 128));
+    let dark_row = |f: &[u8]| {
+        (0..H).any(|y| (144..170).all(|x| px(f, x, y)[0] < 128))
+    };
     assert!(dark_row(&cpu), "CPU underline");
     assert!(dark_row(&frame), "GPU underline");
 }
