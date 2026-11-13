@@ -52,11 +52,72 @@ pub struct SceneFocusEvent {
     pub node: NodeId,
     pub focused: bool,
 }
+/// Roles the engine activates on a completed primary pointer click (press and release inside
+/// the same control) and through `Engine::activate`. Disabled nodes never activate.
+/// 引擎在完成的主键指针点击（按下与抬起在同一控件内）及 `Engine::activate` 时激活的角色；禁用节点从不激活。
+pub fn role_activates_on_click(role: Role) -> bool {
+    matches!(
+        role,
+        Role::Button
+            | Role::Checkbox
+            | Role::Radio
+            | Role::Switch
+            | Role::Link
+            | Role::MenuItem
+            | Role::ListItem
+    )
+}
+
+/// Keyboard activation of a focused control: Enter for Button/Link/MenuItem, Space for
+/// Button/Checkbox/Radio/Switch/MenuItem/ListItem (Space never activates a Link). `key` is the
+/// W3C key value; Space is accepted as `" "` or `"Space"`.
+/// 聚焦控件的键盘激活：Enter 作用于 Button/Link/MenuItem；Space 作用于 Button/Checkbox/Radio/Switch/
+/// MenuItem/ListItem（Space 从不激活 Link）。`key` 为 W3C 键值，空格接受 `" "` 或 `"Space"`。
+pub fn role_activates_on_key(role: Role, key: &str) -> bool {
+    match key {
+        "Enter" => matches!(role, Role::Button | Role::Link | Role::MenuItem),
+        " " | "Space" => matches!(
+            role,
+            Role::Button
+                | Role::Checkbox
+                | Role::Radio
+                | Role::Switch
+                | Role::MenuItem
+                | Role::ListItem
+        ),
+        _ => false,
+    }
+}
+
+/// `ancestor` is `node` or one of its source ancestors; bounded by the map size.
+fn source_contains(
+    parents: &BTreeMap<NodeId, Option<NodeId>>,
+    node: NodeId,
+    ancestor: NodeId,
+) -> bool {
+    let mut current = Some(node);
+    let mut remaining = parents.len();
+    while let Some(cursor) = current {
+        if cursor == ancestor {
+            return true;
+        }
+        if remaining == 0 {
+            return false;
+        }
+        remaining -= 1;
+        current = parents.get(&cursor).copied().flatten();
+    }
+    false
+}
+
 pub(crate) struct SceneEventHandler<'a, F> {
     pub version: u64,
     pub suppress_unpaired_up: bool,
     pub nodes: &'a BTreeMap<NodeId, (blitz_dom::NodeId, Option<blitz_dom::NodeId>)>,
     pub semantics: &'a BTreeMap<NodeId, Semantics>,
+    pub parents: &'a BTreeMap<NodeId, Option<NodeId>>,
+    /// Source node under the native press of this click, if any.
+    pub pressed: Option<NodeId>,
     pub sink: &'a mut F,
 }
 impl<F: FnMut(SceneEvent) -> NativeEventReply> blitz_dom::EventHandler
@@ -71,7 +132,8 @@ impl<F: FnMut(SceneEvent) -> NativeEventReply> blitz_dom::EventHandler
     ) {
         use blitz_traits::events::DomEventData;
         // Pinned chain remains authoritative. Pointer targets are the nearest source node;
-        // activation belongs to the nearest Button component, including nested caption nodes.
+        // activation belongs to the nearest activatable component (role_activates_on_click),
+        // including nested caption nodes.
         // Apply lifecycle default suppression even when no source node maps this native target.
         if self.suppress_unpaired_up && matches!(&event.data, DomEventData::PointerUp(_)) {
             state.prevent_default();
@@ -95,7 +157,7 @@ impl<F: FnMut(SceneEvent) -> NativeEventReply> blitz_dom::EventHandler
                         || self
                             .semantics
                             .get(id)
-                            .is_some_and(|s| s.role == Role::Button)))
+                            .is_some_and(|s| role_activates_on_click(s.role))))
                 .then_some(*id)
             })
         }) else {
@@ -111,7 +173,15 @@ impl<F: FnMut(SceneEvent) -> NativeEventReply> blitz_dom::EventHandler
                 if !self
                     .semantics
                     .get(&node)
-                    .is_some_and(|s| s.role == Role::Button && !s.disabled)
+                    .is_some_and(|s| role_activates_on_click(s.role) && !s.disabled)
+                {
+                    return;
+                }
+                // A click activates only the control the press began in.
+                // 只有按下发生在其内部的控件才被点击激活。
+                if !self
+                    .pressed
+                    .is_some_and(|pressed| source_contains(self.parents, pressed, node))
                 {
                     return;
                 }

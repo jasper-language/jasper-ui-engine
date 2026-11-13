@@ -352,6 +352,54 @@ impl HostRenderer {
             && self.inner.key(owner, version, input, key, focus)
     }
 
+    /// `key` plus engine keyboard activation; see `Engine::key_with_activation`.
+    /// `key` 加引擎键盘激活；见 `Engine::key_with_activation`。
+    pub fn key_with_activation(
+        &mut self,
+        owner: u64,
+        version: u64,
+        generation: u64,
+        input: &crate::native::HostKeyInput<'_>,
+        key: &mut impl FnMut(crate::native::SceneKeyEvent) -> crate::native::EventReply,
+        focus: &mut impl FnMut(SceneFocusEvent),
+        activation: &mut impl FnMut(crate::native::SceneActivationEvent),
+    ) -> bool {
+        self.surface.render_allowed(owner, generation)
+            && self
+                .inner
+                .key_with_activation(owner, version, input, key, focus, activation)
+    }
+
+    /// View-local logical border box of a source-visible node through the live surface
+    /// generation; see `Engine::node_bounds`.
+    /// 经当前活动 Surface 代数取源可见节点的视图局部逻辑边框盒；见 `Engine::node_bounds`。
+    pub fn node_bounds(
+        &self,
+        owner: u64,
+        version: u64,
+        generation: u64,
+        node: NodeId,
+    ) -> Option<crate::geometry::Rect> {
+        if !self.surface.render_allowed(owner, generation) {
+            return None;
+        }
+        self.inner.node_bounds(owner, version, node)
+    }
+
+    /// Semantic activation through the live surface generation; see `Engine::activate`.
+    /// 经当前活动 Surface 代数做语义激活；见 `Engine::activate`。
+    pub fn activate(
+        &self,
+        owner: u64,
+        version: u64,
+        generation: u64,
+        node: NodeId,
+        sink: &mut impl FnMut(crate::native::SceneActivationEvent),
+    ) -> bool {
+        self.surface.render_allowed(owner, generation)
+            && self.inner.activate(owner, version, node, sink)
+    }
+
     pub fn apply_with_focus_events(
         &mut self,
         owner: u64,

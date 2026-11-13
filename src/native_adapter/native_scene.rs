@@ -763,21 +763,85 @@ impl NativeScene {
         // Native press identity is authoritative; retired/no press cannot activate a replacement.
         let suppress_unpaired_up =
             phase == PointerAction::Up && document.get_mousedown_node_id().is_none();
+        let pressed = document.get_mousedown_node_id().and_then(|native| {
+            self.nodes.iter().find_map(|(id, (element, text))| {
+                (*element == native || *text == Some(native)).then_some(*id)
+            })
+        });
+        let focused_before = document.get_focussed_node_id();
+        // First routed event of this sample's own phase: (source target, default prevented).
+        let mut hit: Option<(NodeId, bool)> = None;
+        let mut observe = |event: crate::scene_events::SceneEvent| {
+            let target = event.node;
+            let own = event.kind == crate::scene_events::SceneEventKind::Pointer(phase);
+            let reply = sink(event);
+            if own && hit.is_none() {
+                hit = Some((target, reply.prevent_default));
+            }
+            reply
+        };
         let handler = crate::scene_events::SceneEventHandler {
             version,
             suppress_unpaired_up,
             nodes: &self.nodes,
             semantics: &self.semantics,
-            sink,
+            parents: &self.parents,
+            pressed,
+            sink: &mut observe,
         };
         blitz_dom::EventDriver::new(document, handler).handle_ui_event(event);
         if matches!(phase, PointerAction::Up | PointerAction::Cancel) {
             document.set_mousedown_node_id(None);
         }
+        // Pinned Blitz focuses only native form inputs on press and clears focus after any click
+        // it does not recognise. Like a browser: a primary press whose default is not prevented
+        // focuses the nearest focus-eligible source ancestor, and the release of a click inside
+        // the control that already held focus keeps it there.
+        // 固定版 Blitz 按下时只聚焦原生表单输入，且对不认识的点击一律清除焦点。与浏览器一致：未阻止默认
+        // 行为的主键按下聚焦最近的可聚焦源祖先；在已持有焦点的控件内完成的点击，抬起后焦点仍留在该控件上。
+        let focus_target = match (phase, hit) {
+            (PointerAction::Down, Some((target, false))) if pressed_primary(input) => {
+                self.nearest_focus_eligible(target)
+            }
+            (PointerAction::Up, Some((target, _))) => {
+                self.nearest_focus_eligible(target).filter(|id| {
+                    self.nodes
+                        .get(id)
+                        .is_some_and(|(element, _)| focused_before == Some(*element))
+                })
+            }
+            _ => None,
+        };
+        let element = focus_target.and_then(|id| self.nodes.get(&id).map(|(element, _)| *element));
+        let Some(document) = self.document.as_mut() else {
+            return false;
+        };
+        if let Some(element) = element {
+            if document.get_focussed_node_id() != Some(element) {
+                document.set_focus_to(element);
+            }
+        }
         document.resolve(0.0);
         true
     }
+    /// Nearest source ancestor-or-self that `focus_eligible` admits; bounded by the node count.
+    fn nearest_focus_eligible(&self, id: NodeId) -> Option<NodeId> {
+        let mut current = Some(id);
+        let mut remaining = self.parents.len();
+        while let Some(cursor) = current {
+            if self.focus_eligible(cursor) {
+                return Some(cursor);
+            }
+            if remaining == 0 {
+                return None;
+            }
+            remaining -= 1;
+            current = self.parents.get(&cursor).copied().flatten();
+        }
+        None
+    }
     /// Route only to the admitted currently focused source node; no editor/default text commit.
+    /// Reports no activation; `key_with_activation_from_host` adds role keyboard activation.
     pub(crate) fn key_from_host(
         &mut self,
         caller: u64,
@@ -787,6 +851,25 @@ impl NativeScene {
             crate::scene_events::SceneKeyEvent,
         ) -> crate::native_events::NativeEventReply,
         focus: &mut impl FnMut(crate::scene_events::SceneFocusEvent),
+    ) -> bool {
+        self.key_with_activation_from_host(caller, version, input, sink, focus, &mut |_| {})
+    }
+    /// `key_from_host` plus role keyboard activation of the focused node
+    /// (`role_activates_on_key`): on a non-repeating, non-composing key press without
+    /// ctrl/alt/meta whose default the key sink did not prevent, an enabled visible focused
+    /// control reports one activation after the key event.
+    /// 在 `key_from_host` 基础上加按角色的键盘激活（`role_activates_on_key`）：非重复、非组合输入、
+    /// 无 ctrl/alt/meta、且键事件未被阻止默认行为的按下，聚焦的已启用可见控件在键事件之后报告一次激活。
+    pub(crate) fn key_with_activation_from_host(
+        &mut self,
+        caller: u64,
+        version: u64,
+        input: &crate::native_keys::HostKeyInput<'_>,
+        sink: &mut impl FnMut(
+            crate::scene_events::SceneKeyEvent,
+        ) -> crate::native_events::NativeEventReply,
+        focus: &mut impl FnMut(crate::scene_events::SceneFocusEvent),
+        activation: &mut impl FnMut(crate::scene_events::SceneActivationEvent),
     ) -> bool {
         self.invalidate_frame();
         use blitz_traits::events::UiEvent;
@@ -823,14 +906,38 @@ impl NativeScene {
         } else {
             UiEvent::KeyUp(key)
         };
+        let mut prevented = false;
+        let mut observe = |event: crate::scene_events::SceneKeyEvent| {
+            let reply = sink(event);
+            prevented |= reply.prevent_default;
+            reply
+        };
         let handler = crate::scene_events::SceneKeyHandler {
             version,
             node,
             element,
-            sink,
+            sink: &mut observe,
         };
         blitz_dom::EventDriver::new(document, handler).handle_ui_event(event);
         document.resolve(0.0);
+        let activates = before == Some(node)
+            && input.pressed
+            && !input.repeat
+            && !input.composing
+            && !input.modifiers.control
+            && !input.modifiers.alt
+            && !input.modifiers.meta
+            && !prevented
+            && self.semantics.get(&node).is_some_and(|s| {
+                !s.disabled && crate::scene_events::role_activates_on_key(s.role, input.key)
+            })
+            && self.source_visible(node);
+        if activates {
+            activation(crate::scene_events::SceneActivationEvent {
+                scene_version: version,
+                node,
+            });
+        }
         let after = self.focused_node(caller, version);
         crate::scene_events::notify_focus_transition(version, before, after, focus);
         true
@@ -928,11 +1035,10 @@ impl NativeScene {
         {
             return false;
         }
-        let can_activate = self
-            .semantics
-            .get(&id)
-            .is_some_and(|s| s.role == Role::Button && !s.disabled)
-            && self.source_visible(id);
+        let can_activate =
+            self.semantics.get(&id).is_some_and(|s| {
+                crate::scene_events::role_activates_on_click(s.role) && !s.disabled
+            }) && self.source_visible(id);
         if !crate::native_semantics::accepts_activation(self.scene_version, version, can_activate) {
             return false;
         }
@@ -1353,8 +1459,9 @@ impl NativeScene {
                 disabled: semantics.disabled,
                 bounds: self.node_bounds_from_host(caller, version, id),
                 focused: focused == Some(id),
+                // The kernel's `is_button` input is "activatable by role" since E12.
                 actions: access_actions(
-                    semantics.role == Role::Button,
+                    crate::scene_events::role_activates_on_click(semantics.role),
                     semantics.focusable,
                     semantics.disabled,
                 ),
@@ -2243,6 +2350,10 @@ impl RestoreCandidate<NodeId, Viewport, blitz_dom::util::Point<f64>, (f32, f32),
     }
 }
 
+fn pressed_primary(input: &crate::scene_events::ScenePointerInput) -> bool {
+    input.primary_pressed
+}
+
 // BEGIN VERIFIED SCENE WORK CAPACITY KERNEL
 /// Candidate admission count against the host node limit (`usize::MAX` when unlimited); exact
 /// and overflow-free. Not an allocator bound for text, fonts or upstream scratch.
@@ -3057,7 +3168,7 @@ mod tests {
         let mut native = NativeScene::from_scene(10, &scene, &bytes, 320, 200).unwrap();
         let mut notifications = Vec::new();
         let version = scene.version();
-        // Pinned Blitz does not focus a generic button on Down; Framework requests focus explicitly.
+        // Framework may request focus explicitly; a later press inside it keeps it (no event).
         assert!(
             native.focus_from_host(10, version, NodeId(2), &mut |e| notifications.push((
                 e.scene_version,
@@ -3082,6 +3193,28 @@ mod tests {
             PointerAction::Up,
             12.0,
             12.0,
+            false,
+            &mut |_| NativeEventReply::default(),
+            &mut |_| panic!("a click inside the focused button keeps its focus")
+        ));
+        assert_eq!(notifications, vec![(version, NodeId(2), true)]);
+        // A press outside any focusable control blurs it, as in a browser.
+        assert!(native.pointer_with_focus_events_from_host(
+            10,
+            version,
+            PointerAction::Down,
+            300.0,
+            190.0,
+            true,
+            &mut |_| NativeEventReply::default(),
+            &mut |e| notifications.push((e.scene_version, e.node, e.focused))
+        ));
+        assert!(native.pointer_with_focus_events_from_host(
+            10,
+            version,
+            PointerAction::Up,
+            300.0,
+            190.0,
             false,
             &mut |_| NativeEventReply::default(),
             &mut |e| notifications.push((e.scene_version, e.node, e.focused))

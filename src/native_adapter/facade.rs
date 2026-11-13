@@ -11,7 +11,7 @@ pub use native_keys::{HostKeyInput,KeyLocation,NativeKeyEvent as CommandKeyEvent
 pub use native_events::{NativeFocusEvent as TextFocusEvent,NativePointerEvent as TextPointerEvent,NativeActivationEvent as TextActivationEvent,ViewPart as TextPart};
 pub use jasper_ui_engine::input::Modifiers;
 pub use native_events::NativeEventReply as EventReply;
-pub use scene_events::{ScenePointerInput,SceneKeyEvent,SceneEvent,SceneEventKind,SceneSemanticsNode,SceneSemanticsSnapshot,SceneActivationEvent,SceneFocusEvent};
+pub use scene_events::{role_activates_on_click,role_activates_on_key,ScenePointerInput,SceneKeyEvent,SceneEvent,SceneEventKind,SceneSemanticsNode,SceneSemanticsSnapshot,SceneActivationEvent,SceneFocusEvent};
 pub use crate::render_host::{HostRenderError,HostRenderer};
 pub use crate::surface_lifecycle::{SurfaceLifecycleError,SurfaceState,SurfaceStatus};
 
@@ -657,6 +657,10 @@ impl SceneHostView {
     pub fn accessibility_tree(&self,owner:u64,version:u64)->Option<AccessibilityTree> {
         self.inner.accessibility_tree_from_host(owner,version)
     }
+    /// Semantic activation of an enabled, visible node whose role `role_activates_on_click`
+    /// (Button, Checkbox, Radio, Switch, Link, MenuItem, ListItem).
+    /// 对角色满足 `role_activates_on_click`（Button、Checkbox、Radio、Switch、Link、MenuItem、ListItem）
+    /// 的已启用可见节点做语义激活。
     pub fn activate(&self,owner:u64,version:u64,node:NodeId,sink:&mut impl FnMut(SceneActivationEvent))->bool {
         self.inner.activate_from_host(owner,version,node,sink)
     }
@@ -673,11 +677,29 @@ impl SceneHostView {
         crate::access_kit::route_action(self,owner,version,request,focus,activation)
     }
     /// Command key to native scene focus; text-service commits use the display client.
+    /// Reports no activation; use `key_with_activation` for role keyboard activation.
     pub fn key(&mut self,owner:u64,version:u64,input:&HostKeyInput<'_>,
         sink:&mut impl FnMut(SceneKeyEvent)->EventReply,focus:&mut impl FnMut(SceneFocusEvent))->bool {
         self.inner.key_from_host(owner,version,input,sink,focus)
     }
+    /// `key` plus engine keyboard activation: Enter activates a focused Button/Link/MenuItem,
+    /// Space a focused Button/Checkbox/Radio/Switch/MenuItem/ListItem (`role_activates_on_key`),
+    /// on a non-repeat press without ctrl/alt/meta whose default the key sink did not prevent;
+    /// disabled or hidden nodes never activate. Activation follows the key event.
+    /// `key` 加引擎键盘激活：Enter 激活聚焦的 Button/Link/MenuItem，Space 激活聚焦的 Button/Checkbox/Radio/
+    /// Switch/MenuItem/ListItem（`role_activates_on_key`）；仅限非重复、无 ctrl/alt/meta、键事件未阻止默认行为
+    /// 的按下；禁用或隐藏节点从不激活。激活在键事件之后报告。
+    pub fn key_with_activation(&mut self,owner:u64,version:u64,input:&HostKeyInput<'_>,
+        sink:&mut impl FnMut(SceneKeyEvent)->EventReply,focus:&mut impl FnMut(SceneFocusEvent),
+        activation:&mut impl FnMut(SceneActivationEvent))->bool {
+        self.inner.key_with_activation_from_host(owner,version,input,sink,focus,activation)
+    }
     /// Routed mouse sample; platform capture ownership/ACK remains outside this adapter.
+    /// A completed primary click (press and release inside the same control) on an enabled
+    /// `role_activates_on_click` control yields one `SceneEventKind::Activate`; a primary press
+    /// whose default is not prevented focuses the nearest focus-eligible ancestor (reported to `focus`).
+    /// 完成的主键点击（按下与抬起在同一控件内）作用于已启用的 `role_activates_on_click` 控件时给出一次
+    /// `SceneEventKind::Activate`；未阻止默认行为的主键按下聚焦最近的可聚焦祖先（经 `focus` 报告）。
     pub fn pointer(&mut self,owner:u64,version:u64,phase:PointerAction,x:f32,y:f32,pressed:bool,
         events:&mut impl FnMut(SceneEvent)->EventReply,focus:&mut impl FnMut(SceneFocusEvent))->bool {
         self.inner.pointer_with_focus_events_from_host(owner,version,phase,x,y,pressed,events,focus)
