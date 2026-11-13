@@ -99,3 +99,66 @@ fn gpu_paints_extended_styles_like_cpu() {
     assert!(dark_row(&cpu), "CPU underline");
     assert!(dark_row(&frame), "GPU underline");
 }
+
+/// E7/E8 on the GPU path: a translated, outlined box and a mid-transition frame match the CPU.
+/// GPU 路径上的 E7/E8：平移且带外框的盒子与过渡中间帧与 CPU 一致。
+#[test]
+fn gpu_paints_transforms_and_transition_frames_like_cpu() {
+    use jasper_ui_engine::scene::ScenePatch;
+    use jasper_ui_engine::style::{AnimatedProperties, Easing, Transform2D, Transition};
+    let rule = Transition::new(AnimatedProperties::OPACITY, 100.0, Easing::LINEAR);
+    let boxed = |opacity: f32| {
+        Style::default()
+            .size(Length::Px(40.0), Length::Px(40.0))
+            .background(Color::rgb(0, 0, 255))
+            .outline(Some(Outline {
+                width: 2.0,
+                offset: 2.0,
+                color: Color::rgb(255, 0, 0),
+            }))
+            .transform(Transform2D::translate(60.0, 0.0))
+            .opacity(opacity)
+            .transition(rule)
+    };
+    let source = Scene::new(
+        Node::container(NodeId(1))
+            .with_style(
+                Style::default()
+                    .size(Length::Px(W as f32), Length::Px(H as f32))
+                    .padding(Edges::all(20.0))
+                    .background(Color::WHITE),
+            )
+            .child(Node::container(NodeId(2)).with_style(boxed(1.0))),
+    );
+    let mut gpu = GpuRenderer::new_headless().expect("a wgpu adapter is required for GPU acceptance");
+    let mut gpu_engine = Engine::with_fonts(OWNER, &source, &[&font()], W, H).unwrap();
+    let mut cpu_engine = Engine::with_fonts(OWNER, &source, &[&font()], W, H).unwrap();
+    let mut v = source.version();
+    for engine in [&mut gpu_engine, &mut cpu_engine] {
+        engine.animate(OWNER, 0.0).unwrap();
+        engine
+            .try_apply(
+                OWNER,
+                v,
+                v + 1,
+                &[ScenePatch::UpdateStyle {
+                    id: NodeId(2),
+                    style: boxed(0.0),
+                }],
+            )
+            .unwrap();
+        engine.animate(OWNER, 0.0).unwrap();
+        engine.animate(OWNER, 50.0).unwrap();
+    }
+    v += 1;
+    let frame = gpu_engine.render_gpu(OWNER, v, &mut gpu, 1 << 24).expect("gpu frame");
+    let mut cpu = vec![0u8; (W * H * 4) as usize];
+    assert!(cpu_engine.render_to_surface(OWNER, v, &mut cpu, (W * 4) as usize, 1 << 24));
+    let white = [255, 255, 255, 255];
+    assert!(near(px(&frame, 100, 40), [127, 127, 255, 255]), "half-faded moved box");
+    assert!(near(px(&frame, 77, 40), [255, 127, 127, 255]), "half-faded moved outline");
+    assert!(near(px(&frame, 40, 40), white), "layout place is empty");
+    for (x, y) in [(100, 40), (77, 40), (40, 40), (17, 40), (123, 40)] {
+        assert!(near(px(&frame, x, y), px(&cpu, x, y)), "({x},{y}) GPU vs CPU");
+    }
+}
