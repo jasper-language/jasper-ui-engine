@@ -10,9 +10,17 @@
 
 Framework 产生 `native::SceneUpdate { expected_version, next_version, patches }`；嵌入宿主单独提供归属身份，调用 `Engine::apply_update`。补丁同步借用，拒绝不消耗版本；不承诺第三方 panic 的事务回滚。应用侧只使用自有声明和事件值，宿主侧提供字体字节、逻辑/物理尺寸、DPI 和呈现缓冲。
 
-除兼容的 bool `apply/apply_update` 外，`SceneHostView::try_apply/try_apply_update -> Result<(), SceneUpdateError>` 明确区分：`OwnerMismatch`、`Closed`、`EmptyFrame`、`CapacityExceeded`、带 expected/current 的 `StaleVersion`、带 expected/next 的 `InvalidSuccessor`、来源场景拒绝、原生候选构造拒绝。错误不携带 Blitz 类型或补丁载荷；bool 方法等价于结构化结果的 `is_ok()`。上述分类器已完成限定六阶段验收，但整个整帧事务证明仍待完成。
+除兼容的 bool `apply/apply_update` 外，`SceneHostView::try_apply/try_apply_update -> Result<(), SceneUpdateError>` 明确区分：`OwnerMismatch`、`Closed`、`EmptyFrame`、带 expected/current 的 `StaleVersion`、带 expected/next 的 `InvalidSuccessor`、来源场景拒绝、原生候选构造拒绝，以及宿主额度拒绝 `NodeQuotaExceeded{limit, required}` / `TextQuotaExceeded{limit, required}`。错误不携带 Blitz 类型或补丁载荷；bool 方法等价于结构化结果的 `is_ok()`。上述分类器的旧版已完成限定六阶段验收；2026-11-12 起（E1）去掉固定 4096 上限后的新版重证暂缓，见 [appfw-deferred-verification.md](appfw-deferred-verification.md)。整个整帧事务证明仍待完成。
 
-除兼容的 bool `TextDisplayView::update` 外，`try_update -> Result<(), ComponentUpdateError>` 在组件值变更前分类完整借用帧，明确区分归属/上下文不匹配、关闭、空帧、4096 项容量、带 expected/current 的过期序号、序号耗尽、当前视图不支持的更新和原生映射拒绝。错误不携带 Blitz 类型或更新载荷；bool 方法等价于结构化结果的 `is_ok()`。准入分类器已完成限定六阶段验收，逐值原生 setter、resolve、回调 panic 回滚和整帧组合证明仍待完成。
+**无固定规模上限（E1，2026-11-12 用户裁决）**：单视图节点数与每帧操作数都没有上限（至少 1 个操作）。整帧在分离的源副本与原生候选上应用后整体换入，任意大小都是原子的（全应用或全不应用），调用方不必切帧。规模只受宿主配置的 `SceneQuota { max_nodes, max_text_bytes }`（默认 `None` = 无上限）约束，经 `try_apply_within` / `HostRenderer::try_apply_within` 生效；超额显式返回上述两种错误（文案含额度与所需量），不消耗版本。额度计量的是引擎可精确计数的源节点数与文字/语义字符串 UTF-8 字节数，不是布局、字体或渲染分配的上界。
+
+**按角色激活（E12）**：引擎统一产出激活。指针：按下与抬起在同一控件内的主键点击，对 `role_activates_on_click` 的角色（Button、Checkbox、Radio、Switch、Link、MenuItem、ListItem）给出 `SceneEventKind::Activate`；键盘：`key_with_activation` 对聚焦控件按 `role_activates_on_key`（Enter：Button/Link/MenuItem；Space：Button/Checkbox/Radio/Switch/MenuItem/ListItem）报告 `SceneActivationEvent`；非重复、无 ctrl/alt/meta、键事件未阻止默认时才激活。禁用或隐藏节点从不激活。原 `key` 不报告激活。`Engine::activate` 与无障碍树的 activate 动作用同一角色表。未阻止默认的主键按下聚焦最近的可聚焦祖先，在焦点控件内完成的点击保持焦点，点击可聚焦控件之外失焦（与浏览器一致）。
+
+**新角色（E11）**：`Role::Heading(HeadingLevel)`（1..=6，`HeadingLevel::new` 构造）、`Status`、`Live(LivePoliteness::{Polite, Assertive})`、`Alert`、`Form`；AccessKit 映射为 Heading（level，1 起）/Status（live polite）/Region（live 按参数）/Alert（live assertive）/Form。
+
+**宿主接口（E13）**：`HostRenderer::node_bounds`、`activate`、`key_with_activation` 经 Surface 代数准入后转发。
+
+除兼容的 bool `TextDisplayView::update` 外，`try_update -> Result<(), ComponentUpdateError>` 在组件值变更前分类完整借用帧，明确区分归属/上下文不匹配、关闭、空帧（无更新数上限，E1 起去掉 4096 项容量）、带 expected/current 的过期序号、序号耗尽、当前视图不支持的更新和原生映射拒绝。错误不携带 Blitz 类型或更新载荷；bool 方法等价于结构化结果的 `is_ok()`。准入分类器已完成限定六阶段验收，逐值原生 setter、resolve、回调 panic 回滚和整帧组合证明仍待完成。
 
 原生 CPU 入口 `Engine::render_to_backend` 在归属/版本/存活/预算准入后，复用原生绘制并调用既有 `RenderBackend::submit_rgba8`、成功后才调用 `present`。默认后端明确返回 Unsupported；HeadlessBackend 接管已经绘制的像素，不重放 PaintOp。字节按上游输出原样保存，不提供宿主 alpha/合成转换或外部呈现回滚；旧 UiBatch 序列化格式不变。此新增编排与包装尚未完成有序证明验收。
 
