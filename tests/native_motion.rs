@@ -515,3 +515,48 @@ fn removed_node_drops_its_transition_and_inserted_nodes_do_not_animate() {
     assert_eq!(view.engine.animating(OWNER), Some(false));
     assert_eq!(px(&view.frame(), 40, 40), RED);
 }
+
+#[test]
+fn size_transition_relayouts_on_presented_values() {
+    let rule = linear(AnimatedProperties::WIDTH, 100.0);
+    let node = |w: f32| {
+        Node::container(NodeId(2)).with_style(
+            base()
+                .size(Length::Px(w), Length::Px(40.0))
+                .transition(rule),
+        )
+    };
+    let scene = Scene::new(root().child(node(40.0)));
+    let mut engine = Engine::with_fonts(OWNER, &scene, &[&font()], W, H).unwrap();
+    let mut version = scene.version();
+    engine.animate(OWNER, 0.0).unwrap();
+    engine
+        .try_apply(
+            OWNER,
+            version,
+            version + 1,
+            &[ScenePatch::UpdateStyle {
+                id: NodeId(2),
+                style: node(80.0).style,
+            }],
+        )
+        .unwrap();
+    version += 1;
+    engine.animate(OWNER, 0.0).unwrap();
+    engine.animate(OWNER, 50.0).unwrap();
+    // node_bounds and paint follow the presented (laid-out) width: 60 at half time.
+    assert_eq!(
+        engine.node_bounds(OWNER, version, NodeId(2)),
+        Some(Rect::new(20.0, 20.0, 60.0, 40.0))
+    );
+    let mut frame = vec![0u8; (W * H * 4) as usize];
+    assert!(engine.render_to_surface(OWNER, version, &mut frame, (W * 4) as usize, 1 << 24));
+    assert_eq!(px(&frame, 78, 40), BLUE);
+    assert_eq!(px(&frame, 82, 40), BG);
+    engine.animate(OWNER, 100.0).unwrap();
+    assert_eq!(
+        engine.node_bounds(OWNER, version, NodeId(2)),
+        Some(Rect::new(20.0, 20.0, 80.0, 40.0))
+    );
+    assert_eq!(engine.animating(OWNER), Some(false));
+}
