@@ -26,6 +26,7 @@ pub use jasper_ui_engine::composition_identity::UiCompositionToken;
 #[cfg(feature="cpu-pending")]
 pub use crate::frame_schedule::{FrameDamage,FramePace};
 pub use crate::access_tree::{AccessActions,AccessibilityNode,AccessibilityTree,AccessibilityUpdate};
+pub use jasper_ui_engine::motion::AnimationTick;
 /// The pinned AccessKit crate the bridge emits and accepts; hosts build their platform adapter on it.
 /// 桥所输出与接受的固定 AccessKit crate；宿主在其上构建平台适配器。
 #[cfg(feature="accesskit-pending")]
@@ -75,12 +76,14 @@ pub const fn platform_bridge_capabilities()->PlatformBridgeCapabilities {
     }
 }
 
-/// Extended style capabilities (E2 corner radius, E3 shadow, E4 opacity, E9 border sides /
-/// outline / text decoration, E10 hit slop) this native engine implements, with the JUI 2
-/// `xstyle` keys each covers. A host lists the names in its `hello`; `Style::apply_xstyle`
-/// parses the values. Painting needs a renderer feature (`cpu-pending` / `gpu-pending`).
-/// 本原生引擎实现的扩展样式能力（E2 圆角、E3 阴影、E4 透明度、E9 单侧边框/外框/文字装饰、E10 命中扩展）及各自覆盖的
-/// JUI 2 `xstyle` 键。宿主在 `hello` 中列出这些名称；`Style::apply_xstyle` 解析取值。绘制需要渲染特性。
+/// Extended style capabilities (E2 corner radius, E3 shadow, E4 opacity, E7 transition, E8
+/// transform, E9 border sides / outline / text decoration, E10 hit slop) this native engine
+/// implements, with the JUI 2 `xstyle` keys each covers. A host lists the names in its `hello`;
+/// `Style::apply_xstyle` parses the values. Painting needs a renderer feature (`cpu-pending` /
+/// `gpu-pending`); `transition` also needs the host to drive `SceneHostView::animate`.
+/// 本原生引擎实现的扩展样式能力（E2 圆角、E3 阴影、E4 透明度、E7 过渡、E8 变换、E9 单侧边框/外框/文字装饰、E10 命中扩展）
+/// 及各自覆盖的 JUI 2 `xstyle` 键。宿主在 `hello` 中列出这些名称；`Style::apply_xstyle` 解析取值。绘制需要渲染特性；
+/// `transition` 另需宿主驱动 `SceneHostView::animate`。
 pub const fn style_capabilities()->&'static [crate::style::StyleCapability] {
     crate::style::EXTENDED_STYLE_CAPABILITIES
 }
@@ -807,12 +810,31 @@ impl SceneHostView {
         ->Result<(),jasper_ui_engine::backend::BackendError> {
         self.inner.render_to_backend(owner,version,backend,budget)
     }
-    /// On-demand scheduling: Some(true) while a possible visible change is unpainted; hosts
-    /// skip rendering on Some(false). A repeated render of an unchanged view reuses the last
+    /// On-demand scheduling: Some(true) while a possible visible change is unpainted or an E7
+    /// transition is running (call `animate` first); hosts skip rendering on Some(false). A repeated render of an unchanged view reuses the last
     /// painted frame. None for a foreign owner or a closed view.
     /// 按需调度：存在尚未绘制的可能可见变化时为 Some(true)，宿主见 Some(false) 可跳过渲染；
     /// 未变化视图的重复渲染复用上一帧。非归属方或已关闭视图返回 None。
     pub fn needs_frame(&self,owner:u64)->Option<bool> {self.inner.needs_frame(owner)}
+    /// E7 transitions: advance to host clock time `now_ms` (milliseconds, monotone; an earlier
+    /// time counts as the last one) and update presented values; call once per refresh tick
+    /// before rendering while `animating` (or `needs_frame`) holds. The first call attaches the
+    /// clock — until then every transition is immediate. The scene version is never consumed;
+    /// pointer hit testing and `node_bounds` follow the presented values. None for a foreign
+    /// owner, a closed view or a non-finite time.
+    /// E7 过渡：推进到宿主时钟 `now_ms`（毫秒，单调；更早的时间按上次处理）并更新呈现值；`animating`（或
+    /// `needs_frame`）为真时，每个刷新节拍在绘制前调用一次。首次调用即接上时钟——此前所有过渡立即生效。从不消耗
+    /// 场景版本；指针命中与 `node_bounds` 按呈现值。非归属方、已关闭视图或时间非有限值时为 None。
+    pub fn animate(&mut self,owner:u64,now_ms:f64)->Option<AnimationTick> {self.inner.animate_from_host(owner,now_ms)}
+    /// E7: some transition is running. None for a foreign owner or a closed view.
+    /// E7：有过渡在运行。非归属方或已关闭视图为 None。
+    pub fn animating(&self,owner:u64)->Option<bool> {self.inner.animating(owner)}
+    /// E7: host reduce-motion environment. On finishes running transitions at once; afterwards
+    /// size/transform changes are immediate and other properties use their rule's `reduce=`
+    /// timing (immediate without one). False for a foreign owner or a closed view.
+    /// E7：宿主「减少动态」环境。开启时运行中的过渡立即结束；之后尺寸/变换变化立即生效，其他属性用规则的
+    /// `reduce=` 替代曲线（没有则立即）。非归属方或已关闭视图为 false。
+    pub fn set_reduce_motion(&mut self,owner:u64,on:bool)->bool {self.inner.set_reduce_motion_from_host(owner,on)}
     /// Force the next render to repaint, e.g. after the host lost its presentation surface.
     /// 强制下一次渲染重绘，如宿主呈现表面丢失之后。
     pub fn invalidate_frame(&mut self,owner:u64)->bool {self.inner.invalidate_frame_from_host(owner)}

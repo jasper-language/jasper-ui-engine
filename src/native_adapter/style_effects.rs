@@ -205,7 +205,10 @@ mod tests {
         };
         let (outer, outer_r, inner) =
             outline_ring(B, CornerRadii::new(4.0, 0.0, 0.0, 0.0), outline).unwrap();
-        assert_eq!((outer.x, outer.y, outer.width, outer.height), (5.0, 15.0, 110.0, 50.0));
+        assert_eq!(
+            (outer.x, outer.y, outer.width, outer.height),
+            (5.0, 15.0, 110.0, 50.0)
+        );
         assert_eq!(outer_r, [9.0, 0.0, 0.0, 0.0]);
         let (inner, inner_r) = inner.unwrap();
         assert_eq!((inner.x, inner.width), (7.0, 106.0));
@@ -223,7 +226,15 @@ mod tests {
         assert_eq!(outer.x, 12.0);
         assert_eq!(inner.unwrap().0.x, 14.0);
         // Zero width or transparent: nothing.
-        assert!(outline_ring(B, CornerRadii::ZERO, Outline { width: 0.0, ..outline }).is_none());
+        assert!(outline_ring(
+            B,
+            CornerRadii::ZERO,
+            Outline {
+                width: 0.0,
+                ..outline
+            }
+        )
+        .is_none());
         assert!(outline_ring(
             B,
             CornerRadii::ZERO,

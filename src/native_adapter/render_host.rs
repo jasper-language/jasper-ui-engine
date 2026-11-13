@@ -386,6 +386,33 @@ impl HostRenderer {
         self.inner.node_bounds(owner, version, node)
     }
 
+    /// E7 transition clock through the live surface generation; see `Engine::animate`.
+    /// 经当前活动 Surface 代数推进 E7 过渡时钟；见 `Engine::animate`。
+    pub fn animate(
+        &mut self,
+        owner: u64,
+        generation: u64,
+        now_ms: f64,
+    ) -> Option<crate::motion::AnimationTick> {
+        if !self.surface.render_allowed(owner, generation) {
+            return None;
+        }
+        self.inner.animate(owner, now_ms)
+    }
+
+    /// E7: some transition is running; see `Engine::animating`.
+    /// E7：有过渡在运行；见 `Engine::animating`。
+    pub fn animating(&self, owner: u64) -> Option<bool> {
+        self.inner.animating(owner)
+    }
+
+    /// E7 host reduce-motion environment; see `Engine::set_reduce_motion`. Independent of the
+    /// surface lifecycle (it is a scene setting).
+    /// E7 宿主「减少动态」环境；见 `Engine::set_reduce_motion`。与 Surface 生命周期无关（属场景设置）。
+    pub fn set_reduce_motion(&mut self, owner: u64, on: bool) -> bool {
+        self.inner.set_reduce_motion(owner, on)
+    }
+
     /// Semantic activation through the live surface generation; see `Engine::activate`.
     /// 经当前活动 Surface 代数做语义激活；见 `Engine::activate`。
     pub fn activate(

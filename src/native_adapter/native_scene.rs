@@ -256,6 +256,7 @@ pub(crate) struct NativeScene {
     frame_cache: Option<(u32, u32, Vec<u8>)>,
     families: BTreeSet<String>,
     last_pointer: Option<(f32, f32)>,
+    motion: jasper_ui_engine::motion::MotionState,
 }
 // END VERIFIED NATIVE SCENE TYPE
 impl NativeScene {
@@ -361,6 +362,7 @@ impl NativeScene {
             frame_cache: None,
             families,
             last_pointer: None,
+            motion: jasper_ui_engine::motion::MotionState::default(),
         };
         if !view.append_prepared_subtree(&scene.root, None, body, prepared) {
             return None;
@@ -613,6 +615,29 @@ impl NativeScene {
                 frame_cache: self.frame_cache.clone(),
             },
         )?;
+        // E7: carry the clock and running transitions; start new ones for restyled nodes whose
+        // new style covers the changed property. No transition anywhere: no work.
+        let restyled: BTreeSet<NodeId> = patches
+            .iter()
+            .filter_map(|patch| match patch {
+                ScenePatch::UpdateStyle { id, style } if !style.transitions.is_empty() => Some(*id),
+                _ => None,
+            })
+            .collect();
+        let mut motion = self.motion.clone();
+        if motion.running() || !restyled.is_empty() {
+            motion.retarget(
+                |id| self.source.find(id).map(|n| &n.style),
+                |id| candidate.source.find(id).map(|n| &n.style),
+                &restyled,
+                |id| self.frame_retires_node(id, patches),
+            );
+        }
+        candidate.motion = motion;
+        if candidate.motion.running() {
+            let animated: Vec<NodeId> = candidate.motion.animated_nodes().collect();
+            candidate.write_presented(&animated);
+        }
         Some(candidate)
     }
     /// A frame that removes a node also retires its native press/focus identity. Reusing
@@ -1174,32 +1199,96 @@ impl NativeScene {
         document.resolve(0.0);
         true
     }
-    /// Opacity product of the node and its ancestors, and the intersection of the padding boxes
-    /// of the clipping ones (the node itself included when `own_clip`). None: clipped away.
+    /// Presented opacity product of the node and its ancestors, and the padding boxes of the
+    /// clipping ones (the node itself included when `own_clip`). Without E8 transforms on the
+    /// chain the boxes are intersected into one; with them each box keeps its own chain matrix.
+    /// None: clipped away.
     #[cfg(feature = "cpu-pending")]
-    fn paint_context(
-        &self,
-        id: NodeId,
-        own_clip: bool,
-    ) -> Option<(f32, Option<crate::style_effects::LogicalBox>)> {
+    fn paint_context(&self, id: NodeId, own_clip: bool) -> Option<(f32, Vec<OverlayClip>)> {
         let mut alpha = 1.0;
-        let mut clip: Option<crate::style_effects::LogicalBox> = None;
+        let mut clips: Vec<OverlayClip> = Vec::new();
         let mut chain = vec![id];
         chain.extend(self.source_ancestors(id));
         for (index, node) in chain.into_iter().enumerate() {
-            let Some(source) = self.source.find(node) else {
+            let Some(style) = self.style_of(node) else {
                 continue;
             };
-            alpha *= source.style.opacity;
-            if source.style.overflow != Overflow::Visible && (index > 0 || own_clip) {
+            alpha *= style.opacity;
+            if style.overflow != Overflow::Visible && (index > 0 || own_clip) {
                 let b = self.padding_box(node)?;
-                clip = Some(match clip {
-                    None => b,
-                    Some(c) => c.intersect(&b)?,
-                });
+                let matrix = self.chain_matrix(node);
+                match clips.last_mut() {
+                    Some(last) if matrix.is_none() && last.matrix.is_none() => {
+                        last.rect = last.rect.intersect(&b)?;
+                    }
+                    _ => clips.push(OverlayClip { rect: b, matrix }),
+                }
             }
         }
-        Some((alpha, clip))
+        Some((alpha, clips))
+    }
+    /// Target style of a source node with its running transition values (E7): what is painted.
+    /// 源节点的目标样式叠加运行中过渡的当前值（E7）：即实际绘制的样式。
+    fn style_of(&self, id: NodeId) -> Option<std::borrow::Cow<'_, Style>> {
+        let node = self.source.find(id)?;
+        Some(self.presented_of(node))
+    }
+    fn presented_of<'a>(&'a self, node: &'a Node) -> std::borrow::Cow<'a, Style> {
+        match self.motion.presented(node.id, &node.style) {
+            Some(style) => std::borrow::Cow::Owned(style),
+            None => std::borrow::Cow::Borrowed(&node.style),
+        }
+    }
+    /// E8: presented transform of a node and every ancestor composed into one view-local
+    /// logical affine (`[a, b, c, d, e, f]`, local layout coordinates → view). None when the whole
+    /// chain is untransformed.
+    /// E8：节点及其所有祖先的呈现变换合成的视图局部逻辑仿射（局部布局坐标 → 视图）；整条链都无变换时为 None。
+    fn chain_matrix(&self, id: NodeId) -> Option<[f64; 6]> {
+        let mut acc: Option<[f64; 6]> = None;
+        for node in std::iter::once(id).chain(self.source_ancestors(id)) {
+            let Some(style) = self.style_of(node) else {
+                continue;
+            };
+            if style.transform.is_identity() {
+                continue;
+            }
+            let Some(b) = self.layout_box(node) else {
+                continue;
+            };
+            let m = style.transform.matrix(
+                f64::from(b.x),
+                f64::from(b.y),
+                f64::from(b.width),
+                f64::from(b.height),
+            );
+            acc = Some(match acc {
+                None => m,
+                Some(inner) => compose(m, inner),
+            });
+        }
+        acc
+    }
+    /// A view point in `id`'s untransformed layout coordinates (identity without transforms;
+    /// None for a singular transform).
+    /// 视图点在 `id` 未变换布局坐标中的位置（无变换时不变；奇异变换为 None）。
+    fn to_local(&self, id: NodeId, x: f32, y: f32) -> Option<(f32, f32)> {
+        match self.chain_matrix(id) {
+            None => Some((x, y)),
+            Some(m) => {
+                let (lx, ly) = apply(invert(m)?, f64::from(x), f64::from(y));
+                let out = (lx as f32, ly as f32);
+                (out.0.is_finite() && out.1.is_finite()).then_some(out)
+            }
+        }
+    }
+    fn to_view(&self, id: NodeId, x: f32, y: f32) -> (f32, f32) {
+        match self.chain_matrix(id) {
+            None => (x, y),
+            Some(m) => {
+                let (vx, vy) = apply(m, f64::from(x), f64::from(y));
+                (vx as f32, vy as f32)
+            }
+        }
     }
     /// Inline layout painted for a source text node and its content origin in view-local logical
     /// px: the inline root must be the element or the anonymous box directly inside it.
@@ -1233,9 +1322,9 @@ impl NativeScene {
     fn text_decorations(&self, id: NodeId, out: &mut Vec<Overlay>) {
         let mut decorating = Vec::new();
         for node in std::iter::once(id).chain(self.source_ancestors(id)) {
-            if let Some(source) = self.source.find(node) {
-                if source.style.text_decoration != TextDecoration::NONE {
-                    decorating.push((source.style.text_decoration, source.style.color));
+            if let Some(style) = self.style_of(node) {
+                if style.text_decoration != TextDecoration::NONE {
+                    decorating.push((style.text_decoration, style.color));
                 }
             }
         }
@@ -1245,9 +1334,10 @@ impl NativeScene {
         let Some((layout, origin_x, origin_y)) = self.painted_text_layout(id) else {
             return;
         };
-        let Some((alpha, clip)) = self.paint_context(id, true) else {
+        let Some((alpha, clips)) = self.paint_context(id, true) else {
             return;
         };
+        let matrix = self.chain_matrix(id);
         let scale = layout.layout.scale() as f64;
         if !(scale > 0.0) || !scale.is_finite() {
             return;
@@ -1301,7 +1391,8 @@ impl NativeScene {
                         outer_radii: [0.0; 4],
                         inner: None,
                         rgba: [color.r, color.g, color.b, a.clamp(0.0, 255.0) as u8],
-                        clip,
+                        clips: clips.clone(),
+                        matrix,
                     });
                 }
             }
@@ -1368,7 +1459,12 @@ impl NativeScene {
     fn padding_box(&self, id: NodeId) -> Option<crate::style_effects::LogicalBox> {
         let border_box = self.layout_box(id)?;
         let (element, _) = self.nodes.get(&id)?;
-        let border = self.document.as_ref()?.get_node(*element)?.final_layout().border;
+        let border = self
+            .document
+            .as_ref()?
+            .get_node(*element)?
+            .final_layout()
+            .border;
         border_box.outset(-border.top, -border.right, -border.bottom, -border.left)
     }
     fn clips(&self, id: NodeId) -> bool {
@@ -1376,15 +1472,25 @@ impl NativeScene {
             .find(id)
             .is_some_and(|node| node.style.overflow != Overflow::Visible)
     }
-    /// The point lies in a corner of `id` cut away by its radii.
+    /// The view point lies in a corner of `id` cut away by its presented radii.
     fn cut_by(&self, id: NodeId, x: f32, y: f32) -> bool {
-        let Some(node) = self.source.find(id) else {
+        let Some(style) = self.style_of(id) else {
             return false;
         };
-        !node.style.corner_radius.is_zero()
+        let radii = style.corner_radius;
+        !radii.is_zero()
             && self.layout_box(id).is_some_and(|rect| {
-                crate::style_effects::in_cut_corner(rect, node.style.corner_radius, x, y)
+                self.to_local(id, x, y).is_some_and(|(lx, ly)| {
+                    crate::style_effects::in_cut_corner(rect, radii, lx, ly)
+                })
             })
+    }
+    /// The view point lies inside `id`'s (transformed) padding box.
+    fn inside_padding(&self, id: NodeId, x: f32, y: f32) -> bool {
+        self.padding_box(id).is_some_and(|b| {
+            self.to_local(id, x, y)
+                .is_some_and(|(lx, ly)| b.contains(lx, ly))
+        })
     }
     /// Engine-painted overlays in paint order: every text decoration, then every outline ring.
     #[cfg(feature = "cpu-pending")]
@@ -1401,7 +1507,8 @@ impl NativeScene {
             self.text_decorations(node.id, &mut rings);
         }
         for node in preorder {
-            let Some(outline) = node.style.outline else {
+            let style = self.presented_of(node);
+            let Some(outline) = style.outline else {
                 continue;
             };
             if !self.source_displayed(node.id) {
@@ -1410,15 +1517,13 @@ impl NativeScene {
             let Some(border_box) = self.layout_box(node.id) else {
                 continue;
             };
-            let Some((outer, outer_radii, inner)) = crate::style_effects::outline_ring(
-                border_box,
-                node.style.corner_radius,
-                outline,
-            ) else {
+            let Some((outer, outer_radii, inner)) =
+                crate::style_effects::outline_ring(border_box, style.corner_radius, outline)
+            else {
                 continue;
             };
             // The node's own overflow does not clip its outline; ancestors' does.
-            let Some((alpha, clip)) = self.paint_context(node.id, false) else {
+            let Some((alpha, clips)) = self.paint_context(node.id, false) else {
                 continue;
             };
             let a = (f32::from(outline.color.a) * alpha).round();
@@ -1435,7 +1540,8 @@ impl NativeScene {
                     outline.color.b,
                     a.clamp(0.0, 255.0) as u8,
                 ],
-                clip,
+                clips,
+                matrix: self.chain_matrix(node.id),
             });
         }
         rings
@@ -1454,7 +1560,9 @@ impl NativeScene {
         let has_slop = preorder
             .iter()
             .any(|n| n.style.hit_slop != jasper_ui_engine::geometry::Edges::ZERO);
-        let has_radius = preorder.iter().any(|n| !n.style.corner_radius.is_zero());
+        let has_radius = preorder
+            .iter()
+            .any(|n| !self.presented_of(n).corner_radius.is_zero());
         if !has_slop && !has_radius {
             return PointerHitAdjustment::default();
         }
@@ -1471,10 +1579,7 @@ impl NativeScene {
         }
         let limit = self.nodes.len().saturating_mul(4).saturating_add(16);
         let natural = |cx: f32, cy: f32| -> Option<NodeId> {
-            let hit = document.hit(
-                (cx as f64 + scroll.x) as f32,
-                (cy as f64 + scroll.y) as f32,
-            )?;
+            let hit = document.hit((cx as f64 + scroll.x) as f32, (cy as f64 + scroll.y) as f32)?;
             let mut cursor = Some(hit.node_id);
             for _ in 0..limit {
                 let current = cursor?;
@@ -1487,7 +1592,8 @@ impl NativeScene {
         };
         let target = natural(x, y);
         if has_slop {
-            let mut best: Option<(f32, NodeId, crate::style_effects::LogicalBox)> = None;
+            let mut best: Option<(f32, NodeId, crate::style_effects::LogicalBox, (f32, f32))> =
+                None;
             for node in &preorder {
                 let slop = node.style.hit_slop;
                 if slop == jasper_ui_engine::geometry::Edges::ZERO
@@ -1498,36 +1604,37 @@ impl NativeScene {
                 let Some(rect) = self.layout_box(node.id) else {
                     continue;
                 };
-                if rect.contains(x, y)
-                    || !crate::style_effects::slop_box(rect, slop).is_some_and(|b| b.contains(x, y))
+                // E8: slop geometry lives in the node's untransformed layout frame.
+                let Some((lx, ly)) = self.to_local(node.id, x, y) else {
+                    continue;
+                };
+                if rect.contains(lx, ly)
+                    || !crate::style_effects::slop_box(rect, slop)
+                        .is_some_and(|b| b.contains(lx, ly))
                 {
                     continue;
                 }
                 if let Some(target) = target {
-                    if target == node.id
-                        || !source_subtree_contains(&self.parents, node.id, target)
+                    if target == node.id || !source_subtree_contains(&self.parents, node.id, target)
                     {
                         continue;
                     }
                 }
                 if self.source_ancestors(node.id).into_iter().any(|a| {
-                    self.clips(a)
-                        && (!self.padding_box(a).is_some_and(|b| b.contains(x, y))
-                            || self.cut_by(a, x, y))
+                    self.clips(a) && (!self.inside_padding(a, x, y) || self.cut_by(a, x, y))
                 }) {
                     continue;
                 }
-                let distance = rect.distance(x, y);
+                let distance = rect.distance(lx, ly);
                 if best.is_none_or(|(d, ..)| distance <= d) {
-                    best = Some((distance, node.id, rect));
+                    best = Some((distance, node.id, rect, (lx, ly)));
                 }
             }
-            if let Some((_, id, rect)) = best {
-                let (mut sx, mut sy) = rect.clamp_inside(x, y, 0.5);
+            if let Some((_, id, rect, (lx, ly))) = best {
+                let (mut sx, mut sy) = rect.clamp_inside(lx, ly, 0.5);
                 let radii = self
-                    .source
-                    .find(id)
-                    .map(|n| n.style.corner_radius)
+                    .style_of(id)
+                    .map(|s| s.corner_radius)
                     .unwrap_or_default();
                 let (cx, cy) = (rect.x + rect.width / 2.0, rect.y + rect.height / 2.0);
                 let (qx, qy) = (sx, sy);
@@ -1539,7 +1646,9 @@ impl NativeScene {
                     sx = qx + (cx - qx) * t;
                     sy = qy + (cy - qy) * t;
                 }
-                if natural(sx, sy).is_some_and(|hit| source_subtree_contains(&self.parents, hit, id))
+                let (sx, sy) = self.to_view(id, sx, sy);
+                if natural(sx, sy)
+                    .is_some_and(|hit| source_subtree_contains(&self.parents, hit, id))
                 {
                     return PointerHitAdjustment {
                         steer: Some((sx, sy)),
@@ -2064,7 +2173,100 @@ impl NativeScene {
         if caller != self.owner || !self.document.is_open() {
             return None;
         }
-        Some(self.frame_dirty)
+        Some(self.frame_dirty || self.motion.running())
+    }
+    /// E7: advance this view's transitions to host time `now_ms` (milliseconds, monotone) and
+    /// write the presented values into the native document. The first call attaches the clock:
+    /// before it every transition is immediate. Never consumes or changes the scene version.
+    /// E7：把本视图的过渡推进到宿主时间 `now_ms`（毫秒，单调）并把呈现值写入原生文档。首次调用即接上时钟；此前
+    /// 所有过渡立即生效。从不消耗或改变场景版本。
+    pub(crate) fn animate_from_host(
+        &mut self,
+        caller: u64,
+        now_ms: f64,
+    ) -> Option<jasper_ui_engine::motion::AnimationTick> {
+        if caller != self.owner || !self.document.is_open() || !now_ms.is_finite() {
+            return None;
+        }
+        if !self.motion.running() {
+            self.motion.advance(now_ms)?;
+            return Some(Default::default());
+        }
+        let before: Vec<(NodeId, Option<Style>)> = self
+            .motion
+            .animated_nodes()
+            .map(|id| (id, self.style_of(id).map(|s| s.into_owned())))
+            .collect();
+        self.motion.advance(now_ms)?;
+        let changed: Vec<NodeId> = before
+            .into_iter()
+            .filter(|(id, style)| self.style_of(*id).map(|s| s.into_owned()) != *style)
+            .map(|(id, _)| id)
+            .collect();
+        if !changed.is_empty() {
+            self.invalidate_frame();
+            self.write_presented(&changed);
+        }
+        Some(jasper_ui_engine::motion::AnimationTick {
+            changed: !changed.is_empty(),
+            running: self.motion.running(),
+        })
+    }
+    /// E7: host reduce-motion environment (JUI 2 `env reduce-motion on|off`). On: running
+    /// transitions finish at once; later changes of movement properties (size, transform) are
+    /// immediate and others use their rule's reduced timing, or are immediate without one.
+    /// E7：宿主「减少动态」环境（JUI 2 `env reduce-motion on|off`）。开启时运行中的过渡立即结束；之后移动类属性
+    /// （尺寸、变换）的变化立即生效，其余属性用规则的减少动态替代曲线，没有替代则立即生效。
+    pub(crate) fn set_reduce_motion_from_host(&mut self, caller: u64, on: bool) -> bool {
+        if caller != self.owner || !self.document.is_open() {
+            return false;
+        }
+        let finished = self.motion.set_reduce_motion(on);
+        if !finished.is_empty() {
+            self.invalidate_frame();
+            self.write_presented(&finished);
+        }
+        true
+    }
+    /// E7: some transition is running (the host should keep calling `animate` each refresh tick).
+    /// E7：有过渡在运行（宿主应在每个刷新节拍继续调用 `animate`）。
+    pub(crate) fn animating(&self, caller: u64) -> Option<bool> {
+        if caller != self.owner || !self.document.is_open() {
+            return None;
+        }
+        Some(self.motion.running())
+    }
+    /// Write the presented style of `ids` into the native document and re-resolve style and
+    /// layout. A presented style the native projection refuses falls back to the target.
+    /// 把 `ids` 的呈现样式写入原生文档并重新解析样式与布局；原生投影拒绝的呈现样式退回目标值。
+    fn write_presented(&mut self, ids: &[NodeId]) {
+        let root = self.source.root.id;
+        let mut writes = Vec::new();
+        for id in ids {
+            let (Some(node), Some((element, _))) = (self.source.find(*id), self.nodes.get(id))
+            else {
+                continue;
+            };
+            let presented = self.presented_of(node);
+            let Some(properties) = style_properties(&presented, *id == root, &self.families)
+                .or_else(|| style_properties(&node.style, *id == root, &self.families))
+            else {
+                continue;
+            };
+            writes.push((*element, properties));
+        }
+        let Some(document) = self.document.as_mut() else {
+            return;
+        };
+        {
+            let mut tree = document.mutate();
+            for (element, properties) in &writes {
+                for (property, value) in properties {
+                    tree.set_style_property(*element, property, value);
+                }
+            }
+        }
+        document.resolve(0.0);
     }
     /// Host-forced repaint (e.g. lost or replaced presentation surface).
     /// 宿主强制重绘（如呈现表面丢失或更换）。
@@ -2860,7 +3062,54 @@ struct Overlay {
     outer_radii: [f32; 4],
     inner: Option<(crate::style_effects::LogicalBox, [f32; 4])>,
     rgba: [u8; 4],
-    clip: Option<crate::style_effects::LogicalBox>,
+    /// Ancestor overflow clips, outermost last.
+    clips: Vec<OverlayClip>,
+    /// E8 chain matrix of the decorated/outlined node (None: untransformed).
+    matrix: Option<[f64; 6]>,
+}
+
+/// One overlay clip: a padding box in its node's layout frame and that node's chain matrix.
+#[cfg(feature = "cpu-pending")]
+#[derive(Clone, Copy, Debug)]
+struct OverlayClip {
+    rect: crate::style_effects::LogicalBox,
+    matrix: Option<[f64; 6]>,
+}
+
+/// `outer ∘ inner` for `[a, b, c, d, e, f]` affines.
+fn compose(outer: [f64; 6], inner: [f64; 6]) -> [f64; 6] {
+    let [a1, b1, c1, d1, e1, f1] = outer;
+    let [a2, b2, c2, d2, e2, f2] = inner;
+    [
+        a1 * a2 + c1 * b2,
+        b1 * a2 + d1 * b2,
+        a1 * c2 + c1 * d2,
+        b1 * c2 + d1 * d2,
+        a1 * e2 + c1 * f2 + e1,
+        b1 * e2 + d1 * f2 + f1,
+    ]
+}
+
+fn apply(m: [f64; 6], x: f64, y: f64) -> (f64, f64) {
+    (m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5])
+}
+
+/// Inverse affine; None when singular (e.g. scale 0) or not finite.
+fn invert(m: [f64; 6]) -> Option<[f64; 6]> {
+    let [a, b, c, d, e, f] = m;
+    let det = a * d - b * c;
+    if !det.is_finite() || det.abs() < 1e-12 {
+        return None;
+    }
+    let out = [
+        d / det,
+        -b / det,
+        -c / det,
+        a / det,
+        (c * f - d * e) / det,
+        (b * e - a * f) / det,
+    ];
+    out.iter().all(|v| v.is_finite()).then_some(out)
 }
 
 /// Paint overlays after the document: above every node, inside ancestor overflow clips.
@@ -2889,23 +3138,27 @@ fn paint_overlays(scene: &mut impl anyrender::PaintScene, rings: &[Overlay], sca
             ),
         )
     };
+    let with = |matrix: &Option<[f64; 6]>| match matrix {
+        None => transform,
+        Some(m) => transform * Affine::new(*m),
+    };
     for ring in rings {
         let mut path = rounded(&ring.outer, &ring.outer_radii).to_path(0.05);
         if let Some((inner, radii)) = &ring.inner {
             path.extend(rounded(inner, radii).to_path(0.05));
         }
-        if let Some(clip) = &ring.clip {
-            scene.push_clip_layer(peniko::Fill::NonZero, transform, &rect(clip));
+        for clip in ring.clips.iter().rev() {
+            scene.push_clip_layer(peniko::Fill::NonZero, with(&clip.matrix), &rect(&clip.rect));
         }
         let [r, g, b, a] = ring.rgba;
         scene.fill(
             peniko::Fill::EvenOdd,
-            transform,
+            with(&ring.matrix),
             peniko::Color::from_rgba8(r, g, b, a),
             None,
             &path,
         );
-        if ring.clip.is_some() {
+        for _ in &ring.clips {
             scene.pop_layer();
         }
     }
@@ -3070,7 +3323,10 @@ fn style_properties(
 /// E2/E3/E4/E9/E10 到 Blitz CSS 的投影。与基础子集一样，每个节点显式写出全部属性（含默认值）。外框、文字装饰与
 /// 命中扩展不经 CSS：固定版 Blitz 没有 `outline-offset`，且文字装饰只在同一行内格式化上下文内传播（不从 flex/块
 /// 祖先传下），因此二者由引擎在文档之后绘制（`paint_overlays`）；命中扩展由指针路由处理。
-fn extended_style_properties(style: &Style, values: &mut Vec<(&'static str, String)>) -> Option<()> {
+fn extended_style_properties(
+    style: &Style,
+    values: &mut Vec<(&'static str, String)>,
+) -> Option<()> {
     use jasper_ui_engine::style::Side;
     if !style.extended_style_valid() {
         return None;
@@ -3122,6 +3378,40 @@ fn extended_style_properties(style: &Style, values: &mut Vec<(&'static str, Stri
         },
     ));
     values.push(("opacity", style.opacity.to_string()));
+    // E8: CSS order translate → rotate → scale about `transform-origin` (Blitz applies it to
+    // paint and hit testing, not layout). Identity is `none`, so an untransformed node creates
+    // no stacking context and paints exactly as before. A vanishing scale is kept invertible.
+    let t = style.transform;
+    let keep = |v: f32| {
+        if v.abs() < 1e-4 {
+            if v.is_sign_negative() {
+                -1e-4
+            } else {
+                1e-4
+            }
+        } else {
+            v
+        }
+    };
+    values.push((
+        "transform",
+        if t.is_identity() {
+            "none".to_owned()
+        } else {
+            format!(
+                "translate({}px, {}px) rotate({}deg) scale({}, {})",
+                t.translate_x,
+                t.translate_y,
+                t.rotate,
+                keep(t.scale_x),
+                keep(t.scale_y)
+            )
+        },
+    ));
+    values.push((
+        "transform-origin",
+        format!("{}% {}%", t.origin_x * 100.0, t.origin_y * 100.0),
+    ));
     Some(())
 }
 
