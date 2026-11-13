@@ -9,10 +9,13 @@ use crate::access_tree::{AccessibilityNode, AccessibilityTree, AccessibilityUpda
 use crate::native::host::SceneHostView;
 use crate::native::{SceneActivationEvent, SceneFocusEvent};
 use accesskit::{
-    Action, ActionRequest, Affine, Node, NodeId as KitId, Rect as KitRect, Role as KitRole, TreeId,
-    TreeInfo, TreeUpdate,
+    Action, ActionRequest, Affine, Live as KitLive, Node, NodeId as KitId, Rect as KitRect,
+    Role as KitRole, TreeId, TreeInfo, TreeUpdate,
 };
-use jasper_ui_engine::{scene::NodeId, semantics::Role};
+use jasper_ui_engine::{
+    scene::NodeId,
+    semantics::{LivePoliteness, Role},
+};
 
 // BEGIN VERIFIED ACCESS REQUEST TYPE
 /// What an AccessKit action request asks of a node, as far as this engine is concerned.
@@ -74,6 +77,23 @@ pub fn accesskit_role(role: Role) -> KitRole {
         Role::MenuItem => KitRole::MenuItem,
         Role::ScrollView => KitRole::ScrollView,
         Role::Unknown => KitRole::Unknown,
+        Role::Heading(_) => KitRole::Heading,
+        Role::Status => KitRole::Status,
+        // A bare live region: Region (not GenericContainer, which AccessKit consumers prune).
+        // 纯实时区域映射为 Region（GenericContainer 会被 AccessKit 消费端剪除）。
+        Role::Live(_) => KitRole::Region,
+        Role::Alert => KitRole::Alert,
+        Role::Form => KitRole::Form,
+    }
+}
+
+/// Live-region politeness a role implies: Status is polite, Alert assertive, Live as given.
+/// 角色隐含的实时区域播报强度：Status 为礼貌型，Alert 为强制型，Live 按其参数。
+pub fn accesskit_live(role: Role) -> Option<KitLive> {
+    match role {
+        Role::Status | Role::Live(LivePoliteness::Polite) => Some(KitLive::Polite),
+        Role::Alert | Role::Live(LivePoliteness::Assertive) => Some(KitLive::Assertive),
+        _ => None,
     }
 }
 
@@ -84,6 +104,14 @@ pub fn accesskit_role(role: Role) -> KitRole {
 /// 读取 Label 的文字内容）。焦点经 TreeUpdate::focus 报告，不在节点上。`transform` 只设在根上。
 fn accesskit_node(node: &AccessibilityNode, transform: Option<Affine>) -> Node {
     let mut out = Node::new(accesskit_role(node.role));
+    if let Role::Heading(level) = node.role {
+        // ARIA-style 1-based heading level, as AccessKit platform adapters expose it.
+        // 与 ARIA 一致的从 1 起的标题级别（AccessKit 平台适配器按此暴露）。
+        out.set_level(level.get() as usize);
+    }
+    if let Some(live) = accesskit_live(node.role) {
+        out.set_live(live);
+    }
     if node.role == Role::Text && node.value.is_empty() {
         if !node.label.is_empty() {
             out.set_value(node.label.clone());

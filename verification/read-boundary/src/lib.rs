@@ -2084,6 +2084,12 @@ pub fn assert_role(code: u8) {
         Role::MenuItem,
         Role::ScrollView,
         Role::Unknown,
+        // E11 roles: none is activatable by the legacy keyboard classifiers.
+        Role::Status,
+        Role::Live(LivePoliteness::Polite),
+        Role::Live(LivePoliteness::Assertive),
+        Role::Alert,
+        Role::Form,
     ];
     let index = code as usize % roles.len();
     assert_eq!(

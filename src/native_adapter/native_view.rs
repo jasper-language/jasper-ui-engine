@@ -38,7 +38,6 @@ pub enum ComponentUpdateError {
     OwnerContextMismatch,
     Closed,
     EmptyFrame,
-    CapacityExceeded,
     StaleSequence { expected: u64, current: u64 },
     SequenceExhausted { current: u64 },
     UnsupportedForView,
@@ -54,9 +53,6 @@ impl std::fmt::Display for ComponentUpdateError {
             }
             Self::Closed => write!(f, "text display view is closed"),
             Self::EmptyFrame => write!(f, "component update frame is empty"),
-            Self::CapacityExceeded => {
-                write!(f, "component update exceeds the 4096-update capacity")
-            }
             Self::StaleSequence { expected, current } => write!(
                 f,
                 "component update expected sequence {expected}, current sequence is {current}"
@@ -1425,9 +1421,6 @@ pub(crate) fn admit_component_frame(
     }
     if count == 0 {
         return Err(ComponentUpdateError::EmptyFrame);
-    }
-    if count > 4096 {
-        return Err(ComponentUpdateError::CapacityExceeded);
     }
     if current != expected {
         return Err(ComponentUpdateError::StaleSequence { expected, current });

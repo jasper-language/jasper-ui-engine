@@ -34,11 +34,6 @@ fn public_component_update_errors_distinguish_rejection_stages() {
         view.try_update(OWNER, CONTEXT, 0, &[]),
         Err(ComponentUpdateError::EmptyFrame)
     );
-    let oversized = vec![ComponentUpdate::AccessibleLabel(None); 4097];
-    assert_eq!(
-        view.try_update(OWNER, CONTEXT, 0, &oversized),
-        Err(ComponentUpdateError::CapacityExceeded)
-    );
     assert_eq!(
         view.try_update(OWNER, CONTEXT, 3, &[ComponentUpdate::AccessibleLabel(None)]),
         Err(ComponentUpdateError::StaleSequence {
@@ -77,6 +72,12 @@ fn public_component_update_errors_distinguish_rejection_stages() {
     );
     assert_eq!(view.update_version(OWNER, CONTEXT), Some(1));
     assert_eq!(view.semantics(OWNER, CONTEXT).unwrap().name, "Updated");
+    // No per-frame update limit: a frame far beyond the former 4096 cap is admitted atomically.
+    // 没有每帧更新数上限：远超原 4096 上限的帧被原子接受。
+    let large = vec![ComponentUpdate::AccessibleLabel(Some("Large")); 50_000];
+    assert_eq!(view.try_update(OWNER, CONTEXT, 1, &large), Ok(()));
+    assert_eq!(view.update_version(OWNER, CONTEXT), Some(2));
+    assert_eq!(view.semantics(OWNER, CONTEXT).unwrap().name, "Large");
 
     assert!(view.close(OWNER, CONTEXT));
     assert_eq!(

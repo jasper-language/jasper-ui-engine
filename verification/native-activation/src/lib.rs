@@ -82,7 +82,7 @@ pub fn check_component_frame_admission(owner_ok:bool,open:bool,count:usize,curre
     let model=if !owner_ok {Err(E::OwnerContextMismatch)}
         else if !open {Err(E::Closed)}
         else if count==0 {Err(E::EmptyFrame)}
-        else if count>4096 {Err(E::CapacityExceeded)}
+        // No per-frame update limit (E1): every nonzero count passes this stage.
         else if current!=expected {Err(E::StaleSequence {expected,current})}
         else if current==u64::MAX {Err(E::SequenceExhausted {current})}
         else if !native_ready {Err(E::NativeRejected)}
@@ -119,9 +119,16 @@ mod component_gate_proofs {
 }
 
 mod capacity { include!(concat!(env!("OUT_DIR"),"/capacity.rs")); }
-pub fn check_scene_capacity(prepared:usize,pending:usize,incoming:usize) {
-    let expected=(prepared as u128)+(pending as u128)+(incoming as u128)<=4096;
-    assert_eq!(capacity::scene_work_fits(prepared,pending,incoming),expected);
+/// E1: the node limit is host-configured, not the former fixed 4096; `usize::MAX` is unlimited.
+/// The predicate is exact (work fits iff prepared+pending+incoming <= limit) and overflow-free.
+pub fn check_scene_capacity(prepared:usize,pending:usize,incoming:usize,limit:usize) {
+    let expected=(prepared as u128)+(pending as u128)+(incoming as u128)<=limit as u128;
+    assert_eq!(capacity::scene_work_fits(prepared,pending,incoming,limit),expected);
+}
+/// Unlimited default: any work a real traversal can hold (its sum fits usize) is admitted.
+pub fn check_scene_capacity_unlimited(prepared:usize,pending:usize,incoming:usize) {
+    let fits=prepared.checked_add(pending).and_then(|sum|sum.checked_add(incoming)).is_some();
+    assert_eq!(capacity::scene_work_fits(prepared,pending,incoming,usize::MAX),fits);
 }
 #[cfg(test)]
 mod capacity_tests {
@@ -129,27 +136,41 @@ mod capacity_tests {
     proptest! {
         #![proptest_config(ProptestConfig::with_cases(256))]
         #[test]
-        fn scene_capacity(a in any::<usize>(),b in any::<usize>(),c in any::<usize>()) {
-            check_scene_capacity(a,b,c);check_scene_capacity(a%4097,b%4097,c%4097);
+        fn scene_capacity(a in any::<usize>(),b in any::<usize>(),c in any::<usize>(),limit in any::<usize>()) {
+            check_scene_capacity(a,b,c,limit);check_scene_capacity(a%4097,b%4097,c%4097,limit%8193);
+            check_scene_capacity(a%4097,b%4097,c%4097,usize::MAX);
+            check_scene_capacity_unlimited(a,b,c);check_scene_capacity_unlimited(a>>2,b>>2,c>>2);
         }
     }
     #[test]
     fn miri_capacity_boundaries() {
         for a in [0,1,4095,4096,4097,usize::MAX] {
-            for b in [0,1,4096,usize::MAX] {for c in [0,1,4096,usize::MAX] {check_scene_capacity(a,b,c);}}
+            for b in [0,1,4096,usize::MAX] {for c in [0,1,4096,usize::MAX] {
+                for limit in [0,1,4096,4097,50_000,usize::MAX-1,usize::MAX] {check_scene_capacity(a,b,c,limit);}
+                check_scene_capacity_unlimited(a,b,c);
+            }}
+        }
+        // Former fixed cap is gone: 4097, 50 000 and 1 000 000 nodes fit when unlimited.
+        for nodes in [4097usize,50_000,1_000_000] {
+            assert!(capacity::scene_work_fits(nodes,0,0,usize::MAX));
+            assert!(capacity::scene_work_fits(nodes-1,0,1,nodes));
+            assert!(!capacity::scene_work_fits(nodes,0,1,nodes));
         }
     }
 }
 #[cfg(kani)]
 mod capacity_proofs {
     #[kani::proof]
-    fn scene_capacity() {super::check_scene_capacity(kani::any(),kani::any(),kani::any());}
+    fn scene_capacity() {super::check_scene_capacity(kani::any(),kani::any(),kani::any(),kani::any());}
+    #[kani::proof]
+    fn scene_capacity_unlimited() {super::check_scene_capacity_unlimited(kani::any(),kani::any(),kani::any());}
 }
 
 mod scene_gate {include!(concat!(env!("OUT_DIR"),"/scene_gate.rs"));}
 pub fn check_scene_update(owner:u64,caller:u64,current:u64,expected:u64,next:u64,count:usize,open:bool) {
     let accepted=scene_gate::accepts_scene_update(owner,caller,current,expected,next,count,open);
-    let model=owner==caller && open && current==expected && current.checked_add(1)==Some(next) && count>0 && count<=4096;
+    // E1: at least one operation, no upper limit.
+    let model=owner==caller && open && current==expected && current.checked_add(1)==Some(next) && count>0;
     assert_eq!(accepted,model);
 }
 /// Exact structured rejection ordering for the production scene-update admission.
@@ -159,11 +180,12 @@ pub fn check_scene_update_result(owner:u64,caller:u64,current:u64,expected:u64,n
     let model=if owner!=caller {Err(E::OwnerMismatch)}
         else if !open {Err(E::Closed)}
         else if count==0 {Err(E::EmptyFrame)}
-        else if count>4096 {Err(E::CapacityExceeded)}
         else if current!=expected {Err(E::StaleVersion {expected,current})}
         else if current.checked_add(1)!=Some(next) {Err(E::InvalidSuccessor {expected,next})}
         else {Ok(())};
     assert_eq!(actual,model);
+    // Quota rejections are assigned after the source stage, never by this admission kernel.
+    assert!(!matches!(actual,Err(E::NodeQuotaExceeded {..})|Err(E::TextQuotaExceeded {..})));
     check_scene_update(owner,caller,current,expected,next,count,open);
 }
 /// Exact source-success/version/candidate gate before active replacement.
@@ -278,14 +300,17 @@ pub mod semantic_tag {
     pub fn check(a:u8,b:u8) {
         let roles=[Role::Container,Role::Text,Role::Button,Role::TextField,Role::Checkbox,Role::Radio,
             Role::Switch,Role::Slider,Role::Image,Role::Link,Role::List,Role::ListItem,Role::Dialog,
-            Role::Menu,Role::MenuItem,Role::ScrollView,Role::Unknown];
+            Role::Menu,Role::MenuItem,Role::ScrollView,Role::Unknown,
+            // E11 roles: none selects the native button tag.
+            Role::Heading(HeadingLevel(1)),Role::Heading(HeadingLevel(6)),Role::Status,
+            Role::Live(LivePoliteness::Polite),Role::Live(LivePoliteness::Assertive),Role::Alert,Role::Form];
         let a=(a as usize)%roles.len();let b=(b as usize)%roles.len();
         assert_eq!(semantic_role_update_preserves_tag(roles[a],roles[b]),(a==2)==(b==2));
     }
     #[cfg(test)] mod tests {
         use super::*;use proptest::prelude::*;
         proptest! {#[test] fn role_tag_property(a in any::<u8>(),b in any::<u8>()) {check(a,b);}}
-        #[test] fn miri_role_tags() {for a in 0..17 {for b in 0..17 {check(a,b);}}}
+        #[test] fn miri_role_tags() {for a in 0..24 {for b in 0..24 {check(a,b);}}}
     }
     #[cfg(kani)] mod proofs {#[kani::proof] fn semantic_role_tags() {super::check(kani::any(),kani::any());}}
 }

@@ -2028,19 +2028,18 @@ KERNELS["component-update-admission"] = {
             Err(ComponentUpdateError::OwnerContextMismatch)=>!owner_ok,
             Err(ComponentUpdateError::Closed)=>owner_ok && !open,
             Err(ComponentUpdateError::EmptyFrame)=>owner_ok && open && count==0,
-            Err(ComponentUpdateError::CapacityExceeded)=>owner_ok && open && count>4096,
             Err(ComponentUpdateError::StaleSequence {expected:reported_expected,current:reported_current})=>
-                owner_ok && open && 0<count<=4096 && current!=expected
+                owner_ok && open && count>0 && current!=expected
                 && reported_expected==expected && reported_current==current,
             Err(ComponentUpdateError::SequenceExhausted {current:reported_current})=>
-                owner_ok && open && 0<count<=4096 && current==expected && current>=u64::MAX
+                owner_ok && open && count>0 && current==expected && current>=u64::MAX
                 && reported_current==current,
             Err(ComponentUpdateError::NativeRejected)=>
-                owner_ok && open && 0<count<=4096 && current==expected && current<u64::MAX && !native_ready,
+                owner_ok && open && count>0 && current==expected && current<u64::MAX && !native_ready,
             Err(ComponentUpdateError::UnsupportedForView)=>
-                owner_ok && open && 0<count<=4096 && current==expected && current<u64::MAX
+                owner_ok && open && count>0 && current==expected && current<u64::MAX
                 && native_ready && !supported,
-            Ok(())=>owner_ok && open && 0<count<=4096 && current==expected && current<u64::MAX
+            Ok(())=>owner_ok && open && count>0 && current==expected && current<u64::MAX
                 && native_ready && supported,
         },
     {""",
@@ -2053,13 +2052,13 @@ KERNELS["component-update-admission"] = {
 KERNELS["scene-work-capacity"] = {
     "source":"src/native_adapter/native_scene.rs", "marker":"SCENE WORK CAPACITY",
     "property":"UI-SCENE-WORK-CAPACITY-001",
-    "signature":"pub(crate) fn scene_work_fits(prepared:usize,pending:usize,incoming:usize)->bool {",
-    "contract":"""pub(crate) fn scene_work_fits(prepared:usize,pending:usize,incoming:usize)->(result:bool)
-        ensures result == (prepared as int + pending as int + incoming as int <= 4096),
+    "signature":"pub(crate) fn scene_work_fits(prepared:usize,pending:usize,incoming:usize,limit:usize)->bool {",
+    "contract":"""pub(crate) fn scene_work_fits(prepared:usize,pending:usize,incoming:usize,limit:usize)->(result:bool)
+        ensures result == (prepared as int + pending as int + incoming as int <= limit as int),
     {""",
     "depends":[], "evidence":"scene-work-capacity-kernel", "function_count":1,
-    "scope":"Exact production count predicate used before traversal pushes and patch preparation; no text/font/backend allocation or full traversal invariant proof.",
-    "mutations":[("ignore-pending","    incoming<=4096-prepared-pending", "    incoming<=4096-prepared"),("off-by-one","    incoming<=4096-prepared-pending", "    incoming<4096-prepared-pending")],
+    "scope":"Exact production count predicate against the host-configured node limit (usize::MAX when unlimited; no fixed cap since 2026-11-12), used before traversal pushes and patch preparation; no text/font/backend allocation or full traversal invariant proof.",
+    "mutations":[("ignore-pending","    incoming<=limit-prepared-pending", "    incoming<=limit-prepared"),("off-by-one","    incoming<=limit-prepared-pending", "    incoming<limit-prepared-pending")],
 }
 
 
@@ -2075,17 +2074,18 @@ KERNELS["scene-update-admission"] = {
             Err(SceneUpdateError::OwnerMismatch)=>owner!=caller,
             Err(SceneUpdateError::Closed)=>owner==caller && !open,
             Err(SceneUpdateError::EmptyFrame)=>owner==caller && open && count==0,
-            Err(SceneUpdateError::CapacityExceeded)=>owner==caller && open && count>4096,
             Err(SceneUpdateError::StaleVersion {expected:reported_expected,current:reported_current})=>
-                owner==caller && open && 0<count<=4096 && current!=expected
+                owner==caller && open && count>0 && current!=expected
                 && reported_expected==expected && reported_current==current,
             Err(SceneUpdateError::InvalidSuccessor {expected:reported_expected,next:reported_next})=>
-                owner==caller && open && 0<count<=4096 && current==expected
+                owner==caller && open && count>0 && current==expected
                 && (current>=u64::MAX || next as int!=current as int+1)
                 && reported_expected==expected && reported_next==next,
             Err(SceneUpdateError::SourceRejected)=>false,
             Err(SceneUpdateError::NativeRejected)=>false,
-            Ok(()) => owner==caller && open && 0<count<=4096 && current==expected
+            Err(SceneUpdateError::NodeQuotaExceeded {limit:_,required:_})=>false,
+            Err(SceneUpdateError::TextQuotaExceeded {limit:_,required:_})=>false,
+            Ok(()) => owner==caller && open && count>0 && current==expected
                 && current<u64::MAX && next as int==current as int+1,
         },
     {""",
@@ -2107,7 +2107,8 @@ KERNELS["scene-frame-completion"] = {
             Err(SceneUpdateError::OwnerMismatch)=>false,
             Err(SceneUpdateError::Closed)=>false,
             Err(SceneUpdateError::EmptyFrame)=>false,
-            Err(SceneUpdateError::CapacityExceeded)=>false,
+            Err(SceneUpdateError::NodeQuotaExceeded {..})=>false,
+            Err(SceneUpdateError::TextQuotaExceeded {..})=>false,
             Err(SceneUpdateError::StaleVersion {..})=>false,
             Err(SceneUpdateError::InvalidSuccessor {..})=>false,
         },
@@ -2137,7 +2138,8 @@ KERNELS["scene-frame-order"] = {
             Err(SceneUpdateError::OwnerMismatch)=>false,
             Err(SceneUpdateError::Closed)=>false,
             Err(SceneUpdateError::EmptyFrame)=>false,
-            Err(SceneUpdateError::CapacityExceeded)=>false,
+            Err(SceneUpdateError::NodeQuotaExceeded {..})=>false,
+            Err(SceneUpdateError::TextQuotaExceeded {..})=>false,
             Err(SceneUpdateError::StaleVersion {..})=>false,
             Err(SceneUpdateError::InvalidSuccessor {..})=>false,
         },

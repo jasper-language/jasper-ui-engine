@@ -1,5 +1,5 @@
 pub use update_contract::SceneUpdate;
-pub use native_scene::SceneUpdateError;
+pub use native_scene::{SceneQuota,SceneUpdateError};
 pub use jasper_ui_engine::style;
 pub use jasper_ui_engine::geometry::{Point,Rect};
 pub use jasper_ui_engine::{scene::{Scene,ScenePatch,Node,NodeId},semantics::{Semantics,Role}};
@@ -31,7 +31,7 @@ pub use crate::access_tree::{AccessActions,AccessibilityNode,AccessibilityTree,A
 #[cfg(feature="accesskit-pending")]
 pub use ::accesskit;
 #[cfg(feature="accesskit-pending")]
-pub use crate::access_kit::{AccessRequest,access_request,accesskit_role};
+pub use crate::access_kit::{AccessRequest,access_request,accesskit_live,accesskit_role};
 #[cfg(feature="gpu-pending")]
 pub use crate::gpu_render::{GpuRenderer,GpuFrameError};
 
@@ -590,6 +590,15 @@ impl SceneHostView {
     pub fn try_apply(&mut self,owner:u64,expected:u64,next:u64,patches:&[ScenePatch])
         ->Result<(),SceneUpdateError> {
         self.inner.apply_patches_result(owner,expected,next,patches)
+    }
+    /// `try_apply` under a host-configured quota. The engine has no fixed node or per-frame
+    /// operation limit; a frame whose resulting scene exceeds `quota` is rejected whole with
+    /// `NodeQuotaExceeded` / `TextQuotaExceeded` (limit and required amount), consuming no version.
+    /// 宿主额度下的 `try_apply`。引擎没有固定的节点数或每帧操作数上限；结果场景超出 `quota` 的帧整帧拒绝，
+    /// 返回 `NodeQuotaExceeded` / `TextQuotaExceeded`（含额度与所需量），不消耗版本。
+    pub fn try_apply_within(&mut self,owner:u64,expected:u64,next:u64,patches:&[ScenePatch],quota:SceneQuota)
+        ->Result<(),SceneUpdateError> {
+        self.inner.apply_patches_result_within(owner,expected,next,patches,quota)
     }
     /// Consume a Framework update value; authenticated owner stays in the embedding host.
     /// 消费 Framework 更新值；已认证的归属身份只由嵌入宿主提供。

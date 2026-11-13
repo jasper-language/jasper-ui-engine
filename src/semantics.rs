@@ -26,8 +26,52 @@ pub enum Role {
     MenuItem,
     ScrollView,
     Unknown,
+    /// Section heading; the level is 1..=6 by construction.
+    /// 章节标题；级别由构造保证为 1..=6。
+    Heading(HeadingLevel),
+    /// Advisory status output (implicitly a polite live region).
+    /// 状态信息（隐含礼貌型实时区域）。
+    Status,
+    /// Live region announcing its changes with the given politeness.
+    /// 以指定礼貌级别播报变化的实时区域。
+    Live(LivePoliteness),
+    /// Important, time-sensitive message (implicitly an assertive live region).
+    /// 重要且有时效的消息（隐含强制型实时区域）。
+    Alert,
+    /// Form landmark grouping input controls.
+    /// 表单地标，组合输入控件。
+    Form,
+}
+
+/// Heading level, always within 1..=6; build with `HeadingLevel::new`.
+/// 标题级别，恒在 1..=6；经 `HeadingLevel::new` 构造。
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct HeadingLevel(u8);
+
+/// How assertively a live region's changes are announced.
+/// 实时区域变化的播报强度。
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum LivePoliteness {
+    Polite,
+    Assertive,
 }
 // END VERIFIED ROLE TYPE
+
+impl HeadingLevel {
+    /// Some for 1..=6, None otherwise; no clamping.
+    /// 1..=6 时为 Some，否则 None；不钳制。
+    pub const fn new(level: u8) -> Option<Self> {
+        if level >= 1 && level <= 6 {
+            Some(Self(level))
+        } else {
+            None
+        }
+    }
+
+    pub const fn get(self) -> u8 {
+        self.0
+    }
+}
 
 /// Semantics supplied by the Jasper UI layer for one node.
 // BEGIN VERIFIED SCENE SEMANTICS TYPE

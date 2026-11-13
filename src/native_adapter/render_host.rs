@@ -8,7 +8,7 @@
 use crate::native::host::SceneHostView;
 #[cfg(feature = "gpu-pending")]
 use crate::native::host::{GpuFrameError, GpuRenderer};
-use crate::native::{SceneFocusEvent, SceneUpdate, SceneUpdateError};
+use crate::native::{SceneFocusEvent, SceneQuota, SceneUpdate, SceneUpdateError};
 use crate::scene::{NodeId, Scene, ScenePatch};
 #[cfg(feature = "cpu-pending")]
 use crate::surface_lifecycle::RenderedPixels;
@@ -218,6 +218,28 @@ impl HostRenderer {
             return Err(SceneUpdateError::Closed);
         }
         let result = self.inner.try_apply(owner, expected, next, patches);
+        if result.is_ok() {
+            self.surface.frame_superseded();
+        }
+        result
+    }
+
+    /// `try_apply` under a host-configured quota; see `Engine::try_apply_within`.
+    /// 宿主额度下的 `try_apply`；见 `Engine::try_apply_within`。
+    pub fn try_apply_within(
+        &mut self,
+        owner: u64,
+        expected: u64,
+        next: u64,
+        patches: &[ScenePatch],
+        quota: SceneQuota,
+    ) -> Result<(), SceneUpdateError> {
+        if !self.surface.active_for_owner(owner) {
+            return Err(SceneUpdateError::Closed);
+        }
+        let result = self
+            .inner
+            .try_apply_within(owner, expected, next, patches, quota);
         if result.is_ok() {
             self.surface.frame_superseded();
         }

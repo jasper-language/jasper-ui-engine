@@ -20,11 +20,29 @@ pub enum SceneUpdateError {
     OwnerMismatch,
     Closed,
     EmptyFrame,
-    CapacityExceeded,
-    StaleVersion { expected: u64, current: u64 },
-    InvalidSuccessor { expected: u64, next: u64 },
+    StaleVersion {
+        expected: u64,
+        current: u64,
+    },
+    InvalidSuccessor {
+        expected: u64,
+        next: u64,
+    },
     SourceRejected,
     NativeRejected,
+    /// The updated scene would hold `required` nodes; the host quota allows `limit`.
+    /// 更新后的场景需要 `required` 个节点，宿主额度只允许 `limit` 个。
+    NodeQuotaExceeded {
+        limit: usize,
+        required: usize,
+    },
+    /// The updated scene would hold `required` bytes of text and semantic strings; the host
+    /// quota allows `limit`.
+    /// 更新后的场景需要 `required` 字节文字与语义字符串，宿主额度只允许 `limit` 字节。
+    TextQuotaExceeded {
+        limit: usize,
+        required: usize,
+    },
 }
 // END VERIFIED SCENE UPDATE ERROR TYPE KERNEL
 
@@ -34,7 +52,6 @@ impl std::fmt::Display for SceneUpdateError {
             Self::OwnerMismatch => write!(f, "scene update owner does not match the view"),
             Self::Closed => write!(f, "scene view is closed"),
             Self::EmptyFrame => write!(f, "scene update frame is empty"),
-            Self::CapacityExceeded => write!(f, "scene update exceeds the 4096-patch capacity"),
             Self::StaleVersion { expected, current } => write!(
                 f,
                 "scene update expected version {expected}, current version is {current}"
@@ -46,8 +63,87 @@ impl std::fmt::Display for SceneUpdateError {
             Self::NativeRejected => {
                 write!(f, "native scene could not construct the update candidate")
             }
+            Self::NodeQuotaExceeded { limit, required } => write!(
+                f,
+                "scene update needs {required} nodes but the host node quota is {limit}"
+            ),
+            Self::TextQuotaExceeded { limit, required } => write!(
+                f,
+                "scene update needs {required} bytes of text but the host text quota is {limit} bytes"
+            ),
         }
     }
+}
+
+/// Host-configured resource quota for one scene view. The engine itself has no fixed node or
+/// per-frame operation limit; `None` (the default) means unlimited. These are the admission
+/// measures the engine can count exactly (source nodes; UTF-8 bytes of text content plus
+/// semantic label/description/value), not an allocator bound for layout, fonts or rendering.
+/// 宿主为单个场景视图配置的资源额度。引擎本身没有固定的节点数或每帧操作数上限；`None`（默认）表示无上限。
+/// 这里是引擎能精确计数的准入量（源节点数；文字内容与语义 label/description/value 的 UTF-8 字节数），
+/// 不是布局、字体或渲染的分配器上界。
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct SceneQuota {
+    pub max_nodes: Option<usize>,
+    pub max_text_bytes: Option<usize>,
+}
+
+impl SceneQuota {
+    /// No quota: only the host's memory bounds the scene.
+    /// 无额度：场景只受宿主内存约束。
+    pub const UNLIMITED: Self = Self {
+        max_nodes: None,
+        max_text_bytes: None,
+    };
+}
+
+/// Exact source usage (nodes, text bytes) of one scene tree; iterative, saturating.
+/// 一棵场景树的精确源用量（节点数、文字字节数）；迭代、饱和计数。
+pub(crate) fn scene_usage(root: &Node) -> (usize, usize) {
+    let mut nodes = 0usize;
+    let mut text = 0usize;
+    let mut pending = vec![root];
+    while let Some(node) = pending.pop() {
+        nodes = nodes.saturating_add(1);
+        if let NodeKind::Text(value) = &node.kind {
+            text = text.saturating_add(value.len());
+        }
+        for value in [
+            &node.semantics.label,
+            &node.semantics.description,
+            &node.semantics.value,
+        ] {
+            text = text.saturating_add(value.len());
+        }
+        pending.extend(node.children.iter());
+    }
+    (nodes, text)
+}
+
+/// Admit measured usage against the host quota; nodes are checked before text.
+/// 按宿主额度准入实测用量；先查节点数，再查文字字节数。
+pub(crate) fn admit_scene_quota(
+    quota: SceneQuota,
+    nodes: usize,
+    text_bytes: usize,
+) -> Result<(), SceneUpdateError> {
+    if let Some(limit) = quota.max_nodes {
+        if nodes > limit {
+            return Err(SceneUpdateError::NodeQuotaExceeded {
+                limit,
+                required: nodes,
+            });
+        }
+    }
+    if let Some(limit) = quota.max_text_bytes {
+        if text_bytes > limit {
+            return Err(SceneUpdateError::TextQuotaExceeded {
+                limit,
+                required: text_bytes,
+            });
+        }
+    }
+    Ok(())
 }
 
 impl std::error::Error for SceneUpdateError {}
@@ -177,6 +273,7 @@ impl NativeScene {
             crate::native_fonts::injected_font_context(font),
             width,
             height,
+            usize::MAX,
         )
     }
     /// Host-ordered font stack; measurement and painting share the one Parley layout.
@@ -194,14 +291,18 @@ impl NativeScene {
             crate::native_fonts::injected_font_stack(fonts)?,
             width,
             height,
+            usize::MAX,
         )
     }
+    /// `node_limit` bounds the admission traversal (`scene_work_fits`); `usize::MAX` is unlimited.
+    /// `node_limit` 限定准入遍历（`scene_work_fits`）；`usize::MAX` 表示无上限。
     fn from_scene_with_context(
         owner: u64,
         scene: &Scene,
         fonts: crate::native_fonts::InjectedFonts,
         width: u32,
         height: u32,
+        node_limit: usize,
     ) -> Option<Self> {
         let crate::native_fonts::InjectedFonts {
             context: mut font_ctx,
@@ -214,7 +315,7 @@ impl NativeScene {
             .family_names()
             .map(str::to_owned)
             .collect();
-        let prepared = prepare_subtree(&scene.root, 0, &BTreeSet::new(), &families)?;
+        let prepared = prepare_subtree(&scene.root, 0, &BTreeSet::new(), &families, node_limit)?;
         // Existing identity validation runs only after depth/node admission.
         scene.validate().ok()?;
         let stored_font_ctx = font_ctx.clone();
@@ -393,7 +494,46 @@ impl NativeScene {
         next: u64,
         patches: &[ScenePatch],
     ) -> Result<(), SceneUpdateError> {
-        self.apply_patches_built_by(caller, expected, next, patches, Self::rebuild_candidate)
+        self.apply_patches_result_within(caller, expected, next, patches, SceneQuota::UNLIMITED)
+    }
+    /// Frame transaction under a host quota. There is no per-frame operation limit: the whole
+    /// frame is applied to a detached source copy and native candidate, then swapped in, so it is
+    /// atomic however large it is. The quota is measured on the updated source before any native
+    /// construction; exceeding it rejects the frame like any other failure (no version consumed).
+    /// 宿主额度下的帧事务。没有每帧操作数上限：整帧应用到分离的源副本与原生候选上再整体换入，无论多大都
+    /// 是原子的。额度在任何原生构造之前对更新后的源场景计量；超额与其他失败一样整帧拒绝（不消耗版本）。
+    pub(crate) fn apply_patches_result_within(
+        &mut self,
+        caller: u64,
+        expected: u64,
+        next: u64,
+        patches: &[ScenePatch],
+        quota: SceneQuota,
+    ) -> Result<(), SceneUpdateError> {
+        let mut exceeded = None;
+        let result = self.apply_patches_built_by(
+            caller,
+            expected,
+            next,
+            patches,
+            |view, source, focused, patches| {
+                let (nodes, text) = scene_usage(&source.root);
+                if let Err(error) = admit_scene_quota(quota, nodes, text) {
+                    exceeded = Some(error);
+                    return None;
+                }
+                view.rebuild_candidate(
+                    source,
+                    focused,
+                    patches,
+                    quota.max_nodes.unwrap_or(usize::MAX),
+                )
+            },
+        );
+        match (result, exceeded) {
+            (Err(SceneUpdateError::NativeRejected), Some(error)) => Err(error),
+            (result, _) => result,
+        }
     }
     /// The whole frame transaction with its native construction stage as a parameter. Both
     /// stages only hold `&self`, so a stage panic unwinds past a view nothing has written.
@@ -437,6 +577,7 @@ impl NativeScene {
         source: Scene,
         focused: Option<NodeId>,
         patches: &[ScenePatch],
+        node_limit: usize,
     ) -> Option<Self> {
         let document = self.document.as_ref()?;
         let viewport = document.viewport().clone();
@@ -459,6 +600,7 @@ impl NativeScene {
             },
             width,
             height,
+            node_limit,
         )?;
         restore_candidate_interaction(
             &mut candidate,
@@ -1863,12 +2005,15 @@ fn source_subtree_contains(
     }
 }
 
-/// Bounded source admission shared by initial import and single-subtree insertion.
+/// Source admission shared by initial import and single-subtree insertion; the node count is
+/// bounded only by `node_limit` (the host quota, `usize::MAX` when unlimited).
+/// 初始导入与单子树插入共用的源准入；节点数只受 `node_limit`（宿主额度，无上限时为 `usize::MAX`）约束。
 fn prepare_subtree(
     root: &Node,
     base_depth: usize,
     existing: &BTreeSet<NodeId>,
     families: &BTreeSet<String>,
+    node_limit: usize,
 ) -> Option<Vec<Vec<(&'static str, String)>>> {
     let mut stack = vec![(root, base_depth)];
     let mut prepared = Vec::new();
@@ -1887,6 +2032,7 @@ fn prepare_subtree(
             existing.len().checked_add(prepared.len())?,
             stack.len(),
             node.children.len(),
+            node_limit,
         ) {
             return None;
         }
@@ -1924,9 +2070,6 @@ pub(crate) fn admit_scene_update(
     }
     if count == 0 {
         return Err(SceneUpdateError::EmptyFrame);
-    }
-    if count > 4096 {
-        return Err(SceneUpdateError::CapacityExceeded);
     }
     if current != expected {
         return Err(SceneUpdateError::StaleVersion { expected, current });
@@ -2101,12 +2244,19 @@ impl RestoreCandidate<NodeId, Viewport, blitz_dom::util::Point<f64>, (f32, f32),
 }
 
 // BEGIN VERIFIED SCENE WORK CAPACITY KERNEL
-/// Candidate admission count only; not an allocator bound for text, fonts or upstream scratch.
-pub(crate) fn scene_work_fits(prepared: usize, pending: usize, incoming: usize) -> bool {
-    if prepared > 4096 || pending > 4096 - prepared {
+/// Candidate admission count against the host node limit (`usize::MAX` when unlimited); exact
+/// and overflow-free. Not an allocator bound for text, fonts or upstream scratch.
+/// 按宿主节点上限（无上限时为 `usize::MAX`）的候选准入计数；精确且无溢出。不是文字、字体或上游暂存的分配上界。
+pub(crate) fn scene_work_fits(
+    prepared: usize,
+    pending: usize,
+    incoming: usize,
+    limit: usize,
+) -> bool {
+    if prepared > limit || pending > limit - prepared {
         return false;
     }
-    incoming <= 4096 - prepared - pending
+    incoming <= limit - prepared - pending
 }
 // END VERIFIED SCENE WORK CAPACITY KERNEL
 
@@ -2127,10 +2277,27 @@ fn semantic_attributes(semantics: &Semantics) -> Vec<(&'static str, String)> {
         Role::Menu => Some("menu"),
         Role::MenuItem => Some("menuitem"),
         Role::ScrollView => Some("region"),
+        Role::Heading(_) => Some("heading"),
+        Role::Status => Some("status"),
+        Role::Live(_) => Some("region"),
+        Role::Alert => Some("alert"),
+        Role::Form => Some("form"),
         Role::Container | Role::Text | Role::Unknown => None,
     };
     if let Some(role) = role {
         values.push(("role", role.to_owned()));
+    }
+    match semantics.role {
+        Role::Heading(level) => values.push(("aria-level", level.get().to_string())),
+        Role::Live(politeness) => values.push((
+            "aria-live",
+            match politeness {
+                jasper_ui_engine::semantics::LivePoliteness::Polite => "polite",
+                jasper_ui_engine::semantics::LivePoliteness::Assertive => "assertive",
+            }
+            .to_owned(),
+        )),
+        _ => {}
     }
     for (key, value) in [
         ("aria-label", &semantics.label),
@@ -3294,7 +3461,23 @@ mod tests {
             };
             4097
         ];
-        assert!(!native.apply_patches(10, version, version + 1, &oversized));
+        // No per-frame operation limit; only a host quota refuses a frame for size.
+        assert_eq!(
+            native.apply_patches_result_within(
+                10,
+                version,
+                version + 1,
+                &oversized,
+                SceneQuota {
+                    max_nodes: Some(1),
+                    max_text_bytes: None
+                }
+            ),
+            Err(SceneUpdateError::NodeQuotaExceeded {
+                limit: 1,
+                required: 2
+            })
+        );
         assert!(before == native.render_cpu(10, 1024 * 1024).unwrap());
         let patches = [
             ScenePatch::UpdateText {
@@ -3417,7 +3600,7 @@ mod tests {
                 next,
                 &patches,
                 |view, source, focused, frame| {
-                    let candidate = view.rebuild_candidate(source, focused, frame);
+                    let candidate = view.rebuild_candidate(source, focused, frame, usize::MAX);
                     assert!(candidate.is_some());
                     resume_unwind(Box::new("after candidate"))
                 },
@@ -3433,7 +3616,9 @@ mod tests {
                 next,
                 &patches,
                 |view, source, focused, frame| {
-                    assert!(view.rebuild_candidate(source, focused, frame).is_some());
+                    assert!(view
+                        .rebuild_candidate(source, focused, frame, usize::MAX)
+                        .is_some());
                     None
                 }
             ),
@@ -3632,7 +3817,12 @@ mod tests {
             Node::container(NodeId(0))
                 .with_children((1..4097).map(|id| Node::text(NodeId(id), "x")).collect()),
         );
-        assert!(NativeScene::from_scene(10, &wide, &bytes, 320, 200).is_none());
+        // Node count is unlimited: a scene beyond the former 4096 cap imports.
+        let wide_view = NativeScene::from_scene(10, &wide, &bytes, 320, 200).unwrap();
+        assert_eq!(
+            wide_view.snapshot_identity(10),
+            Some((wide.version(), 4097))
+        );
         let mut deep = Node::text(NodeId(0), "x");
         for id in 1..131 {
             deep = Node::container(NodeId(id)).child(deep);
