@@ -1146,6 +1146,84 @@ mod tests {
     }
 
     #[test]
+    fn material_and_gradient_interpolate_only_between_like_shapes() {
+        use crate::style::{Backdrop, Gradient, GradientStop};
+        let all = Transition::new(AnimatedProperties::ALL, 100.0, Easing::LINEAR);
+        let stops = |c: Color, p: f32| {
+            vec![
+                GradientStop::new(0.0, Color::WHITE),
+                GradientStop::new(p, c),
+                GradientStop::new(1.0, Color::BLACK),
+            ]
+        };
+        let a = Style::default()
+            .transition(all)
+            .background_gradient(Some(Gradient::linear(0.0, stops(Color::rgb(0, 0, 0), 0.2))))
+            .backdrop(Some(
+                Backdrop::new(10.0, Color::new(255, 255, 255, 100)).fallback(Color::WHITE),
+            ));
+        let b = Style::default()
+            .transition(all)
+            .background_gradient(Some(Gradient::linear(
+                90.0,
+                stops(Color::rgb(200, 100, 0), 0.6),
+            )))
+            .backdrop(Some(
+                Backdrop::new(30.0, Color::new(255, 255, 255, 200))
+                    .saturate(2.0)
+                    .fallback(Color::WHITE),
+            ));
+        let mut state = MotionState::default();
+        state.advance(0.0).unwrap();
+        step(&mut state, &a, &b);
+        state.advance(0.0).unwrap();
+        state.advance(50.0).unwrap();
+        let s = state.presented(NodeId(1), &b).unwrap();
+        let g = s.background_gradient.clone().unwrap();
+        assert_eq!(g.shape, crate::style::GradientShape::Linear { angle: 45.0 });
+        assert!((g.stops[1].position - 0.4).abs() < 1e-5);
+        assert_eq!(g.stops[1].color, Color::rgb(100, 50, 0));
+        let m = s.backdrop.unwrap();
+        assert_eq!((m.blur, m.saturation), (20.0, 1.5));
+        assert_eq!(m.tint.a, 150);
+        assert!(s.extended_style_valid());
+        // Different kind, stop count, stroke presence or fallback: no channel (immediate).
+        let radial = b.clone().background_gradient(Some(Gradient::radial(
+            0.5,
+            0.5,
+            stops(Color::BLACK, 0.5),
+        )));
+        assert!(endpoints(AnimatedProperties::GRADIENT, &a, &radial).is_none());
+        let two = b.clone().background_gradient(Some(Gradient::linear(
+            0.0,
+            vec![
+                GradientStop::new(0.0, Color::WHITE),
+                GradientStop::new(1.0, Color::BLACK),
+            ],
+        )));
+        assert!(endpoints(AnimatedProperties::GRADIENT, &a, &two).is_none());
+        let stroked = b.clone().backdrop(Some(
+            Backdrop::new(30.0, Color::WHITE)
+                .stroke(1.0, Color::BLACK)
+                .fallback(Color::WHITE),
+        ));
+        assert!(endpoints(AnimatedProperties::BACKDROP, &a, &stroked).is_none());
+        let none = b.clone().backdrop(None);
+        assert!(endpoints(AnimatedProperties::BACKDROP, &a, &none).is_none());
+        // A spring overshoot keeps stop positions ordered and inside 0..=1.
+        let mut out = Style::default();
+        write(
+            AnimatedProperties::GRADIENT,
+            &Shape::Gradient(Some((true, false, 2))),
+            &[0.0, 1.3, 255.0, 0.0, 0.0, 255.0, -0.2, 0.0, 0.0, 0.0, 255.0],
+            &mut out,
+        );
+        let g = out.background_gradient.unwrap();
+        assert_eq!((g.stops[0].position, g.stops[1].position), (1.0, 1.0));
+        assert!(g.valid());
+    }
+
+    #[test]
     fn delay_holds_the_old_value_and_uncovered_change_cancels() {
         let rule = Transition::new(AnimatedProperties::OPACITY, 100.0, Easing::LINEAR).delay(50.0);
         let a = Style::default().transition(rule);

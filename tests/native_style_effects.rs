@@ -586,7 +586,9 @@ fn capabilities_are_declared_for_the_host_hello() {
             "underline",
             "hit-target",
             "transform",
-            "transition"
+            "transition",
+            "material",
+            "gradient"
         ]
     );
 }

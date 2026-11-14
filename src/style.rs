@@ -2338,6 +2338,115 @@ mod tests {
     }
 
     #[test]
+    fn xstyle_gradient_and_backdrop() {
+        let red = Color::rgb(255, 0, 0);
+        let blue = Color::rgb(0, 0, 255);
+        let mut s = Style::default();
+        s.apply_xstyle("background-gradient", "linear(90,#ff0000 0%,#0000ffff 100%)")
+            .unwrap();
+        assert_eq!(
+            s.background_gradient,
+            Some(Gradient::linear(
+                90.0,
+                vec![GradientStop::new(0.0, red), GradientStop::new(1.0, blue)]
+            ))
+        );
+        s.apply_xstyle(
+            "background-gradient",
+            "radial(0.25,0.75,#ff0000 0%,#ff000000 40%,#0000ff 100%)",
+        )
+        .unwrap();
+        let g = s.background_gradient.clone().unwrap();
+        assert_eq!(
+            g.shape,
+            GradientShape::Radial {
+                center_x: 0.25,
+                center_y: 0.75,
+                radius: None
+            }
+        );
+        assert_eq!(g.stops.len(), 3);
+        assert!((g.stops[1].position - 0.4).abs() < 1e-6);
+        s.apply_xstyle("background-gradient", "radial(0.5,0.5,24,#ff0000 0%,#0000ff 100%)")
+            .unwrap();
+        assert!(matches!(
+            s.background_gradient.as_ref().unwrap().shape,
+            GradientShape::Radial {
+                radius: Some(r),
+                ..
+            } if r == 24.0
+        ));
+        s.apply_xstyle(
+            "backdrop",
+            "blur(20) saturate(1.8) tint(#ffffff80) stroke(1,#ffffff33) fallback(#f2f2f7)",
+        )
+        .unwrap();
+        assert_eq!(
+            s.backdrop,
+            Some(
+                Backdrop::new(20.0, Color::new(255, 255, 255, 128))
+                    .saturate(1.8)
+                    .stroke(1.0, Color::new(255, 255, 255, 0x33))
+                    .fallback(Color::rgb(0xf2, 0xf2, 0xf7))
+            )
+        );
+        s.apply_xstyle("backdrop", "tint(#00000040)").unwrap();
+        let b = s.backdrop.unwrap();
+        assert_eq!((b.blur, b.saturation, b.stroke, b.fallback), (0.0, 1.0, None, None));
+        assert_eq!(b.fallback_color(), Color::new(0, 0, 0, 0x40));
+
+        // Canonical pairs reproduce the style.
+        s.apply_xstyle("backdrop", "blur(12);saturate(1.5);tint(#11223344);fallback(#ffffff)")
+            .unwrap();
+        let mut copy = Style::default();
+        for (k, v) in s.xstyle_pairs() {
+            copy.apply_xstyle(k, &v).unwrap();
+        }
+        assert_eq!(copy, s);
+        s.apply_xstyle("background-gradient", "none").unwrap();
+        s.apply_xstyle("backdrop", "none").unwrap();
+        assert_eq!(s, Style::default());
+
+        // Rejections leave the style unchanged.
+        let before = s.clone();
+        for (k, v) in [
+            ("background-gradient", "linear(90,#ff0000 0%)"),
+            ("background-gradient", "linear(90,#ff0000 60%,#0000ff 40%)"),
+            ("background-gradient", "linear(90,#ff0000 0%,#0000ff 120%)"),
+            ("background-gradient", "linear(90,#ff0000,#0000ff)"),
+            ("background-gradient", "linear(90deg,#ff0000 0%,#0000ff 100%)"),
+            ("background-gradient", "conic(0,#ff0000 0%,#0000ff 100%)"),
+            ("background-gradient", "radial(0.5,#ff0000 0%,#0000ff 100%)"),
+            ("background-gradient", "radial(0.5,0.5,0,#ff0000 0%,#0000ff 100%)"),
+            ("background-gradient", "radial(9,0.5,#ff0000 0%,#0000ff 100%)"),
+            ("backdrop", ""),
+            ("backdrop", "blur(200)"),
+            ("backdrop", "blur(-1)"),
+            ("backdrop", "saturate(9)"),
+            ("backdrop", "blur(2) blur(3)"),
+            ("backdrop", "tint(red)"),
+            ("backdrop", "stroke(0,#ffffff)"),
+            ("backdrop", "glass(1)"),
+        ] {
+            assert!(s.apply_xstyle(k, v).is_err(), "{k}={v}");
+            assert_eq!(s, before);
+        }
+        let stops = (0..=MAX_GRADIENT_STOPS)
+            .map(|i| format!("#000000 {}%", i))
+            .collect::<Vec<_>>()
+            .join(",");
+        assert!(s
+            .apply_xstyle("background-gradient", &format!("linear(0,{stops})"))
+            .is_err());
+        assert!(AnimatedProperties::ALL.contains(AnimatedProperties::BACKDROP));
+        s.apply_xstyle("transition", "backdrop,gradient:200ms").unwrap();
+        assert_eq!(
+            s.transitions[0].properties,
+            AnimatedProperties::BACKDROP.union(AnimatedProperties::GRADIENT)
+        );
+    }
+
+    #[test]
     fn blends_alpha() {
         let dst = Color::rgb(0, 0, 0);
         let src = Color::new(255, 255, 255, 128);
