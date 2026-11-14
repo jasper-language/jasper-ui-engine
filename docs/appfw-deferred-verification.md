@@ -180,3 +180,17 @@
 - Miri、cargo-fuzz、Kani、Verus 本机不可用；`EditBuffer` 未做模糊测试（建议：随机操作序列下的字符边界不变式）。
 - 未在真实窗口中实测输入法（fcitx/IBus 预编辑、候选窗定位）与系统剪贴板；宿主侧路由尚未改（见说明文档 §3）。
 - AccessKit `TextSelection` 与文本动作未接；长文本单行水平滚动、双向文本视觉移动、撤销未做。
+
+### 修复：材质预算跨帧丢失（2026-11-14，宿主接入发现）
+
+`rebuild_candidate` 帧事务以 `from_scene_with_context` 新建候选视图，`material: MaterialState` 取默认值而未从旧视图携带，
+导致宿主经 `set_backdrop_budget` 设置的预算在每个已应用帧后回到 `BackdropBudget::DEFAULT`（报告也被清空）。
+修复：候选携带 `material`（预算与上一绘制帧报告）。同查减少动态（随 `motion` 克隆携带）与编辑态闪烁（随会话携带）无此问题，补测试。
+`BEGIN/END VERIFIED` 区段未变（改动在区段外），无新增待重证项。
+
+| 项 | 命令（同上） | 结果 |
+|---|---|---|
+| 引擎默认特性 | `cargo test --locked` | 216 通过 |
+| 引擎全量（原生 CPU + AccessKit） | `cargo test --locked --features native-engine-cpu,accesskit-pending` | 439 通过，2 忽略（新增 3：`e5_budget_persists_across_applied_frames`、`reduce_motion_persists_across_applied_frames`、`caret_blink_and_reduce_motion_persist_across_applied_frames`） |
+| 引擎全量 + GPU | `cargo test --locked --features native-engine-cpu,gpu-pending,accesskit-pending` | 454 通过，2 忽略 |
+| `verification/native-activation` / `read-boundary` | `cargo test --locked` | 20 / 64 通过 |

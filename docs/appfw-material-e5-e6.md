@@ -138,6 +138,7 @@ radial(<cx>,<cy>,<半径>,<色标>,...)   # 半径为逻辑像素的圆
 - 报告：`Engine::backdrop_report(owner) -> Option<BackdropReport { blurred, degraded: Vec<(NodeId, BackdropDegradation)>, pixels }>`
   给出**上一个绘制帧**的结果（原因 `NodeBudget` / `PixelBudget` / `RasterFailed`）；`HostRenderer` 同名转发。
 - 宿主可调：`Engine::set_backdrop_budget(owner, budget)`（改变时重绘），例如测得帧超时后切 `FALLBACK_ONLY`。
+  预算是**会话级设置**：跨已应用帧（插入、改样式、移除等）保持，直到宿主再次设置；帧事务重建视图时随候选携带（报告同样携带，直到新帧绘制）。
 
 **测法**：`tests/native_material.rs::e5_frame_cost_measurement`（`--ignored`，优化构建）——1920×1080 窗口、玻璃工具栏 1920×88 + 侧栏 280×992、σ=30、饱和度 1.8，
 取 5 次最好成绩，对比同一帧两材质都降级时的耗时；`material.rs::kernel_cost_measurement` 单测核心（2048×1024，σ 4/30/128）。
@@ -165,7 +166,7 @@ radial(<cx>,<cy>,<半径>,<色标>,...)   # 半径为逻辑像素的圆
 | `src/style.rs` 单元 | `xstyle_gradient_and_backdrop`：三种渐变写法、材质全部函数与省略默认值、规范往返、清除、17 + 1 种非法值拒绝且样式不变、`backdrop`/`gradient` 过渡属性名 |
 | `src/motion.rs` 单元 | `material_and_gradient_interpolate_only_between_like_shapes`：角度/色标位置/预乘色、模糊/饱和度/着色中间值；异类、色标数、描边有无、有↔无立即；弹簧越界色标保序 |
 | `src/native_adapter/material.rs` 单元 | 标签往返（含 u64::MAX）与非标签滤镜；盒宽公式与 σ 误差；平坦色不变、阶跃边缘单调平滑、两轴对称、预乘不越界；CSS 饱和度矩阵 |
-| `tests/native_material.rs`（无头 CPU） | 渐变 0/90/180 度方向与单调、硬色标位置、中间色标、径向中心与半径对称、最远角椭圆、圆角裁剪、透明度、旋转、色标过渡中间帧与结束；毛玻璃边缘单调平滑并随半径变宽、盒外不变、**中性材质（σ0、饱和度 1、透明着色）与无材质逐像素一致**、着色与饱和度 0/2 取值、圆角外不变、描边、子节点在上、预算降级（节点/像素）与报告、恢复默认后逐像素复现、无回退色画着色、非归属方；平移下材质位置与着色过渡中间帧；6 种非法值整帧拒绝 |
+| `tests/native_material.rs`（无头 CPU） | 渐变 0/90/180 度方向与单调、硬色标位置、中间色标、径向中心与半径对称、最远角椭圆、圆角裁剪、透明度、旋转、色标过渡中间帧与结束；毛玻璃边缘单调平滑并随半径变宽、盒外不变、**中性材质（σ0、饱和度 1、透明着色）与无材质逐像素一致**、着色与饱和度 0/2 取值、圆角外不变、描边、子节点在上、预算降级（节点/像素）与报告、恢复默认后逐像素复现、预算跨已应用帧（插入/改样式/移除）保持且重设后按新预算、无回退色画着色、非归属方；平移下材质位置与着色过渡中间帧；6 种非法值整帧拒绝 |
 | `tests/native_style_effects_gpu.rs`（`gpu-pending`） | 渐变 + 圆角材质（模糊/饱和度/着色/描边）GPU 与 CPU 一致、重复帧逐字节一致、GPU 回退 |
 
 ### 本机测量（2026-11-14）

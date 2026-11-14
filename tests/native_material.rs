@@ -454,6 +454,111 @@ fn e5_over_budget_degrades_to_the_fallback_and_reports() {
     assert!(!e.set_backdrop_budget(OWNER + 1, BackdropBudget::DEFAULT));
 }
 
+/// Regression: the budget is a host session setting. Applied frames (Insert, UpdateStyle,
+/// Remove) used to rebuild the view with `BackdropBudget::DEFAULT`; it must persist until the
+/// host sets it again.
+/// 回归：预算是宿主会话级设置。已应用帧（插入、改样式、移除）曾以 `BackdropBudget::DEFAULT` 重建视图；
+/// 预算须保持到宿主再次设置。
+#[test]
+fn e5_budget_persists_across_applied_frames() {
+    let glass = |a: u8| {
+        Style::default().backdrop(Some(
+            Backdrop::new(8.0, Color::new(255, 255, 255, a)).fallback(Color::rgb(242, 242, 247)),
+        ))
+    };
+    let strip = |id: u64| {
+        Node::container(NodeId(id)).with_style(glass(60).size(Length::Px(120.0), Length::Px(8.0)))
+    };
+    let scene = glass_scene(glass(60));
+    let mut v = scene.version();
+    let mut e = engine(&scene);
+    let fallback = [242, 242, 247, 255];
+    let degraded = |ids: &[u64]| -> Vec<(NodeId, BackdropDegradation)> {
+        ids.iter()
+            .map(|id| (NodeId(*id), BackdropDegradation::NodeBudget))
+            .collect()
+    };
+    assert!(e.set_backdrop_budget(OWNER, BackdropBudget::FALLBACK_ONLY));
+    frame(&mut e, v);
+    assert_eq!(e.backdrop_report(OWNER).unwrap().degraded, degraded(&[3]));
+    let mut apply = |e: &mut Engine, patches: &[ScenePatch]| {
+        e.try_apply(OWNER, v, v + 1, patches).expect("frame");
+        v += 1;
+        v
+    };
+
+    // Insert: a second material; both still degraded. The report keeps describing the last
+    // painted frame until the new one paints.
+    let at = apply(
+        &mut e,
+        &[ScenePatch::Insert {
+            parent: NodeId(1),
+            index: 1,
+            node: strip(4),
+        }],
+    );
+    assert_eq!(e.backdrop_report(OWNER).unwrap().degraded, degraded(&[3]));
+    let f = frame(&mut e, at);
+    assert_eq!(px(&f, 30, 50), fallback);
+    let report = e.backdrop_report(OWNER).unwrap();
+    assert!(report.blurred.is_empty(), "{report:?}");
+    assert_eq!(report.degraded, degraded(&[3, 4]));
+
+    // UpdateStyle: still the fallback.
+    let at = apply(
+        &mut e,
+        &[ScenePatch::UpdateStyle {
+            id: NodeId(3),
+            style: glass(90).size(Length::Px(120.0), Length::Px(60.0)),
+        }],
+    );
+    let f = frame(&mut e, at);
+    assert_eq!(px(&f, 30, 50), fallback);
+    assert_eq!(e.backdrop_report(OWNER).unwrap().degraded, degraded(&[3, 4]));
+
+    // Remove: still the fallback.
+    let at = apply(&mut e, &[ScenePatch::Remove { id: NodeId(4) }]);
+    let f = frame(&mut e, at);
+    assert_eq!(px(&f, 30, 50), fallback);
+    let report = e.backdrop_report(OWNER).unwrap();
+    assert!(report.blurred.is_empty(), "{report:?}");
+    assert_eq!(report.degraded, degraded(&[3]));
+
+    // Setting it again takes over and persists in turn: one blurred material per frame.
+    assert!(e.set_backdrop_budget(
+        OWNER,
+        BackdropBudget {
+            max_nodes: 1,
+            ..BackdropBudget::DEFAULT
+        }
+    ));
+    for patches in [
+        vec![ScenePatch::Insert {
+            parent: NodeId(1),
+            index: 1,
+            node: strip(5),
+        }],
+        vec![ScenePatch::UpdateStyle {
+            id: NodeId(5),
+            style: glass(30).size(Length::Px(120.0), Length::Px(8.0)),
+        }],
+    ] {
+        let at = apply(&mut e, &patches);
+        let f = frame(&mut e, at);
+        assert_ne!(px(&f, 30, 50), fallback);
+        let report = e.backdrop_report(OWNER).unwrap();
+        assert_eq!(report.blurred, vec![NodeId(3)], "{report:?}");
+        assert_eq!(report.degraded, degraded(&[5]));
+    }
+    // Back to the default: both blurred, across a further frame.
+    assert!(e.set_backdrop_budget(OWNER, BackdropBudget::DEFAULT));
+    let at = apply(&mut e, &[ScenePatch::Remove { id: NodeId(5) }]);
+    frame(&mut e, at);
+    let report = e.backdrop_report(OWNER).unwrap();
+    assert_eq!(report.blurred, vec![NodeId(3)]);
+    assert!(report.degraded.is_empty());
+}
+
 #[test]
 fn e5_material_follows_the_transform_and_transitions() {
     // Translated glass blurs what is behind its painted position.

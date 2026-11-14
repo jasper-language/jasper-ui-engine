@@ -209,6 +209,51 @@ fn caret_blinks_on_the_host_clock_and_stays_under_reduce_motion() {
     assert!(column_dark(&f.render(), rect.x().round() as u32, rect) >= 10);
 }
 
+/// The blink phase and reduce-motion survive applied frames (Insert, UpdateStyle, Remove) that
+/// keep the edited field focused.
+/// 闪烁相位与减少动态跨已应用帧（插入、改样式、移除，编辑字段保持聚焦）保持。
+#[test]
+fn caret_blink_and_reduce_motion_persist_across_applied_frames() {
+    let mut f = Fixture::new("ab");
+    f.focus_field();
+    assert_eq!(f.e.caret_blink(OWNER, 1000.0).unwrap().next_toggle_ms, Some(1530.0));
+    let extra = Node::container(NodeId(9))
+        .with_style(Style::default().size(Length::Px(10.0), Length::Px(10.0)));
+    let frames = [
+        vec![ScenePatch::Insert {
+            parent: NodeId(1),
+            index: 2,
+            node: extra,
+        }],
+        vec![ScenePatch::UpdateStyle {
+            id: BUTTON,
+            style: Style::default().size(Length::Px(70.0), Length::Px(30.0)),
+        }],
+        vec![ScenePatch::Remove { id: NodeId(9) }],
+    ];
+    let apply = |f: &mut Fixture, patches: &[ScenePatch]| {
+        f.e.try_apply(OWNER, f.v, f.v + 1, patches).expect("frame");
+        f.v += 1;
+        assert_eq!(f.state().node, FIELD);
+    };
+    // Without reduce-motion the blink keeps its origin (1000 ms) across a frame.
+    apply(&mut f, &frames[0]);
+    let b = f.e.caret_blink(OWNER, 1600.0).unwrap();
+    assert_eq!((b.visible, b.next_toggle_ms), (false, Some(2060.0)));
+    // Under reduce-motion it stays visible on every following frame.
+    assert!(f.e.set_reduce_motion(OWNER, true));
+    for (i, patches) in frames[1..].iter().enumerate() {
+        apply(&mut f, patches);
+        let b = f.e.caret_blink(OWNER, 1600.0 + 530.0 * (i as f64 + 1.0)).unwrap();
+        assert_eq!((b.visible, b.next_toggle_ms), (true, None));
+        let rect = f.state().caret_rect.unwrap();
+        assert!(column_dark(&f.render(), rect.x().round() as u32, rect) >= 10);
+    }
+    // Setting it off again resumes blinking.
+    assert!(f.e.set_reduce_motion(OWNER, false));
+    assert!(f.e.caret_blink(OWNER, 4000.0).unwrap().next_toggle_ms.is_some());
+}
+
 #[test]
 fn keyboard_editing_selection_and_clipboard_hooks() {
     let mut f = Fixture::new("hello");

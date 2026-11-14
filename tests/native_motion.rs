@@ -366,6 +366,53 @@ fn reduce_motion_makes_movement_immediate_and_uses_declared_cross_fade() {
     assert_eq!(px(&view.frame(), 40, 40), RED);
 }
 
+/// Reduce-motion is a host session setting: it persists across applied frames (Insert,
+/// UpdateStyle, Remove) until the host sets it again.
+/// 减少动态是宿主会话级设置：跨已应用帧（插入、改样式、移除）保持，直到宿主再次设置。
+#[test]
+fn reduce_motion_persists_across_applied_frames() {
+    let plain = linear(AnimatedProperties::ALL, 200.0);
+    let mut view = View::new(base().transition(plain));
+    view.animate(0.0);
+    assert!(view.engine.set_reduce_motion(OWNER, true));
+    let extra = Node::container(NodeId(9))
+        .with_style(Style::default().size(Length::Px(10.0), Length::Px(10.0)));
+    let red = || base().background(Color::RED).transition(plain);
+    let frames: [(Vec<ScenePatch>, Style, [u8; 4]); 3] = [
+        (
+            vec![ScenePatch::Insert {
+                parent: NodeId(1),
+                index: 1,
+                node: extra,
+            }],
+            red(),
+            RED,
+        ),
+        (Vec::new(), base().transition(plain), BLUE),
+        (vec![ScenePatch::Remove { id: NodeId(9) }], red(), RED),
+    ];
+    for (mut patches, style, colour) in frames {
+        patches.push(ScenePatch::UpdateStyle {
+            id: NodeId(2),
+            style: style.size(Length::Px(40.0), Length::Px(40.0)),
+        });
+        view.engine
+            .try_apply(OWNER, view.version, view.version + 1, &patches)
+            .expect("frame");
+        view.version += 1;
+        view.animate(16.0);
+        assert_eq!(view.engine.animating(OWNER), Some(false));
+        assert_eq!(px(&view.frame(), 40, 40), colour);
+    }
+    // Setting it off again animates the next change.
+    assert!(view.engine.set_reduce_motion(OWNER, false));
+    view.restyle(base().transition(plain));
+    view.animate(16.0);
+    view.animate(116.0);
+    assert_eq!(view.engine.animating(OWNER), Some(true));
+    assert_ne!(px(&view.frame(), 40, 40), BLUE);
+}
+
 #[test]
 fn spring_overshoots_then_settles_with_finite_frames() {
     let rule = Transition::spring(AnimatedProperties::TRANSFORM, 1.0, 170.0, 12.0);

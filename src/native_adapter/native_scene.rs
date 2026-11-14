@@ -654,6 +654,10 @@ impl NativeScene {
             let animated: Vec<NodeId> = candidate.motion.animated_nodes().collect();
             candidate.write_presented(&animated);
         }
+        // E5: the material budget is a host session setting (kept until the host sets it again)
+        // and the report describes the last painted frame until the candidate paints its own.
+        // E5：材质预算是宿主会话级设置（保持到宿主再次设置）；报告在候选首次绘制前仍描述上一个绘制帧。
+        candidate.material = self.material.clone();
         // E14: the edit session survives frames (engine-local, no version of its own).
         candidate.carry_edit_from(self, patches);
         Some(candidate)
