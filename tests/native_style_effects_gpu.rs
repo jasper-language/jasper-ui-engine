@@ -162,3 +162,95 @@ fn gpu_paints_transforms_and_transition_frames_like_cpu() {
         assert!(near(px(&frame, x, y), px(&cpu, x, y)), "({x},{y}) GPU vs CPU");
     }
 }
+
+/// E6 gradient and E5 material on the GPU path: the backdrop is rasterised and blurred by the
+/// same CPU code on both paths, so sampled pixels match the CPU frame within a small tolerance
+/// (rasteriser anti-aliasing and image sampling); repeated frames free their backdrop images.
+/// GPU 路径上的 E6 渐变与 E5 材质：两条路径的背景都由同一段 CPU 代码光栅化与模糊，采样像素与 CPU 帧在小容差内一致；
+/// 重复绘制会释放单帧背景图像。
+#[test]
+fn gpu_paints_gradients_and_materials_like_cpu() {
+    use jasper_ui_engine::native::BackdropBudget;
+    use jasper_ui_engine::style::{Backdrop, Gradient, GradientStop};
+    let half = vec![
+        GradientStop::new(0.0, Color::BLACK),
+        GradientStop::new(0.5, Color::BLACK),
+        GradientStop::new(0.5, Color::WHITE),
+        GradientStop::new(1.0, Color::WHITE),
+    ];
+    let source = Scene::new(
+        Node::container(NodeId(1))
+            .with_style(
+                Style::default()
+                    .size(Length::Px(W as f32), Length::Px(H as f32))
+                    .padding(Edges::all(20.0))
+                    .background(Color::WHITE),
+            )
+            .child(
+                Node::container(NodeId(2))
+                    .with_style(
+                        Style::default()
+                            .size(Length::Px(160.0), Length::Px(80.0))
+                            .background_gradient(Some(Gradient::linear(90.0, half))),
+                    )
+                    .child(Node::container(NodeId(3)).with_style(
+                        Style::default()
+                            .size(Length::Px(120.0), Length::Px(60.0))
+                            .corner_radius(16.0)
+                            .backdrop(Some(
+                                Backdrop::new(6.0, Color::new(255, 0, 0, 90))
+                                    .saturate(1.5)
+                                    .stroke(1.0, Color::rgb(0, 200, 0)),
+                            )),
+                    )),
+            ),
+    );
+    let v = source.version();
+    let mut gpu = GpuRenderer::new_headless().expect("a wgpu adapter is required for GPU acceptance");
+    let mut engine = Engine::with_fonts(OWNER, &source, &[&font()], W, H).unwrap();
+    let frame = engine.render_gpu(OWNER, v, &mut gpu, 1 << 24).expect("gpu frame");
+    assert_eq!(
+        engine.backdrop_report(OWNER).unwrap().blurred,
+        vec![NodeId(3)]
+    );
+    let mut cpu_engine = Engine::with_fonts(OWNER, &source, &[&font()], W, H).unwrap();
+    let mut cpu = vec![0u8; (W * H * 4) as usize];
+    assert!(cpu_engine.render_to_surface(OWNER, v, &mut cpu, (W * 4) as usize, 1 << 24));
+    let mut worst = 0;
+    for y in (20..100).step_by(3) {
+        for x in (20..180).step_by(3) {
+            let (a, b) = (px(&frame, x, y), px(&cpu, x, y));
+            worst = worst.max(
+                a.iter()
+                    .zip(b)
+                    .map(|(p, q)| (*p as i32 - q as i32).abs())
+                    .max()
+                    .unwrap(),
+            );
+            // Away from shape edges (corner arcs, stroke, hard stop) the paths agree within 3.
+            let edge = x < 24 || x > 136 || y < 24 || y > 76 || (98..=102).contains(&x);
+            if !edge {
+                assert!(near(a, b), "({x},{y}) gpu {a:?} cpu {b:?}");
+            }
+        }
+    }
+    assert!(worst <= 64, "edge AA difference bounded: {worst}");
+    // Repeated frames (each uploads a new backdrop image) stay identical.
+    for _ in 0..3 {
+        assert!(engine.invalidate_frame(OWNER));
+        let again = engine.render_gpu(OWNER, v, &mut gpu, 1 << 24).expect("gpu frame");
+        let diffs: Vec<(usize, u8, u8)> = again
+            .iter()
+            .zip(&frame)
+            .enumerate()
+            .filter(|(_, (a, b))| a != b)
+            .map(|(i, (a, b))| (i, *a, *b))
+            .collect();
+        assert!(diffs.is_empty(), "{} differ, first {:?}", diffs.len(), &diffs[..diffs.len().min(12)]);
+    }
+    // Fallback on the GPU path too.
+    assert!(engine.set_backdrop_budget(OWNER, BackdropBudget::FALLBACK_ONLY));
+    let fallback = engine.render_gpu(OWNER, v, &mut gpu, 1 << 24).expect("gpu frame");
+    assert_eq!(engine.backdrop_report(OWNER).unwrap().degraded.len(), 1);
+    assert_ne!(fallback, frame);
+}

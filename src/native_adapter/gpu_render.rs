@@ -256,11 +256,6 @@ impl GpuRenderer {
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("jasper native gpu frame"),
         });
-        for id in std::mem::take(&mut self.transient) {
-            if let Some(image) = self.images.remove(&id) {
-                renderer.destroy_image(resources, &mut encoder, image);
-            }
-        }
         {
             let images = ImageManager::new(
                 renderer,
@@ -273,6 +268,16 @@ impl GpuRenderer {
             let mut painter =
                 VelloHybridScenePainter::new(&mut scene, images, &mut self.textures, &self.device);
             draw(&mut painter);
+        }
+        // Free the previous frame's one-shot images only after this frame uploaded its own:
+        // uploads go through the queue (executed before this encoder), so a slot freed earlier
+        // could be reused by a new image and then cleared by the encoder.
+        // 先让本帧上传自己的图像，再释放上一帧的单帧图像：上传经队列执行（早于本编码器），若先释放，
+        // 新图像可能复用该槽位而又被编码器清除。
+        for id in std::mem::take(&mut self.transient) {
+            if let Some(image) = self.images.remove(&id) {
+                renderer.destroy_image(resources, &mut encoder, image);
+            }
         }
         let mut bindings = TextureBindings::new();
         for (id, texture) in &self.textures {
