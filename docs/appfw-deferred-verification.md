@@ -94,3 +94,38 @@
 - Miri、cargo-fuzz、Kani、Verus 本机均不可用（同上）；`xstyle` 解析器未做模糊测试。
 - 未在真实宿主窗口与真实 vsync 下测量动画帧耗时：每个动画帧对整份文档重新解析样式与布局（`document.resolve`），大场景下的帧预算未评估。
 - 退出过渡（删除前淡出）与插入即淡入未实现（见 `appfw-motion-e7-e8.md` §6）。
+
+## E5 材质（毛玻璃）、E6 渐变（分支 `appfw/e5-e6`，2026-11-14）
+
+### 已重新通过（本机可执行部分）
+
+见 `docs/appfw-material-e5-e6.md` §7 与本节末「本机命令」；全部命令结果记在交付报告中。
+
+### 证据失效、待重证（源码哈希已变）
+
+| 性质 / 内核 | 改动 | 规格影响 |
+|---|---|---|
+| `NATIVE SCENE TYPE`（`native_scene.rs`） | `NativeScene` 增加字段 `material: MaterialState`（预算 + 上一帧报告） | 规格不涉及新字段；需在 Verus VM 重抽取并重证类型映射（同 E7 的 `motion` 字段） |
+
+其余 `BEGIN/END VERIFIED` 区段（`COLOR TYPE/CONSTRUCT`、`GPU READBACK LAYOUT`、场景准入/帧序/完成、`glyph_skew` 等）逐字未变。
+`GpuRenderer` 结构（不在验证区段内）新增 `transient` 字段与图像释放，不影响 `gpu_readback_layout`。
+
+### 新增代码，六步链全部暂缓
+
+| 项 | 位置 | 现有替代证据 |
+|---|---|---|
+| `Gradient` / `Backdrop` 校验与 `xstyle` 解析、规范输出 | `src/style.rs` | `xstyle_gradient_and_backdrop`（往返、18 种拒绝且样式不变） |
+| 渐变/材质过渡插值与钳制（色标保序） | `src/motion.rs::{snapshot, write}` | `material_and_gradient_interpolate_only_between_like_shapes` + 像素中间帧 |
+| 节点 id ↔ `backdrop-filter` 标签编码（22 位三段，f32 精确） | `material.rs::{tag_css, decode_tag}` | `tags_round_trip_through_blitz_filters`（含 0、2^22±1、u64::MAX） |
+| 三遍盒滤波高斯近似（滑动和、转置、边缘取值）与饱和度矩阵 | `material.rs::{box_passes, gaussian_blur, saturate}` | 单元：平坦不变、单调、对称、预乘 ≤ alpha、σ 误差 ≤ 15% |
+| 录制帧改写：层深度跟踪、区域计算（3σ 外扩、视口相交、变换行列式）、预算计入、降级 | `material.rs::compose` | `tests/native_material.rs` 像素与报告断言；中性材质逐像素一致 |
+| 录制回放（借用命令、平移） | `material.rs::replay` | 中性材质逐像素一致、GPU/CPU 一致 |
+| GPU 单帧图像释放顺序 | `gpu_render.rs::paint` | 重复 GPU 帧逐字节一致 |
+| 预算/报告宿主入口的归属准入 | `native_scene.rs`、`facade.rs`、`render_host.rs` | 非归属方返回 None/false 的断言 |
+
+### 未实测 / 限制
+
+- Miri、cargo-fuzz、Kani、Verus 本机不可用（同上）；`backdrop` / `background-gradient` 的 `xstyle` 解析器、`compose` 的整数区域运算未做模糊测试或溢出证明
+  （区域坐标为 f64 钳制到视口后转 u32，面积按 u64 计）。
+- 未在真实宿主窗口与真实 vsync 下测帧耗时；预算数值来自无头测量（`docs/appfw-material-e5-e6.md` §7）。
+- 平台视觉验收（与 macOS / Windows 原生毛玻璃的观感对照）未做；Liquid Glass 折射高光不在本步。

@@ -617,6 +617,23 @@ mod tests {
         assert!(at(20, 20) >= at(20, 22) && at(20, 22) >= at(20, 25));
     }
 
+    /// Kernel cost (run with `--ignored` in an optimised build): blur + saturate of 2^21 px.
+    #[test]
+    #[ignore]
+    fn kernel_cost_measurement() {
+        let (w, h) = (2048usize, 1024usize);
+        let mut img = image(w, h, |x, y| [(x % 256) as u8, (y % 256) as u8, 128, 255]);
+        for sigma in [4.0, 30.0, 128.0] {
+            let start = std::time::Instant::now();
+            gaussian_blur(&mut img, w, h, sigma);
+            saturate(&mut img, 1.8);
+            println!(
+                "E5 kernel {w}x{h} σ {sigma}: {:.1} ms",
+                start.elapsed().as_secs_f64() * 1000.0
+            );
+        }
+    }
+
     #[test]
     fn saturation_matches_css_matrix() {
         let mut px = vec![200, 100, 50, 255, 255, 255, 255, 255, 100, 50, 25, 128];

@@ -492,3 +492,80 @@ fn e5_material_follows_the_transform_and_transitions() {
     let f = frame(&mut e, v + 1);
     assert!(near(px(&f, 130, 50), [255, 155, 155, 255], 2), "{:?}", px(&f, 130, 50));
 }
+
+/// Frame-time measurement behind `BackdropBudget::DEFAULT` (run with `--ignored` in an
+/// optimised build): a 1920×1080 window with a glass toolbar (1920×88) and sidebar (280×992),
+/// σ = 30, against the same frame with both materials degraded to their fallback.
+/// `BackdropBudget::DEFAULT` 背后的帧耗时测量（优化构建下以 `--ignored` 运行）。
+#[test]
+#[ignore]
+fn e5_frame_cost_measurement() {
+    const FW: u32 = 1920;
+    const FH: u32 = 1080;
+    let content = Gradient::linear(
+        135.0,
+        stops(&[(0.0, Color::rgb(30, 110, 220)), (0.5, Color::WHITE), (1.0, Color::rgb(220, 50, 47))]),
+    );
+    let glass = |w: f32, h: f32| {
+        Style::default()
+            .size(Length::Px(w), Length::Px(h))
+            .backdrop(Some(
+                Backdrop::new(30.0, Color::new(255, 255, 255, 140))
+                    .saturate(1.8)
+                    .fallback(Color::rgb(242, 242, 247)),
+            ))
+    };
+    let mut body = Node::container(NodeId(10)).with_style(
+        Style::default()
+            .size(Length::Px(1640.0), Length::Px(992.0))
+            .background_gradient(Some(content))
+            .direction(FlexDirection::Row)
+            .gap(12.0),
+    );
+    for i in 0..40 {
+        body = body.child(Node::container(NodeId(100 + i)).with_style(
+            Style::default()
+                .size(Length::Px(28.0), Length::Px(900.0))
+                .background(Color::rgb((i * 6) as u8, 80, 160))
+                .corner_radius(8.0),
+        ));
+    }
+    let scene = Scene::new(
+        Node::container(NodeId(1))
+            .with_style(
+                Style::default()
+                    .size(Length::Px(FW as f32), Length::Px(FH as f32))
+                    .background(Color::WHITE),
+            )
+            .child(Node::container(NodeId(2)).with_style(glass(FW as f32, 88.0)))
+            .child(
+                Node::container(NodeId(3))
+                    .with_style(Style::default().direction(FlexDirection::Row))
+                    .child(Node::container(NodeId(4)).with_style(glass(280.0, 992.0)))
+                    .child(body),
+            ),
+    );
+    let mut e = Engine::with_fonts(OWNER, &scene, &[&font()], FW, FH).expect("native import");
+    let v = scene.version();
+    let mut bytes = vec![0u8; (FW * FH * 4) as usize];
+    let mut time = |e: &mut Engine| {
+        let mut best = f64::MAX;
+        for _ in 0..5 {
+            assert!(e.invalidate_frame(OWNER));
+            let start = std::time::Instant::now();
+            assert!(e.render_to_surface(OWNER, v, &mut bytes, (FW * 4) as usize, 1 << 25));
+            best = best.min(start.elapsed().as_secs_f64() * 1000.0);
+        }
+        best
+    };
+    let glass_ms = time(&mut e);
+    let report = e.backdrop_report(OWNER).unwrap();
+    assert_eq!(report.blurred.len(), 2, "{report:?}");
+    e.set_backdrop_budget(OWNER, BackdropBudget::FALLBACK_ONLY);
+    let fallback_ms = time(&mut e);
+    println!(
+        "E5 1920x1080: blurred {} px in 2 materials: frame {glass_ms:.1} ms, fallback frame {fallback_ms:.1} ms, material cost {:.1} ms",
+        report.pixels,
+        glass_ms - fallback_ms
+    );
+}

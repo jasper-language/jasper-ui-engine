@@ -42,6 +42,7 @@
 ## 3. 能力声明（供宿主 `hello`）
 
 `jasper_ui_engine::native::host::style_capabilities()`（常量表 `style::EXTENDED_STYLE_CAPABILITIES`）。名称沿用 Jasper 主题降级矩阵：
+（E7/E8 追加的 `transform`、`transition` 见 `appfw-motion-e7-e8.md`；E5/E6 追加的 `material`、`gradient` 见 `appfw-material-e5-e6.md`。）
 
 | 能力名（`hello` 令牌） | 覆盖的 `xstyle` 键 |
 |---|---|
