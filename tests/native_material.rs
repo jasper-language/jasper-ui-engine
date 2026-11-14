@@ -274,8 +274,9 @@ fn e5_blur_smooths_the_edge_behind_the_glass() {
     let ramp = row.iter().filter(|v| (12..243).contains(*v)).count();
     assert!(ramp >= 8, "transition spans pixels: {row:?}");
     assert!((96..=160).contains(&px(&f, 79, 50)[0]) || (96..=160).contains(&px(&f, 80, 50)[0]));
-    // Far from the edge the colour is kept.
-    assert_eq!(px(&f, 30, 50), [0, 0, 0, 255]);
+    // Far from the edge the colour is kept (x = 30 is still within reach of the white root left
+    // of the panel at x < 20, hence a small tolerance).
+    assert!(near(px(&f, 30, 50), [0, 0, 0, 255], 4), "{:?}", px(&f, 30, 50));
     assert_eq!(px(&f, 130, 50), [255, 255, 255, 255]);
     // Outside the glass nothing changes.
     for (x, y) in [(10, 10), (150, 50), (70, 90)] {

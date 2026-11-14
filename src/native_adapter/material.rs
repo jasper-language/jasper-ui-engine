@@ -74,18 +74,19 @@ pub struct BackdropBudget {
     /// Most blurred materials per frame (each one rasterises its backdrop region once more).
     /// 每帧最多模糊的材质数（每个材质多光栅化一次其背景区域）。
     pub max_nodes: u32,
-    /// Most device pixels of blurred backdrop regions (node box plus 3σ margin) per frame.
-    /// 每帧模糊背景区域（节点盒加 3σ 外延）的设备像素总数上限。
+    /// Most work pixels per frame: blurred backdrop regions (node box plus 3σ margin, inside the
+    /// viewport) at their working resolution (`downsample_for`).
+    /// 每帧工作像素上限：模糊背景区域（节点盒加 3σ 外延，视口内）按工作分辨率（`downsample_for`）计。
     pub max_pixels: u64,
 }
 
 impl BackdropBudget {
-    /// 8 materials and 2^21 device pixels (about one 1920×1080 frame) per frame; see
-    /// `docs/appfw-material-e5-e6.md` for the measurement behind it.
-    /// 每帧 8 个材质、2^21 设备像素（约一个 1920×1080 帧）；依据见 `docs/appfw-material-e5-e6.md`。
+    /// 8 materials and 2^17 work pixels per frame (about 10 ms of material work on the
+    /// measuring machine, see `docs/appfw-material-e5-e6.md` §5/§7).
+    /// 每帧 8 个材质、2^17 工作像素（测量机上约 10 ms 材质工作；依据见 `docs/appfw-material-e5-e6.md` §5/§7）。
     pub const DEFAULT: Self = Self {
         max_nodes: 8,
-        max_pixels: 1 << 21,
+        max_pixels: 1 << 17,
     };
     /// Never blur: every material paints its fallback (for hosts that cannot afford it).
     /// 从不模糊：所有材质画回退色（供负担不起的宿主使用）。
@@ -123,14 +124,18 @@ pub struct BackdropReport {
     /// Painted as the solid fallback, with the reason.
     /// 改画实底回退色，附原因。
     pub degraded: Vec<(NodeId, BackdropDegradation)>,
-    /// Device pixels of blurred backdrop regions.
-    /// 已模糊背景区域的设备像素数。
+    /// Work pixels of blurred backdrop regions (see `BackdropBudget::max_pixels`).
+    /// 已模糊背景区域的工作像素数。
     pub pixels: u64,
 }
 
 // ---------------------------------------------------------------------------------------------
 // Pixel kernels (premultiplied RGBA8).
 // 像素内核（预乘 RGBA8）。
+
+/// Largest device-pixel σ actually blurred (a large DPI or E8 scale beyond it blurs at this σ).
+/// 实际模糊的设备像素 σ 上界（DPI 或 E8 缩放更大时按此值模糊）。
+pub(crate) const MAX_DEVICE_SIGMA: f64 = 512.0;
 
 /// Box widths `(left, right)` of the three passes approximating a Gaussian of standard
 /// deviation `sigma` px (SVG 1.1 feGaussianBlur): d = ⌊σ·3·√(2π)/4 + 0.5⌋; odd d gives three
@@ -154,40 +159,59 @@ pub(crate) fn box_passes(sigma: f64) -> Vec<(usize, usize)> {
     }
 }
 
-/// One horizontal box pass over every row: each output is the rounded mean of the `left + 1 +
-/// right` inputs around it, edges repeated (clamp). Running sums: O(width + left + right) per
-/// row, independent of the box size per pixel.
-/// 对每行做一遍水平盒滤波：输出为周围 `left + 1 + right` 个输入的四舍五入均值，越界取边缘值。
-/// 滑动和：每行 O(width + left + right)，每像素代价与盒宽无关。
-fn box_rows(src: &[u8], dst: &mut [u8], width: usize, height: usize, left: usize, right: usize) {
+/// One box pass over one row: each output is the rounded mean of the `left + 1 + right` inputs
+/// around it, edges repeated (clamp). Running sums: O(width + left + right), independent of the
+/// box size per pixel.
+/// 对一行做一遍盒滤波：输出为周围 `left + 1 + right` 个输入的四舍五入均值，越界取边缘值。滑动和：
+/// O(width + left + right)，每像素代价与盒宽无关。
+fn box_row(row: &[[u8; 4]], out: &mut [[u8; 4]], left: usize, right: usize) {
     let n = (left + 1 + right) as u32;
     let half = n / 2;
-    let at = |row: &[u8], x: isize, c: usize| -> u32 {
-        let x = x.clamp(0, width as isize - 1) as usize;
-        u32::from(row[x * 4 + c])
-    };
-    for y in 0..height {
-        let row = &src[y * width * 4..(y + 1) * width * 4];
-        let out = &mut dst[y * width * 4..(y + 1) * width * 4];
+    // Exact rounded division by `n` through a 32.32 reciprocal: sums stay below 256·n < 2^20
+    // (n < 2^11, see `MAX_DEVICE_SIGMA`), where ⌊x·⌈2^32/n⌉ / 2^32⌋ = ⌊x/n⌋.
+    let recip = (1u64 << 32).div_ceil(u64::from(n));
+    let last = row.len() - 1;
+    let mut sum = [half; 4];
+    for k in -(left as isize)..=right as isize {
+        let p = row[k.clamp(0, last as isize) as usize];
         for c in 0..4 {
-            let mut sum: u32 = (-(left as isize)..=right as isize)
-                .map(|x| at(row, x, c))
-                .sum();
-            for x in 0..width {
-                out[x * 4 + c] = ((sum + half) / n) as u8;
-                sum += at(row, x as isize + right as isize + 1, c);
-                sum -= at(row, x as isize - left as isize, c);
-            }
+            sum[c] += u32::from(p[c]);
+        }
+    }
+    for (x, slot) in out.iter_mut().enumerate() {
+        *slot = sum.map(|v| ((u64::from(v) * recip) >> 32) as u8);
+        let add = row[(x + right + 1).min(last)];
+        let sub = row[x.saturating_sub(left)];
+        for c in 0..4 {
+            sum[c] = sum[c] + u32::from(add[c]) - u32::from(sub[c]);
         }
     }
 }
 
-fn transpose(src: &[u8], dst: &mut [u8], width: usize, height: usize) {
-    for y in 0..height {
-        for x in 0..width {
-            let s = (y * width + x) * 4;
-            let d = (x * height + y) * 4;
-            dst[d..d + 4].copy_from_slice(&src[s..s + 4]);
+/// All box passes over every row (each row stays in cache through the passes).
+fn box_rows(src: &[[u8; 4]], dst: &mut [[u8; 4]], width: usize, passes: &[(usize, usize)]) {
+    let mut a = vec![[0u8; 4]; width];
+    let mut b = vec![[0u8; 4]; width];
+    for (row, out) in src.chunks_exact(width).zip(dst.chunks_exact_mut(width)) {
+        a.copy_from_slice(row);
+        for (left, right) in passes {
+            box_row(&a, &mut b, *left, *right);
+            std::mem::swap(&mut a, &mut b);
+        }
+        out.copy_from_slice(&a);
+    }
+}
+
+/// Transpose in 32×32 pixel tiles (cache-friendly).
+fn transpose(src: &[[u8; 4]], dst: &mut [[u8; 4]], width: usize, height: usize) {
+    const TILE: usize = 32;
+    for ty in (0..height).step_by(TILE) {
+        for tx in (0..width).step_by(TILE) {
+            for y in ty..(ty + TILE).min(height) {
+                for x in tx..(tx + TILE).min(width) {
+                    dst[x * height + y] = src[y * width + x];
+                }
+            }
         }
     }
 }
@@ -202,19 +226,13 @@ pub(crate) fn gaussian_blur(pixels: &mut [u8], width: usize, height: usize, sigm
     if passes.is_empty() || width == 0 || height == 0 {
         return;
     }
-    let mut cur = pixels.to_vec();
-    let mut tmp = vec![0u8; pixels.len()];
-    for (left, right) in &passes {
-        box_rows(&cur, &mut tmp, width, height, *left, *right);
-        std::mem::swap(&mut cur, &mut tmp);
-    }
-    transpose(&cur, &mut tmp, width, height);
-    std::mem::swap(&mut cur, &mut tmp);
-    for (left, right) in &passes {
-        box_rows(&cur, &mut tmp, height, width, *left, *right);
-        std::mem::swap(&mut cur, &mut tmp);
-    }
-    transpose(&cur, pixels, height, width);
+    let (pixels, rest) = pixels.as_chunks_mut::<4>();
+    debug_assert!(rest.is_empty());
+    let mut tmp = vec![[0u8; 4]; pixels.len()];
+    box_rows(pixels, &mut tmp, width, &passes);
+    transpose(&tmp, pixels, width, height);
+    box_rows(pixels, &mut tmp, height, &passes);
+    transpose(&tmp, pixels, height, width);
 }
 
 /// CSS `saturate(s)` (Filter Effects `feColorMatrix type="saturate"`) on premultiplied RGBA8 in
@@ -252,10 +270,35 @@ pub(crate) fn saturate(pixels: &mut [u8], s: f32) {
 #[cfg(feature = "cpu-pending")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct Region {
+    /// Device-pixel origin.
     pub x: u32,
     pub y: u32,
+    /// Buffer size: the device extent divided by `downsample`, rounded up.
     pub width: u32,
     pub height: u32,
+    /// The backdrop is rasterised and blurred at 1/`downsample` resolution (1, 2 or 4).
+    pub downsample: u32,
+}
+
+impl Region {
+    /// Device → buffer transform for rasterising the backdrop prefix.
+    pub(crate) fn raster_transform(&self) -> peniko::kurbo::Affine {
+        peniko::kurbo::Affine::scale(1.0 / f64::from(self.downsample))
+            * peniko::kurbo::Affine::translate((-f64::from(self.x), -f64::from(self.y)))
+    }
+}
+
+/// Resolution divisor for a device σ: blur at full resolution below 4 px, at half up to 16 px,
+/// at quarter beyond (a Gaussian of σ ≥ 4 has no detail a bilinear 2×/4× upsample loses).
+/// 设备 σ 对应的分辨率除数：σ < 4 全分辨率，4..16 半分辨率，≥ 16 四分之一（σ ≥ 4 的高斯不含双线性 2×/4× 上采样会丢的细节）。
+pub(crate) fn downsample_for(sigma: f64) -> u32 {
+    if sigma < 4.0 {
+        1
+    } else if sigma < 16.0 {
+        2
+    } else {
+        4
+    }
 }
 
 /// One material node of the frame, from its presented style and layout.
@@ -412,7 +455,8 @@ pub(crate) fn compose(
         let device_path = transform * rounded(clip, 0.0).to_path(0.1);
         let det = transform.determinant().abs();
         let bbox = device_path.bounding_box();
-        let sigma = f64::from(spec.backdrop.blur) * factor * det.sqrt();
+        // Device σ, capped so box widths stay below 2^11 (exact reciprocal division).
+        let sigma = (f64::from(spec.backdrop.blur) * factor * det.sqrt()).min(MAX_DEVICE_SIGMA);
         let margin = (3.0 * sigma).ceil() + 1.0;
         let x0 = (bbox.x0 - margin).floor().max(0.0);
         let y0 = (bbox.y0 - margin).floor().max(0.0);
@@ -435,11 +479,13 @@ pub(crate) fn compose(
             depth += 1;
             continue;
         }
+        let downsample = downsample_for(sigma);
         let region = Region {
             x: x0 as u32,
             y: y0 as u32,
-            width: (x1 - x0) as u32,
-            height: (y1 - y0) as u32,
+            width: ((x1 - x0) as u32).div_ceil(downsample),
+            height: ((y1 - y0) as u32).div_ceil(downsample),
+            downsample,
         };
         let area = u64::from(region.width) * u64::from(region.height);
         let degraded = if report.blurred.len() as u32 >= budget.max_nodes {
@@ -462,7 +508,7 @@ pub(crate) fn compose(
                     &mut pixels,
                     region.width as usize,
                     region.height as usize,
-                    sigma,
+                    sigma / f64::from(downsample),
                 );
                 saturate(&mut pixels, spec.backdrop.saturation);
                 let image = peniko::ImageData {
@@ -475,11 +521,19 @@ pub(crate) fn compose(
                 images.push(image.data.id());
                 let brush = peniko::ImageBrush::new(image)
                     .with_extend(peniko::Extend::Pad)
-                    .with_quality(peniko::ImageQuality::Low);
+                    .with_quality(if downsample == 1 {
+                        // Integer translation: pixel-exact copy.
+                        peniko::ImageQuality::Low
+                    } else {
+                        peniko::ImageQuality::Medium
+                    });
                 fill(
                     &mut out,
                     Paint::Image(brush),
-                    Some(Affine::translate((f64::from(region.x), f64::from(region.y)))),
+                    Some(
+                        Affine::translate((f64::from(region.x), f64::from(region.y)))
+                            * Affine::scale(f64::from(downsample)),
+                    ),
                 );
                 let tint = spec.backdrop.tint;
                 if tint.a > 0 {
@@ -631,6 +685,17 @@ mod tests {
                 "E5 kernel {w}x{h} σ {sigma}: {:.1} ms",
                 start.elapsed().as_secs_f64() * 1000.0
             );
+        }
+    }
+
+    #[test]
+    fn reciprocal_rounding_equals_integer_division() {
+        for n in [2u32, 3, 5, 19, 20, 77, 241, 2047] {
+            let recip = (1u64 << 32).div_ceil(u64::from(n));
+            for sum in 0..=(255 * n) {
+                let x = sum + n / 2;
+                assert_eq!(((u64::from(x) * recip) >> 32) as u32, x / n, "n {n} sum {sum}");
+            }
         }
     }
 

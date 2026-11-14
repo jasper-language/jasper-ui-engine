@@ -3251,7 +3251,7 @@ fn paint_frame(
         budget,
         (width, height),
         |prefix, open, region| {
-            let offset = Affine::translate((-f64::from(region.x), -f64::from(region.y)));
+            let offset = region.raster_transform();
             Some(anyrender::render_to_buffer::<
                 anyrender_vello_cpu::VelloCpuImageRenderer,
                 _,
