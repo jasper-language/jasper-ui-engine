@@ -450,8 +450,9 @@ mod tests {
             target,
             images,
             textures,
+            transient,
         } = gpu;
-        drop((renderer, target, images, textures));
+        drop((renderer, target, images, textures, transient));
         let DeviceHandle {
             instance,
             adapter,
