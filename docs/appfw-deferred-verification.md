@@ -99,7 +99,15 @@
 
 ### 已重新通过（本机可执行部分）
 
-见 `docs/appfw-material-e5-e6.md` §7 与本节末「本机命令」；全部命令结果记在交付报告中。
+| 项 | 命令（`taskset -c 16-17 nice -n 19`，`-j 2`；字体环境变量同 E7 节） | 结果 |
+|---|---|---|
+| 引擎默认特性 | `cargo test --locked` | 216 通过 |
+| 引擎全量（原生 CPU + AccessKit） | `cargo test --locked --features native-engine-cpu,accesskit-pending` | 415 通过，2 忽略（两个 `--ignored` 测量用例） |
+| 引擎全量 + GPU（硬件 wgpu 适配器） | `cargo test --locked --features native-engine-cpu,gpu-pending,accesskit-pending` | 430 通过，2 忽略 |
+| `verification/native-activation` | `cargo test --locked` | 20 通过 |
+| `verification/read-boundary` | `cargo test --locked` | 64 通过 |
+| `scripts/check-blitz-proof-mapping.py` | 本机无 `evidence/*/report.json`；输出与 `appfw/e7-e8` 基线除路径外逐字相同 | 同基线 |
+| `BEGIN/END VERIFIED` 区段比对（相对 `appfw/e7-e8`） | 脚本逐区段比较 | 仅 `NATIVE SCENE TYPE` 变化（见下） |
 
 ### 证据失效、待重证（源码哈希已变）
 
