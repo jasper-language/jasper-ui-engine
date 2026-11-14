@@ -413,6 +413,22 @@ impl HostRenderer {
         self.inner.set_reduce_motion(owner, on)
     }
 
+    /// E5 material budget; see `Engine::set_backdrop_budget` (a scene setting, like reduce-motion).
+    /// E5 材质预算；见 `Engine::set_backdrop_budget`（与减少动态一样属场景设置）。
+    pub fn set_backdrop_budget(
+        &mut self,
+        owner: u64,
+        budget: crate::native::BackdropBudget,
+    ) -> bool {
+        self.inner.set_backdrop_budget(owner, budget)
+    }
+
+    /// E5 report of the last painted frame; see `Engine::backdrop_report`.
+    /// E5 上一绘制帧的材质报告；见 `Engine::backdrop_report`。
+    pub fn backdrop_report(&self, owner: u64) -> Option<crate::native::BackdropReport> {
+        self.inner.backdrop_report(owner)
+    }
+
     /// Semantic activation through the live surface generation; see `Engine::activate`.
     /// 经当前活动 Surface 代数做语义激活；见 `Engine::activate`。
     pub fn activate(

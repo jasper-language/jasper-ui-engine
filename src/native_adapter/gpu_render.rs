@@ -55,6 +55,9 @@ pub struct GpuRenderer {
     target: Option<Target>,
     images: FxHashMap<u64, ImageId>,
     textures: FxHashMap<ResourceId, wgpu::TextureView>,
+    /// Per-frame images (E5 backdrops) to free from the atlas before the next frame.
+    /// 下一帧之前从图集释放的单帧图像（E5 背景）。
+    transient: Vec<u64>,
 }
 
 impl GpuRenderer {
@@ -79,6 +82,7 @@ impl GpuRenderer {
             target: None,
             images: FxHashMap::default(),
             textures: FxHashMap::default(),
+            transient: Vec::new(),
         }
     }
     /// Acquire an adapter without a surface (headless) and create its device.
@@ -101,7 +105,14 @@ impl GpuRenderer {
             target: None,
             images: FxHashMap::default(),
             textures: FxHashMap::default(),
+            transient: Vec::new(),
         })
+    }
+    /// Images (peniko blob ids) used by one frame only; their atlas slots are freed at the start
+    /// of the next frame, after the frame that drew them was submitted.
+    /// 只用于一帧的图像（peniko blob id）；在绘制它们的帧提交之后、下一帧开始时释放其图集槽位。
+    pub(crate) fn release_images(&mut self, ids: Vec<u64>) {
+        self.transient.extend(ids);
     }
     /// Adapter name and backend, for host diagnostics.
     /// 适配器名称与后端，供宿主诊断。
@@ -245,6 +256,11 @@ impl GpuRenderer {
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("jasper native gpu frame"),
         });
+        for id in std::mem::take(&mut self.transient) {
+            if let Some(image) = self.images.remove(&id) {
+                renderer.destroy_image(resources, &mut encoder, image);
+            }
+        }
         {
             let images = ImageManager::new(
                 renderer,

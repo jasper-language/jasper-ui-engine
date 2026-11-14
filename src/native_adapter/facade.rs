@@ -835,6 +835,17 @@ impl SceneHostView {
     /// E7：宿主「减少动态」环境。开启时运行中的过渡立即结束；之后尺寸/变换变化立即生效，其他属性用规则的
     /// `reduce=` 替代曲线（没有则立即）。非归属方或已关闭视图为 false。
     pub fn set_reduce_motion(&mut self,owner:u64,on:bool)->bool {self.inner.set_reduce_motion_from_host(owner,on)}
+    /// E5 materials: per-frame CPU budget for blurred backdrops (`BackdropBudget::DEFAULT`
+    /// initially). Over budget a material paints its solid fallback and is listed in
+    /// `backdrop_report`; `BackdropBudget::FALLBACK_ONLY` never blurs. False for a foreign owner
+    /// or a closed view.
+    /// E5 材质：模糊背景的每帧 CPU 预算（初始 `BackdropBudget::DEFAULT`）。超出预算的材质画实底回退色并列入
+    /// `backdrop_report`；`FALLBACK_ONLY` 从不模糊。非归属方或已关闭视图为 false。
+    pub fn set_backdrop_budget(&mut self,owner:u64,budget:BackdropBudget)->bool {self.inner.set_backdrop_budget_from_host(owner,budget)}
+    /// E5: which materials the last painted frame blurred and which it degraded (with reason).
+    /// None for a foreign owner or a closed view.
+    /// E5：上一个绘制帧模糊了哪些材质、哪些降级（附原因）。非归属方或已关闭视图为 None。
+    pub fn backdrop_report(&self,owner:u64)->Option<BackdropReport> {self.inner.backdrop_report_from_host(owner)}
     /// Force the next render to repaint, e.g. after the host lost its presentation surface.
     /// 强制下一次渲染重绘，如宿主呈现表面丢失之后。
     pub fn invalidate_frame(&mut self,owner:u64)->bool {self.inner.invalidate_frame_from_host(owner)}

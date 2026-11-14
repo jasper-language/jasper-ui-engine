@@ -246,6 +246,14 @@ pub struct Style {
     /// every change is immediate (the default, with no per-frame work).
     /// E7：之后的更新改变所覆盖属性时由引擎执行的过渡。为空时所有变化立即生效（默认，无逐帧开销）。
     pub transitions: Vec<Transition>,
+    /// E6: gradient painted above `background` and below borders, clipped like the background
+    /// (rounded border box). None: no gradient (the default).
+    /// E6：绘制在 `background` 之上、边框之下的渐变，与背景同样裁剪（圆角边框盒）。None 为无渐变（默认）。
+    pub background_gradient: Option<Gradient>,
+    /// E5: material (frosted glass) under the node's own background: what is painted behind the
+    /// node, blurred, saturated and tinted, clipped to the rounded border box. None: no material.
+    /// E5：节点自身背景之下的材质（毛玻璃）：节点背后已绘内容经模糊、饱和度与着色，按圆角边框盒裁剪。None 为无材质。
+    pub backdrop: Option<Backdrop>,
 }
 
 impl Default for Style {
@@ -286,6 +294,8 @@ impl Default for Style {
             hit_slop: Edges::ZERO,
             transform: Transform2D::IDENTITY,
             transitions: Vec::new(),
+            background_gradient: None,
+            backdrop: None,
         }
     }
 }
@@ -445,6 +455,16 @@ impl Style {
         self
     }
 
+    pub fn background_gradient(mut self, gradient: Option<Gradient>) -> Self {
+        self.background_gradient = gradient;
+        self
+    }
+
+    pub fn backdrop(mut self, backdrop: Option<Backdrop>) -> Self {
+        self.backdrop = backdrop;
+        self
+    }
+
     /// The rule that governs `property`: the last one covering it.
     /// 决定 `property` 的规则：覆盖它的最后一条。
     pub fn transition_for(&self, property: AnimatedProperties) -> Option<&Transition> {
@@ -508,6 +528,8 @@ impl Style {
             && self.transform.valid()
             && self.transitions.len() <= MAX_TRANSITIONS
             && self.transitions.iter().all(Transition::valid)
+            && self.background_gradient.as_ref().is_none_or(Gradient::valid)
+            && self.backdrop.as_ref().is_none_or(Backdrop::valid)
     }
 }
 
@@ -677,14 +699,21 @@ impl AnimatedProperties {
     pub const HEIGHT: Self = Self(1 << 8);
     /// E8 transform (translate, rotate, scale, origin).
     pub const TRANSFORM: Self = Self(1 << 9);
-    pub const ALL: Self = Self((1 << 10) - 1);
+    /// E5 material: blur, saturation, tint and stroke (only while both ends have a backdrop).
+    /// E5 材质：模糊、饱和度、着色与描边（仅当两端都有材质时）。
+    pub const BACKDROP: Self = Self(1 << 10);
+    /// E6 gradient: geometry and colour stops (only between gradients of the same kind and stop
+    /// count).
+    /// E6 渐变：几何与色标（仅在同类、同色标数的渐变之间）。
+    pub const GRADIENT: Self = Self(1 << 11);
+    pub const ALL: Self = Self((1 << 12) - 1);
     /// Properties that move or resize content; reduce-motion always makes these immediate.
     /// 移动或改变内容尺寸的属性；减少动态下这些属性总是立即生效。
     pub const MOVEMENT: Self = Self(Self::WIDTH.0 | Self::HEIGHT.0 | Self::TRANSFORM.0);
 
     /// Each single property with its `xstyle` name, in canonical order.
     /// 每个单项属性及其 `xstyle` 名称，按规范顺序。
-    pub const NAMED: [(&'static str, Self); 10] = [
+    pub const NAMED: [(&'static str, Self); 12] = [
         ("background", Self::BACKGROUND),
         ("color", Self::COLOR),
         ("border-color", Self::BORDER_COLOR),
@@ -695,6 +724,8 @@ impl AnimatedProperties {
         ("width", Self::WIDTH),
         ("height", Self::HEIGHT),
         ("transform", Self::TRANSFORM),
+        ("backdrop", Self::BACKDROP),
+        ("gradient", Self::GRADIENT),
     ];
 
     pub const fn union(self, other: Self) -> Self {
@@ -988,6 +1019,180 @@ impl TextDecoration {
     };
 }
 
+/// Most colour stops of one E6 gradient.
+/// E6 渐变的色标数上限。
+pub const MAX_GRADIENT_STOPS: usize = 16;
+
+/// Geometry of an E6 gradient.
+/// E6 渐变的几何。
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum GradientShape {
+    /// CSS `linear-gradient(<angle>deg, ...)`: 0 points to the top, 90 to the right (clockwise);
+    /// the gradient line spans the border box corner to corner along that direction (CSS).
+    /// CSS `linear-gradient(<angle>deg, ...)`：0 指向上方，90 指向右方（顺时针）；渐变线按 CSS 跨越边框盒。
+    Linear { angle: f32 },
+    /// CSS `radial-gradient`: centre as fractions of the border box (0.5/0.5 is the middle);
+    /// `radius` None is the CSS default ellipse reaching the farthest corner, Some(r) a circle of
+    /// radius r logical px.
+    /// CSS `radial-gradient`：中心为边框盒比例（0.5/0.5 为正中）；`radius` 为 None 时是 CSS 默认的
+    /// 到最远角的椭圆，Some(r) 为半径 r 逻辑像素的圆。
+    Radial {
+        center_x: f32,
+        center_y: f32,
+        radius: Option<f32>,
+    },
+}
+
+/// One colour stop; `position` is a fraction 0..=1 of the gradient line (or ray).
+/// 一个色标；`position` 为渐变线（或半径）上的比例 0..=1。
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct GradientStop {
+    pub position: f32,
+    pub color: Color,
+}
+
+impl GradientStop {
+    pub const fn new(position: f32, color: Color) -> Self {
+        Self { position, color }
+    }
+}
+
+/// E6 gradient background: 2..=16 stops with non-decreasing positions in 0..=1.
+/// E6 渐变背景：2..=16 个色标，位置在 0..=1 内且不减。
+#[derive(Clone, Debug, PartialEq)]
+pub struct Gradient {
+    pub shape: GradientShape,
+    pub stops: Vec<GradientStop>,
+}
+
+impl Gradient {
+    pub fn linear(angle: f32, stops: Vec<GradientStop>) -> Self {
+        Self {
+            shape: GradientShape::Linear { angle },
+            stops,
+        }
+    }
+
+    pub fn radial(center_x: f32, center_y: f32, stops: Vec<GradientStop>) -> Self {
+        Self {
+            shape: GradientShape::Radial {
+                center_x,
+                center_y,
+                radius: None,
+            },
+            stops,
+        }
+    }
+
+    pub fn circle(center_x: f32, center_y: f32, radius: f32, stops: Vec<GradientStop>) -> Self {
+        Self {
+            shape: GradientShape::Radial {
+                center_x,
+                center_y,
+                radius: Some(radius),
+            },
+            stops,
+        }
+    }
+
+    pub fn valid(&self) -> bool {
+        let geometry = match self.shape {
+            GradientShape::Linear { angle } => {
+                angle.is_finite() && angle.abs() <= MAX_TRANSFORM_ROTATE
+            }
+            GradientShape::Radial {
+                center_x,
+                center_y,
+                radius,
+            } => {
+                [center_x, center_y]
+                    .into_iter()
+                    .all(|v| v.is_finite() && v.abs() <= MAX_TRANSFORM_ORIGIN)
+                    && radius.is_none_or(|r| r.is_finite() && r > 0.0 && r <= MAX_EFFECT_EXTENT)
+            }
+        };
+        geometry
+            && (2..=MAX_GRADIENT_STOPS).contains(&self.stops.len())
+            && self
+                .stops
+                .iter()
+                .all(|s| s.position.is_finite() && (0.0..=1.0).contains(&s.position))
+            && self
+                .stops
+                .windows(2)
+                .all(|w| w[0].position <= w[1].position)
+    }
+}
+
+/// Largest E5 blur radius (Gaussian standard deviation, logical px).
+/// E5 模糊半径（高斯标准差，逻辑像素）的上界。
+pub const MAX_BACKDROP_BLUR: f32 = 128.0;
+/// Largest E5 saturation factor.
+/// E5 饱和度系数的上界。
+pub const MAX_BACKDROP_SATURATION: f32 = 8.0;
+
+/// E5 material: the content painted behind the node is blurred (Gaussian, standard deviation
+/// `blur` logical px, CSS `backdrop-filter: blur()`), saturated (CSS `saturate()`, 1 unchanged,
+/// 0 grey), then `tint` is composited over it; an optional inner `stroke` follows the rounded
+/// border box. When the engine cannot blur within its budget it paints `fallback` (or, without
+/// one, `tint`) as a plain fill instead and reports the node (`backdrop_report`).
+/// E5 材质：节点背后已绘内容经高斯模糊（标准差 `blur` 逻辑像素，同 CSS `backdrop-filter: blur()`）、
+/// 饱和度（同 CSS `saturate()`，1 不变、0 灰度），再叠加 `tint`；可选内描边沿圆角边框盒。引擎在预算内无法模糊时
+/// 改画 `fallback`（没有则画 `tint`）实底，并在 `backdrop_report` 中报告该节点。
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Backdrop {
+    pub blur: f32,
+    pub saturation: f32,
+    pub tint: Color,
+    pub stroke: Option<BorderSide>,
+    pub fallback: Option<Color>,
+}
+
+impl Backdrop {
+    /// Blur and tint with saturation 1, no stroke and no fallback.
+    /// 模糊与着色；饱和度 1，无描边、无回退色。
+    pub const fn new(blur: f32, tint: Color) -> Self {
+        Self {
+            blur,
+            saturation: 1.0,
+            tint,
+            stroke: None,
+            fallback: None,
+        }
+    }
+
+    pub const fn saturate(mut self, saturation: f32) -> Self {
+        self.saturation = saturation;
+        self
+    }
+
+    pub const fn stroke(mut self, width: f32, color: Color) -> Self {
+        self.stroke = Some(BorderSide { width, color });
+        self
+    }
+
+    pub const fn fallback(mut self, color: Color) -> Self {
+        self.fallback = Some(color);
+        self
+    }
+
+    pub fn valid(&self) -> bool {
+        self.blur.is_finite()
+            && (0.0..=MAX_BACKDROP_BLUR).contains(&self.blur)
+            && self.saturation.is_finite()
+            && (0.0..=MAX_BACKDROP_SATURATION).contains(&self.saturation)
+            && self.stroke.is_none_or(|s| {
+                s.width.is_finite() && s.width > 0.0 && s.width <= MAX_EFFECT_EXTENT
+            })
+    }
+
+    /// Colour painted instead of the material when it is degraded.
+    /// 材质降级时改画的颜色。
+    pub fn fallback_color(&self) -> Color {
+        self.fallback.unwrap_or(self.tint)
+    }
+}
+
 /// One extended style capability as declared to the runtime (JUI 2 `hello` token) and the
 /// `xstyle` keys it covers. Names follow the Jasper theme degradation matrix.
 /// 向运行时声明的一项扩展样式能力（JUI 2 `hello` 令牌）及其覆盖的 `xstyle` 键；名称沿用 Jasper 主题降级矩阵。
@@ -1036,6 +1241,14 @@ pub const EXTENDED_STYLE_CAPABILITIES: &[StyleCapability] = &[
     StyleCapability {
         name: "transition",
         xstyle_keys: &["transition"],
+    },
+    StyleCapability {
+        name: "material",
+        xstyle_keys: &["backdrop"],
+    },
+    StyleCapability {
+        name: "gradient",
+        xstyle_keys: &["background-gradient"],
     },
 ];
 
@@ -1375,6 +1588,148 @@ fn format_transform(t: &Transform2D) -> String {
     }
 }
 
+/// `linear(<deg>,<stops>)`, `radial(<cx>,<cy>,<stops>)` or `radial(<cx>,<cy>,<r>,<stops>)`;
+/// each stop is `#rrggbb[aa] <p>%`. Stops start at the first argument beginning with `#`.
+fn parse_gradient(text: &str) -> Option<Gradient> {
+    let text = text.trim();
+    let open = text.find('(')?;
+    let name = text[..open].trim();
+    let args: Vec<&str> = text[open + 1..]
+        .strip_suffix(')')?
+        .split(',')
+        .map(str::trim)
+        .collect();
+    let first_stop = args.iter().position(|a| a.starts_with('#'))?;
+    let (geometry, stops) = args.split_at(first_stop);
+    let geometry = geometry
+        .iter()
+        .map(|g| parse_number(g))
+        .collect::<Option<Vec<f32>>>()?;
+    let stops = stops
+        .iter()
+        .map(|stop| {
+            let (color, position) = stop.split_once(char::is_whitespace)?;
+            let percent = parse_number(position.trim().strip_suffix('%')?)?;
+            Some(GradientStop::new(percent / 100.0, parse_color(color)?))
+        })
+        .collect::<Option<Vec<_>>>()?;
+    let shape = match (name, geometry.as_slice()) {
+        ("linear", [angle]) => GradientShape::Linear { angle: *angle },
+        ("radial", [x, y]) => GradientShape::Radial {
+            center_x: *x,
+            center_y: *y,
+            radius: None,
+        },
+        ("radial", [x, y, r]) => GradientShape::Radial {
+            center_x: *x,
+            center_y: *y,
+            radius: Some(*r),
+        },
+        _ => return None,
+    };
+    Some(Gradient { shape, stops })
+}
+
+fn format_gradient(g: &Gradient) -> String {
+    let mut args = match g.shape {
+        GradientShape::Linear { angle } => vec![format_number(angle)],
+        GradientShape::Radial {
+            center_x,
+            center_y,
+            radius,
+        } => {
+            let mut v = vec![format_number(center_x), format_number(center_y)];
+            if let Some(r) = radius {
+                v.push(format_number(r));
+            }
+            v
+        }
+    };
+    args.extend(
+        g.stops
+            .iter()
+            .map(|s| format!("{} {}%", format_color(s.color), format_number(s.position * 100.0))),
+    );
+    format!(
+        "{}({})",
+        match g.shape {
+            GradientShape::Linear { .. } => "linear",
+            GradientShape::Radial { .. } => "radial",
+        },
+        args.join(",")
+    )
+}
+
+/// `none`, or `blur(<σ>)`, `saturate(<s>)`, `tint(<colour>)`, `stroke(<w>,<colour>)`,
+/// `fallback(<colour>)`, each at most once, separated by `;` or spaces (at least one).
+fn parse_backdrop(text: &str) -> Option<Option<Backdrop>> {
+    let text = text.trim();
+    if text == "none" {
+        return Some(None);
+    }
+    let mut out = Backdrop::new(0.0, Color::TRANSPARENT);
+    let mut seen = [false; 5];
+    let mut any = false;
+    for part in text
+        .split(|c: char| c == ';' || c.is_ascii_whitespace())
+        .filter(|p| !p.is_empty())
+    {
+        any = true;
+        let open = part.find('(')?;
+        let name = &part[..open];
+        let args: Vec<&str> = part[open + 1..].strip_suffix(')')?.split(',').collect();
+        let slot = match (name, args.as_slice()) {
+            ("blur", [v]) => {
+                out.blur = parse_number(v)?;
+                0
+            }
+            ("saturate", [v]) => {
+                out.saturation = parse_number(v)?;
+                1
+            }
+            ("tint", [c]) => {
+                out.tint = parse_color(c)?;
+                2
+            }
+            ("stroke", [w, c]) => {
+                out.stroke = Some(BorderSide {
+                    width: parse_number(w)?,
+                    color: parse_color(c)?,
+                });
+                3
+            }
+            ("fallback", [c]) => {
+                out.fallback = Some(parse_color(c)?);
+                4
+            }
+            _ => return None,
+        };
+        if std::mem::replace(&mut seen[slot], true) {
+            return None;
+        }
+    }
+    any.then_some(Some(out))
+}
+
+fn format_backdrop(b: &Backdrop) -> String {
+    let mut parts = vec![
+        format!("blur({})", format_number(b.blur)),
+        format!("saturate({})", format_number(b.saturation)),
+        format!("tint({})", format_color(b.tint)),
+    ];
+    if let Some(s) = b.stroke {
+        parts.push(format!(
+            "stroke({},{})",
+            format_number(s.width),
+            format_color(s.color)
+        ));
+    }
+    if let Some(c) = b.fallback {
+        parts.push(format!("fallback({})", format_color(c)));
+    }
+    parts.join(";")
+}
+
 impl Style {
     /// Applies one JUI 2 `xstyle` pair (see `docs/appfw-style-e2-e10.md` for the grammar).
     /// On error the style is unchanged. Values are validated with `extended_style_valid`.
@@ -1472,6 +1827,16 @@ impl Style {
                             .collect::<Option<Vec<_>>>()
                             .ok_or_else(invalid)?
                     };
+                }
+                "background-gradient" => {
+                    next.background_gradient = if value_trimmed == "none" {
+                        None
+                    } else {
+                        Some(parse_gradient(value_trimmed).ok_or_else(invalid)?)
+                    };
+                }
+                "backdrop" => {
+                    next.backdrop = parse_backdrop(value_trimmed).ok_or_else(invalid)?;
                 }
                 _ => return Err(XStyleError::UnknownKey(key.to_owned())),
             }
@@ -1585,6 +1950,12 @@ impl Style {
                     .collect::<Vec<_>>()
                     .join(";"),
             ));
+        }
+        if let Some(g) = &self.background_gradient {
+            pairs.push(("background-gradient", format_gradient(g)));
+        }
+        if let Some(b) = &self.backdrop {
+            pairs.push(("backdrop", format_backdrop(b)));
         }
         pairs
     }

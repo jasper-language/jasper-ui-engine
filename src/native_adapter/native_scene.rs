@@ -257,8 +257,17 @@ pub(crate) struct NativeScene {
     families: BTreeSet<String>,
     last_pointer: Option<(f32, f32)>,
     motion: jasper_ui_engine::motion::MotionState,
+    material: MaterialState,
 }
 // END VERIFIED NATIVE SCENE TYPE
+
+/// E5 material budget and the report of the last painted frame.
+/// E5 材质预算与上一个绘制帧的报告。
+#[derive(Clone, Debug, Default)]
+pub(crate) struct MaterialState {
+    budget: crate::material::BackdropBudget,
+    report: crate::material::BackdropReport,
+}
 impl NativeScene {
     /// Bounded snapshot import; Canvas remains unsupported.
     pub(crate) fn from_scene(
@@ -363,6 +372,7 @@ impl NativeScene {
             families,
             last_pointer: None,
             motion: jasper_ui_engine::motion::MotionState::default(),
+            material: MaterialState::default(),
         };
         if !view.append_prepared_subtree(&scene.root, None, body, prepared) {
             return None;
@@ -1408,6 +1418,34 @@ impl NativeScene {
         }
         out
     }
+    /// E5: displayed nodes whose presented style has a material, with their logical border-box
+    /// size and presented radii.
+    /// E5：呈现样式带材质的已显示节点，附逻辑边框盒尺寸与呈现圆角。
+    #[cfg(feature = "cpu-pending")]
+    fn glass_specs(&self) -> BTreeMap<NodeId, crate::material::GlassSpec> {
+        let mut out = BTreeMap::new();
+        for node in self.source_preorder() {
+            let style = self.presented_of(node);
+            let Some(backdrop) = style.backdrop else {
+                continue;
+            };
+            if !self.source_displayed(node.id) {
+                continue;
+            }
+            if let Some(b) = self.layout_box(node.id) {
+                out.insert(
+                    node.id,
+                    crate::material::GlassSpec {
+                        backdrop,
+                        radii: style.corner_radius,
+                        width: b.width,
+                        height: b.height,
+                    },
+                );
+            }
+        }
+        out
+    }
     /// Displayed (no `display: none` on the node or an ancestor); unlike `source_visible`,
     /// semantic hiding does not hide paint. Bounded by the node count.
     fn source_displayed(&self, id: NodeId) -> bool {
@@ -2048,26 +2086,29 @@ impl NativeScene {
         }
         let scale = document.viewport().scale_f64();
         let rings = self.overlays();
+        let glass = self.glass_specs();
+        let budget = self.material.budget;
+        let mut frame_material = None;
         let document = self.document.as_mut()?;
         let pixels = anyrender::render_to_buffer::<anyrender_vello_cpu::VelloCpuImageRenderer, _>(
             |scene| {
-                blitz_paint::paint_scene(
-                    &mut crate::glyph_skew::UprightSyntheticItalic {
-                        scene: &mut *scene,
-                        bold_aliases: &self.bold_aliases,
-                    },
+                frame_material = Some(paint_frame(
+                    scene,
                     document,
+                    &self.bold_aliases,
                     scale,
-                    width,
-                    height,
-                    0,
-                    0,
-                );
-                paint_overlays(scene, &rings, scale);
+                    (width, height),
+                    &rings,
+                    &glass,
+                    budget,
+                ));
             },
             width,
             height,
         );
+        if let Some((report, _)) = frame_material {
+            self.material.report = report;
+        }
         if pixels.len() != bytes {
             return None;
         }
@@ -2122,25 +2163,25 @@ impl NativeScene {
             return None;
         }
         let rings = self.overlays();
+        let glass = self.glass_specs();
+        let budget = self.material.budget;
+        let mut frame_material = None;
         let document = self.document.as_mut()?;
         let (width, height) = document.viewport().window_size;
         let bytes = crate::cpu_budget::cpu_frame_bytes(width, height, max_bytes)?;
         let scale = document.viewport().scale_f64();
         let pixels = anyrender::render_to_buffer::<anyrender_vello_cpu::VelloCpuImageRenderer, _>(
             |scene| {
-                blitz_paint::paint_scene(
-                    &mut crate::glyph_skew::UprightSyntheticItalic {
-                        scene: &mut *scene,
-                        bold_aliases: &self.bold_aliases,
-                    },
+                frame_material = Some(paint_frame(
+                    scene,
                     document,
+                    &self.bold_aliases,
                     scale,
-                    width,
-                    height,
-                    0,
-                    0,
-                );
-                paint_overlays(scene, &rings, scale);
+                    (width, height),
+                    &rings,
+                    &glass,
+                    budget,
+                ));
                 for (node, commands) in &admitted {
                     for command in commands.iter() {
                         let left = f64::from(node.x) + f64::from(command.x);
@@ -2164,6 +2205,9 @@ impl NativeScene {
             width,
             height,
         );
+        if let Some((report, _)) = frame_material {
+            self.material.report = report;
+        }
         (pixels.len() == bytes).then_some(pixels)
     }
     /// Some(true) while a possible visible change is not yet painted; None for a foreign
@@ -2228,6 +2272,37 @@ impl NativeScene {
         }
         true
     }
+    /// E5: per-frame CPU budget for blurred materials (`BackdropBudget::DEFAULT` initially;
+    /// `FALLBACK_ONLY` paints every material as its fallback). A change repaints. False for a
+    /// foreign caller or a closed view.
+    /// E5：模糊材质的每帧 CPU 预算（初始为 `BackdropBudget::DEFAULT`；`FALLBACK_ONLY` 时所有材质画回退色）。
+    /// 改变时重绘。非归属方或已关闭视图为 false。
+    pub(crate) fn set_backdrop_budget_from_host(
+        &mut self,
+        caller: u64,
+        budget: crate::material::BackdropBudget,
+    ) -> bool {
+        if caller != self.owner || !self.document.is_open() {
+            return false;
+        }
+        if self.material.budget != budget {
+            self.material.budget = budget;
+            self.invalidate_frame();
+        }
+        true
+    }
+    /// E5: materials of the last painted frame (blurred, degraded with reason). None for a
+    /// foreign caller or a closed view.
+    /// E5：上一个绘制帧的材质（已模糊、降级及原因）。非归属方或已关闭视图为 None。
+    pub(crate) fn backdrop_report_from_host(
+        &self,
+        caller: u64,
+    ) -> Option<crate::material::BackdropReport> {
+        if caller != self.owner || !self.document.is_open() {
+            return None;
+        }
+        Some(self.material.report.clone())
+    }
     /// E7: some transition is running (the host should keep calling `animate` each refresh tick).
     /// E7：有过渡在运行（宿主应在每个刷新节拍继续调用 `animate`）。
     pub(crate) fn animating(&self, caller: u64) -> Option<bool> {
@@ -2248,8 +2323,8 @@ impl NativeScene {
                 continue;
             };
             let presented = self.presented_of(node);
-            let Some(properties) = style_properties(&presented, *id == root, &self.families)
-                .or_else(|| style_properties(&node.style, *id == root, &self.families))
+            let Some(properties) = style_properties(&presented, *id == root, &self.families, *id)
+                .or_else(|| style_properties(&node.style, *id == root, &self.families, *id))
             else {
                 continue;
             };
@@ -2438,22 +2513,27 @@ impl NativeScene {
         }
         let scale = document.viewport().scale_f64();
         let rings = self.overlays();
+        let glass = self.glass_specs();
+        let budget = self.material.budget;
+        let mut frame_material = None;
         let document = self.document.as_mut().ok_or(GpuFrameError::Rejected)?;
         let pixels = gpu.render(width, height, |scene| {
-            blitz_paint::paint_scene(
-                &mut crate::glyph_skew::UprightSyntheticItalic {
-                    scene: &mut *scene,
-                    bold_aliases: &self.bold_aliases,
-                },
+            frame_material = Some(paint_frame(
+                scene,
                 document,
+                &self.bold_aliases,
                 scale,
-                width,
-                height,
-                0,
-                0,
-            );
-            paint_overlays(scene, &rings, scale);
-        })?;
+                (width, height),
+                &rings,
+                &glass,
+                budget,
+            ));
+        });
+        if let Some((report, images)) = frame_material {
+            self.material.report = report;
+            gpu.release_images(images);
+        }
+        let pixels = pixels?;
         if pixels.len() != bytes {
             return Err(GpuFrameError::Readback(format!(
                 "expected {bytes} bytes, read {}",
@@ -2623,22 +2703,26 @@ impl NativeScene {
             .ok_or(GpuFrameError::Rejected)?;
         self.invalidate_frame();
         let rings = self.overlays();
+        let glass = self.glass_specs();
+        let budget = self.material.budget;
+        let mut frame_material = None;
         let document = self.document.as_mut().ok_or(GpuFrameError::Rejected)?;
         let result = gpu.render_to_host_view(width, height, format, view, |scene| {
-            blitz_paint::paint_scene(
-                &mut crate::glyph_skew::UprightSyntheticItalic {
-                    scene: &mut *scene,
-                    bold_aliases: &self.bold_aliases,
-                },
+            frame_material = Some(paint_frame(
+                scene,
                 document,
+                &self.bold_aliases,
                 scale,
-                width,
-                height,
-                0,
-                0,
-            );
-            paint_overlays(scene, &rings, scale);
+                (width, height),
+                &rings,
+                &glass,
+                budget,
+            ));
         });
+        if let Some((report, images)) = frame_material {
+            self.material.report = report;
+            gpu.release_images(images);
+        }
         if result.is_ok() {
             // Presentation pixels live in the host's texture, not in this CPU cache.
             self.frame_cache = None;
@@ -2749,7 +2833,7 @@ fn prepare_subtree(
         {
             return None;
         }
-        prepared.push(style_properties(&node.style, depth == 0, families)?);
+        prepared.push(style_properties(&node.style, depth == 0, families, node.id)?);
         if !scene_work_fits(
             existing.len().checked_add(prepared.len())?,
             stack.len(),
@@ -3112,6 +3196,82 @@ fn invert(m: [f64; 6]) -> Option<[f64; 6]> {
     out.iter().all(|v| v.is_finite()).then_some(out)
 }
 
+/// One frame of the document plus engine overlays into `scene`, shared by every render path.
+/// Without materials this is the direct Blitz paint (unchanged pixels); with materials the frame
+/// is recorded, rewritten by `material::compose` (backdrops rasterised by the CPU renderer for
+/// both paths) and replayed. Returns the material report and the backdrop image ids.
+/// 把文档与引擎叠加层画进 `scene` 的一帧，所有渲染路径共用。无材质时即直接的 Blitz 绘制（像素不变）；有材质时整帧录制、
+/// 经 `material::compose` 改写（两条路径的背景都由 CPU 渲染器光栅化）后回放。返回材质报告与背景图像 id。
+#[cfg(feature = "cpu-pending")]
+#[allow(clippy::too_many_arguments)]
+fn paint_frame(
+    scene: &mut impl anyrender::PaintScene,
+    document: &mut BaseDocument,
+    bold_aliases: &BTreeSet<u64>,
+    scale: f64,
+    (width, height): (u32, u32),
+    rings: &[Overlay],
+    glass: &BTreeMap<NodeId, crate::material::GlassSpec>,
+    budget: crate::material::BackdropBudget,
+) -> (crate::material::BackdropReport, Vec<u64>) {
+    use anyrender::PaintScene;
+    use peniko::kurbo::Affine;
+    if glass.is_empty() {
+        blitz_paint::paint_scene(
+            &mut crate::glyph_skew::UprightSyntheticItalic {
+                scene: &mut *scene,
+                bold_aliases,
+            },
+            document,
+            scale,
+            width,
+            height,
+            0,
+            0,
+        );
+        paint_overlays(scene, rings, scale);
+        return (crate::material::BackdropReport::default(), Vec::new());
+    }
+    let mut recording = anyrender::recording::Scene::new();
+    blitz_paint::paint_scene(
+        &mut crate::glyph_skew::UprightSyntheticItalic {
+            scene: &mut recording,
+            bold_aliases,
+        },
+        document,
+        scale,
+        width,
+        height,
+        0,
+        0,
+    );
+    let composed = crate::material::compose(
+        recording.commands,
+        glass,
+        budget,
+        (width, height),
+        |prefix, open, region| {
+            let offset = Affine::translate((-f64::from(region.x), -f64::from(region.y)));
+            Some(anyrender::render_to_buffer::<
+                anyrender_vello_cpu::VelloCpuImageRenderer,
+                _,
+            >(
+                |backdrop| {
+                    crate::material::replay(backdrop, prefix, offset);
+                    for _ in 0..open {
+                        backdrop.pop_layer();
+                    }
+                },
+                region.width,
+                region.height,
+            ))
+        },
+    );
+    crate::material::replay(scene, &composed.commands, Affine::IDENTITY);
+    paint_overlays(scene, rings, scale);
+    (composed.report, composed.images)
+}
+
 /// Paint overlays after the document: above every node, inside ancestor overflow clips.
 /// Shared by the CPU and GPU paths (both paint through the same anyrender scene).
 /// 在文档之后绘制叠加层：位于全部节点之上，受祖先 overflow 裁剪。CPU 与 GPU 路径共用（同一 anyrender 场景）。
@@ -3176,6 +3336,7 @@ fn style_properties(
     style: &Style,
     root: bool,
     families: &BTreeSet<String>,
+    id: NodeId,
 ) -> Option<Vec<(&'static str, String)>> {
     let mut values = Vec::new();
     for (key, length) in [
@@ -3311,7 +3472,7 @@ fn style_properties(
     ] {
         values.push((key, value.to_owned()));
     }
-    extended_style_properties(style, &mut values)?;
+    extended_style_properties(style, id, &mut values)?;
     Some(values)
 }
 
@@ -3323,7 +3484,11 @@ fn style_properties(
 /// E2/E3/E4/E9/E10 到 Blitz CSS 的投影。与基础子集一样，每个节点显式写出全部属性（含默认值）。外框、文字装饰与
 /// 命中扩展不经 CSS：固定版 Blitz 没有 `outline-offset`，且文字装饰只在同一行内格式化上下文内传播（不从 flex/块
 /// 祖先传下），因此二者由引擎在文档之后绘制（`paint_overlays`）；命中扩展由指针路由处理。
-fn extended_style_properties(style: &Style, values: &mut Vec<(&'static str, String)>) -> Option<()> {
+fn extended_style_properties(
+    style: &Style,
+    id: NodeId,
+    values: &mut Vec<(&'static str, String)>,
+) -> Option<()> {
     use jasper_ui_engine::style::Side;
     if !style.extended_style_valid() {
         return None;
@@ -3409,7 +3574,61 @@ fn extended_style_properties(style: &Style, values: &mut Vec<(&'static str, Stri
         "transform-origin",
         format!("{}% {}%", t.origin_x * 100.0, t.origin_y * 100.0),
     ));
+    // E6: CSS gradient image above `background-color`, clipped with the background (rounded
+    // border box). None is `none`, so a node without a gradient paints exactly as before.
+    values.push((
+        "background-image",
+        match &style.background_gradient {
+            None => "none".to_owned(),
+            Some(g) => css_gradient(g),
+        },
+    ));
+    // E5: the backdrop filter only tags the node's effect layer (`material::tag_css`); neither
+    // renderer applies it, the engine composes the material itself (`material.rs`).
+    values.push((
+        "backdrop-filter",
+        match style.backdrop {
+            None => "none".to_owned(),
+            Some(_) => crate::material::tag_css(id),
+        },
+    ));
     Some(())
+}
+
+/// CSS text of an E6 gradient (`Gradient::valid` holds).
+fn css_gradient(g: &jasper_ui_engine::style::Gradient) -> String {
+    use jasper_ui_engine::style::GradientShape;
+    let stops = g
+        .stops
+        .iter()
+        .map(|s| {
+            format!(
+                "#{:02x}{:02x}{:02x}{:02x} {}%",
+                s.color.r,
+                s.color.g,
+                s.color.b,
+                s.color.a,
+                s.position * 100.0
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(", ");
+    match g.shape {
+        GradientShape::Linear { angle } => format!("linear-gradient({angle}deg, {stops})"),
+        GradientShape::Radial {
+            center_x,
+            center_y,
+            radius,
+        } => format!(
+            "radial-gradient({} at {}% {}%, {stops})",
+            match radius {
+                None => "farthest-corner".to_owned(),
+                Some(r) => format!("circle {r}px"),
+            },
+            center_x * 100.0,
+            center_y * 100.0
+        ),
+    }
 }
 
 #[cfg(test)]

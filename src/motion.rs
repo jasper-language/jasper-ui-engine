@@ -12,8 +12,9 @@
 
 use crate::scene::NodeId;
 use crate::style::{
-    AnimatedProperties, BorderSide, BoxShadow, Color, Easing, Length, Outline, Style, Transform2D,
-    Transition, MAX_EFFECT_EXTENT, MAX_TRANSFORM_ORIGIN, MAX_TRANSFORM_ROTATE, MAX_TRANSFORM_SCALE,
+    AnimatedProperties, Backdrop, BorderSide, BoxShadow, Color, Easing, Gradient, GradientShape,
+    GradientStop, Length, Outline, Style, Transform2D, Transition, MAX_BACKDROP_BLUR,
+    MAX_BACKDROP_SATURATION, MAX_EFFECT_EXTENT, MAX_TRANSFORM_ORIGIN, MAX_TRANSFORM_ROTATE, MAX_TRANSFORM_SCALE,
     MAX_TRANSFORM_TRANSLATE, MAX_TRANSITION_MS,
 };
 use std::collections::{BTreeMap, BTreeSet};
@@ -200,6 +201,10 @@ enum Shape {
     Borders([bool; 4]),
     /// Outline presence.
     Outline(bool),
+    /// E5 material: presence, stroke presence and the (not interpolated) fallback colour.
+    Backdrop(Option<(bool, Option<Color>)>),
+    /// E6 gradient: None, or (linear?, explicit radius?, stop count).
+    Gradient(Option<(bool, bool, usize)>),
 }
 
 /// One animating property of one node.
@@ -397,6 +402,54 @@ fn snapshot(property: AnimatedProperties, style: &Style) -> (Shape, Vec<f64>, Ve
             ]);
             Shape::Plain
         }
+        AnimatedProperties::BACKDROP => match style.backdrop {
+            Some(b) => {
+                v.extend([b.blur, b.saturation].map(f64::from));
+                tol.extend([LENGTH_TOLERANCE, 1e-4]);
+                color_components(b.tint, &mut v);
+                tol.extend([COLOR_TOLERANCE; 4]);
+                if let Some(stroke) = b.stroke {
+                    v.push(f64::from(stroke.width));
+                    tol.push(LENGTH_TOLERANCE);
+                    color_components(stroke.color, &mut v);
+                    tol.extend([COLOR_TOLERANCE; 4]);
+                }
+                Shape::Backdrop(Some((b.stroke.is_some(), b.fallback)))
+            }
+            None => Shape::Backdrop(None),
+        },
+        AnimatedProperties::GRADIENT => match &style.background_gradient {
+            Some(g) => {
+                let (linear, explicit) = match g.shape {
+                    GradientShape::Linear { angle } => {
+                        v.push(f64::from(angle));
+                        tol.push(0.01);
+                        (true, false)
+                    }
+                    GradientShape::Radial {
+                        center_x,
+                        center_y,
+                        radius,
+                    } => {
+                        v.extend([center_x, center_y].map(f64::from));
+                        tol.extend([1e-4, 1e-4]);
+                        if let Some(r) = radius {
+                            v.push(f64::from(r));
+                            tol.push(LENGTH_TOLERANCE);
+                        }
+                        (false, radius.is_some())
+                    }
+                };
+                for stop in &g.stops {
+                    v.push(f64::from(stop.position));
+                    tol.push(1e-4);
+                    color_components(stop.color, &mut v);
+                    tol.extend([COLOR_TOLERANCE; 4]);
+                }
+                Shape::Gradient(Some((linear, explicit, g.stops.len())))
+            }
+            None => Shape::Gradient(None),
+        },
         _ => Shape::Plain,
     };
     // Defaults for the remaining components: colours vs lengths.
@@ -531,6 +584,49 @@ fn write(property: AnimatedProperties, shape: &Shape, v: &[f64], out: &mut Style
                 origin_x: clamp_signed(v[5], MAX_TRANSFORM_ORIGIN),
                 origin_y: clamp_signed(v[6], MAX_TRANSFORM_ORIGIN),
             };
+        }
+        (AnimatedProperties::BACKDROP, Shape::Backdrop(Some((stroke, fallback)))) => {
+            out.backdrop = Some(Backdrop {
+                blur: (v[0] as f32).clamp(0.0, MAX_BACKDROP_BLUR),
+                saturation: (v[1] as f32).clamp(0.0, MAX_BACKDROP_SATURATION),
+                tint: color_from(&v[2..6]),
+                stroke: stroke.then(|| BorderSide {
+                    // A stroke never animates to zero width (it would be invalid); 1e-3 px is invisible.
+                    width: clamp_length(v[6]).max(1e-3),
+                    color: color_from(&v[7..11]),
+                }),
+                fallback: *fallback,
+            });
+        }
+        (AnimatedProperties::GRADIENT, Shape::Gradient(Some((linear, explicit, count)))) => {
+            let (shape, mut index) = if *linear {
+                (
+                    GradientShape::Linear {
+                        angle: clamp_signed(v[0], MAX_TRANSFORM_ROTATE),
+                    },
+                    1,
+                )
+            } else {
+                let radius = explicit.then(|| clamp_length(v[2]).max(1e-3));
+                (
+                    GradientShape::Radial {
+                        center_x: clamp_signed(v[0], MAX_TRANSFORM_ORIGIN),
+                        center_y: clamp_signed(v[1], MAX_TRANSFORM_ORIGIN),
+                        radius,
+                    },
+                    if *explicit { 3 } else { 2 },
+                )
+            };
+            let mut stops = Vec::with_capacity(*count);
+            let mut floor = 0.0f32;
+            for _ in 0..*count {
+                // Positions stay in 0..=1 and non-decreasing even when a spring overshoots.
+                let position = (v[index] as f32).clamp(floor, 1.0);
+                floor = position;
+                stops.push(GradientStop::new(position, color_from(&v[index + 1..index + 5])));
+                index += 5;
+            }
+            out.background_gradient = Some(Gradient { shape, stops });
         }
         _ => {}
     }

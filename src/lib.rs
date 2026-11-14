@@ -109,8 +109,9 @@ pub use scrollbar::{
 };
 pub use semantics::{FocusError, FocusManager, Role, Semantics, SemanticsNode, SemanticsTree};
 pub use style::{
-    Align, AnimatedProperties, BorderSide, BoxShadow, Color, CornerRadii, Display, Easing,
-    FlexDirection, Justify, Length, Outline, Side, Style, TextDecoration, Transform2D, Transition,
+    Align, AnimatedProperties, Backdrop, BorderSide, BoxShadow, Color, CornerRadii, Display,
+    Easing, FlexDirection, Gradient, GradientShape, GradientStop, Justify, Length, Outline, Side,
+    Style, TextDecoration, Transform2D, Transition,
 };
 pub use text::{SimpleTextEngine, TextEngine, TextMetrics};
 #[cfg(feature = "real-text")]
@@ -148,6 +149,9 @@ mod glyph_skew;
 #[cfg(feature = "gpu-pending")]
 #[path = "native_adapter/gpu_render.rs"]
 mod gpu_render;
+#[cfg(feature = "native-blitz-pending")]
+#[path = "native_adapter/material.rs"]
+mod material;
 #[cfg(feature = "native-blitz-pending")]
 #[path = "native_adapter/native_events.rs"]
 mod native_events;
@@ -192,6 +196,9 @@ pub mod native {
     /// Per-view limit for `engine::Engine::with_fonts`.
     /// `engine::Engine::with_fonts` 每视图注入字体文件上限。
     pub use crate::native_fonts::MAX_INJECTED_FONTS;
+    /// E5 material budget and per-frame report.
+    /// E5 材质预算与每帧报告。
+    pub use crate::material::{BackdropBudget, BackdropDegradation, BackdropReport};
     use crate::{
         component_contract, native_events, native_keys, native_scene, native_semantics,
         native_view, pointer_host, scene_events, update_contract,
