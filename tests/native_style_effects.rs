@@ -588,7 +588,8 @@ fn capabilities_are_declared_for_the_host_hello() {
             "transform",
             "transition",
             "material",
-            "gradient"
+            "gradient",
+            "text-valign"
         ]
     );
 }

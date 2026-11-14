@@ -137,3 +137,46 @@
   （区域坐标为 f64 钳制到视口后转 u32，面积按 u64 计）。
 - 未在真实宿主窗口与真实 vsync 下测帧耗时；预算数值来自无头测量（`docs/appfw-material-e5-e6.md` §7）。
 - 平台视觉验收（与 macOS / Windows 原生毛玻璃的观感对照）未做；Liquid Glass 折射高光不在本步。
+
+## E14 场景内编辑态、E15 文字垂直对齐（分支 `appfw/e14-e15`，2026-11-14）
+
+基于 `appfw/e5-e6` f1f3e0a。说明见 `docs/appfw-text-edit-e14-e15.md`。
+
+### 已重新通过（本机可执行部分）
+
+| 项 | 命令（`taskset -c 16-17 nice -n 19`，`-j 2`；字体环境变量同 E7 节） | 结果 |
+|---|---|---|
+| 引擎默认特性 | `cargo test --locked` | 216 通过 |
+| 引擎全量（原生 CPU + AccessKit） | `cargo test --locked --features native-engine-cpu,accesskit-pending` | 436 通过，2 忽略（新增 21：E15 6、E14 10、编辑缓冲单元 5） |
+| 引擎全量 + GPU（硬件 wgpu 适配器） | `cargo test --locked --features native-engine-cpu,gpu-pending,accesskit-pending` | 451 通过，2 忽略 |
+| `verification/native-activation` | `cargo test --locked` | 20 通过 |
+| `verification/read-boundary` | `cargo test --locked` | 64 通过 |
+| `BEGIN/END VERIFIED` 区段比对（相对 `appfw/e5-e6` f1f3e0a） | 脚本逐区段比较 | 仅 `NATIVE SCENE TYPE` 变化（见下） |
+
+### 证据失效、待重证（源码哈希已变）
+
+| 性质 / 内核 | 改动 | 规格影响 |
+|---|---|---|
+| `NATIVE SCENE TYPE`（`native_scene.rs`） | `NativeScene` 增加字段 `edit: scene_edit::EditState`（编辑会话、事件发件箱、拖动、失焦保持显示） | 规格不涉及新字段；需在 Verus VM 重抽取并重证类型映射（同 `motion`、`material`） |
+
+`text_offset_admits` / `text_range_admits`（TEXT OFFSET / RANGE KERNEL）未改，编辑叠加层的几何仍经其准入。
+
+### 新增代码，六步链全部暂缓
+
+| 项 | 位置 | 现有替代证据 |
+|---|---|---|
+| `TextAlignVertical` / `LineHeight` 校验与 `xstyle` 解析、规范输出 | `src/style.rs` | `capability_and_xstyle_grammar`（往返、8 种拒绝且样式不变） |
+| E15 CSS 投影（列/行/块三种覆盖、只对 Text 节点、默认不写） | `native_scene.rs::text_style_properties` | 默认/显式 top 逐像素一致；居中留白相等 ±1px；node_bounds 与命中不变 |
+| 编辑缓冲：字素簇/按词删除与移动、选区、预编辑显示偏移 ↔ 缓冲偏移映射、字符边界不变式 | `text_edit.rs::EditBuffer` | 5 个单元测试（含 ZWJ 表情、组合附加符、CJK 边界） |
+| 会话生命周期（随焦点开始/失焦提交/帧内静默结束）、跨帧携带与外部更新冲突规则 | `scene_edit.rs::{sync_edit_session, carry_edit_from}` | `enter_and_blur_commit_once…`、`external_updates_win…`、`removal_ends…` |
+| 显示文本写入原生文字节点（不写源、不耗版本）、空文本零宽空格占位 | `scene_edit.rs::{write_node_text, write_edit_display}` | `snapshot_identity` 不变断言；空文本光标几何 |
+| 键盘编辑、剪贴板钩子、指针定位与拖选（含 E8 逆变换） | `scene_edit.rs::{edit_key, edit_pointer, edit_offset_at}` | `keyboard_editing…`、`pointer_places_caret…` |
+| 叠加层（选区、预编辑下划线、光标）的裁剪/变换/透明度 | `scene_edit.rs::edit_overlays` | 光标列、选区色、下划线像素断言 |
+| 闪烁相位计算与减少动态 | `scene_edit.rs::caret_blink_from_host` | `caret_blinks_on_the_host_clock…` |
+| 宿主入口归属/版本准入 | `scene_edit.rs`、`facade.rs`、`render_host.rs` | 非归属方 None、过期版本 false 断言 |
+
+### 未实测 / 限制
+
+- Miri、cargo-fuzz、Kani、Verus 本机不可用；`EditBuffer` 未做模糊测试（建议：随机操作序列下的字符边界不变式）。
+- 未在真实窗口中实测输入法（fcitx/IBus 预编辑、候选窗定位）与系统剪贴板；宿主侧路由尚未改（见说明文档 §3）。
+- AccessKit `TextSelection` 与文本动作未接；长文本单行水平滚动、双向文本视觉移动、撤销未做。
