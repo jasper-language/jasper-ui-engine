@@ -551,11 +551,12 @@ impl NativeScene {
         let ink = [color.r, color.g, color.b, color.a];
         if let Some((s, e)) = preedit {
             for rect in self.selection_geometry(node, s, e).unwrap_or_default() {
+                // Snapped to whole logical px so the 1px line stays crisp.
                 let thickness = 1.0_f32.min(rect.height());
                 push(
                     jasper_ui_engine::geometry::Rect::new(
                         rect.x(),
-                        rect.y() + rect.height() - thickness,
+                        (rect.y() + rect.height()).floor() - thickness,
                         rect.width(),
                         thickness,
                     ),
