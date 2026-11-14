@@ -14,6 +14,7 @@ pub use native_events::NativeEventReply as EventReply;
 pub use scene_events::{role_activates_on_click,role_activates_on_key,ScenePointerInput,SceneKeyEvent,SceneEvent,SceneEventKind,SceneSemanticsNode,SceneSemanticsSnapshot,SceneActivationEvent,SceneFocusEvent};
 pub use crate::render_host::{HostRenderError,HostRenderer};
 pub use crate::surface_lifecycle::{SurfaceLifecycleError,SurfaceState,SurfaceStatus};
+pub use crate::text_edit::{CaretBlink,SceneEditEvent,SceneEditEventKind,SceneEditState};
 
 /// Embedding-host adapter; application declarations use Scene/ScenePatch values above.
 /// This module does not acquire windows, surfaces, devices or OS services.
@@ -724,6 +725,46 @@ impl SceneHostView {
         if !self.inner.pointer_input_from_host(owner,version,input,events) {return false;}
         let after=self.inner.focused_node(owner,version);
         scene_events::notify_focus_transition(version,before,after,focus);true
+    }
+    /// E14 committed text input (typed characters, IME commit, clipboard paste) into the
+    /// TextField the engine is editing (the focused enabled visible Text node with role
+    /// TextField). Control characters are dropped; the selection is replaced. Never consumes a
+    /// scene version. False without an edit session, for a foreign owner, a stale version or a
+    /// closed view.
+    /// E14：向引擎正在编辑的 TextField（聚焦、启用、可见、角色为 TextField 的 Text 节点）输入已提交文字（键入字符、
+    /// 输入法提交、剪贴板粘贴）。丢弃控制字符，替换选区。从不消耗场景版本。无编辑会话、非归属方、过期版本或已关闭视图为 false。
+    pub fn text_input(&mut self,owner:u64,version:u64,text:&str)->bool {
+        self.inner.text_input_from_host(owner,version,text)
+    }
+    /// E14 IME preedit shown (underlined) at the caret of the edited field; None clears it.
+    /// `cursor` is the IME cursor/selection inside `text` (UTF-8 offsets). While composing,
+    /// editing keys and pointer caret placement are left to the input method.
+    /// E14：显示在被编辑文本框光标处（带下划线）的输入法预编辑；None 清除。`cursor` 为 `text` 内的输入法光标/选区
+    /// （UTF-8 偏移）。组合期间编辑键与指针定位交给输入法。
+    pub fn set_preedit(&mut self,owner:u64,version:u64,text:Option<&str>,cursor:Option<(usize,usize)>)->bool {
+        self.inner.preedit_from_host(owner,version,text,cursor)
+    }
+    /// E14 edit events since the last call (changes, commits on Enter/blur, copy, paste
+    /// requests, dropped compositions), oldest first. Drain after every key, pointer, focus,
+    /// text-input or frame call; send a call's commits before that call's focus-out lines.
+    /// None for a foreign owner.
+    /// E14：自上次调用以来的编辑事件（变化、Enter/失焦提交、复制、粘贴请求、丢弃的组合），按先后排列。每次键盘、指针、
+    /// 焦点、文字输入或帧调用之后取出；同一次调用的提交先于其失焦行发送。非归属方为 None。
+    pub fn take_edit_events(&mut self,owner:u64)->Option<Vec<SceneEditEvent>> {
+        self.inner.take_edit_events_from_host(owner)
+    }
+    /// E14 active edit session (Some(None) without one). None for a foreign owner, a stale
+    /// version or a closed view.
+    /// E14 当前编辑会话（无会话时为 Some(None)）。非归属方、过期版本或已关闭视图为 None。
+    pub fn edit_state(&self,owner:u64,version:u64)->Option<Option<SceneEditState>> {
+        self.inner.edit_state_from_host(owner,version)
+    }
+    /// E14 caret blink on the host frame clock (ms, monotone); see `CaretBlink`. Call on the
+    /// refresh tick (or at `next_toggle_ms`) before rendering. Reduce-motion keeps the caret on.
+    /// E14：按宿主帧时钟（毫秒、单调）的光标闪烁，见 `CaretBlink`。在刷新节拍（或 `next_toggle_ms`）绘制前调用；
+    /// 减少动态时光标常亮。
+    pub fn caret_blink(&mut self,owner:u64,now_ms:f64)->Option<CaretBlink> {
+        self.inner.caret_blink_from_host(owner,now_ms)
     }
     /// Current scene-local focus; embedding host combines OS window/application focus.
     pub fn focused_node(&self,owner:u64,version:u64)->Option<NodeId> {

@@ -370,6 +370,57 @@ impl HostRenderer {
                 .key_with_activation(owner, version, input, key, focus, activation)
     }
 
+    /// E14 text input through the live surface generation; see `Engine::text_input`.
+    /// 经当前活动 Surface 代数的 E14 文字输入；见 `Engine::text_input`。
+    pub fn text_input(&mut self, owner: u64, version: u64, generation: u64, text: &str) -> bool {
+        self.surface.render_allowed(owner, generation)
+            && self.inner.text_input(owner, version, text)
+    }
+
+    /// E14 IME preedit through the live surface generation; see `Engine::set_preedit`.
+    /// 经当前活动 Surface 代数的 E14 输入法预编辑；见 `Engine::set_preedit`。
+    pub fn set_preedit(
+        &mut self,
+        owner: u64,
+        version: u64,
+        generation: u64,
+        text: Option<&str>,
+        cursor: Option<(usize, usize)>,
+    ) -> bool {
+        self.surface.render_allowed(owner, generation)
+            && self.inner.set_preedit(owner, version, text, cursor)
+    }
+
+    /// E14 edit events; see `Engine::take_edit_events` (independent of the surface lifecycle).
+    /// E14 编辑事件；见 `Engine::take_edit_events`（与 Surface 生命周期无关）。
+    pub fn take_edit_events(&mut self, owner: u64) -> Option<Vec<crate::native::SceneEditEvent>> {
+        self.inner.take_edit_events(owner)
+    }
+
+    /// E14 active edit session; see `Engine::edit_state`.
+    /// E14 当前编辑会话；见 `Engine::edit_state`。
+    pub fn edit_state(
+        &self,
+        owner: u64,
+        version: u64,
+    ) -> Option<Option<crate::native::SceneEditState>> {
+        self.inner.edit_state(owner, version)
+    }
+
+    /// E14 caret blink through the live surface generation; see `Engine::caret_blink`.
+    /// 经当前活动 Surface 代数的 E14 光标闪烁；见 `Engine::caret_blink`。
+    pub fn caret_blink(
+        &mut self,
+        owner: u64,
+        generation: u64,
+        now_ms: f64,
+    ) -> Option<crate::native::CaretBlink> {
+        if !self.surface.render_allowed(owner, generation) {
+            return None;
+        }
+        self.inner.caret_blink(owner, now_ms)
+    }
+
     /// View-local logical border box of a source-visible node through the live surface
     /// generation; see `Engine::node_bounds`.
     /// 经当前活动 Surface 代数取源可见节点的视图局部逻辑边框盒；见 `Engine::node_bounds`。

@@ -39,6 +39,10 @@ pub struct AccessibilityNode {
     pub label: String,
     pub description: String,
     pub value: String,
+    /// E14: while the engine edits this TextField, the selection as (anchor, caret) UTF-8
+    /// offsets into `value` (which is then the edit buffer); None otherwise.
+    /// E14：引擎编辑此 TextField 期间的选区，(anchor, caret) 为 `value`（此时即编辑缓冲）内的 UTF-8 偏移；否则为 None。
+    pub text_selection: Option<(usize, usize)>,
     pub disabled: bool,
     /// Same as node_bounds (view-local logical coordinates); None where node_bounds is None.
     /// 同 node_bounds（视图局部逻辑坐标）；node_bounds 为 None 时为 None。

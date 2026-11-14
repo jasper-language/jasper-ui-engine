@@ -37,6 +37,8 @@ blitz-dom = { git = "https://github.com/DioxusLabs/blitz", rev = "52739472460824
 blitz-traits = { git = "https://github.com/DioxusLabs/blitz", rev = "52739472460824ec7f1624ab135c09a4bbc99219", default-features = false, optional = true }
 blitz-paint = { git = "https://github.com/DioxusLabs/blitz", rev = "52739472460824ec7f1624ab135c09a4bbc99219", default-features = false, optional = true }
 fontique = { version = "=0.12.0", default-features = false, optional = true }
+# E14 in-scene editing: grapheme-cluster deletion/movement and word bounds (already in the lock via parley).
+unicode-segmentation = { version = "=1.13.3", optional = true }
 keyboard-types = { version = "=0.8.3", optional = true }
 anyrender = { version = "=0.14.0", optional = true }
 anyrender_vello_cpu = { version = "=0.18.0", default-features = false, optional = true }
@@ -68,7 +70,7 @@ default = []
 # separately and is not implied by the shorter feature name.
 native-engine = ["native-blitz-pending"]
 native-engine-cpu = ["native-engine", "native-blitz-cpu-pending"]
-native-blitz-pending = ["dep:blitz-dom", "dep:blitz-traits", "dep:fontique", "dep:keyboard-types", "dep:parley"]
+native-blitz-pending = ["dep:blitz-dom", "dep:blitz-traits", "dep:fontique", "dep:keyboard-types", "dep:parley", "dep:unicode-segmentation"]
 native-blitz-cpu-pending = ["native-blitz-pending", "cpu-pending"]
 # Shared source uses this internal cfg in both crates.
 cpu-pending = ["native-blitz-pending", "dep:blitz-paint", "dep:anyrender", "dep:anyrender_vello_cpu", "dep:peniko"]

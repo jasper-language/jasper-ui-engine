@@ -111,7 +111,7 @@ pub use semantics::{FocusError, FocusManager, Role, Semantics, SemanticsNode, Se
 pub use style::{
     Align, AnimatedProperties, Backdrop, BorderSide, BoxShadow, Color, CornerRadii, Display,
     Easing, FlexDirection, Gradient, GradientShape, GradientStop, Justify, Length, Outline, Side,
-    Style, TextDecoration, Transform2D, Transition,
+    Style, LineHeight, TextAlignVertical, TextDecoration, Transform2D, Transition,
 };
 pub use text::{SimpleTextEngine, TextEngine, TextMetrics};
 #[cfg(feature = "real-text")]
@@ -182,6 +182,9 @@ mod scene_events;
 #[cfg(feature = "native-blitz-pending")]
 #[path = "native_adapter/style_effects.rs"]
 mod style_effects;
+#[cfg(feature = "native-blitz-pending")]
+#[path = "native_adapter/text_edit.rs"]
+mod text_edit;
 #[cfg(feature = "native-blitz-pending")]
 #[path = "native_adapter/text_geometry.rs"]
 mod text_geometry;

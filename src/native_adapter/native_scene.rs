@@ -1,6 +1,10 @@
 //! Candidate adapter for the existing Rust scene, using native Blitz mutations only.
 //! 现有 Rust 场景适配候选；不序列化 HTML，不执行旧布局/绘制算法。
 use crate::view_slot::ViewSlot;
+/// E14 in-scene text editing (child module: it reads the scene's private state).
+/// E14 场景内文本编辑（子模块：读取场景私有状态）。
+#[path = "scene_edit.rs"]
+mod scene_edit;
 use blitz_dom::{BaseDocument, DocumentConfig, LocalName, Namespace, QualName};
 use blitz_traits::shell::Viewport;
 use jasper_ui_engine::input_identity::next_ui_update_version;
@@ -258,6 +262,7 @@ pub(crate) struct NativeScene {
     last_pointer: Option<(f32, f32)>,
     motion: jasper_ui_engine::motion::MotionState,
     material: MaterialState,
+    edit: scene_edit::EditState,
 }
 // END VERIFIED NATIVE SCENE TYPE
 
@@ -373,6 +378,7 @@ impl NativeScene {
             last_pointer: None,
             motion: jasper_ui_engine::motion::MotionState::default(),
             material: MaterialState::default(),
+            edit: scene_edit::EditState::default(),
         };
         if !view.append_prepared_subtree(&scene.root, None, body, prepared) {
             return None;
@@ -648,6 +654,8 @@ impl NativeScene {
             let animated: Vec<NodeId> = candidate.motion.animated_nodes().collect();
             candidate.write_presented(&animated);
         }
+        // E14: the edit session survives frames (engine-local, no version of its own).
+        candidate.carry_edit_from(self, patches);
         Some(candidate)
     }
     /// A frame that removes a node also retires its native press/focus identity. Reusing
@@ -861,6 +869,15 @@ impl NativeScene {
             }
         }
         document.resolve(0.0);
+        // E14: blur commits, a newly focused field starts editing, then caret placement.
+        self.sync_edit_session(true);
+        self.edit_pointer(
+            phase,
+            hit,
+            (x, y),
+            pressed_primary(input),
+            input.modifiers.shift,
+        );
         true
     }
     /// Nearest source ancestor-or-self that `focus_eligible` admits; bounded by the node count.
@@ -959,7 +976,10 @@ impl NativeScene {
         };
         blitz_dom::EventDriver::new(document, handler).handle_ui_event(event);
         document.resolve(0.0);
-        let activates = before == Some(node)
+        // E14: an unprevented key on the edited field goes to the engine editor.
+        let edited = before == Some(node) && !prevented && self.edit_key(node, input);
+        let activates = !edited
+            && before == Some(node)
             && input.pressed
             && !input.repeat
             && !input.composing
@@ -977,6 +997,7 @@ impl NativeScene {
                 node,
             });
         }
+        self.sync_edit_session(true);
         let after = self.focused_node(caller, version);
         crate::scene_events::notify_focus_transition(version, before, after, focus);
         true
@@ -1109,6 +1130,7 @@ impl NativeScene {
         };
         document.set_focus_to(element);
         document.resolve(0.0);
+        self.sync_edit_session(true);
         let after = self.focused_node(caller, version);
         if before != after {
             if let Some(node) = before {
@@ -1145,6 +1167,7 @@ impl NativeScene {
         };
         document.clear_focus();
         document.resolve(0.0);
+        self.sync_edit_session(true);
         if let Some(node) = before {
             sink(crate::scene_events::SceneFocusEvent {
                 scene_version: version,
@@ -1175,6 +1198,7 @@ impl NativeScene {
         document.clear_hover();
         document.clear_focus();
         document.resolve(0.0);
+        self.sync_edit_session(true);
         crate::scene_events::notify_focus_transition(version, before, None, sink);
         true
     }
@@ -1534,11 +1558,14 @@ impl NativeScene {
             .iter()
             .all(|n| n.style.outline.is_none() && n.style.text_decoration == TextDecoration::NONE)
         {
+            self.edit_overlays(&mut rings);
             return rings;
         }
         for node in &preorder {
             self.text_decorations(node.id, &mut rings);
         }
+        // E14: selection, preedit underline and caret above text, below focus rings.
+        self.edit_overlays(&mut rings);
         for node in preorder {
             let style = self.presented_of(node);
             let Some(outline) = style.outline else {
@@ -1768,6 +1795,15 @@ impl NativeScene {
         if caller != self.owner || version != self.scene_version || !self.source_visible(id) {
             return None;
         }
+        self.node_text_layout(id)
+    }
+    /// `source_text_layout` without the caller/version/visibility admission: the layout of the
+    /// text the native document holds for `id` (the E14 display text while it is edited).
+    /// 不做调用方/版本/可见性准入的 `source_text_layout`：原生文档中 `id` 所持文字的布局（E14 编辑时为显示文本）。
+    pub(crate) fn node_text_layout(
+        &self,
+        id: NodeId,
+    ) -> Option<(&blitz_dom::node::TextLayout, &str, f64, f64)> {
         let (element, Some(text)) = self.nodes.get(&id)? else {
             return None;
         };
@@ -1840,10 +1876,21 @@ impl NativeScene {
         offset: usize,
         width: f32,
     ) -> Option<jasper_ui_engine::geometry::Rect> {
+        self.source_text_layout(caller, version, id)?;
+        self.caret_geometry(id, offset, width)
+    }
+    /// `text_caret_from_host` geometry without caller/version/visibility admission.
+    /// 不做调用方/版本/可见性准入的 `text_caret_from_host` 几何。
+    pub(crate) fn caret_geometry(
+        &self,
+        id: NodeId,
+        offset: usize,
+        width: f32,
+    ) -> Option<jasper_ui_engine::geometry::Rect> {
         if !width.is_finite() || width < 0.0 {
             return None;
         }
-        let (text, source, origin_x, origin_y) = self.source_text_layout(caller, version, id)?;
+        let (text, source, origin_x, origin_y) = self.node_text_layout(id)?;
         if !crate::text_geometry::text_offset_admits(
             text.text.len(),
             source.len(),
@@ -1892,7 +1939,18 @@ impl NativeScene {
         start: usize,
         end: usize,
     ) -> Option<Vec<jasper_ui_engine::geometry::Rect>> {
-        let (text, source, origin_x, origin_y) = self.source_text_layout(caller, version, id)?;
+        self.source_text_layout(caller, version, id)?;
+        self.selection_geometry(id, start, end)
+    }
+    /// `text_selection_from_host` geometry without caller/version/visibility admission.
+    /// 不做调用方/版本/可见性准入的 `text_selection_from_host` 几何。
+    pub(crate) fn selection_geometry(
+        &self,
+        id: NodeId,
+        start: usize,
+        end: usize,
+    ) -> Option<Vec<jasper_ui_engine::geometry::Rect>> {
+        let (text, source, origin_x, origin_y) = self.node_text_layout(id)?;
         if !crate::text_geometry::text_range_admits(
             text.text.len(),
             source.len(),
@@ -2000,12 +2058,18 @@ impl NativeScene {
                 .filter(|child| self.source_visible(*child))
                 .collect();
             pending.extend(children.iter().rev());
+            // E14: the edited field reports its edit buffer and selection.
+            let edit = self.edit_accessibility(id);
             nodes.push(AccessibilityNode {
                 node: id,
                 role: semantics.role,
                 label: semantics.label.clone(),
                 description: semantics.description.clone(),
-                value: semantics.value.clone(),
+                value: match &edit {
+                    Some((text, _)) => text.clone(),
+                    None => semantics.value.clone(),
+                },
+                text_selection: edit.map(|(_, selection)| selection),
                 disabled: semantics.disabled,
                 bounds: self.node_bounds_from_host(caller, version, id),
                 focused: focused == Some(id),
@@ -2266,6 +2330,7 @@ impl NativeScene {
             return false;
         }
         let finished = self.motion.set_reduce_motion(on);
+        self.edit_reduce_motion(on);
         if !finished.is_empty() {
             self.invalidate_frame();
             self.write_presented(&finished);
@@ -2323,8 +2388,11 @@ impl NativeScene {
                 continue;
             };
             let presented = self.presented_of(node);
-            let Some(properties) = style_properties(&presented, *id == root, &self.families, *id)
-                .or_else(|| style_properties(&node.style, *id == root, &self.families, *id))
+            let shape = TextShape::of(node);
+            let Some(properties) =
+                style_properties(&presented, *id == root, &self.families, *id, shape).or_else(
+                    || style_properties(&node.style, *id == root, &self.families, *id, shape),
+                )
             else {
                 continue;
             };
@@ -2833,7 +2901,13 @@ fn prepare_subtree(
         {
             return None;
         }
-        prepared.push(style_properties(&node.style, depth == 0, families, node.id)?);
+        prepared.push(style_properties(
+            &node.style,
+            depth == 0,
+            families,
+            node.id,
+            TextShape::of(node),
+        )?);
         if !scene_work_fits(
             existing.len().checked_add(prepared.len())?,
             stack.len(),
@@ -3332,11 +3406,34 @@ struct PointerHitAdjustment {
     exclude: Option<NodeId>,
 }
 
+/// What a source node lays out as text: E15 line height / vertical alignment apply to Text
+/// nodes only; an E14 text field also keeps its whitespace (`pre-wrap`) so the edited text maps
+/// byte for byte onto its layout.
+/// 源节点作为文字如何排版：E15 行高/垂直对齐只作用于 Text 节点；E14 文本框另保留空白（`pre-wrap`），
+/// 使编辑文本与其布局逐字节对应。
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum TextShape {
+    NotText,
+    Text,
+    Field,
+}
+
+impl TextShape {
+    pub(crate) fn of(node: &Node) -> Self {
+        match node.kind {
+            NodeKind::Text(_) if node.semantics.role == Role::TextField => TextShape::Field,
+            NodeKind::Text(_) => TextShape::Text,
+            _ => TextShape::NotText,
+        }
+    }
+}
+
 fn style_properties(
     style: &Style,
     root: bool,
     families: &BTreeSet<String>,
     id: NodeId,
+    shape: TextShape,
 ) -> Option<Vec<(&'static str, String)>> {
     let mut values = Vec::new();
     for (key, length) in [
@@ -3473,7 +3570,58 @@ fn style_properties(
         values.push((key, value.to_owned()));
     }
     extended_style_properties(style, id, &mut values)?;
+    text_style_properties(style, shape, &mut values)?;
     Some(values)
+}
+
+/// E15 (and the E14 field whitespace) on Blitz CSS, written after the base properties so the
+/// later declarations win. Nothing is written for the defaults, so existing pixels are unchanged.
+/// Vertical alignment moves the anonymous text box inside the element's flex container: the main
+/// axis (`justify-content`) of a column, the cross axis (`align-items`) of a row; a block element
+/// becomes a one-item stretched column, which lays its text out exactly as the block did. The
+/// element's own box (layout size, hit area, `node_bounds`) is untouched.
+/// E15（及 E14 文本框空白）到 Blitz CSS 的投影，写在基础属性之后以覆盖之。默认值不写任何属性，现有像素不变。
+/// 垂直对齐移动元素 flex 容器里的匿名文字盒：列方向用主轴（`justify-content`），行方向用交叉轴（`align-items`）；
+/// 块元素改为单项拉伸的列，其文字排版与块相同。元素自身的盒（布局尺寸、命中区、`node_bounds`）不变。
+fn text_style_properties(
+    style: &Style,
+    shape: TextShape,
+    values: &mut Vec<(&'static str, String)>,
+) -> Option<()> {
+    use jasper_ui_engine::style::{LineHeight, TextAlignVertical};
+    if shape == TextShape::NotText {
+        return Some(());
+    }
+    match style.line_height {
+        None => {}
+        Some(h) if !h.valid() => return None,
+        Some(LineHeight::Px(v)) => values.push(("line-height", format!("{v}px"))),
+        Some(LineHeight::Multiple(v)) => values.push(("line-height", format!("{v}"))),
+    }
+    if let Some(align) = style.text_align_vertical {
+        let value = match align {
+            TextAlignVertical::Top => "flex-start",
+            TextAlignVertical::Center => "center",
+            TextAlignVertical::Bottom => "flex-end",
+        };
+        match (style.display, style.direction) {
+            (Display::None, _) => {}
+            (Display::Flex, FlexDirection::Column) => {
+                values.push(("justify-content", value.to_owned()))
+            }
+            (Display::Flex, FlexDirection::Row) => values.push(("align-items", value.to_owned())),
+            (Display::Block, _) => {
+                values.push(("display", "flex".to_owned()));
+                values.push(("flex-direction", "column".to_owned()));
+                values.push(("align-items", "stretch".to_owned()));
+                values.push(("justify-content", value.to_owned()));
+            }
+        }
+    }
+    if shape == TextShape::Field {
+        values.push(("white-space", "pre-wrap".to_owned()));
+    }
+    Some(())
 }
 
 /// E2/E3/E4/E9/E10 projection onto Blitz CSS. Every node states every property (defaults

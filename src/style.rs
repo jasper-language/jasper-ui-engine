@@ -254,6 +254,19 @@ pub struct Style {
     /// node, blurred, saturated and tinted, clipped to the rounded border box. None: no material.
     /// E5：节点自身背景之下的材质（毛玻璃）：节点背后已绘内容经模糊、饱和度与着色，按圆角边框盒裁剪。None 为无材质。
     pub backdrop: Option<Backdrop>,
+    /// E15: line height of the node's own text (CSS `line-height`). None: the font's normal
+    /// line height (the default, unchanged layout). Applies to Text nodes only; never
+    /// transitioned (a change is immediate).
+    /// E15：节点自身文字的行高（CSS `line-height`）。None 为字体的正常行高（默认，布局不变）。只作用于 Text 节点；
+    /// 不参与过渡（变化立即生效）。
+    pub line_height: Option<LineHeight>,
+    /// E15: vertical placement of a Text node's text inside its content box when the box is
+    /// taller than the text (fixed height). None: the node's own flex alignment decides (top by
+    /// default, unchanged pixels). Never changes the node's layout size, hit area or
+    /// `node_bounds`; applies to Text nodes only; never transitioned.
+    /// E15：Text 节点内容盒高于文字（固定高度）时文字的垂直位置。None 时由节点自身的 flex 对齐决定（默认靠上，像素不变）。
+    /// 从不改变节点布局尺寸、命中区与 `node_bounds`；只作用于 Text 节点；不参与过渡。
+    pub text_align_vertical: Option<TextAlignVertical>,
 }
 
 impl Default for Style {
@@ -296,6 +309,8 @@ impl Default for Style {
             transitions: Vec::new(),
             background_gradient: None,
             backdrop: None,
+            line_height: None,
+            text_align_vertical: None,
         }
     }
 }
@@ -465,6 +480,16 @@ impl Style {
         self
     }
 
+    pub fn line_height(mut self, line_height: Option<LineHeight>) -> Self {
+        self.line_height = line_height;
+        self
+    }
+
+    pub fn text_align_vertical(mut self, align: Option<TextAlignVertical>) -> Self {
+        self.text_align_vertical = align;
+        self
+    }
+
     /// The rule that governs `property`: the last one covering it.
     /// 决定 `property` 的规则：覆盖它的最后一条。
     pub fn transition_for(&self, property: AnimatedProperties) -> Option<&Transition> {
@@ -530,6 +555,7 @@ impl Style {
             && self.transitions.iter().all(Transition::valid)
             && self.background_gradient.as_ref().is_none_or(Gradient::valid)
             && self.backdrop.as_ref().is_none_or(Backdrop::valid)
+            && self.line_height.as_ref().is_none_or(LineHeight::valid)
     }
 }
 
@@ -1019,6 +1045,38 @@ impl TextDecoration {
     };
 }
 
+/// E15 line height: absolute logical px, or a multiple of the font size.
+/// E15 行高：逻辑像素绝对值，或字号的倍数。
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum LineHeight {
+    /// `0 < px <= MAX_EFFECT_EXTENT`.
+    Px(f32),
+    /// `0 < multiple <= MAX_LINE_HEIGHT_MULTIPLE`.
+    Multiple(f32),
+}
+
+/// Upper bound of an E15 line-height multiple.
+/// E15 行高倍数的上界。
+pub const MAX_LINE_HEIGHT_MULTIPLE: f32 = 16.0;
+
+impl LineHeight {
+    pub fn valid(&self) -> bool {
+        match *self {
+            LineHeight::Px(v) => v.is_finite() && v > 0.0 && v <= MAX_EFFECT_EXTENT,
+            LineHeight::Multiple(v) => v.is_finite() && v > 0.0 && v <= MAX_LINE_HEIGHT_MULTIPLE,
+        }
+    }
+}
+
+/// E15 vertical alignment of a Text node's text in its content box.
+/// E15 Text 节点文字在内容盒中的垂直对齐。
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TextAlignVertical {
+    Top,
+    Center,
+    Bottom,
+}
+
 /// Most colour stops of one E6 gradient.
 /// E6 渐变的色标数上限。
 pub const MAX_GRADIENT_STOPS: usize = 16;
@@ -1249,6 +1307,10 @@ pub const EXTENDED_STYLE_CAPABILITIES: &[StyleCapability] = &[
     StyleCapability {
         name: "gradient",
         xstyle_keys: &["background-gradient"],
+    },
+    StyleCapability {
+        name: "text-valign",
+        xstyle_keys: &["text-valign", "line-height"],
     },
 ];
 
@@ -1838,6 +1900,26 @@ impl Style {
                 "backdrop" => {
                     next.backdrop = parse_backdrop(value_trimmed).ok_or_else(invalid)?;
                 }
+                "text-valign" => {
+                    next.text_align_vertical = match value_trimmed {
+                        "none" => None,
+                        "top" => Some(TextAlignVertical::Top),
+                        "center" => Some(TextAlignVertical::Center),
+                        "bottom" => Some(TextAlignVertical::Bottom),
+                        _ => return Err(invalid()),
+                    };
+                }
+                "line-height" => {
+                    next.line_height = if value_trimmed == "none" {
+                        None
+                    } else if let Some(px) = value_trimmed.strip_suffix("px") {
+                        Some(LineHeight::Px(parse_number(px).ok_or_else(invalid)?))
+                    } else {
+                        Some(LineHeight::Multiple(
+                            parse_number(value_trimmed).ok_or_else(invalid)?,
+                        ))
+                    };
+                }
                 _ => return Err(XStyleError::UnknownKey(key.to_owned())),
             }
         }
@@ -1956,6 +2038,26 @@ impl Style {
         }
         if let Some(b) = &self.backdrop {
             pairs.push(("backdrop", format_backdrop(b)));
+        }
+        if let Some(a) = self.text_align_vertical {
+            pairs.push((
+                "text-valign",
+                match a {
+                    TextAlignVertical::Top => "top",
+                    TextAlignVertical::Center => "center",
+                    TextAlignVertical::Bottom => "bottom",
+                }
+                .to_owned(),
+            ));
+        }
+        if let Some(h) = self.line_height {
+            pairs.push((
+                "line-height",
+                match h {
+                    LineHeight::Px(v) => format!("{}px", format_number(v)),
+                    LineHeight::Multiple(v) => format_number(v),
+                },
+            ));
         }
         pairs
     }
