@@ -31,7 +31,8 @@ pub open spec fn composition_active(state: (u64, Option<UiCompositionToken>), to
 pub mod blitz_dom { #[verifier::external_body] pub struct NodeId {} }
 #[verifier::external_body] pub struct BaseDocument {}
 
-
+pub assume_specification<T>[ bool::then_some ](b: bool, t: T) -> (r: Option<T>)
+    ensures r == (if b { Some(t) } else { None::<T> });
 pub struct ViewSlot<T> {
     value: Option<T>,
 }

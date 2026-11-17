@@ -1,6 +1,6 @@
 verification results:: 9 verified, 0 errors
 warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
-  --> /home/jasper/work/jasper-ui-engine-verus/evidence/scene-snapshot-identity-kernel/kernel.rs:88:10
+  --> <repo>/evidence/scene-snapshot-identity-kernel/kernel.rs:88:10
    |
 88 | #[derive(Clone, Debug, Default, PartialEq, Eq)]
    |          ^^^^^

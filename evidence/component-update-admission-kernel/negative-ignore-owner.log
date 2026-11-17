@@ -1,13 +1,13 @@
 verification results:: 1 verified, 1 errors
 note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
-  --> /home/jasper/work/jasper-ui-engine-verus/evidence/component-update-admission-kernel/negative_ignore_owner.rs:18:1
+  --> <repo>/evidence/component-update-admission-kernel/negative_ignore_owner.rs:18:1
    |
 18 | / pub(crate) fn admit_component_frame(owner_ok:bool,open:bool,count:usize,current:u64,expected:u64,
 19 | |     native_ready:bool,supported:bool)->(result:Result<(),ComponentUpdateError>)
    | |______________________________________________________________________________^
 
 error: postcondition not satisfied
-  --> /home/jasper/work/jasper-ui-engine-verus/evidence/component-update-admission-kernel/negative_ignore_owner.rs:20:17
+  --> <repo>/evidence/component-update-admission-kernel/negative_ignore_owner.rs:20:17
    |
 20 |           ensures match result {
    |  _________________^
@@ -23,7 +23,7 @@ error: postcondition not satisfied
    |           --------------------------------------------------------------------- at this exit
 
 error: postcondition not satisfied
-  --> /home/jasper/work/jasper-ui-engine-verus/evidence/component-update-admission-kernel/negative_ignore_owner.rs:20:17
+  --> <repo>/evidence/component-update-admission-kernel/negative_ignore_owner.rs:20:17
    |
 20 |           ensures match result {
    |  _________________^
@@ -39,7 +39,7 @@ error: postcondition not satisfied
    |           --------------------------------------------------------------- at this exit
 
 error: postcondition not satisfied
-  --> /home/jasper/work/jasper-ui-engine-verus/evidence/component-update-admission-kernel/negative_ignore_owner.rs:20:17
+  --> <repo>/evidence/component-update-admission-kernel/negative_ignore_owner.rs:20:17
    |
 20 |           ensures match result {
    |  _________________^
@@ -55,7 +55,7 @@ error: postcondition not satisfied
    |           -------------------------------------------- at this exit
 
 error: postcondition not satisfied
-  --> /home/jasper/work/jasper-ui-engine-verus/evidence/component-update-admission-kernel/negative_ignore_owner.rs:20:17
+  --> <repo>/evidence/component-update-admission-kernel/negative_ignore_owner.rs:20:17
    |
 20 |           ensures match result {
    |  _________________^

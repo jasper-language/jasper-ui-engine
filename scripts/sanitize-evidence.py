@@ -9,7 +9,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 HOME = "/" + "home/"
-REPO = re.compile(re.escape(HOME) + r"[\w.-]+(?:/[\w.-]+)*?/jasper-ui-engine(?:-item\d+)?(?=[/\s\"'`:,)\]]|$)", re.M)
+# Worktree checkouts (`-itemN`, `-verus`) are the same repository; an earlier pass may already have
+# turned the home prefix into `<home>`, so that form is accepted too.
+# 工作树（`-itemN`、`-verus`）同属本仓库；早先一轮可能已把主目录前缀换成 `<home>`，该形式同样接受。
+REPO = re.compile(r"(?:" + re.escape(HOME) + r"[\w.-]+|<home>)(?:/[\w.-]+)*?/jasper-ui-engine(?:-item\d+|-verus)?(?=[/\s\"'`:,)\]]|$)", re.M)
 OTHER = re.compile(re.escape(HOME) + r"[\w.-]+")
 
 

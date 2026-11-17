@@ -1,19 +1,19 @@
 verification results:: 25 verified, 1 errors
 warning: type `NativeTextView` is more private than the item `native_component_version_model`
-   --> /home/jasper/work/jasper-ui-engine-verus/evidence/native-component-version-kernel/negative_wrong_native_version.rs:33:1
+   --> <repo>/evidence/native-component-version-kernel/negative_wrong_native_version.rs:33:1
     |
  33 | pub closed spec fn native_component_version_model(view: &NativeTextView) -> Option<u64> { if view.document.owned_value().is_some() ...
     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ function `native_component_version_model` is reachable at visibility `pub`
     |
 note: but type `NativeTextView` is only usable at visibility `pub(crate)`
-   --> /home/jasper/work/jasper-ui-engine-verus/evidence/native-component-version-kernel/negative_wrong_native_version.rs:400:1
+   --> <repo>/evidence/native-component-version-kernel/negative_wrong_native_version.rs:400:1
     |
 400 | pub(crate) struct NativeTextView {
     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     = note: `#[warn(private_interfaces)]` on by default
 
 error: postcondition not satisfied
-   --> /home/jasper/work/jasper-ui-engine-verus/evidence/native-component-version-kernel/negative_wrong_native_version.rs:417:17
+   --> <repo>/evidence/native-component-version-kernel/negative_wrong_native_version.rs:417:17
     |
 417 |           ensures result == native_component_version_model(self),
     |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition

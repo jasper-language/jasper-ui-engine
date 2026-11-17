@@ -1,12 +1,12 @@
 verification results:: 26 verified, 0 errors
 warning: type `NativeTextView` is more private than the item `native_component_version_model`
-   --> /home/jasper/work/jasper-ui-engine-verus/evidence/native-component-version-kernel/kernel.rs:33:1
+   --> <repo>/evidence/native-component-version-kernel/kernel.rs:33:1
     |
  33 | pub closed spec fn native_component_version_model(view: &NativeTextView) -> Option<u64> { if view.document.owned_value().is_some() ...
     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ function `native_component_version_model` is reachable at visibility `pub`
     |
 note: but type `NativeTextView` is only usable at visibility `pub(crate)`
-   --> /home/jasper/work/jasper-ui-engine-verus/evidence/native-component-version-kernel/kernel.rs:400:1
+   --> <repo>/evidence/native-component-version-kernel/kernel.rs:400:1
     |
 400 | pub(crate) struct NativeTextView {
     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -15,13 +15,13 @@ note: but type `NativeTextView` is only usable at visibility `pub(crate)`
 warning: 1 warning emitted
 
 warning: type `NativeTextView` is more private than the item `native_component_version_model`
-   --> /home/jasper/work/jasper-ui-engine-verus/evidence/native-component-version-kernel/kernel.rs:33:1
+   --> <repo>/evidence/native-component-version-kernel/kernel.rs:33:1
     |
  33 | pub closed spec fn native_component_version_model(view: &NativeTextView) -> Option<u64> { if view.document.owned_value().is_some() ...
     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ function `native_component_version_model` is reachable at visibility `pub`
     |
 note: but type `NativeTextView` is only usable at visibility `pub(crate)`
-   --> /home/jasper/work/jasper-ui-engine-verus/evidence/native-component-version-kernel/kernel.rs:400:1
+   --> <repo>/evidence/native-component-version-kernel/kernel.rs:400:1
     |
 400 | pub(crate) struct NativeTextView {
     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

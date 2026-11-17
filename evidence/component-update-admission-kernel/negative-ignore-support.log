@@ -1,6 +1,6 @@
 verification results:: 1 verified, 1 errors
 error: postcondition not satisfied
-  --> /home/jasper/work/jasper-ui-engine-verus/evidence/component-update-admission-kernel/negative_ignore_support.rs:20:17
+  --> <repo>/evidence/component-update-admission-kernel/negative_ignore_support.rs:20:17
    |
 20 |           ensures match result {
    |  _________________^

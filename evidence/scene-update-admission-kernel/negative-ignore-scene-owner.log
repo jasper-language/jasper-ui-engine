@@ -1,13 +1,13 @@
 verification results:: 4 verified, 1 errors
 note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
-  --> /home/jasper/work/jasper-ui-engine-verus/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:64:1
+  --> <repo>/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:64:1
    |
 64 | / pub(crate) fn admit_scene_update(owner:u64,caller:u64,current:u64,expected:u64,next:u64,
 65 | |     count:usize,open:bool)->(result:Result<(),SceneUpdateError>)
    | |_______________________________________________________________^
 
 error: postcondition not satisfied
-  --> /home/jasper/work/jasper-ui-engine-verus/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:66:17
+  --> <repo>/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:66:17
    |
 66 |           ensures match result {
    |  _________________^
@@ -23,7 +23,7 @@ error: postcondition not satisfied
    |           ---------------------------------------------------------------- at this exit
 
 error: postcondition not satisfied
-  --> /home/jasper/work/jasper-ui-engine-verus/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:66:17
+  --> <repo>/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:66:17
    |
 66 |           ensures match result {
    |  _________________^
@@ -42,7 +42,7 @@ error: postcondition not satisfied
    | |_____- at the end of the function body
 
 error: postcondition not satisfied
-  --> /home/jasper/work/jasper-ui-engine-verus/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:66:17
+  --> <repo>/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:66:17
    |
 66 |           ensures match result {
    |  _________________^
@@ -58,7 +58,7 @@ error: postcondition not satisfied
    |           ---------------------------------------- at this exit
 
 error: postcondition not satisfied
-  --> /home/jasper/work/jasper-ui-engine-verus/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:66:17
+  --> <repo>/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:66:17
    |
 66 |           ensures match result {
    |  _________________^

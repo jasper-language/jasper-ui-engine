@@ -1,6 +1,6 @@
 verification results:: 1 verified, 1 errors
 error: postcondition not satisfied
-  --> /home/jasper/work/jasper-ui-engine-verus/evidence/scene-frame-completion-kernel/negative_commit_without_candidate.rs:39:17
+  --> <repo>/evidence/scene-frame-completion-kernel/negative_commit_without_candidate.rs:39:17
    |
 39 |           ensures match result {
    |  _________________^

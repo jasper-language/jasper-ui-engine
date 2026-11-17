@@ -1,6 +1,6 @@
 verification results:: 4 verified, 1 errors
 error: postcondition not satisfied
-  --> /home/jasper/work/jasper-ui-engine-verus/evidence/semantic-role-tag-kernel/negative_invert_tag_relation.rs:64:13
+  --> <repo>/evidence/semantic-role-tag-kernel/negative_invert_tag_relation.rs:64:13
    |
 64 |     ensures result == ((match current {Role::Button=>true,_=>false}) == (match next {Role::Button=>true,_=>false})),
    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition

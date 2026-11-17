@@ -15,14 +15,14 @@
   "runner_sha256": "20c535cc7e1bbb67bef89c5b24724141c98292edf5fe2b826fcaabfb005d6f5f",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
-    "/home/jasper/verus/verus",
+    "<home>/verus/verus",
     "--crate-type",
     "lib",
-    "/home/jasper/work/jasper-ui-engine-verus/evidence/component-update-admission-kernel/kernel.rs"
+    "<repo>/evidence/component-update-admission-kernel/kernel.rs"
   ],
   "exit_code": 0,
   "solver": {
-    "path": "/home/jasper/verus/z3",
+    "path": "<home>/verus/z3",
     "version": "Z3 version 4.16.0 - 64 bit\n",
     "explicit_override": null
   },

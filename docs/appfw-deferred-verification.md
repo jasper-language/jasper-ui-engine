@@ -13,7 +13,7 @@
 | 引擎全量（原生 CPU + AccessKit） | `cargo test --locked --features native-engine-cpu,accesskit-pending`（注入 DejaVu / Noto CJK 字体环境变量） | 349 通过 |
 | 引擎默认特性 | `cargo test --locked` | 198 通过 |
 
-`verification/native-projection` 在改动前的 `main`（12f71b2）上即编译失败（`input-identity` 依赖的 `DesktopInput` 字段已变更），与本分支无关，未修。
+`verification/native-projection` 在改动前的 `main`（12f71b2）上即编译失败（`input-identity` 依赖的 `DesktopInput` 字段已变更），与本分支无关，未修。——已于 2026-11-17 在 `appfw/verus-recheck` 修复验证外壳，JasperNative04 上 `cargo test --locked` 通过，见文末「验证外壳修复」节。
 
 ## 证据失效、待重证（源码哈希已变）——已重证 2026-11-17 JasperNative04 Verus 0.2026.10.18.7d82994，见文末「Verus 重证」节
 
@@ -68,7 +68,7 @@
 
 | 性质 / 内核 | 改动 | 规格影响 |
 |---|---|---|
-| `NATIVE SCENE TYPE`（`native_scene.rs`，被 `verification/native-projection` 抽取；该 crate 在 main 上即编译失败，见上） | `NativeScene` 增加字段 `motion: MotionState` | 规格不涉及新字段；需在 Verus VM 重抽取并重证类型映射 |
+| `NATIVE SCENE TYPE`（`native_scene.rs`，被 `verification/native-projection` 抽取；该 crate 在 main 上即编译失败，见上；已在 `appfw/verus-recheck` 修复，见文末） | `NativeScene` 增加字段 `motion: MotionState` | 规格不涉及新字段；需在 Verus VM 重抽取并重证类型映射 |
 
 其余已验证区段（`SCENE UPDATE ERROR TYPE`、`SCENE WORK CAPACITY`、`SCENE UPDATE ADMISSION`、`SCENE FRAME COMPLETION/ORDER`、`SCENE INTERACTION RESTORE`、
 `frame_schedule.rs` 全部内核、`COLOR TYPE/CONSTRUCT`、`SCENE HOST TYPE` 等）逐字未变（脚本比对 `BEGIN/END VERIFIED` 区段）。
@@ -229,5 +229,57 @@ E0433/E0425：`jasper_ui_engine::motion::MotionState`、`MaterialState`、`scene
 | 项 | 结果 |
 |---|---|
 | UI-NATIVE-COMPONENT-VERSION-001 `native-component-version`（旧证据早于本批改动即已失配） | 已重证 2026-11-17 JasperNative04 Verus 0.2026.10.18.7d82994：proved（26；2/2） |
-| `native-host-context`、`text-display-version`、`text-display-close` | **失败**：Verus 报 `core::bool::impl&%0::then_some` 不受支持（`native_view.rs` NATIVE HOST CONTEXT KERNEL 中 `(…).then_some(self.context)`）。该写法由 d3a29f3（UI32，早于 appfw 基线 12f71b2）引入，与本批改动无关；原 proved 证据针对更早源码，此前已失配。判断：证明外壳/写法问题——需在规格侧为 `bool::then_some` 加 `assume_specification`，或把实现改写为 `if … {Some(…)} else {None}`（后者涉及实现，未擅自改）。三份证据现记录为 not_verified。 |
-| `verification/native-projection`（VM 内 `cargo test --locked`） | **未能编译**（与上文登记一致，早于本分支）：其依赖 `verification/input-identity` 仍按旧 `DesktopInput{pointer_id,position,pressed,modifiers}` 构造，且抽取出的 `DesktopInput` 引用未声明的 `DesktopPointerState`/`DesktopTouchState`（9 个错误）。该 crate 中 `NATIVE SCENE TYPE` 的映射测试因此无法运行；Verus 侧已由上面三个内核覆盖。修复需改写 input-identity 验证外壳，未做。日志：`evidence/native-projection-recheck/cargo-test.log`。 |
+| `native-host-context`、`text-display-version`、`text-display-close` | 首次运行**失败**：Verus 报 `core::bool::impl&%0::then_some` 不受支持（`native_view.rs` NATIVE HOST CONTEXT KERNEL 中 `(…).then_some(self.context)`，d3a29f3/UI32 引入，早于 appfw 基线 12f71b2）。已在规格侧修复并重证通过，见下「验证外壳修复」节。 |
+| `verification/native-projection`（VM 内 `cargo test --locked`） | 首次运行**未能编译**（早于本分支）：其依赖 `verification/input-identity` 仍按旧 `DesktopInput{pointer_id,position,pressed,modifiers}` 构造，且抽取出的 `DesktopInput` 引用未声明的 `DesktopPointerState`/`DesktopTouchState`（9 个错误）。已修复验证外壳并通过，见下「验证外壳修复」节。 |
+
+### 验证外壳修复（2026-11-17，JasperNative04，分支 `appfw/verus-recheck`，用户 2026-11-17 批准）
+
+只改验证侧（验证规格、证明外壳、验证 crate），引擎实现 `src/` 未改动。
+
+**1. `bool::then_some` 规格（`scripts/verify-version.py`）**：在 `native-host-context` 的 `spec_prelude` 中加
+
+```
+pub assume_specification<T>[ bool::then_some ](b: bool, t: T) -> (r: Option<T>)
+    ensures r == (if b { Some(t) } else { None::<T> });
+```
+
+即标准库文档语义（vstd 0.2026.10.18 未提供该函数规格，Verus 0.2026.10.18 接受此路径写法，未要求 `Destruct` 约束）。这是一条**假定**的
+std 规格，属可信边界：报告的 `trust_boundary` 在证明含 `assume_specification` 时会多列一项。依赖闭包含 `native-host-context`
+的只有 `text-display-type` → `text-display-version`、`text-display-close`，因此只影响这三个内核；`native-host-context` 的契约
+（`host_context_matches`）与反例均未改。runner sha256 050ff755…。
+
+| 性质 / 内核 | 结果（已验证义务数；反例被拒数） |
+|---|---|
+| UI-NATIVE-HOST-CONTEXT-001 `native-host-context` | 已重证 2026-11-17 JasperNative04 Verus 0.2026.10.18.7d82994：proved（29；2/2：`ignore-caller`、`ignore-revision`） |
+| UI-TEXT-DISPLAY-VERSION-001 `text-display-version` | 已重证 2026-11-17 JasperNative04 Verus 0.2026.10.18.7d82994：proved（31；2/2：`ignore-owner-context`、`wrong-version`） |
+| UI-TEXT-DISPLAY-CLOSE-001 `text-display-close` | 已重证 2026-11-17 JasperNative04 Verus 0.2026.10.18.7d82994：proved（32；2/2：`ignore-owner-context`、`skip-retirement`） |
+
+此前通过的 10 个内核与 `native-component-version`：本次未改其依赖闭包中任何 `spec_prelude` 或源码区段；在宿主上按脚本同一抽取
+逻辑重算 `proof_sha256`，11 份均与现有证据逐字一致，故未重跑（其证据所记 runner 仍为 20c535cc…，差异仅为上面这条
+`spec_prelude` 与 `trust_boundary` 的条件项，不进入这些证明文本）。
+
+**2. 验证 crate 外壳**：
+
+- `verification/input-identity/build.rs`：按当前 `src/desktop.rs` 逐字抽取 `DESKTOP POINTER KERNEL`、`DESKTOP POINTER STATE TYPE`、
+  `DESKTOP POINTER STATE KERNEL`、`DESKTOP INPUT TYPE`；`DesktopTouchState` 无验证标记，按 `#[derive(Clone, Debug, Default)]\npub struct DesktopTouchState {`
+  唯一匹配逐字截取其声明。去掉已不用的 `BTreeSet` 导入。
+- `verification/input-identity/src/lib.rs` `check_desktop_ime`：夹具改为真实存储 `DesktopInput{pointer:DesktopPointerState::new(),touch:DesktopTouchState::default(),start:Instant::now()}`；
+  原断言（`ime` 委托不改指针身份/位置/按键集合）保留并改到 `desktop.pointer.*`，另加 `modifiers` 仍为默认、触控 `active` 为空、`primary` 为 `None`（更强，不放宽）。
+- `verification/native-projection`：`NativeTextView` 新字段 `bold_aliases`（夹具给空集）；`NativeScene` 新字段 `source`、`font_ctx`、`bold_aliases`、`last_pointer`、
+  `motion`、`material`、`edit`——与既有 `BaseDocument`/`blitz_dom::NodeId` 一样，对被抽取内核从不读取的载荷类型声明不透明单元结构
+  （`Scene`、`blitz_dom::FontContext`、`jasper_ui_engine::motion::MotionState`、`MaterialState`、`scene_edit::EditState`），路径与源码一致；
+  四处 `NativeScene` 字面量收为 `scene_fixture(owner,version,count)`；导入 `UiCompositionToken`（`accepts_preedit` 签名需要）。
+  `scene_close::check` 另断言关闭后 `bold_aliases`、`last_pointer`、`families` 不变（更强）。
+
+| 项（VM 内 `cargo test --locked`） | 结果 | 日志 |
+|---|---|---|
+| `verification/input-identity` | 5 通过 | `evidence/input-identity-recheck/cargo-test.log` |
+| `verification/native-projection` | 21 通过 | `evidence/native-projection-recheck/cargo-test.log` |
+| `verification/native-activation`（未改，回归） | 20 通过 | `evidence/native-activation-recheck/cargo-test.log` |
+| `verification/read-boundary`（未改，回归） | 64 通过 | `evidence/read-boundary-recheck/cargo-test.log` |
+
+仍有一条编译警告 `DesktopInput.start` 未读（字段为真实存储的一部分，夹具只构造不读）。Kani/Miri/fuzz 入口签名未变，本次未运行。
+
+**证据规范化**：`scripts/sanitize-evidence.py` 的仓库路径模式此前只认 `jasper-ui-engine(-itemN)`，ffc6050 提交的证据里 VM 路径
+`/home/jasper/work/jasper-ui-engine-verus/…` 与 `/home/jasper/verus/…` 原样留存。现模式兼认 `-verus` 工作树及已替换为 `<home>` 的前缀，
+重跑脚本后 ffc6050 与本次证据均为 `<repo>/…`、`<home>/…` 形式（报告中引用的文件哈希由脚本同步）。

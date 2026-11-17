@@ -189,7 +189,9 @@ calls it and touches no translator state. No callback/thread/atomic/queue exists
 in this function path; the actual OS event loop and IME service remain separate.
 
 The wrapper extension also extracts the actual DesktopInput storage and ime
-method body, preserving the original BTreeSet/Instant fields. Verus treats only
+method body, preserving the actual DesktopPointerState/DesktopTouchState/Instant
+fields (pointer state and its constructor from verified markers; the unmarked
+touch tracker declaration taken verbatim). Verus treats only
 std::time::Instant's representation as an opaque external dependency type; no
 clock method, own runtime function, or business predicate is assumed. This is an
 explicit dependency trust boundary, not an external_body on Jasper logic. The

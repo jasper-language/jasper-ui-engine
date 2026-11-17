@@ -31,7 +31,8 @@ pub open spec fn composition_active(state: (u64, Option<UiCompositionToken>), to
 pub mod blitz_dom { #[verifier::external_body] pub struct NodeId {} }
 #[verifier::external_body] pub struct BaseDocument {}
 
-
+pub assume_specification<T>[ bool::then_some ](b: bool, t: T) -> (r: Option<T>)
+    ensures r == (if b { Some(t) } else { None::<T> });
 pub closed spec fn native_component_version_model(view: &NativeTextView) -> Option<u64> { if view.document.owned_value().is_some() { Some(view.component_version) } else { None } }
 pub(crate) mod native_view { pub(crate) use super::NativeTextView; }
 pub closed spec fn text_display_version_model(view:&TextDisplayView,owner:u64,context:UiInputContext)->Option<u64> {if view.inner.session==owner && view.inner.context.target.0==context.target.0 && view.inner.context.target_generation==context.target_generation && view.inner.context.document==context.document && view.inner.context.revision==context.revision {native_component_version_model(&view.inner)} else {None}}

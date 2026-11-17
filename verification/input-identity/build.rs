@@ -17,9 +17,22 @@ fn main() {
         assert_eq!(source.matches(&begin).count(),1);assert_eq!(source.matches(&end).count(),1);
         output.push_str(source.split_once(&begin).unwrap().1.split_once(&end).unwrap().0);
     }
-    output.push_str("use std::collections::BTreeSet; use std::time::Instant;\n");
+    output.push_str("use std::time::Instant;\n");
     let source=fs::read_to_string(root.join("../../src/desktop.rs")).unwrap();
-    output.push_str(source.split_once("// BEGIN VERIFIED DESKTOP INPUT TYPE").unwrap().1.split_once("// END VERIFIED DESKTOP INPUT TYPE").unwrap().0);
+    // DesktopInput now owns the clock-free pointer state and the touch tracker; extract both exact declarations
+    // (and the pointer state's own constructor) so the fixture builds the actual storage.
+    // DesktopInput 现由无时钟指针状态与触控跟踪组成；逐字抽取二者声明（及指针状态自身构造器），夹具据此构造真实存储。
+    for marker in ["DESKTOP POINTER KERNEL","DESKTOP POINTER STATE TYPE","DESKTOP POINTER STATE KERNEL","DESKTOP INPUT TYPE"] {
+        let begin=format!("// BEGIN VERIFIED {marker}");let end=format!("// END VERIFIED {marker}");
+        assert_eq!(source.matches(&begin).count(),1);assert_eq!(source.matches(&end).count(),1);
+        output.push_str(source.split_once(&begin).unwrap().1.split_once(&end).unwrap().0);
+    }
+    // The touch tracker has no verified marker; take its exact declaration (derives included) verbatim.
+    // 触控跟踪无验证标记；逐字取其声明（含 derive）。
+    let touch="#[derive(Clone, Debug, Default)]\npub struct DesktopTouchState {";
+    assert_eq!(source.matches(touch).count(),1);
+    let start=source.find(touch).unwrap();let end=start+source[start..].find("\n}\n").unwrap()+3;
+    output.push_str(&source[start..end]);
     output.push_str("impl DesktopInput {\n");
     output.push_str(source.split_once("// BEGIN VERIFIED DESKTOP IME DELEGATE KERNEL").unwrap().1.split_once("// END VERIFIED DESKTOP IME DELEGATE KERNEL").unwrap().0);
     output.push_str("}\n");

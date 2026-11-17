@@ -1,106 +1,48 @@
- Downloading crates ...
-  Downloaded rand_xorshift v0.4.0
-  Downloaded ppv-lite86 v0.2.21
-  Downloaded rand_chacha v0.9.0
-  Downloaded rand_core v0.9.5
-  Downloaded rand v0.9.5
-  Downloaded proptest v1.9.0
-   Compiling libc v0.2.191
-   Compiling getrandom v0.3.4
-   Compiling cfg-if v1.0.5
-   Compiling zerocopy v0.8.63
-   Compiling rand_core v0.9.5
-   Compiling autocfg v1.5.1
-   Compiling num-traits v0.2.19
-   Compiling jasper-ui-input-identity-verification v0.0.0 (/home/jasper/work/jasper-ui-engine-verus/verification/input-identity)
-   Compiling ppv-lite86 v0.2.21
-   Compiling jasper-ui-native-projection-verification v0.0.0 (/home/jasper/work/jasper-ui-engine-verus/verification/native-projection)
-   Compiling rand_chacha v0.9.0
-error[E0425]: cannot find type `DesktopPointerState` in this scope
-    --> /home/jasper/work/jasper-ui-engine-verus/verification/native-projection/target/debug/build/jasper-ui-input-identity-verification/68de2dd4395061ea/out/actual.rs:1005:14
+   Compiling jasper-ui-input-identity-verification v0.0.0 (<repo>/verification/input-identity)
+   Compiling jasper-ui-native-projection-verification v0.0.0 (<repo>/verification/native-projection)
+warning: field `start` is never read
+    --> <repo>/verification/native-projection/target/debug/build/jasper-ui-input-identity-verification/68de2dd4395061ea/out/actual.rs:1165:5
      |
-1005 |     pointer: DesktopPointerState,
-     |              ^^^^^^^^^^^^^^^^^^^ not found in this scope
-
-error[E0425]: cannot find type `DesktopTouchState` in this scope
-    --> /home/jasper/work/jasper-ui-engine-verus/verification/native-projection/target/debug/build/jasper-ui-input-identity-verification/68de2dd4395061ea/out/actual.rs:1006:12
+1162 | pub struct DesktopInput {
+     |            ------------ field in this struct
+...
+1165 |     start: Instant,
+     |     ^^^^^
      |
-1006 |     touch: DesktopTouchState,
-     |            ^^^^^^^^^^^^^^^^^ not found in this scope
+     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
 
-warning: unused import: `std::collections::BTreeSet`
-    --> /home/jasper/work/jasper-ui-engine-verus/verification/native-projection/target/debug/build/jasper-ui-input-identity-verification/68de2dd4395061ea/out/actual.rs:1002:5
-     |
-1002 | use std::collections::BTreeSet; use std::time::Instant;
-     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
-     |
-     = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
-
-error[E0560]: struct `DesktopInput` has no field named `pointer_id`
-   --> /home/jasper/work/jasper-ui-engine-verus/verification/input-identity/src/lib.rs:317:34
-    |
-317 |     let mut desktop=DesktopInput{pointer_id:PointerId(0),position:Point{x:0.0,y:0.0},pressed:std::collections::BTreeSet::new(),modi...
-    |                                  ^^^^^^^^^^ unknown field
-    |
-help: a field with a similar name exists
-    |
-317 -     let mut desktop=DesktopInput{pointer_id:PointerId(0),position:Point{x:0.0,y:0.0},pressed:std::collections::BTreeSet::new(),modifiers:Modifiers::default(),start:std::time::Instant::now()};
-317 +     let mut desktop=DesktopInput{pointer:PointerId(0),position:Point{x:0.0,y:0.0},pressed:std::collections::BTreeSet::new(),modifiers:Modifiers::default(),start:std::time::Instant::now()};
-    |
-
-error[E0560]: struct `DesktopInput` has no field named `position`
-   --> /home/jasper/work/jasper-ui-engine-verus/verification/input-identity/src/lib.rs:317:58
-    |
-317 |     let mut desktop=DesktopInput{pointer_id:PointerId(0),position:Point{x:0.0,y:0.0},pressed:std::collections::BTreeSet::new(),modi...
-    |                                                          ^^^^^^^^ `DesktopInput` does not have this field
-    |
-    = note: available fields are: `pointer`, `touch`
-
-error[E0560]: struct `DesktopInput` has no field named `pressed`
-   --> /home/jasper/work/jasper-ui-engine-verus/verification/input-identity/src/lib.rs:317:86
-    |
-317 | ...ointerId(0),position:Point{x:0.0,y:0.0},pressed:std::collections::BTreeSet::new(),modifiers:Modifiers::default(),start:std::time...
-    |                                            ^^^^^^^ `DesktopInput` does not have this field
-    |
-    = note: available fields are: `pointer`, `touch`
-
-error[E0560]: struct `DesktopInput` has no field named `modifiers`
-   --> /home/jasper/work/jasper-ui-engine-verus/verification/input-identity/src/lib.rs:317:128
-    |
-317 | ...ssed:std::collections::BTreeSet::new(),modifiers:Modifiers::default(),start:std::time::Instant::now()};
-    |                                           ^^^^^^^^^ `DesktopInput` does not have this field
-    |
-    = note: available fields are: `pointer`, `touch`
-
-error[E0609]: no field `pointer_id` on type `DesktopInput`
-   --> /home/jasper/work/jasper-ui-engine-verus/verification/input-identity/src/lib.rs:322:24
-    |
-322 |     assert_eq!(desktop.pointer_id.0,0);assert_eq!(desktop.position.x,0.0);assert!(desktop.pressed.is_empty());
-    |                        ^^^^^^^^^^ unknown field
-    |
-help: a field with a similar name exists
-    |
-322 -     assert_eq!(desktop.pointer_id.0,0);assert_eq!(desktop.position.x,0.0);assert!(desktop.pressed.is_empty());
-322 +     assert_eq!(desktop.pointer.0,0);assert_eq!(desktop.position.x,0.0);assert!(desktop.pressed.is_empty());
-    |
-
-error[E0609]: no field `position` on type `DesktopInput`
-   --> /home/jasper/work/jasper-ui-engine-verus/verification/input-identity/src/lib.rs:322:59
-    |
-322 |     assert_eq!(desktop.pointer_id.0,0);assert_eq!(desktop.position.x,0.0);assert!(desktop.pressed.is_empty());
-    |                                                           ^^^^^^^^ unknown field
-    |
-    = note: available fields are: `pointer`, `touch`, `start`
-
-error[E0609]: no field `pressed` on type `DesktopInput`
-   --> /home/jasper/work/jasper-ui-engine-verus/verification/input-identity/src/lib.rs:322:91
-    |
-322 |     assert_eq!(desktop.pointer_id.0,0);assert_eq!(desktop.position.x,0.0);assert!(desktop.pressed.is_empty());
-    |                                                                                           ^^^^^^^ unknown field
-    |
-    = note: available fields are: `pointer`, `touch`, `start`
-
-Some errors have detailed explanations: E0425, E0560, E0609.
-For more information about an error, try `rustc --explain E0425`.
 warning: `jasper-ui-input-identity-verification` (lib) generated 1 warning
-error: could not compile `jasper-ui-input-identity-verification` (lib) due to 9 previous errors; 1 warning emitted
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.54s
+     Running unittests src/lib.rs (target/debug/build/jasper-ui-native-projection-verification/122536d62ee30475/out/jasper_ui_native_projection_verification-122536d62ee30475)
+
+running 21 tests
+test capture_policy::tests::miri_capture_policy ... ok
+test close_tests::miri_public_close ... ok
+test public_tests::miri_public_projection ... ok
+test public_tests::actual_public_projection ... ok
+test host_context_tests::actual_host_context ... ok
+test capture_policy::tests::route_dense ... ok
+test host_context_tests::miri_host_context ... ok
+test scene_close::hidden_tests::dense_hidden_ancestry ... ok
+test close_tests::actual_public_close ... ok
+test scene_close::hidden_tests::actual_hidden_ancestry ... ok
+test capture_policy::tests::route_fields ... ok
+test scene_close::snapshot_identity_tests::actual_snapshot_identity ... ok
+test scene_close::snapshot_identity_tests::miri_snapshot_identity ... ok
+test scene_close::tests::miri_scene_close ... ok
+test scene_close::tests::actual_scene_close ... ok
+test scene_close::hidden_tests::miri_hidden_ancestry ... ok
+test scene_close::visibility_tests::miri_visibility ... ok
+test tests::miri_projection_boundaries ... ok
+test tests::stored_version_and_retirement ... ok
+test scene_close::visibility_tests::dense_visibility ... ok
+test scene_close::visibility_tests::actual_visibility ... ok
+
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+
+   Doc-tests jasper_ui_native_projection_verification
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

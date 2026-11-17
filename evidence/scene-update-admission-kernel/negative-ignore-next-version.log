@@ -1,6 +1,6 @@
 verification results:: 4 verified, 1 errors
 error: postcondition not satisfied
-   --> /home/jasper/work/jasper-ui-engine-verus/evidence/scene-update-admission-kernel/negative_ignore_next_version.rs:66:17
+   --> <repo>/evidence/scene-update-admission-kernel/negative_ignore_next_version.rs:66:17
     |
  66 |           ensures match result {
     |  _________________^

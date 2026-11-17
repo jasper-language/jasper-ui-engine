@@ -1,6 +1,6 @@
 verification results:: 4 verified, 1 errors
 error: postcondition not satisfied
-  --> /home/jasper/work/jasper-ui-engine-verus/evidence/semantic-role-tag-kernel/negative_wrong_native_class.rs:57:13
+  --> <repo>/evidence/semantic-role-tag-kernel/negative_wrong_native_class.rs:57:13
    |
 57 |     ensures result == (match role {Role::Button=>true,_=>false}),
    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition

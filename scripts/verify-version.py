@@ -3550,6 +3550,9 @@ KERNELS["native-host-context"] = {
         ensures result == (self.session==caller && self.context.target.0==expected.target.0 && self.context.target_generation==expected.target_generation && self.context.document==expected.document && self.context.revision==expected.revision),
     {""",
     "depends":["native-view-type","ui-view-owner"],"internal_only":False,
+    # core's `bool::then_some` has no vstd specification; state its documented std meaning (trusted).
+    # vstd 未给 `bool::then_some` 规格；此处按标准库文档语义假定（可信边界）。
+    "spec_prelude":"pub assume_specification<T>[ bool::then_some ](b: bool, t: T) -> (r: Option<T>)\n    ensures r == (if b { Some(t) } else { None::<T> });",
     "property":"UI-NATIVE-HOST-CONTEXT-001","evidence":"native-host-context-kernel","function_count":1,
     "scope":"Exact NativeTextView read-only owner/context equality only; no backend, authentication or lifecycle effect proof.",
     "mutations":[("ignore-caller","matches_ui_view_owner(self.session,self.context,caller,expected)","matches_ui_view_owner(self.session,self.context,self.session,expected)"),
@@ -4798,7 +4801,9 @@ def main():
         "negative_controls": controls,
         "negative_control_rejected": all(control["rejected"] for control in controls),
         "trust_boundary": ["Verus/vstd and SMT solver", "Rust/Verus integer, references and slice semantics",
-                           "signature annotation/extraction script", "Rust compiler and target execution"],
+                           "signature annotation/extraction script", "Rust compiler and target execution",
+                           *(["assume_specification axioms in the spec prelude (std functions without vstd specs)"]
+                             if "assume_specification" in specs else [])],
     }
     (evidence / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
     print(output, end="")

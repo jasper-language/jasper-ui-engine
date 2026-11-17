@@ -1,17 +1,29 @@
 use super::{BaseDocument,blitz_dom,ViewSlot,NodeId};
 use std::collections::{BTreeMap,BTreeSet};
 mod native_scene {pub(crate) use super::NativeScene;}
+// Explicitly abstract payloads of fields these kernels never read (no mock renderer, motion, material or editor model).
+// 这些内核从不读取的字段载荷，仅作不透明占位（不是渲染、动效、材质或编辑的模型）。
+pub struct Scene;
+pub struct MaterialState;
+mod jasper_ui_engine {pub mod motion {pub struct MotionState;}}
+mod scene_edit {pub struct EditState;}
+fn scene_fixture(owner:u64,scene_version:u64,node_count:usize)->NativeScene {
+    NativeScene {source:Scene,font_ctx:blitz_dom::FontContext,bold_aliases:BTreeSet::new(),document:ViewSlot::new(BaseDocument),
+        owner,scene_version,node_count,parents:BTreeMap::new(),children:BTreeMap::new(),displayed:BTreeMap::new(),
+        semantics:BTreeMap::new(),nodes:BTreeMap::new(),frame_dirty:true,frame_cache:None,families:BTreeSet::new(),
+        last_pointer:None,motion:jasper_ui_engine::motion::MotionState,material:MaterialState,edit:scene_edit::EditState}
+}
 include!(concat!(env!("OUT_DIR"),"/actual_scene.rs"));
 pub fn check(version:u64,owner:u64,caller:u64,closed:bool) {
     // Unread map contents are universally framed by Verus; runtime fixture keeps them empty.
-    let mut view=SceneHostView {inner:NativeScene {document:ViewSlot::new(BaseDocument),owner,scene_version:version,node_count:7,
-        parents:BTreeMap::new(),children:BTreeMap::new(),displayed:BTreeMap::new(),semantics:BTreeMap::new(),nodes:BTreeMap::new(),frame_dirty:true,frame_cache:None,families:BTreeSet::new()}};
+    let mut view=SceneHostView {inner:scene_fixture(owner,version,7)};
     if closed {assert!(view.inner.document.close());}
     assert_eq!(view.close(caller),owner==caller && !closed);
     assert_eq!(view.inner.document.is_open(),owner!=caller && !closed);
     assert_eq!(view.inner.owner,owner);assert_eq!(view.inner.scene_version,version);assert_eq!(view.inner.node_count,7);
     assert_eq!(view.inner.parents.len(),0);assert_eq!(view.inner.children.len(),0);assert_eq!(view.inner.displayed.len(),0);
     assert_eq!(view.inner.semantics.len(),0);assert_eq!(view.inner.nodes.len(),0);
+    assert!(view.inner.bold_aliases.is_empty());assert!(view.inner.last_pointer.is_none());assert!(view.inner.families.is_empty());
     if owner==caller {assert!(!view.close(caller));}
     // Wrapper/map destruction is outside the borrowed close method's logical scope.
     std::mem::forget(view);
@@ -38,8 +50,7 @@ mod proofs {
 }
 
 pub fn check_visibility(entries:&[(u64,Option<u64>,Option<bool>,Option<bool>)],start:u64) {
-    let mut view=SceneHostView {inner:NativeScene {document:ViewSlot::new(BaseDocument),owner:1,scene_version:0,node_count:entries.len(),
-        parents:BTreeMap::new(),children:BTreeMap::new(),displayed:BTreeMap::new(),semantics:BTreeMap::new(),nodes:BTreeMap::new(),frame_dirty:true,frame_cache:None,families:BTreeSet::new()}};
+    let mut view=SceneHostView {inner:scene_fixture(1,0,entries.len())};
     for (id,parent,displayed,hidden) in entries {
         view.inner.parents.insert(NodeId(*id),parent.map(NodeId));
         match displayed {Some(value)=>{view.inner.displayed.insert(NodeId(*id),*value);},None=>{view.inner.displayed.remove(&NodeId(*id));}}
@@ -89,8 +100,7 @@ mod visibility_proofs {
         use super::*;
         let parent_present:bool=kani::any();let display_present:bool=kani::any();let semantic_present:bool=kani::any();
         let shown:bool=kani::any();let hidden:bool=kani::any();let cycle:bool=kani::any();
-        let mut view=SceneHostView {inner:NativeScene {document:ViewSlot::new(BaseDocument),owner:1,scene_version:0,node_count:1,
-            parents:BTreeMap::new(),children:BTreeMap::new(),displayed:BTreeMap::new(),semantics:BTreeMap::new(),nodes:BTreeMap::new(),frame_dirty:true,frame_cache:None,families:BTreeSet::new()}};
+        let mut view=SceneHostView {inner:scene_fixture(1,0,1)};
         if parent_present {view.inner.parents.insert(NodeId(0),if cycle {Some(NodeId(0))} else {None});}
         if display_present {view.inner.displayed.insert(NodeId(0),shown);}
         if semantic_present {view.inner.semantics.insert(NodeId(0),Semantics {hidden,..Default::default()});}
@@ -166,8 +176,7 @@ mod hidden_proofs {
 
 pub fn check_snapshot_identity(version:u64,count:usize,owner:u64,caller:u64,closed:bool) {
     // Maps are never accessed by this method; Verus frames arbitrary map payloads.
-    let mut view=NativeScene {document:ViewSlot::new(BaseDocument),owner,scene_version:version,node_count:count,
-        parents:BTreeMap::new(),children:BTreeMap::new(),displayed:BTreeMap::new(),semantics:BTreeMap::new(),nodes:BTreeMap::new(),frame_dirty:true,frame_cache:None,families:BTreeSet::new()};
+    let mut view=scene_fixture(owner,version,count);
     if closed {assert!(view.document.close());}
     let expected=if owner==caller && !closed {Some((version,count))} else {None};
     assert_eq!(view.snapshot_identity(caller),expected);assert_eq!(view.snapshot_identity(caller),expected);

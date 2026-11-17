@@ -1,13 +1,13 @@
 verification results:: 1 verified, 1 errors
 note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
-  --> /home/jasper/work/jasper-ui-engine-verus/evidence/scene-frame-completion-kernel/negative_ignore_source_version.rs:37:1
+  --> <repo>/evidence/scene-frame-completion-kernel/negative_ignore_source_version.rs:37:1
    |
 37 | / pub(crate) fn complete_scene_frame(source_ok:bool,source_version:u64,next:u64,candidate_ready:bool)
 38 | |     ->(result:Result<(),SceneUpdateError>)
    | |_________________________________________^
 
 error: postcondition not satisfied
-  --> /home/jasper/work/jasper-ui-engine-verus/evidence/scene-frame-completion-kernel/negative_ignore_source_version.rs:39:17
+  --> <repo>/evidence/scene-frame-completion-kernel/negative_ignore_source_version.rs:39:17
    |
 39 |           ensures match result {
    |  _________________^
@@ -23,7 +23,7 @@ error: postcondition not satisfied
    |           -------------------------------------------- at this exit
 
 error: postcondition not satisfied
-  --> /home/jasper/work/jasper-ui-engine-verus/evidence/scene-frame-completion-kernel/negative_ignore_source_version.rs:39:17
+  --> <repo>/evidence/scene-frame-completion-kernel/negative_ignore_source_version.rs:39:17
    |
 39 |           ensures match result {
    |  _________________^

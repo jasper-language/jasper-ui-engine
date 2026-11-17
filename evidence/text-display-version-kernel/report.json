@@ -1,6 +1,6 @@
 {
   "property": "UI-TEXT-DISPLAY-VERSION-001",
-  "status": "not_verified",
+  "status": "proved",
   "scope": "Actual public read-only owner/context/version projection plus actual own helper and slot getter; unused backend payloads opaque, no construction/render/other facade proof.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
   "source_sha256": "17c944792c3dccb850e2d27d6a93af9bc0aea4fed0122f486fac633f918c28b4",
@@ -27,39 +27,40 @@
     "native-component-version": "b1c91b8ac6726626a36b917f4a0ac58b26c67129ca09f5b36a4f365ab2e4ce72",
     "text-display-type": "cdc2999138051282f6a1f5b48b61a1f6f227702efcd7c6c9316c4ef31537ebd1"
   },
-  "proof_sha256": "1abc3e8578b106ac311aa4310754ebc36aaf15c560c9728d2c36bfa1a56f9275",
-  "runner_sha256": "20c535cc7e1bbb67bef89c5b24724141c98292edf5fe2b826fcaabfb005d6f5f",
+  "proof_sha256": "1e294986897bd26d633769e4f8b66dc3efb868f42c079e19fda81298b2557b3e",
+  "runner_sha256": "050ff755785dcf2731b14e163ba702ccef9bff8a592ff5ea891d9340287e462b",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
-    "/home/jasper/verus/verus",
+    "<home>/verus/verus",
     "--crate-type",
     "lib",
-    "/home/jasper/work/jasper-ui-engine-verus/evidence/text-display-version-kernel/kernel.rs"
+    "<repo>/evidence/text-display-version-kernel/kernel.rs"
   ],
-  "exit_code": 1,
+  "exit_code": 0,
   "solver": {
-    "path": "/home/jasper/verus/z3",
+    "path": "<home>/verus/z3",
     "version": "Z3 version 4.16.0 - 64 bit\n",
     "explicit_override": null
   },
-  "verified_obligations": 0,
+  "verified_obligations": 31,
   "negative_controls": [
     {
       "name": "ignore-owner-context",
-      "rejected": false,
+      "rejected": true,
       "exit_code": 1
     },
     {
       "name": "wrong-version",
-      "rejected": false,
+      "rejected": true,
       "exit_code": 1
     }
   ],
-  "negative_control_rejected": false,
+  "negative_control_rejected": true,
   "trust_boundary": [
     "Verus/vstd and SMT solver",
     "Rust/Verus integer, references and slice semantics",
     "signature annotation/extraction script",
-    "Rust compiler and target execution"
+    "Rust compiler and target execution",
+    "assume_specification axioms in the spec prelude (std functions without vstd specs)"
   ]
 }
