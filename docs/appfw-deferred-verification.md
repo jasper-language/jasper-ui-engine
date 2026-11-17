@@ -218,6 +218,21 @@ scripts/verify-in-vm.sh bash -c 'python3 scripts/verify-version.py --verus "$HOM
 | `NATIVE SCENE TYPE` → UI-SCENE-HOST-IDENTITY-001 `scene-host-identity` | 已重证 2026-11-17 JasperNative04 Verus 0.2026.10.18.7d82994：proved（11；2/2） |
 | UI-ACCESS-ACTIONS-001 `access_actions` | 内核与依赖区段逐字未变，现有证据哈希仍匹配，未重跑（文字描述按上表读作「按角色可激活」） |
 
+## P0-A 场景浮层（分支 `appfw/p0a-overlay`，2026-11-17）
+
+新增 Rust 的完整六步链暂缓；像素与交互集成测试不代替形式化证明。
+
+| 项 | 位置 | 现有替代证据 |
+|---|---|---|
+| `OverlaySpec` 范围校验、`overlay` 解析/输出 | `overlay.rs`、`style.rs` | 六项定位/语法单元测试 |
+| 视口避让、翻转、限宽高与锚点布局 | `overlay.rs::place_overlay`、`native_adapter/scene_overlay.rs` | 单元测试与 `scene_overlay` 像素/几何测试 |
+| 源节点提升、layer/源序绘制、父裁剪脱离 | `native_adapter/scene_overlay.rs::configure` | 父级 `overflow:hidden` 外像素测试 |
+| 外部点击阻断、Escape/outside `dismiss-request` | `scene_overlay.rs`、`native_scene.rs` | 输入阻断与事件内容测试 |
+| 模态焦点门 | `scene_overlay.rs::allows_interaction` | 外部焦点拒绝测试 |
+
+仍未实现/验收：Tab 焦点陷阱与关闭后焦点恢复、AccessKit `modal`/背景 inert、复杂嵌套浮层的
+逐层关闭归属、真实菜单/对话框组件与平台窗口级弹窗。不得据此宣告整项 P0-A 已关闭。
+
 **规格同步（`scripts/verify-version.py`）**：首次运行时三个 `NATIVE SCENE TYPE` 依赖内核均失败（`not_verified`，rustc
 E0433/E0425：`jasper_ui_engine::motion::MotionState`、`MaterialState`、`scene_edit::EditState` 在证明文件中无定义）。这是证明外壳缺少
 新字段类型声明，不是代码缺陷：仿照既有 `blitz_dom::NodeId` / `BaseDocument` 做法，在 `native-scene-type` 的 `spec_prelude` 中补三个
