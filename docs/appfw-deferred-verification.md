@@ -234,6 +234,22 @@ scripts/verify-in-vm.sh bash -c 'python3 scripts/verify-version.py --verus "$HOM
 未覆盖：JPEG/WebP 真实夹具像素（仅解码准入单元）、恶意编码器模糊测试、SVG 全特性矩阵、
 超大规模图片内存压力、macOS/Windows 发布包许可审计。
 
+## P0-A 场景浮层（分支 `appfw/p0a-overlay`，2026-11-17）
+
+新增 Rust 的完整六步链暂缓；像素与交互集成测试不代替形式化证明。
+
+| 项 | 位置 | 现有替代证据 |
+|---|---|---|
+| `OverlaySpec` 范围校验、`overlay` 解析/输出 | `overlay.rs`、`style.rs` | 六项定位/语法单元测试 |
+| 视口避让、翻转、限宽高与锚点布局 | `overlay.rs::place_overlay`、`native_adapter/scene_overlay.rs` | 单元测试与 `scene_overlay` 像素/几何测试 |
+| 源节点提升、layer/源序绘制、父裁剪脱离 | `native_adapter/scene_overlay.rs::configure` | 父级 `overflow:hidden` 外像素测试 |
+| 外部点击阻断、Escape/outside `dismiss-request` | `scene_overlay.rs`、`native_scene.rs` | 输入阻断与事件内容测试 |
+| 模态焦点门、自动聚焦、Tab 循环与关闭恢复 | `scene_overlay.rs::{allows_interaction,apply_auto_focus,tab_target,restore_removed_focus}` | 外部焦点拒绝、自动聚焦、Tab 循环与恢复测试 |
+| AccessKit modal 标记 | `access_tree.rs`、`access_kit.rs` | AccessKit 节点 `is_modal` 测试 |
+
+仍未实现/验收：复杂嵌套浮层的逐层关闭归属、真实菜单/对话框组件、平台窗口级弹窗与
+多显示器边界；不得据此宣告整项 P0-A 已关闭。
+
 **规格同步（`scripts/verify-version.py`）**：首次运行时三个 `NATIVE SCENE TYPE` 依赖内核均失败（`not_verified`，rustc
 E0433/E0425：`jasper_ui_engine::motion::MotionState`、`MaterialState`、`scene_edit::EditState` 在证明文件中无定义）。这是证明外壳缺少
 新字段类型声明，不是代码缺陷：仿照既有 `blitz_dom::NodeId` / `BaseDocument` 做法，在 `native-scene-type` 的 `spec_prelude` 中补三个

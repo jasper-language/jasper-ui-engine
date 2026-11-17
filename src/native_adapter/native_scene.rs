@@ -5,6 +5,10 @@ use crate::view_slot::ViewSlot;
 /// E14 场景内文本编辑（子模块：读取场景私有状态）。
 #[path = "scene_edit.rs"]
 mod scene_edit;
+/// P0-A scene overlays (child module: it reads the scene's private native state).
+/// P0-A 场景浮层（子模块：读取场景私有原生状态）。
+#[path = "scene_overlay.rs"]
+mod scene_overlay;
 use blitz_dom::{BaseDocument, DocumentConfig, LocalName, Namespace, QualName};
 use blitz_traits::shell::Viewport;
 use jasper_ui_engine::input_identity::next_ui_update_version;
@@ -264,6 +268,7 @@ pub(crate) struct NativeScene {
     material: MaterialState,
     edit: scene_edit::EditState,
     images: crate::image_resource::ImageStore,
+    overlays: scene_overlay::OverlayState,
 }
 // END VERIFIED NATIVE SCENE TYPE
 
@@ -381,6 +386,7 @@ impl NativeScene {
             material: MaterialState::default(),
             edit: scene_edit::EditState::default(),
             images: crate::image_resource::ImageStore::default(),
+            overlays: scene_overlay::OverlayState::new(body),
         };
         if !view.append_prepared_subtree(&scene.root, None, body, prepared) {
             return None;
@@ -392,6 +398,11 @@ impl NativeScene {
         if !view.apply_source_scrolls(&scene.root) {
             return None;
         }
+        let configured = view.with_overlay_state(|overlays, view| overlays.configure(view));
+        if !configured {
+            return None;
+        }
+        view.with_overlay_state(|overlays, view| overlays.apply_auto_focus(view));
         Some(view)
     }
     /// Shared native construction for initial snapshots and admitted insertion.
@@ -611,6 +622,7 @@ impl NativeScene {
             })
             .filter(|id| !self.frame_retires_node(*id, patches));
         let (width, height) = viewport.window_size;
+        let previous_focus = self.focused_node(self.owner, self.scene_version);
         let mut candidate = Self::from_scene_with_context(
             self.owner,
             &source,
@@ -663,6 +675,19 @@ impl NativeScene {
         // E14: the edit session survives frames (engine-local, no version of its own).
         candidate.carry_edit_from(self, patches);
         candidate.images = self.images.clone();
+        candidate.images = self.images.clone();
+        candidate
+            .overlays
+            .carry_from(&self.overlays, previous_focus);
+        candidate.with_overlay_state(|overlays, candidate| {
+            overlays.restore_removed_focus(
+                candidate,
+                &self.overlays,
+                &self.parents,
+                previous_focus,
+            );
+            overlays.apply_auto_focus(candidate);
+        });
         Some(candidate)
     }
     /// A frame that removes a node also retires its native press/focus identity. Reusing
@@ -753,6 +778,17 @@ impl NativeScene {
         if caller != self.owner || version != self.scene_version || !x.is_finite() || !y.is_finite()
         {
             return false;
+        }
+        let (consume, _) = self.with_overlay_state(|overlays, view| {
+            overlays.pointer_gate(view, x, y, phase, pressed_primary(input))
+        });
+        if consume {
+            if let Some(document) = self.document.as_mut() {
+                if matches!(phase, PointerAction::Down | PointerAction::Up | PointerAction::Cancel) {
+                    document.set_mousedown_node_id(None);
+                }
+            }
+            return true;
         }
         self.last_pointer = Some((x, y));
         let adjustment = self.pointer_hit_adjustment(x, y);
@@ -940,6 +976,30 @@ impl NativeScene {
             return false;
         }
         let before = self.focused_node(caller, version);
+        let escape = input.key == "Escape" && input.pressed && !input.composing;
+        if input.key == "Tab"
+            && input.pressed
+            && !input.composing
+            && !input.modifiers.control
+            && !input.modifiers.alt
+            && !input.modifiers.meta
+        {
+            if let Some(target) =
+                self.overlays
+                    .tab_target(self, before, input.modifiers.shift)
+            {
+                if let Some(target) = target {
+                    let _ = self.focus_from_host(caller, version, target, focus);
+                }
+                return true;
+            }
+        }
+        if before.is_some_and(|id| !self.overlays.allows_interaction(self, id)) {
+            if escape {
+                self.with_overlay_state(|overlays, view| overlays.escape_request(view));
+            }
+            return false;
+        }
         let node = match before {
             Some(node) if self.focus_eligible(node) => node,
             None if input.key == "Tab" && input.pressed && !input.composing => {
@@ -951,6 +1011,10 @@ impl NativeScene {
                     return false;
                 };
                 root
+            }
+            _ if escape => {
+                self.with_overlay_state(|overlays, view| overlays.escape_request(view));
+                return true;
             }
             _ => return false,
         };
@@ -983,6 +1047,9 @@ impl NativeScene {
         };
         blitz_dom::EventDriver::new(document, handler).handle_ui_event(event);
         document.resolve(0.0);
+        if escape && !prevented {
+            self.with_overlay_state(|overlays, view| overlays.escape_request(view));
+        }
         // E14: an unprevented key on the edited field goes to the engine editor.
         let edited = before == Some(node) && !prevented && self.edit_key(node, input);
         let activates = !edited
@@ -1089,6 +1156,44 @@ impl NativeScene {
         }
     }
 
+    /// Logical viewport used by Framework overlay placement. The host supplies a physical
+    /// Surface extent plus DPI; the native logical layout coordinate is that extent divided by
+    /// the scale.
+    /// Framework 浮层定位使用的逻辑视口。宿主提供物理 Surface 尺寸与 DPI；原生逻辑布局坐标为
+    /// 该尺寸除以缩放。
+    fn viewport_logical(&self) -> crate::style_effects::LogicalBox {
+        let viewport = self
+            .document
+            .as_ref()
+            .map(|document| document.viewport().clone())
+            .unwrap_or_default();
+        let scale = if viewport.hidpi_scale.is_finite() && viewport.hidpi_scale > 0.0 {
+            viewport.hidpi_scale
+        } else {
+            1.0
+        };
+        crate::style_effects::LogicalBox {
+            x: 0.0,
+            y: 0.0,
+            width: viewport.window_size.0 as f32 / scale,
+            height: viewport.window_size.1 as f32 / scale,
+        }
+    }
+
+    /// Run one overlay operation with separate borrows of the overlay state and scene.
+    /// 在对场景与浮层状态分别可变借用的情况下执行一次浮层操作。
+    fn with_overlay_state<R>(
+        &mut self,
+        operation: impl FnOnce(&mut scene_overlay::OverlayState, &mut Self) -> R,
+    ) -> R {
+        let body = self.overlays.body();
+        let mut overlays =
+            std::mem::replace(&mut self.overlays, scene_overlay::OverlayState::new(body));
+        let result = operation(&mut overlays, self);
+        self.overlays = overlays;
+        result
+    }
+
     /// Host-authenticated semantic action; no fabricated pointer, key or focus request.
     /// Scene version prevents stale routing, not duplicate actions; host owns replay policy.
     pub(crate) fn activate_from_host(
@@ -1100,6 +1205,9 @@ impl NativeScene {
     ) -> bool {
         if caller != self.owner || self.document.as_ref().is_none() || !self.nodes.contains_key(&id)
         {
+            return false;
+        }
+        if !self.overlays.allows_interaction(self, id) {
             return false;
         }
         let can_activate =
@@ -1124,7 +1232,11 @@ impl NativeScene {
         sink: &mut impl FnMut(crate::scene_events::SceneFocusEvent),
     ) -> bool {
         self.invalidate_frame();
-        if caller != self.owner || version != self.scene_version || !self.focus_eligible(id) {
+        if caller != self.owner
+            || version != self.scene_version
+            || !self.focus_eligible(id)
+            || !self.overlays.allows_interaction(self, id)
+        {
             return false;
         }
         let Some((element, _)) = self.nodes.get(&id) else {
@@ -1271,6 +1383,26 @@ impl NativeScene {
             return None;
         }
         Some(self.images.report())
+    }
+    pub(crate) fn overlays_from_host(
+        &self,
+        caller: u64,
+        version: u64,
+    ) -> Option<Vec<crate::overlay::OverlayInfo>> {
+        if caller != self.owner || version != self.scene_version || !self.document.is_open() {
+            return None;
+        }
+        Some(self.overlays.info(self))
+    }
+
+    pub(crate) fn take_overlay_events_from_host(
+        &mut self,
+        caller: u64,
+    ) -> Option<Vec<crate::overlay::OverlayEvent>> {
+        if caller != self.owner {
+            return None;
+        }
+        Some(self.overlays.take_events())
     }
 
     /// Host supplies physical surface extent and DPI; scene version is independent.
@@ -2214,6 +2346,11 @@ impl NativeScene {
                 },
                 text_selection: edit.map(|(_, selection)| selection),
                 disabled: semantics.disabled,
+                modal: self
+                    .source
+                    .find(id)
+                    .and_then(|node| node.style.overlay)
+                    .is_some_and(|overlay| overlay.modal),
                 bounds: self.node_bounds_from_host(caller, version, id),
                 focused: focused == Some(id),
                 // The kernel's `is_button` input is "activatable by role" since E12.

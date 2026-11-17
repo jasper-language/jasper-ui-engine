@@ -273,6 +273,12 @@ pub struct Style {
     /// P0-A 图片内容：宿主注入的资源（位图或 SVG）画在内容盒内，位于子节点与文字之下，按（圆角）内容盒裁剪。
     /// 图片从不改变布局：节点尺寸只由自身样式决定，与 Rect 相同。None 为无图片（默认）。
     pub image: Option<ImageStyle>,
+    /// Overlay layer (issue #1 P0-A): lifts the node and its subtree out of the parent's clip
+    /// and paint order, anchors and places it, and gives it modal / dismiss / focus behaviour
+    /// (see `crate::overlay`). None: an ordinary node (the default). Never transitioned.
+    /// 浮层层（issue #1 P0-A）：使节点及其子树脱离父节点裁剪与绘制顺序，锚定并定位，带模态/关闭请求/焦点行为
+    /// （见 `crate::overlay`）。None 为普通节点（默认）。不参与过渡。
+    pub overlay: Option<crate::overlay::OverlaySpec>,
 }
 
 impl Default for Style {
@@ -318,6 +324,7 @@ impl Default for Style {
             line_height: None,
             text_align_vertical: None,
             image: None,
+            overlay: None,
         }
     }
 }
@@ -571,6 +578,7 @@ impl Style {
             && self.backdrop.as_ref().is_none_or(Backdrop::valid)
             && self.line_height.as_ref().is_none_or(LineHeight::valid)
             && self.image.as_ref().is_none_or(ImageStyle::valid)
+            && self.overlay.as_ref().is_none_or(crate::overlay::OverlaySpec::valid)
     }
 }
 
@@ -1460,6 +1468,10 @@ pub const EXTENDED_STYLE_CAPABILITIES: &[StyleCapability] = &[
         name: "svg",
         xstyle_keys: &[],
     },
+    StyleCapability {
+        name: "overlay",
+        xstyle_keys: &["overlay"],
+    },
 ];
 
 /// `xstyle` key/value rejection.
@@ -1483,7 +1495,7 @@ impl std::fmt::Display for XStyleError {
 
 impl std::error::Error for XStyleError {}
 
-fn parse_number(text: &str) -> Option<f32> {
+pub(crate) fn parse_number(text: &str) -> Option<f32> {
     let text = text.trim();
     // Plain decimal only: no units, no `inf`/`nan` spellings.
     if text.is_empty()
@@ -1496,7 +1508,7 @@ fn parse_number(text: &str) -> Option<f32> {
     text.parse::<f32>().ok().filter(|v| v.is_finite())
 }
 
-fn parse_color(text: &str) -> Option<Color> {
+pub(crate) fn parse_color(text: &str) -> Option<Color> {
     let hex = text.trim().strip_prefix('#')?;
     if !(hex.len() == 6 || hex.len() == 8) || !hex.bytes().all(|b| b.is_ascii_hexdigit()) {
         return None;
@@ -1510,7 +1522,7 @@ fn parse_color(text: &str) -> Option<Color> {
     ))
 }
 
-fn format_color(c: Color) -> String {
+pub(crate) fn format_color(c: Color) -> String {
     format!("#{:02x}{:02x}{:02x}{:02x}", c.r, c.g, c.b, c.a)
 }
 
@@ -1546,7 +1558,7 @@ fn parse_shadow(text: &str) -> Option<BoxShadow> {
     })
 }
 
-fn format_number(v: f32) -> String {
+pub(crate) fn format_number(v: f32) -> String {
     format!("{v}")
 }
 
@@ -2133,6 +2145,9 @@ impl Style {
                         ))
                     };
                 }
+                "overlay" => {
+                    next.overlay = crate::overlay::parse_overlay(value_trimmed).ok_or_else(invalid)?;
+                }
                 _ => return Err(XStyleError::UnknownKey(key.to_owned())),
             }
         }
@@ -2274,6 +2289,9 @@ impl Style {
                     LineHeight::Multiple(v) => format_number(v),
                 },
             ));
+        }
+        if let Some(o) = &self.overlay {
+            pairs.push(("overlay", crate::overlay::format_overlay(o)));
         }
         pairs
     }

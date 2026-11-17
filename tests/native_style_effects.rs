@@ -591,7 +591,8 @@ fn capabilities_are_declared_for_the_host_hello() {
             "gradient",
             "text-valign",
             "image",
-            "svg"
+            "svg",
+            "overlay"
         ]
     );
 }

@@ -49,6 +49,7 @@ pub mod keyboard;
 pub mod layout;
 mod legacy_engine;
 pub mod motion;
+pub mod overlay;
 pub mod paint;
 pub mod platform;
 pub mod platform_input;
