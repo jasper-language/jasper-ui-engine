@@ -17,6 +17,8 @@ pub use crate::surface_lifecycle::{SurfaceLifecycleError,SurfaceState,SurfaceSta
 pub use crate::text_edit::{CaretBlink,SceneEditEvent,SceneEditEventKind,SceneEditState};
 pub use crate::image_resource::{ImageError,ImageFormat,ImageInfo,ImageLimits,ImageNodeError,ImageNodeReport,ImageReport};
 pub use crate::overlay::{DismissReason,OutsidePress,OverlayAlign,OverlayAnchor,OverlayAvoid,OverlayDismiss,OverlayEvent,OverlayEventKind,OverlayFocus,OverlayInfo,OverlayPlacement,OverlaySide,OverlaySpec,OverlaySuppression};
+pub use crate::scroll::ScrollGeometry;
+pub use crate::table::{TableCellMetrics,TableMetrics};
 
 /// Embedding-host adapter; application declarations use Scene/ScenePatch values above.
 /// This module does not acquire windows, surfaces, devices or OS services.
@@ -632,6 +634,17 @@ impl SceneHostView {
     /// Embedding host owns OS screen transforms and native accessibility API mapping.
     pub fn node_bounds(&self,owner:u64,version:u64,node:NodeId)->Option<Rect> {
         self.inner.node_bounds_from_host(owner,version,node)
+    }
+    /// Authoritative native scroll extent, offset and maximum for a `Overflow::Scroll` node.
+    /// `ScrollGeometry::visible(overscan)` is the content-space virtualization window.
+    /// 原生 `Overflow::Scroll` 节点的权威滚动范围/偏移/上界；`visible(overscan)` 是内容空间虚拟化窗口。
+    pub fn scroll_geometry(&self,owner:u64,version:u64,node:NodeId)->Option<ScrollGeometry> {
+        self.inner.scroll_geometry_from_host(owner,version,node)
+    }
+    /// Measured CSS table columns/rows and visible cell rectangles in source order.
+    /// 按源顺序返回 CSS 表格的列/行测量与可见单元矩形。
+    pub fn table_metrics(&self,owner:u64,version:u64,node:NodeId)->Option<TableMetrics> {
+        self.inner.table_metrics_from_host(owner,version,node)
     }
     /// UTF-8 offset in a text node's source text nearest a view-local logical point, from the
     /// same native layout that paints it; for caret placement, not an occlusion-aware hit test.

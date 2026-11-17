@@ -250,6 +250,8 @@ fn map_style(style: &Style, is_root: bool, viewport: Size) -> TaffyStyle {
         display: match style.display {
             Display::Block => TaffyDisplay::Block,
             Display::Flex => TaffyDisplay::Flex,
+            Display::Grid => TaffyDisplay::Grid,
+            Display::Table | Display::TableRow | Display::TableCell => TaffyDisplay::Block,
             Display::None => TaffyDisplay::None,
         },
         box_sizing: BoxSizing::BorderBox,

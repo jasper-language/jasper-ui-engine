@@ -29,7 +29,80 @@ pub enum Display {
     Block,
     #[default]
     Flex,
+    Grid,
+    Table,
+    TableRow,
+    TableCell,
     None,
+}
+
+/// CSS-like positioning mode. Static preserves the historical flow-only behavior.
+/// 类 CSS 定位模式；Static 保持原有纯流式行为的默认语义。
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Position {
+    #[default]
+    Static,
+    Relative,
+    Absolute,
+    Fixed,
+    Sticky,
+}
+
+/// One track in an explicit grid template.
+/// 显式 Grid 模板中的一条轨道。
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum GridTrack {
+    Auto,
+    Px(f32),
+    Percent(f32),
+    Fr(f32),
+}
+
+/// A grid line: automatic placement, an explicit integer line, or a span.
+/// Grid 线：自动放置、显式整数线或跨若干轨道。
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum GridLine {
+    #[default]
+    Auto,
+    Line(i32),
+    Span(u32),
+}
+
+/// Four logical-pixel lengths used for positioning insets.
+/// 定位内边距使用的四个逻辑像素长度。
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Inset {
+    pub top: Length,
+    pub right: Length,
+    pub bottom: Length,
+    pub left: Length,
+}
+
+impl Inset {
+    pub const ZERO: Self = Self {
+        top: Length::Auto,
+        right: Length::Auto,
+        bottom: Length::Auto,
+        left: Length::Auto,
+    };
+
+    pub const fn all(value: Length) -> Self {
+        Self {
+            top: value,
+            right: value,
+            bottom: value,
+            left: value,
+        }
+    }
+
+    pub const fn new(top: Length, right: Length, bottom: Length, left: Length) -> Self {
+        Self {
+            top,
+            right,
+            bottom,
+            left,
+        }
+    }
 }
 
 /// Main-axis direction for flex layout.
@@ -201,6 +274,18 @@ pub struct Style {
     pub align_items: Align,
     pub justify_content: Justify,
     pub flex_grow: f32,
+    /// Positioning and stacking. Defaults are neutral and preserve historical flow order.
+    /// 定位与层级；默认值中立，保持历史流式顺序。
+    pub position: Position,
+    pub inset: Inset,
+    pub z_index: Option<i32>,
+    pub order: i32,
+    /// Explicit grid tracks. None keeps auto placement and the browser-compatible implicit grid.
+    /// 显式 Grid 轨道；None 保留自动放置与浏览器兼容的隐式轨道。
+    pub grid_columns: Option<Vec<GridTrack>>,
+    pub grid_rows: Option<Vec<GridTrack>>,
+    pub grid_column: GridLine,
+    pub grid_row: GridLine,
     pub background: Color,
     pub border_width: f32,
     pub border_color: Color,
@@ -298,6 +383,14 @@ impl Default for Style {
             align_items: Align::Stretch,
             justify_content: Justify::Start,
             flex_grow: 0.0,
+            position: Position::Static,
+            inset: Inset::ZERO,
+            z_index: None,
+            order: 0,
+            grid_columns: None,
+            grid_rows: None,
+            grid_column: GridLine::Auto,
+            grid_row: GridLine::Auto,
             background: Color::TRANSPARENT,
             border_width: 0.0,
             border_color: Color::TRANSPARENT,
@@ -383,6 +476,46 @@ impl Style {
 
     pub fn flex_grow(mut self, grow: f32) -> Self {
         self.flex_grow = grow.max(0.0);
+        self
+    }
+
+    pub fn position(mut self, position: Position) -> Self {
+        self.position = position;
+        self
+    }
+
+    pub fn inset(mut self, inset: Inset) -> Self {
+        self.inset = inset;
+        self
+    }
+
+    pub fn z_index(mut self, z_index: i32) -> Self {
+        self.z_index = Some(z_index);
+        self
+    }
+
+    pub fn order(mut self, order: i32) -> Self {
+        self.order = order;
+        self
+    }
+
+    pub fn grid_columns(mut self, tracks: Vec<GridTrack>) -> Self {
+        self.grid_columns = Some(tracks);
+        self
+    }
+
+    pub fn grid_rows(mut self, tracks: Vec<GridTrack>) -> Self {
+        self.grid_rows = Some(tracks);
+        self
+    }
+
+    pub fn grid_column(mut self, line: GridLine) -> Self {
+        self.grid_column = line;
+        self
+    }
+
+    pub fn grid_row(mut self, line: GridLine) -> Self {
+        self.grid_row = line;
         self
     }
 
@@ -579,6 +712,38 @@ impl Style {
             && self.line_height.as_ref().is_none_or(LineHeight::valid)
             && self.image.as_ref().is_none_or(ImageStyle::valid)
             && self.overlay.as_ref().is_none_or(crate::overlay::OverlaySpec::valid)
+            && [
+                self.inset.top,
+                self.inset.right,
+                self.inset.bottom,
+                self.inset.left,
+            ]
+            .into_iter()
+            .all(|v| match v {
+                Length::Auto => true,
+                Length::Px(v) | Length::Percent(v) => v.is_finite() && v >= 0.0,
+            })
+            && self.grid_columns.as_deref().is_none_or(valid_grid_tracks)
+            && self.grid_rows.as_deref().is_none_or(valid_grid_tracks)
+            && valid_grid_line(self.grid_column)
+            && valid_grid_line(self.grid_row)
+    }
+}
+
+pub(crate) fn valid_grid_tracks(tracks: &[GridTrack]) -> bool {
+    tracks.len() <= 256
+        && tracks.iter().all(|track| match track {
+            GridTrack::Auto => true,
+            GridTrack::Px(v) | GridTrack::Percent(v) => v.is_finite() && *v >= 0.0,
+            GridTrack::Fr(v) => v.is_finite() && *v > 0.0,
+        })
+}
+
+fn valid_grid_line(line: GridLine) -> bool {
+    match line {
+        GridLine::Auto => true,
+        GridLine::Line(v) => v != 0,
+        GridLine::Span(v) => v > 0,
     }
 }
 
@@ -1472,6 +1637,19 @@ pub const EXTENDED_STYLE_CAPABILITIES: &[StyleCapability] = &[
         name: "overlay",
         xstyle_keys: &["overlay"],
     },
+    StyleCapability {
+        name: "position",
+        xstyle_keys: &["position", "inset", "z-index", "order"],
+    },
+    StyleCapability {
+        name: "grid",
+        xstyle_keys: &[
+            "grid-template-columns",
+            "grid-template-rows",
+            "grid-column",
+            "grid-row",
+        ],
+    },
 ];
 
 /// `xstyle` key/value rejection.
@@ -1506,6 +1684,88 @@ pub(crate) fn parse_number(text: &str) -> Option<f32> {
         return None;
     }
     text.parse::<f32>().ok().filter(|v| v.is_finite())
+}
+
+fn parse_length(text: &str) -> Option<Length> {
+    match text {
+        "auto" => Some(Length::Auto),
+        _ if text.ends_with("px") => Some(Length::Px(parse_number(
+            text.strip_suffix("px")?,
+        )?)),
+        _ if text.ends_with('%') => Some(Length::Percent(parse_number(
+            text.strip_suffix('%')?,
+        )?)),
+        _ => None,
+    }
+}
+
+fn format_length(length: Length) -> String {
+    match length {
+        Length::Auto => "auto".to_owned(),
+        Length::Px(v) => format!("{}px", format_number(v)),
+        Length::Percent(v) => format!("{}%", format_number(v)),
+    }
+}
+
+fn expand_four<T: Copy>(values: &[T]) -> Option<[T; 4]> {
+    match values {
+        [a] => Some([*a; 4]),
+        [a, b] => Some([*a, *b, *a, *b]),
+        [a, b, c] => Some([*a, *b, *c, *b]),
+        [a, b, c, d] => Some([*a, *b, *c, *d]),
+        _ => None,
+    }
+}
+
+fn parse_grid_track(text: &str) -> Option<GridTrack> {
+    match text {
+        "auto" => Some(GridTrack::Auto),
+        _ if text.ends_with("fr") => {
+            let value = parse_number(text.strip_suffix("fr")?)?;
+            (value > 0.0).then_some(GridTrack::Fr(value))
+        }
+        _ if text.ends_with('%') => Some(GridTrack::Percent(parse_number(
+            text.strip_suffix('%')?,
+        )?)),
+        _ => Some(GridTrack::Px(parse_number(
+            text.strip_suffix("px").unwrap_or(text),
+        )?)),
+    }
+}
+
+fn format_grid_tracks(tracks: &[GridTrack]) -> String {
+    tracks
+        .iter()
+        .map(|track| match track {
+            GridTrack::Auto => "auto".to_owned(),
+            GridTrack::Px(v) => format!("{}px", format_number(*v)),
+            GridTrack::Percent(v) => format!("{}%", format_number(*v)),
+            GridTrack::Fr(v) => format!("{}fr", format_number(*v)),
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn parse_grid_line(text: &str) -> Option<GridLine> {
+    match text {
+        "auto" => Some(GridLine::Auto),
+        _ if text.starts_with("span ") => {
+            let value = text.strip_prefix("span ")?.parse().ok()?;
+            (value > 0).then_some(GridLine::Span(value))
+        }
+        _ => {
+            let value: i32 = text.parse().ok()?;
+            (value != 0).then_some(GridLine::Line(value))
+        }
+    }
+}
+
+fn format_grid_line(line: GridLine) -> String {
+    match line {
+        GridLine::Auto => "auto".to_owned(),
+        GridLine::Line(v) => v.to_string(),
+        GridLine::Span(v) => format!("span {v}"),
+    }
 }
 
 pub(crate) fn parse_color(text: &str) -> Option<Color> {
@@ -2148,6 +2408,53 @@ impl Style {
                 "overlay" => {
                     next.overlay = crate::overlay::parse_overlay(value_trimmed).ok_or_else(invalid)?;
                 }
+                "position" => {
+                    next.position = match value_trimmed {
+                        "static" => Position::Static,
+                        "relative" => Position::Relative,
+                        "absolute" => Position::Absolute,
+                        "fixed" => Position::Fixed,
+                        "sticky" => Position::Sticky,
+                        _ => return Err(invalid()),
+                    };
+                }
+                "inset" => {
+                    let values = value_trimmed
+                        .split(',')
+                        .map(|v| parse_length(v.trim()).ok_or_else(invalid))
+                        .collect::<Result<Vec<_>, _>>()?;
+                    let [top, right, bottom, left] = expand_four(&values).ok_or_else(invalid)?;
+                    next.inset = Inset::new(top, right, bottom, left);
+                }
+                "z-index" => {
+                    next.z_index = if value_trimmed == "auto" {
+                        None
+                    } else {
+                        Some(value_trimmed.parse().map_err(|_| invalid())?)
+                    };
+                }
+                "order" => {
+                    next.order = value_trimmed.parse().map_err(|_| invalid())?;
+                }
+                "grid-template-columns" | "grid-template-rows" => {
+                    let tracks = if value_trimmed == "none" {
+                        None
+                    } else {
+                        Some(
+                            value_trimmed
+                                .split_ascii_whitespace()
+                                .map(|v| parse_grid_track(v).ok_or_else(invalid))
+                                .collect::<Result<Vec<_>, _>>()?,
+                        )
+                    };
+                    if key == "grid-template-columns" {
+                        next.grid_columns = tracks;
+                    } else {
+                        next.grid_rows = tracks;
+                    }
+                }
+                "grid-column" => next.grid_column = parse_grid_line(value_trimmed).ok_or_else(invalid)?,
+                "grid-row" => next.grid_row = parse_grid_line(value_trimmed).ok_or_else(invalid)?,
                 _ => return Err(XStyleError::UnknownKey(key.to_owned())),
             }
         }
@@ -2269,6 +2576,46 @@ impl Style {
         }
         if let Some(i) = &self.image {
             pairs.push(("image", format_image(i)));
+        }
+        if self.position != Position::Static {
+            pairs.push((
+                "position",
+                match self.position {
+                    Position::Static => "static",
+                    Position::Relative => "relative",
+                    Position::Absolute => "absolute",
+                    Position::Fixed => "fixed",
+                    Position::Sticky => "sticky",
+                }
+                .to_owned(),
+            ));
+        }
+        let i = self.inset;
+        if i != Inset::ZERO {
+            pairs.push((
+                "inset",
+                [i.top, i.right, i.bottom, i.left]
+                    .map(format_length)
+                    .join(","),
+            ));
+        }
+        if let Some(z) = self.z_index {
+            pairs.push(("z-index", z.to_string()));
+        }
+        if self.order != 0 {
+            pairs.push(("order", self.order.to_string()));
+        }
+        if let Some(tracks) = &self.grid_columns {
+            pairs.push(("grid-template-columns", format_grid_tracks(tracks)));
+        }
+        if let Some(tracks) = &self.grid_rows {
+            pairs.push(("grid-template-rows", format_grid_tracks(tracks)));
+        }
+        if self.grid_column != GridLine::Auto {
+            pairs.push(("grid-column", format_grid_line(self.grid_column)));
+        }
+        if self.grid_row != GridLine::Auto {
+            pairs.push(("grid-row", format_grid_line(self.grid_row)));
         }
         if let Some(a) = self.text_align_vertical {
             pairs.push((
@@ -2438,6 +2785,38 @@ mod tests {
         assert_eq!(s.hit_slop, Edges::all(8.0));
         s.apply_xstyle("hit-slop", "1,2,3,4").unwrap();
         assert_eq!(s.hit_slop, Edges::new(1.0, 2.0, 3.0, 4.0));
+        s.apply_xstyle("position", "absolute").unwrap();
+        s.apply_xstyle("inset", "1px,2%,auto,4px").unwrap();
+        s.apply_xstyle("z-index", "-3").unwrap();
+        s.apply_xstyle("order", "7").unwrap();
+        s.apply_xstyle("grid-template-columns", "40px 1fr 20% auto")
+            .unwrap();
+        s.apply_xstyle("grid-template-rows", "2fr 30px").unwrap();
+        s.apply_xstyle("grid-column", "span 2").unwrap();
+        s.apply_xstyle("grid-row", "-1").unwrap();
+        assert_eq!(s.position, Position::Absolute);
+        assert_eq!(
+            s.inset,
+            Inset::new(
+                Length::Px(1.0),
+                Length::Percent(2.0),
+                Length::Auto,
+                Length::Px(4.0)
+            )
+        );
+        assert_eq!(s.z_index, Some(-3));
+        assert_eq!(s.order, 7);
+        assert_eq!(
+            s.grid_columns,
+            Some(vec![
+                GridTrack::Px(40.0),
+                GridTrack::Fr(1.0),
+                GridTrack::Percent(20.0),
+                GridTrack::Auto
+            ])
+        );
+        assert_eq!(s.grid_column, GridLine::Span(2));
+        assert_eq!(s.grid_row, GridLine::Line(-1));
 
         // Round trip through the canonical pairs.
         let mut copy = Style::default();
@@ -2511,6 +2890,11 @@ mod tests {
             let value = match key {
                 "corner-radius" | "hit-slop" => "0",
                 "opacity" => "1",
+                "position" => "static",
+                "inset" => "auto",
+                "z-index" => "auto",
+                "order" => "0",
+                "grid-column" | "grid-row" => "auto",
                 _ => "none",
             };
             s.apply_xstyle(key, value).unwrap();

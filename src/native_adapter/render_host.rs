@@ -438,6 +438,24 @@ impl HostRenderer {
         self.inner.node_bounds(owner, version, node)
     }
 
+    pub fn scroll_geometry(
+        &self,
+        owner: u64,
+        version: u64,
+        node: NodeId,
+    ) -> Option<crate::ScrollGeometry> {
+        self.inner.scroll_geometry(owner, version, node)
+    }
+
+    pub fn table_metrics(
+        &self,
+        owner: u64,
+        version: u64,
+        node: NodeId,
+    ) -> Option<crate::TableMetrics> {
+        self.inner.table_metrics(owner, version, node)
+    }
+
     /// E7 transition clock through the live surface generation; see `Engine::animate`.
     /// 经当前活动 Surface 代数推进 E7 过渡时钟；见 `Engine::animate`。
     pub fn animate(

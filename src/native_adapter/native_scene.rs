@@ -2056,6 +2056,124 @@ impl NativeScene {
             rect.height as f32,
         ))
     }
+
+    /// Native scroll extent and current content-space window. This removes the former need for
+    /// hosts to trust their own scroll upper bound and gives list virtualization one authoritative
+    /// range query.
+    /// 原生滚动范围与当前内容空间窗口。宿主不再需要信任自身上界，虚拟列表获得唯一权威范围查询。
+    pub(crate) fn scroll_geometry_from_host(
+        &self,
+        caller: u64,
+        version: u64,
+        id: NodeId,
+    ) -> Option<jasper_ui_engine::scroll::ScrollGeometry> {
+        if caller != self.owner || version != self.scene_version || !self.source_visible(id) {
+            return None;
+        }
+        let (element, _) = self.nodes.get(&id)?;
+        let source = self.source.find(id)?;
+        if source.style.overflow != Overflow::Scroll {
+            return None;
+        }
+        let document = self.document.as_ref()?;
+        let node = document.get_node(*element)?;
+        let layout = node.final_layout();
+        let width = (layout.size.width
+            - layout.border.left
+            - layout.border.right
+            - layout.padding.left
+            - layout.padding.right)
+            .max(0.0);
+        let height = (layout.size.height
+            - layout.border.top
+            - layout.border.bottom
+            - layout.padding.top
+            - layout.padding.bottom)
+            .max(0.0);
+        // Pinned Blitz's `scroll_width/height` expose the scrolled overflow bound once the
+        // container has a nonzero offset (the overflow rectangle is shifted by that offset).
+        // Recover the full content extent by adding the viewport back only when it overflows.
+        let scroll_width = layout.scroll_width().max(0.0);
+        let scroll_height = layout.scroll_height().max(0.0);
+        let content = (
+            if scroll_width > width { width + scroll_width } else { width },
+            if scroll_height > height { height + scroll_height } else { height },
+        );
+        let viewport = jasper_ui_engine::geometry::Size::new(width, height);
+        let content = jasper_ui_engine::geometry::Size::new(content.0, content.1);
+        let bounds = jasper_ui_engine::scroll::ScrollBounds { viewport, content };
+        let offset = jasper_ui_engine::geometry::Point::new(
+            source.scroll.x.max(0.0).min(bounds.max_offset().x),
+            source.scroll.y.max(0.0).min(bounds.max_offset().y),
+        );
+        Some(jasper_ui_engine::scroll::ScrollGeometry {
+            viewport,
+            content,
+            offset,
+            max_offset: bounds.max_offset(),
+        })
+    }
+
+    /// Measure a CSS table from the active layout, preserving source row/cell identities.
+    /// 从当前活动布局测量 CSS 表格，并保留源行/单元身份。
+    pub(crate) fn table_metrics_from_host(
+        &self,
+        caller: u64,
+        version: u64,
+        id: NodeId,
+    ) -> Option<jasper_ui_engine::table::TableMetrics> {
+        if caller != self.owner || version != self.scene_version || !self.source_visible(id) {
+            return None;
+        }
+        let source = self.source.find(id)?;
+        if source.style.display != Display::Table {
+            return None;
+        }
+        let rect = self.node_bounds_from_host(caller, version, id)?;
+        let mut column_widths = Vec::<f32>::new();
+        let mut row_heights = Vec::<f32>::new();
+        let mut cells = Vec::new();
+        for (row, row_node) in source
+            .children
+            .iter()
+            .filter(|node| node.style.display == Display::TableRow)
+            .enumerate()
+        {
+            let mut row_height = 0.0f32;
+            for (column, cell) in row_node
+                .children
+                .iter()
+                .filter(|node| node.style.display == Display::TableCell)
+                .enumerate()
+            {
+                if !self.source_visible(cell.id) {
+                    continue;
+                }
+                let Some(cell_rect) = self.node_bounds_from_host(caller, version, cell.id) else {
+                    continue;
+                };
+                row_height = row_height.max(cell_rect.height());
+                while column_widths.len() <= column {
+                    column_widths.push(0.0);
+                }
+                column_widths[column] = column_widths[column].max(cell_rect.width());
+                cells.push(jasper_ui_engine::table::TableCellMetrics {
+                    node: cell.id,
+                    row,
+                    column,
+                    rect: cell_rect,
+                });
+            }
+            row_heights.push(row_height);
+        }
+        Some(jasper_ui_engine::table::TableMetrics {
+            table: id,
+            rect,
+            column_widths,
+            row_heights,
+            cells,
+        })
+    }
     /// Inline layout of a source text node with its first line-box origin in view-local logical
     /// coordinates. None unless the text's inline root (the element, or the anonymous block a
     /// flex/grid element wraps it in) lays out exactly the source text (collapsed whitespace has
@@ -3827,6 +3945,10 @@ fn style_properties(
             match style.display {
                 Display::Block => "block",
                 Display::Flex => "flex",
+                Display::Grid => "grid",
+                Display::Table => "table",
+                Display::TableRow => "table-row",
+                Display::TableCell => "table-cell",
                 Display::None => "none",
             },
         ),
@@ -3922,6 +4044,7 @@ fn text_style_properties(
                 values.push(("align-items", "stretch".to_owned()));
                 values.push(("justify-content", value.to_owned()));
             }
+            _ => {}
         }
     }
     if shape == TextShape::Field {
@@ -4028,6 +4151,44 @@ fn extended_style_properties(
         "transform-origin",
         format!("{}% {}%", t.origin_x * 100.0, t.origin_y * 100.0),
     ));
+    values.push((
+        "position",
+        match style.position {
+            Position::Static => "static",
+            Position::Relative => "relative",
+            Position::Absolute => "absolute",
+            Position::Fixed => "fixed",
+            Position::Sticky => "sticky",
+        }
+        .to_owned(),
+    ));
+    for (key, length) in [
+        ("top", style.inset.top),
+        ("right", style.inset.right),
+        ("bottom", style.inset.bottom),
+        ("left", style.inset.left),
+    ] {
+        values.push((key, css_length(length)?));
+    }
+    values.push((
+        "z-index",
+        style
+            .z_index
+            .map_or_else(|| "auto".to_owned(), |value| value.to_string()),
+    ));
+    values.push(("order", style.order.to_string()));
+    if let Some(tracks) = &style.grid_columns {
+        values.push(("grid-template-columns", css_grid_tracks(tracks)?));
+    }
+    if let Some(tracks) = &style.grid_rows {
+        values.push(("grid-template-rows", css_grid_tracks(tracks)?));
+    }
+    if let Some(value) = css_grid_line(style.grid_column) {
+        values.push(("grid-column", value));
+    }
+    if let Some(value) = css_grid_line(style.grid_row) {
+        values.push(("grid-row", value));
+    }
     // E6: CSS gradient image above `background-color`, clipped with the background (rounded
     // border box). None is `none`, so a node without a gradient paints exactly as before.
     values.push((
@@ -4058,6 +4219,44 @@ fn extended_style_properties(
         },
     ));
     Some(())
+}
+
+fn css_length(length: Length) -> Option<String> {
+    match length {
+        Length::Auto => Some("auto".to_owned()),
+        Length::Px(value) if value.is_finite() && value >= 0.0 => Some(format!("{value}px")),
+        Length::Percent(value) if value.is_finite() && value >= 0.0 => {
+            Some(format!("{value}%"))
+        }
+        _ => None,
+    }
+}
+
+fn css_grid_tracks(tracks: &[GridTrack]) -> Option<String> {
+    if !crate::style::valid_grid_tracks(tracks) {
+        return None;
+    }
+    Some(
+        tracks
+            .iter()
+            .map(|track| match track {
+                GridTrack::Auto => "auto".to_owned(),
+                GridTrack::Px(value) => format!("{value}px"),
+                GridTrack::Percent(value) => format!("{value}%"),
+                GridTrack::Fr(value) => format!("{value}fr"),
+            })
+            .collect::<Vec<_>>()
+            .join(" "),
+    )
+}
+
+fn css_grid_line(line: GridLine) -> Option<String> {
+    match line {
+        GridLine::Auto => None,
+        GridLine::Line(value) if value != 0 => Some(value.to_string()),
+        GridLine::Span(value) if value > 0 => Some(format!("auto / span {value}")),
+        _ => None,
+    }
 }
 
 /// CSS text of an E6 gradient (`Gradient::valid` holds).

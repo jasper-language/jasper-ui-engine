@@ -250,6 +250,20 @@ scripts/verify-in-vm.sh bash -c 'python3 scripts/verify-version.py --verus "$HOM
 仍未实现/验收：复杂嵌套浮层的逐层关闭归属、真实菜单/对话框组件、平台窗口级弹窗与
 多显示器边界；不得据此宣告整项 P0-A 已关闭。
 
+## P0-A 布局缺口（分支 `appfw/p0a-layout`，2026-11-17）
+
+新增 Rust 的完整六步链暂缓；真实布局与像素测试不代替形式化证明。
+
+| 项 | 位置 | 现有替代证据 |
+|---|---|---|
+| Grid 轨道、显式放置与 `Fr`/百分比解析 | `style.rs`、`native_scene.rs` | `native_layout_extended` 的精确列宽和像素 |
+| absolute/relative/fixed/sticky 定位、inset 与 z-index/order | `style.rs`、`native_scene.rs` | 相对/绝对坐标、层级像素与 Flex order |
+| CSS table row/cell 映射与表格列/行测量 | `style.rs`、`table.rs`、`native_scene.rs::table_metrics_from_host` | 80/160 两列、40 行高和单元身份 |
+| 虚拟化范围查询与 overscan 窗口 | `scroll.rs::ScrollGeometry`、`native_scene.rs::scroll_geometry_from_host` | 40×200 内容、偏移 50、max 160、5px overscan |
+
+仍未验收：跨行/跨列及 colspan/rowspan 测量、sticky 实际滚动像素、复杂 nested Grid/Table、
+多显示器/真实 DPI 视觉矩阵和布局形式化证明。
+
 **规格同步（`scripts/verify-version.py`）**：首次运行时三个 `NATIVE SCENE TYPE` 依赖内核均失败（`not_verified`，rustc
 E0433/E0425：`jasper_ui_engine::motion::MotionState`、`MaterialState`、`scene_edit::EditState` 在证明文件中无定义）。这是证明外壳缺少
 新字段类型声明，不是代码缺陷：仿照既有 `blitz_dom::NodeId` / `BaseDocument` 做法，在 `native-scene-type` 的 `spec_prelude` 中补三个

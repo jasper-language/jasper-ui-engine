@@ -592,7 +592,9 @@ fn capabilities_are_declared_for_the_host_hello() {
             "text-valign",
             "image",
             "svg",
-            "overlay"
+            "overlay",
+            "position",
+            "grid"
         ]
     );
 }

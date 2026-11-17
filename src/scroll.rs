@@ -9,7 +9,7 @@
 
 use std::collections::BTreeMap;
 
-use crate::geometry::{Point, Size};
+use crate::geometry::{Point, Rect, Size};
 use crate::layout::LayoutTree;
 use crate::scene::{NodeId, Scene, ScenePatch};
 use crate::style::Overflow;
@@ -39,6 +39,35 @@ impl ScrollBounds {
     pub fn is_scrollable(self) -> bool {
         let max = self.max_offset();
         max.x > 0.0 || max.y > 0.0
+    }
+}
+
+/// Host-consumable scroll geometry for virtualization. Coordinates are the container's content
+/// box: `offset` and `visible` are expressed in unscrolled content space.
+/// 供宿主虚拟化使用的滚动几何；坐标位于容器内容盒，`offset` 与 `visible` 使用未滚动内容空间。
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ScrollGeometry {
+    pub viewport: Size,
+    pub content: Size,
+    pub offset: Point,
+    pub max_offset: Point,
+}
+
+impl ScrollGeometry {
+    /// Content-space window visible at the current offset, expanded by `overscan` on every side
+    /// and clipped to `[0, content]`.
+    /// 当前偏移下可见的内容空间窗口，每侧扩展 `overscan`，并裁剪到 `[0, content]`。
+    pub fn visible(self, overscan: f32) -> Rect {
+        let pad = if overscan.is_finite() {
+            overscan.max(0.0)
+        } else {
+            0.0
+        };
+        let x0 = (self.offset.x - pad).max(0.0);
+        let y0 = (self.offset.y - pad).max(0.0);
+        let x1 = (self.offset.x + self.viewport.width + pad).min(self.content.width);
+        let y1 = (self.offset.y + self.viewport.height + pad).min(self.content.height);
+        Rect::new(x0, y0, (x1 - x0).max(0.0), (y1 - y0).max(0.0))
     }
 }
 
