@@ -15,7 +15,7 @@
 
 `verification/native-projection` 在改动前的 `main`（12f71b2）上即编译失败（`input-identity` 依赖的 `DesktopInput` 字段已变更），与本分支无关，未修。
 
-## 证据失效、待重证（源码哈希已变）
+## 证据失效、待重证（源码哈希已变）——已重证 2026-11-17 JasperNative04 Verus 0.2026.10.18.7d82994，见文末「Verus 重证」节
 
 下列内核的源码或其依赖类型改动后，`evidence/<kernel>/report.json` 绑定的源码哈希不再匹配，按 `docs/verification.md` 规则其状态
 应读作 not_verified，直到在装有 Verus 0.2026.10.18.7d82994 的构建 VM 内重跑 `scripts/verify-version.py` / `scripts/verify-ui.py`。
@@ -45,7 +45,7 @@
 
 ## 工具缺失（本机）
 
-- Verus：未安装（证据记录的路径在构建 VM 内）。上表所有 Verus 重证待 VM。
+- Verus：本机未安装（证据记录的路径在构建 VM 内）。上表 Verus 重证已于 2026-11-17 在 JasperNative04 完成，见文末。
 - Miri：nightly 未装 `miri` 组件；`miri_*` 边界用例只以普通测试运行。
 - cargo-fuzz / Kani：未安装。`verification/native-activation/fuzz/fuzz_targets/scene_capacity.rs` 已随新签名改写（未运行）。
 - 平台验收：AccessKit 的 heading level 采用 ARIA 的 1 起计数（AccessKit 文档称该属性 0 起，平台适配器实际按 1 起暴露标题级别），
@@ -64,7 +64,7 @@
 | `verification/read-boundary` | `cargo test --locked` | 64 通过 |
 | `scripts/check-blitz-proof-mapping.py` | 本机无 `evidence/*/report.json`，输出与 `appfw/e2-e10` 基线逐字相同（未新增失配） | 同基线 |
 
-### 证据失效、待重证（源码哈希已变）
+### 证据失效、待重证（源码哈希已变）——`NATIVE SCENE TYPE` 已重证 2026-11-17 JasperNative04 Verus 0.2026.10.18.7d82994，见文末「Verus 重证」节
 
 | 性质 / 内核 | 改动 | 规格影响 |
 |---|---|---|
@@ -109,7 +109,7 @@
 | `scripts/check-blitz-proof-mapping.py` | 本机无 `evidence/*/report.json`；输出与 `appfw/e7-e8` 基线除路径外逐字相同 | 同基线 |
 | `BEGIN/END VERIFIED` 区段比对（相对 `appfw/e7-e8`） | 脚本逐区段比较 | 仅 `NATIVE SCENE TYPE` 变化（见下） |
 
-### 证据失效、待重证（源码哈希已变）
+### 证据失效、待重证（源码哈希已变）——`NATIVE SCENE TYPE` 已重证 2026-11-17 JasperNative04 Verus 0.2026.10.18.7d82994，见文末「Verus 重证」节
 
 | 性质 / 内核 | 改动 | 规格影响 |
 |---|---|---|
@@ -153,7 +153,7 @@
 | `verification/read-boundary` | `cargo test --locked` | 64 通过 |
 | `BEGIN/END VERIFIED` 区段比对（相对 `appfw/e5-e6` f1f3e0a） | 脚本逐区段比较 | 仅 `NATIVE SCENE TYPE` 变化（见下） |
 
-### 证据失效、待重证（源码哈希已变）
+### 证据失效、待重证（源码哈希已变）——`NATIVE SCENE TYPE` 已重证 2026-11-17 JasperNative04 Verus 0.2026.10.18.7d82994，见文末「Verus 重证」节
 
 | 性质 / 内核 | 改动 | 规格影响 |
 |---|---|---|
@@ -194,3 +194,40 @@
 | 引擎全量（原生 CPU + AccessKit） | `cargo test --locked --features native-engine-cpu,accesskit-pending` | 439 通过，2 忽略（新增 3：`e5_budget_persists_across_applied_frames`、`reduce_motion_persists_across_applied_frames`、`caret_blink_and_reduce_motion_persist_across_applied_frames`） |
 | 引擎全量 + GPU | `cargo test --locked --features native-engine-cpu,gpu-pending,accesskit-pending` | 454 通过，2 忽略 |
 | `verification/native-activation` / `read-boundary` | `cargo test --locked` | 20 / 64 通过 |
+
+## Verus 重证（2026-11-17，构建 VM JasperNative04，分支 `appfw/verus-recheck`，基于 main ebddcc6）
+
+工具：VM 内 `~/verus/verus`，Verus 0.2026.10.18.7d82994（release，linux_x86_64，工具链 1.99.1），随包 Z3 4.16.0。
+入口：`JASPER_UI_VM_RUN=…/vm-run.sh JASPER_VM_PROFILE=native JASPER_UI_VM_TIMEOUT_SECONDS=3600 JASPER_UI_VM_MEMORY=4G
+scripts/verify-in-vm.sh bash -c 'python3 scripts/verify-version.py --verus "$HOME/verus/verus" --kernel <名>'`（逐个 kernel）。
+范围由脚本确定：相对改动前基线 12f71b2 逐区段比较 `BEGIN/END VERIFIED` 抽取结果，变化的区段为 `role-type`、
+`component-update-error-type`、`component-update-admission`、`scene-work-capacity`、`scene-update-error-type`、
+`scene-update-admission`、`native-scene-type`；依赖闭包含这些区段的对外内核共 10 个，全部重跑。证据在 `evidence/<kernel>-kernel/`。
+
+| 性质 / 内核 | 结果（已验证义务数；反例被拒数） |
+|---|---|
+| UI-SCENE-WORK-CAPACITY-001 `scene-work-capacity` | 已重证 2026-11-17 JasperNative04 Verus 0.2026.10.18.7d82994：proved（1；2/2） |
+| UI-SCENE-UPDATE-ADMISSION-001 `scene-update-admission`（含 `scene-update-error-type`、`scene-work-capacity`） | 已重证 2026-11-17 JasperNative04 Verus 0.2026.10.18.7d82994：proved（5；2/2） |
+| UI-COMPONENT-UPDATE-ADMISSION-001 `component-update-admission`（含 `component-update-error-type`） | 已重证 2026-11-17 JasperNative04 Verus 0.2026.10.18.7d82994：proved（2；2/2） |
+| UI-SCENE-FRAME-COMPLETION-001 `scene-frame-completion`（依赖 `scene-update-error-type`） | 已重证 2026-11-17 JasperNative04 Verus 0.2026.10.18.7d82994：proved（2；2/2） |
+| UI-SCENE-FRAME-ORDER-001 `scene-frame-order`（依赖 `scene-update-error-type`） | 已重证 2026-11-17 JasperNative04 Verus 0.2026.10.18.7d82994：proved（3；4/4） |
+| UI-ROLE-ACTIVATION-001 `role-activation`（依赖 `role-type`；带数据枚举 `Heading`/`Live` 的 `==` 规格无问题） | 已重证 2026-11-17 JasperNative04 Verus 0.2026.10.18.7d82994：proved（5；2/2） |
+| UI-SEMANTIC-ROLE-TAG-001 `semantic-role-tag`（依赖 `role-type`） | 已重证 2026-11-17 JasperNative04 Verus 0.2026.10.18.7d82994：proved（5；2/2） |
+| `NATIVE SCENE TYPE` → UI-SCENE-SNAPSHOT-IDENTITY-001 `scene-snapshot-identity` | 已重证 2026-11-17 JasperNative04 Verus 0.2026.10.18.7d82994：proved（9；2/2）——见下「规格同步」 |
+| `NATIVE SCENE TYPE` → UI-SCENE-HOST-CLOSE-001 `scene-host-close` | 已重证 2026-11-17 JasperNative04 Verus 0.2026.10.18.7d82994：proved（10；2/2） |
+| `NATIVE SCENE TYPE` → UI-SCENE-HOST-IDENTITY-001 `scene-host-identity` | 已重证 2026-11-17 JasperNative04 Verus 0.2026.10.18.7d82994：proved（11；2/2） |
+| UI-ACCESS-ACTIONS-001 `access_actions` | 内核与依赖区段逐字未变，现有证据哈希仍匹配，未重跑（文字描述按上表读作「按角色可激活」） |
+
+**规格同步（`scripts/verify-version.py`）**：首次运行时三个 `NATIVE SCENE TYPE` 依赖内核均失败（`not_verified`，rustc
+E0433/E0425：`jasper_ui_engine::motion::MotionState`、`MaterialState`、`scene_edit::EditState` 在证明文件中无定义）。这是证明外壳缺少
+新字段类型声明，不是代码缺陷：仿照既有 `blitz_dom::NodeId` / `BaseDocument` 做法，在 `native-scene-type` 的 `spec_prelude` 中补三个
+`#[verifier::external_body]` 不透明结构（路径与源码一致），规格与契约文本不变。修改后上述 10 个内核用同一 runner
+（sha256 20c535cc…）全部重跑通过。其余未重跑的旧证据所记 `runner_sha256` 为旧脚本哈希（脚本此前已多次改动），其内核/依赖/证明哈希仍匹配。
+
+**附带运行（不在本次登记范围，如实记录）**：
+
+| 项 | 结果 |
+|---|---|
+| UI-NATIVE-COMPONENT-VERSION-001 `native-component-version`（旧证据早于本批改动即已失配） | 已重证 2026-11-17 JasperNative04 Verus 0.2026.10.18.7d82994：proved（26；2/2） |
+| `native-host-context`、`text-display-version`、`text-display-close` | **失败**：Verus 报 `core::bool::impl&%0::then_some` 不受支持（`native_view.rs` NATIVE HOST CONTEXT KERNEL 中 `(…).then_some(self.context)`）。该写法由 d3a29f3（UI32，早于 appfw 基线 12f71b2）引入，与本批改动无关；原 proved 证据针对更早源码，此前已失配。判断：证明外壳/写法问题——需在规格侧为 `bool::then_some` 加 `assume_specification`，或把实现改写为 `if … {Some(…)} else {None}`（后者涉及实现，未擅自改）。三份证据现记录为 not_verified。 |
+| `verification/native-projection`（VM 内 `cargo test --locked`） | **未能编译**（与上文登记一致，早于本分支）：其依赖 `verification/input-identity` 仍按旧 `DesktopInput{pointer_id,position,pressed,modifiers}` 构造，且抽取出的 `DesktopInput` 引用未声明的 `DesktopPointerState`/`DesktopTouchState`（9 个错误）。该 crate 中 `NATIVE SCENE TYPE` 的映射测试因此无法运行；Verus 侧已由上面三个内核覆盖。修复需改写 input-identity 验证外壳，未做。日志：`evidence/native-projection-recheck/cargo-test.log`。 |

@@ -3598,7 +3598,7 @@ KERNELS["text-display-close"] = {
 }
 
 KERNELS["scene-semantics-type"]={"source":"src/semantics.rs","marker":"SCENE SEMANTICS","suffix":"TYPE","signature":None,"depends":["role-type"],"internal_only":True}
-KERNELS["native-scene-type"]={"source":"src/native_adapter/native_scene.rs","marker":"NATIVE SCENE","suffix":"TYPE","signature":None,"depends":["ui-view-slot","node-id-type","scene-semantics-type"],"internal_only":True,"spec_prelude":"use std::collections::{BTreeMap,BTreeSet}; pub mod blitz_dom {#[verifier::external_body] pub struct NodeId {} #[verifier::external_body] pub struct FontContext {}} #[verifier::external_body] pub struct BaseDocument {} #[verifier::external_body] pub struct Scene {}"}
+KERNELS["native-scene-type"]={"source":"src/native_adapter/native_scene.rs","marker":"NATIVE SCENE","suffix":"TYPE","signature":None,"depends":["ui-view-slot","node-id-type","scene-semantics-type"],"internal_only":True,"spec_prelude":"use std::collections::{BTreeMap,BTreeSet}; pub mod blitz_dom {#[verifier::external_body] pub struct NodeId {} #[verifier::external_body] pub struct FontContext {}} #[verifier::external_body] pub struct BaseDocument {} #[verifier::external_body] pub struct Scene {} pub mod jasper_ui_engine {pub mod motion {#[verifier::external_body] pub struct MotionState {}}} #[verifier::external_body] pub struct MaterialState {} pub mod scene_edit {#[verifier::external_body] pub struct EditState {}}"}
 KERNELS["native-scene-close"]={
  "source":"src/native_adapter/native_scene.rs","marker":"NATIVE SCENE CLOSE",
  "signature":"pub(crate) fn close(&mut self,caller:u64)->bool {",

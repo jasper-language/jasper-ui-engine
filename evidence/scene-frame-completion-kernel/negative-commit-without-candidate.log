@@ -1,18 +1,18 @@
 verification results:: 1 verified, 1 errors
 error: postcondition not satisfied
-  --> <repo>/evidence/scene-frame-completion-kernel/negative_commit_without_candidate.rs:21:17
+  --> /home/jasper/work/jasper-ui-engine-verus/evidence/scene-frame-completion-kernel/negative_commit_without_candidate.rs:39:17
    |
-21 |           ensures match result {
+39 |           ensures match result {
    |  _________________^
-22 | |             Err(SceneUpdateError::SourceRejected)=>!source_ok || source_version!=next,
-23 | |             Err(SceneUpdateError::NativeRejected)=>source_ok && source_version==next && !candidate_ready,
-24 | |             Ok(())=>source_ok && source_version==next && candidate_ready,
+40 | |             Err(SceneUpdateError::SourceRejected)=>!source_ok || source_version!=next,
+41 | |             Err(SceneUpdateError::NativeRejected)=>source_ok && source_version==next && !candidate_ready,
+42 | |             Ok(())=>source_ok && source_version==next && candidate_ready,
 ...  |
-30 | |             Err(SceneUpdateError::InvalidSuccessor {..})=>false,
-31 | |         },
+49 | |             Err(SceneUpdateError::InvalidSuccessor {..})=>false,
+50 | |         },
    | |_________^ failed this postcondition
 ...
-37 |       Ok(())
+56 |       Ok(())
    |       ------ at the end of the function body
 
 error: aborting due to 1 previous error

@@ -3,26 +3,26 @@
   "status": "proved",
   "scope": "Exact component-frame admission ordering before native mutation; actual element/view-type support is supplied as the proved predicate by the caller, and native mapping failure after preflight is excluded.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "9871dc3155d4ad6e4428fbea08610ad8f7b396cfa798380e64a9bd1522124a6e",
+  "source_sha256": "74d68e92795461d3518102f0b8196abd57adbc0769d60ec00eac8fd53c73db5e",
   "sources": {
-    "src/native_adapter/native_view.rs": "9871dc3155d4ad6e4428fbea08610ad8f7b396cfa798380e64a9bd1522124a6e"
+    "src/native_adapter/native_view.rs": "74d68e92795461d3518102f0b8196abd57adbc0769d60ec00eac8fd53c73db5e"
   },
-  "kernel_sha256": "eade559890ea8f473752b6f9fcd9f4af1567be6665019105981d1d1ad275bcf7",
+  "kernel_sha256": "a1cf70a77ba3e003a3f5edf2d1a571388cb800a7c0a73a80143a57cf40ab1de6",
   "dependencies": {
-    "component-update-error-type": "3a013b1723f7cdb6df80d91c4c8d6305463b54dcec778ee2cae4bd5f830e5939"
+    "component-update-error-type": "5e0be33981360b91a3125190823d96b349f10421e522d07684d6949945a171dd"
   },
-  "proof_sha256": "6b64649d310c362aed38f86519cd4f9e0ec072e6c43385cec9ba48902058ac22",
-  "runner_sha256": "9aac303c7b1f05df3ecb673001616a8910a6155452fbb2496f5190611d039d6d",
+  "proof_sha256": "b301e35eb91f1dff2706514def555325282fae67c8530fba67f4cc2af4ec1a6b",
+  "runner_sha256": "20c535cc7e1bbb67bef89c5b24724141c98292edf5fe2b826fcaabfb005d6f5f",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
-    "<home>/verus/verus",
+    "/home/jasper/verus/verus",
     "--crate-type",
     "lib",
-    "<repo>/evidence/component-update-admission-kernel/kernel.rs"
+    "/home/jasper/work/jasper-ui-engine-verus/evidence/component-update-admission-kernel/kernel.rs"
   ],
   "exit_code": 0,
   "solver": {
-    "path": "<home>/verus/z3",
+    "path": "/home/jasper/verus/z3",
     "version": "Z3 version 4.16.0 - 64 bit\n",
     "explicit_override": null
   },

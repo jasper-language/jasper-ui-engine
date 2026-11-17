@@ -1,11 +1,11 @@
-verification results:: 2 verified, 1 errors
+verification results:: 4 verified, 1 errors
 error: postcondition not satisfied
-  --> <repo>/evidence/semantic-role-tag-kernel/negative_invert_tag_relation.rs:36:13
+  --> /home/jasper/work/jasper-ui-engine-verus/evidence/semantic-role-tag-kernel/negative_invert_tag_relation.rs:64:13
    |
-36 |     ensures result == ((match current {Role::Button=>true,_=>false}) == (match next {Role::Button=>true,_=>false})),
+64 |     ensures result == ((match current {Role::Button=>true,_=>false}) == (match next {Role::Button=>true,_=>false})),
    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
-37 |     {
-38 |     role_uses_native_button(current)!=role_uses_native_button(next)
+65 |     {
+66 |     role_uses_native_button(current)!=role_uses_native_button(next)
    |     --------------------------------------------------------------- at the end of the function body
 
 error: aborting due to 1 previous error

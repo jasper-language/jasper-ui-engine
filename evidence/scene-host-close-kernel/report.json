@@ -3,40 +3,40 @@
   "status": "proved",
   "scope": "Actual Scene host/native close and exact map/semantic declarations; logical owned slot retirement plus metadata preservation, no map algorithm, rendering, destructor or host cleanup proof.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "ac54bd10ee888f5d06fdf99bf07a3c97df3facf1f11d9b38405d1c55f1c69f54",
+  "source_sha256": "17c944792c3dccb850e2d27d6a93af9bc0aea4fed0122f486fac633f918c28b4",
   "sources": {
-    "src/native_adapter/facade.rs": "ac54bd10ee888f5d06fdf99bf07a3c97df3facf1f11d9b38405d1c55f1c69f54",
-    "src/native_adapter/native_scene.rs": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
-    "src/native_adapter/view_slot.rs": "eb3058520b3dfa250f894bd8419ada7076046bf50d5091c8d7b15fa48e82025c",
-    "src/scene.rs": "60a8c71dea8702de950b5a036ef4074732c0bed2865f48dc2015a47271f224c2",
-    "src/semantics.rs": "a698a75a61554e48a1dfcd2644544d071340037e96df276c58dd331bc1740755"
+    "src/native_adapter/facade.rs": "17c944792c3dccb850e2d27d6a93af9bc0aea4fed0122f486fac633f918c28b4",
+    "src/native_adapter/native_scene.rs": "650606fff9ca8415aa07d0478b76f153484aaa4e3633735dc769ee99797830e4",
+    "src/native_adapter/view_slot.rs": "a29e71d6249a6dd6123384456609938f6e4ae3991ed360c8afd411a62cac538b",
+    "src/scene.rs": "05d5de1f8763acb66df5749bebf5613f79ebc4af0415280a76f5cd6316439a36",
+    "src/semantics.rs": "059ae6d805f7c3564167acbba03caac701a192faccb001a06defc119c919a904"
   },
   "kernel_sha256": "7beb8ca44a3a0d847af64912b92b59ca566bddaa443639370c8aeebe05af580c",
   "dependencies": {
     "ui-view-slot": "af6bb2ef156567f616ef0f160656d33be6983a729d5f8eb1a18c7f9796c28479",
     "node-id-type": "39ff7bd8c3c5c51e025059e0f104105a839165e2cb4a455f094a2d2bb9cfffad",
-    "role-type": "cad90bc2ac24e004873b2641e0aa09bd9e09f36c93ed7f67e795a68293e3a019",
+    "role-type": "8a44b3ac26e161cd8846e52271c6a80322141eca5309845a9e10dc5fb5472fd8",
     "scene-semantics-type": "c56530710ed3473bba239cc445b979fe73e8f94a76045b3432a31c14e953caa2",
-    "native-scene-type": "87eed3476a1cbac905a553ce4e93a4dcbc6bae28f9bdaa577aeeb593584effc6",
-    "native-scene-close": "ebb391525d089f36290d90d8c3464cc28a5664316a6d6e7b68f26b36e7cc7ec8",
+    "native-scene-type": "869ba7f3078c0b70d181f9cc306ccb28d763334ac0c9fad076503ff4b2254dc0",
+    "native-scene-close": "2f44e811e7e01632075dd35e0191733d2bc11d9102368696def05fbdd982b340",
     "scene-host-type": "9634bb42ae8a8552b800da5972671e92cdff78ef11d6b67deb4ee0642856fab4"
   },
-  "proof_sha256": "1b841840e3f1b288667a62a93ccd5ecc4fc89116831ca774e285fcc856cb90a5",
-  "runner_sha256": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e",
+  "proof_sha256": "7e74ddc71f5ee865d50982cfd1128d48db61885218ce45f4e0ecc840c4ee3ce7",
+  "runner_sha256": "20c535cc7e1bbb67bef89c5b24724141c98292edf5fe2b826fcaabfb005d6f5f",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
-    "<home>/.local/share/jasper-ui-verification/verus-x86-linux/verus",
+    "/home/jasper/verus/verus",
     "--crate-type",
     "lib",
-    "<repo>/evidence/scene-host-close-kernel/kernel.rs"
+    "/home/jasper/work/jasper-ui-engine-verus/evidence/scene-host-close-kernel/kernel.rs"
   ],
   "exit_code": 0,
   "solver": {
-    "path": "<home>/.local/share/jasper-ui-verification/verus-x86-linux/z3",
+    "path": "/home/jasper/verus/z3",
     "version": "Z3 version 4.16.0 - 64 bit\n",
     "explicit_override": null
   },
-  "verified_obligations": 8,
+  "verified_obligations": 10,
   "negative_controls": [
     {
       "name": "ignore-owner",

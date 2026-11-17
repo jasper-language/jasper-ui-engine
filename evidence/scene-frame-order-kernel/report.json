@@ -3,27 +3,27 @@
   "status": "proved",
   "scope": "Exact production stage ordering over arbitrary stage closures: the builder precondition is reachable only from a source stage at the exact successor, and every result is tied to the closure outcomes that produced it. Patch semantics, Blitz construction, state restoration, active replacement assignment and panic unwinding are excluded; unwinding is covered by Proptest/Miri and the real-view integration test, not by this proof.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "071092371c3d5c70594bc66d4b03cee651491bc1ad1a93ab4c0d7ac35e323ea4",
+  "source_sha256": "650606fff9ca8415aa07d0478b76f153484aaa4e3633735dc769ee99797830e4",
   "sources": {
-    "src/native_adapter/native_scene.rs": "071092371c3d5c70594bc66d4b03cee651491bc1ad1a93ab4c0d7ac35e323ea4"
+    "src/native_adapter/native_scene.rs": "650606fff9ca8415aa07d0478b76f153484aaa4e3633735dc769ee99797830e4"
   },
   "kernel_sha256": "74257605dd70fc1a249d9d20998a0bca4d57a5382a72aa9818433f452d48ddd6",
   "dependencies": {
-    "scene-update-error-type": "256606b123f0efa48b755744e08ea821890120a43d4fcfbb60cb9c74f24a8875",
+    "scene-update-error-type": "b08202ef44f2292f6f48327a411ccfffa0edfd8ca1a406348f6317148de4bc12",
     "scene-frame-completion": "c294b6e76b86280d9c03562858f4cbb62c1f6cb8f6716eaf6a8097defd0d0c2c"
   },
-  "proof_sha256": "bd74a290e68ba4a105ab5f6ff46c63560ca04d6e7e98a42facde79f973f74828",
-  "runner_sha256": "9aac303c7b1f05df3ecb673001616a8910a6155452fbb2496f5190611d039d6d",
+  "proof_sha256": "ca6afec810acaf4b03b0a323bd301f26d0e92ec0f233ec047ffd635e8385888c",
+  "runner_sha256": "20c535cc7e1bbb67bef89c5b24724141c98292edf5fe2b826fcaabfb005d6f5f",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
-    "<home>/verus/verus",
+    "/home/jasper/verus/verus",
     "--crate-type",
     "lib",
-    "<repo>/evidence/scene-frame-order-kernel/kernel.rs"
+    "/home/jasper/work/jasper-ui-engine-verus/evidence/scene-frame-order-kernel/kernel.rs"
   ],
   "exit_code": 0,
   "solver": {
-    "path": "<home>/verus/z3",
+    "path": "/home/jasper/verus/z3",
     "version": "Z3 version 4.16.0 - 64 bit\n",
     "explicit_override": null
   },

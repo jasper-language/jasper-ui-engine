@@ -9,21 +9,41 @@ pub enum SceneUpdateError {
     OwnerMismatch,
     Closed,
     EmptyFrame,
-    CapacityExceeded,
-    StaleVersion { expected: u64, current: u64 },
-    InvalidSuccessor { expected: u64, next: u64 },
+    StaleVersion {
+        expected: u64,
+        current: u64,
+    },
+    InvalidSuccessor {
+        expected: u64,
+        next: u64,
+    },
     SourceRejected,
     NativeRejected,
+    /// The updated scene would hold `required` nodes; the host quota allows `limit`.
+    /// 更新后的场景需要 `required` 个节点，宿主额度只允许 `limit` 个。
+    NodeQuotaExceeded {
+        limit: usize,
+        required: usize,
+    },
+    /// The updated scene would hold `required` bytes of text and semantic strings; the host
+    /// quota allows `limit`.
+    /// 更新后的场景需要 `required` 字节文字与语义字符串，宿主额度只允许 `limit` 字节。
+    TextQuotaExceeded {
+        limit: usize,
+        required: usize,
+    },
 }
 
-/// Candidate admission count only; not an allocator bound for text, fonts or upstream scratch.
-pub(crate) fn scene_work_fits(prepared:usize,pending:usize,incoming:usize)->(result:bool)
-        ensures result == (prepared as int + pending as int + incoming as int <= 4096),
+/// Candidate admission count against the host node limit (`usize::MAX` when unlimited); exact
+/// and overflow-free. Not an allocator bound for text, fonts or upstream scratch.
+/// 按宿主节点上限（无上限时为 `usize::MAX`）的候选准入计数；精确且无溢出。不是文字、字体或上游暂存的分配上界。
+pub(crate) fn scene_work_fits(prepared:usize,pending:usize,incoming:usize,limit:usize)->(result:bool)
+        ensures result == (prepared as int + pending as int + incoming as int <= limit as int),
     {
-    if prepared > 4096 || pending > 4096 - prepared {
+    if prepared > limit || pending > limit - prepared {
         return false;
     }
-    incoming <= 4096 - prepared - pending
+    incoming <= limit - prepared - pending
 }
 
 /// Prepare a next UI update version without mutating or reserving backend state.
@@ -47,17 +67,18 @@ pub(crate) fn admit_scene_update(owner:u64,caller:u64,current:u64,expected:u64,n
             Err(SceneUpdateError::OwnerMismatch)=>owner!=caller,
             Err(SceneUpdateError::Closed)=>owner==caller && !open,
             Err(SceneUpdateError::EmptyFrame)=>owner==caller && open && count==0,
-            Err(SceneUpdateError::CapacityExceeded)=>owner==caller && open && count>4096,
             Err(SceneUpdateError::StaleVersion {expected:reported_expected,current:reported_current})=>
-                owner==caller && open && 0<count<=4096 && current!=expected
+                owner==caller && open && count>0 && current!=expected
                 && reported_expected==expected && reported_current==current,
             Err(SceneUpdateError::InvalidSuccessor {expected:reported_expected,next:reported_next})=>
-                owner==caller && open && 0<count<=4096 && current==expected
+                owner==caller && open && count>0 && current==expected
                 && (current>=u64::MAX || next as int!=current as int+1)
                 && reported_expected==expected && reported_next==next,
             Err(SceneUpdateError::SourceRejected)=>false,
             Err(SceneUpdateError::NativeRejected)=>false,
-            Ok(()) => owner==caller && open && 0<count<=4096 && current==expected
+            Err(SceneUpdateError::NodeQuotaExceeded {limit:_,required:_})=>false,
+            Err(SceneUpdateError::TextQuotaExceeded {limit:_,required:_})=>false,
+            Ok(()) => owner==caller && open && count>0 && current==expected
                 && current<u64::MAX && next as int==current as int+1,
         },
     {
@@ -67,9 +88,6 @@ pub(crate) fn admit_scene_update(owner:u64,caller:u64,current:u64,expected:u64,n
     }
     if count == 0 {
         return Err(SceneUpdateError::EmptyFrame);
-    }
-    if count > 4096 {
-        return Err(SceneUpdateError::CapacityExceeded);
     }
     if current != expected {
         return Err(SceneUpdateError::StaleVersion { expected, current });

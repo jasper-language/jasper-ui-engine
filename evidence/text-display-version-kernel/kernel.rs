@@ -162,7 +162,7 @@ pub struct NodeId(pub u64);
 
 /// Trusted current UI binding, independent of third-party editor/IME private types.
 /// 可信的当前 UI 绑定，不暴露第三方编辑器或输入法私有类型。
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct UiInputContext {
     pub target: NodeId,
     pub target_generation: u64,
@@ -172,7 +172,7 @@ pub struct UiInputContext {
 
 /// Identity carried by delayed input; it is not an authentication credential.
 /// 延迟输入携带的身份，不是认证凭证；字段可被客户端伪造，不能代替宿主认证。
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct UiInputTicket {
     pub key: ResourceKey,
     pub context: UiInputContext,
@@ -213,7 +213,10 @@ impl UiInputBinding {
     pub fn new(session: u64, slot: u64) -> (result: Self)
     ensures binding_model(&result) == ((session, slot, 0u64, false), None),
 { reveal(binding_model);
-        Self { gate: ResourceGate::new(session, slot), current: None }
+        Self {
+            gate: ResourceGate::new(session, slot),
+            current: None,
+        }
     }
 
     /// Bind a vacant focus slot. Rejection leaves the previous binding intact.
@@ -234,7 +237,10 @@ impl UiInputBinding {
         match self.gate.issue(caller_session) {
             Some(key) => {
                 self.current = Some(current);
-                Some(UiInputTicket { key, context: current })
+                Some(UiInputTicket {
+                    key,
+                    context: current,
+                })
             }
             None => None,
         }
@@ -291,7 +297,7 @@ fn same_input_ticket(a: UiInputTicket, b: UiInputTicket) -> (result: bool)
 
 /// Public correlation value, not a secret capability or native engine handle.
 /// 公开的关联值，不是秘密凭证或原生引擎句柄。
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct UiCompositionToken {
     pub owner: UiInputTicket,
     pub serial: u64,
@@ -308,7 +314,10 @@ impl UiCompositionSlot {
     pub fn new() -> (result: Self)
     ensures composition_model(&result) == (0u64, None),
 { reveal(composition_model);
-        Self { generation: 0, active: None }
+        Self {
+            generation: 0,
+            active: None,
+        }
     }
 
     /// Start only for an admitted active focus; overlapping starts and exhaustion reject unchanged.
@@ -329,7 +338,10 @@ impl UiCompositionSlot {
             return None;
         }
         self.generation += 1;
-        let token = UiCompositionToken { owner, serial: self.generation };
+        let token = UiCompositionToken {
+            owner,
+            serial: self.generation,
+        };
         self.active = Some(token);
         Some(token)
     }
@@ -338,11 +350,13 @@ impl UiCompositionSlot {
     ensures result == (composition_active(composition_model(self), token) && binding_allowed(binding_model(binding), caller, token.owner)),
 { reveal(composition_model);
         match self.active {
-            Some(active) => token.serial != 0
-                && token.serial == self.generation
-                && token.serial == active.serial
-                && same_input_ticket(token.owner, active.owner)
-                && binding.accepts(caller, token.owner),
+            Some(active) => {
+                token.serial != 0
+                    && token.serial == self.generation
+                    && token.serial == active.serial
+                    && same_input_ticket(token.owner, active.owner)
+                    && binding.accepts(caller, token.owner)
+            }
             None => false,
         }
     }
@@ -359,9 +373,12 @@ impl UiCompositionSlot {
 { reveal(composition_model);
         match self.active {
             Some(active) => {
-                if caller != token.owner.key.session || token.serial == 0
-                    || token.serial != self.generation || token.serial != active.serial
-                    || !same_input_ticket(token.owner, active.owner) {
+                if caller != token.owner.key.session
+                    || token.serial == 0
+                    || token.serial != self.generation
+                    || token.serial != active.serial
+                    || !same_input_ticket(token.owner, active.owner)
+                {
                     return false;
                 }
                 self.active = None;
@@ -385,7 +402,7 @@ impl UiCompositionSlot {
 }
 
 pub(crate) struct NativeTextView {
-    bold_aliases:std::collections::BTreeSet<u64>,
+    bold_aliases: std::collections::BTreeSet<u64>,
     document: ViewSlot<BaseDocument>,
     preedit: UiCompositionSlot,
     component_version: u64,
@@ -401,7 +418,10 @@ pub(crate) struct NativeTextView {
 /// Match a host-bound view instance; caller identity still requires host authentication.
 /// This is a consumer guard, not an input-service protocol or authentication grant.
 pub fn matches_ui_view_owner(
-    session: u64, current: UiInputContext, caller: u64, incoming: UiInputContext,
+    session: u64,
+    current: UiInputContext,
+    caller: u64,
+    incoming: UiInputContext,
  ) -> (result: bool)
     ensures result == (session == caller && current.target.0 == incoming.target.0
         && current.target_generation == incoming.target_generation
@@ -420,9 +440,21 @@ impl NativeTextView {
     pub(crate) fn host_context_matches(&self, caller: u64, expected: UiInputContext) -> (result:bool)
         ensures result == (self.session==caller && self.context.target.0==expected.target.0 && self.context.target_generation==expected.target_generation && self.context.document==expected.document && self.context.revision==expected.revision),
     {
-        matches_ui_view_owner(self.session,self.context,caller,expected)
+        matches_ui_view_owner(self.session, self.context, caller, expected)
     }
 
+    pub(crate) fn current_context_for(&self, caller: u64) -> Option<UiInputContext> {
+        (self.session == caller && self.document.is_open()).then_some(self.context)
+    }
+
+    pub(crate) fn accepts_preedit(
+        &self,
+        binding: &UiInputBinding,
+        caller: u64,
+        token: UiCompositionToken,
+    ) -> bool {
+        self.document.is_open() && self.preedit.accepts(binding, caller, token)
+    }
 }
 
 impl NativeTextView {
@@ -430,7 +462,11 @@ impl NativeTextView {
     pub(crate) fn component_version(&self) -> (result: Option<u64>)
         ensures result == native_component_version_model(self),
     { proof { reveal(native_component_version_model); }
-        if self.document.is_open() { Some(self.component_version) } else { None }
+        if self.document.is_open() {
+            Some(self.component_version)
+        } else {
+            None
+        }
     }
 }
 

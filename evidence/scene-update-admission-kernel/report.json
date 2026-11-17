@@ -3,29 +3,29 @@
   "status": "proved",
   "scope": "Exact production structured patch admission and real reused version/count predicates; source/native rejection variants are assigned outside this kernel and are excluded. No native mutation loop or host authentication proof.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "071092371c3d5c70594bc66d4b03cee651491bc1ad1a93ab4c0d7ac35e323ea4",
+  "source_sha256": "650606fff9ca8415aa07d0478b76f153484aaa4e3633735dc769ee99797830e4",
   "sources": {
     "src/input_identity.rs": "953b0982be297777cc3e2c3f3a02f697df71d83c2d3e5bc21202baa06250aa0d",
-    "src/native_adapter/native_scene.rs": "071092371c3d5c70594bc66d4b03cee651491bc1ad1a93ab4c0d7ac35e323ea4"
+    "src/native_adapter/native_scene.rs": "650606fff9ca8415aa07d0478b76f153484aaa4e3633735dc769ee99797830e4"
   },
-  "kernel_sha256": "dfecc4647be48d37ec7e808c109eca42c2ea44ef7f63e2decb349aef9ba8802d",
+  "kernel_sha256": "b1ec3c1843b0ca2da600791a98fc3d72549941303acdba3d30e711444528173f",
   "dependencies": {
-    "scene-update-error-type": "256606b123f0efa48b755744e08ea821890120a43d4fcfbb60cb9c74f24a8875",
-    "scene-work-capacity": "f6a5094f728c19753c6e20d91bfb5d40866f3b52aaa01b9710a545e878866c4c",
+    "scene-update-error-type": "b08202ef44f2292f6f48327a411ccfffa0edfd8ca1a406348f6317148de4bc12",
+    "scene-work-capacity": "e8ae009c5ac950f643ec73a89ef7fba1ab6058de0c06817bca49f385d31eda0b",
     "ui-update-next": "8c815cd78d43311906ab3a2d625ee1f156d2f0247bf31bdb807a2c3ad5c17679"
   },
-  "proof_sha256": "def00edcec11d7ee687603f6e9f25dc585cf6b65bf8f089b9c21d59a4a4d443f",
-  "runner_sha256": "9aac303c7b1f05df3ecb673001616a8910a6155452fbb2496f5190611d039d6d",
+  "proof_sha256": "bebe6aab787fbecd96a80f2e9ecb253e0c662df5c9d99283ac5831d394427dc3",
+  "runner_sha256": "20c535cc7e1bbb67bef89c5b24724141c98292edf5fe2b826fcaabfb005d6f5f",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
-    "<home>/verus/verus",
+    "/home/jasper/verus/verus",
     "--crate-type",
     "lib",
-    "<repo>/evidence/scene-update-admission-kernel/kernel.rs"
+    "/home/jasper/work/jasper-ui-engine-verus/evidence/scene-update-admission-kernel/kernel.rs"
   ],
   "exit_code": 0,
   "solver": {
-    "path": "<home>/verus/z3",
+    "path": "/home/jasper/verus/z3",
     "version": "Z3 version 4.16.0 - 64 bit\n",
     "explicit_override": null
   },

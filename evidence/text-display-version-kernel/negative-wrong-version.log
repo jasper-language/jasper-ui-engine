@@ -1,25 +1,13 @@
-verification results:: 28 verified, 1 errors
-warning: type `NativeTextView` is more private than the item `native_component_version_model`
-   --> <repo>/evidence/text-display-version-kernel/negative_wrong_version.rs:35:1
+error: `core::bool::impl&%0::then_some` is not supported (note: you may be able to add a Verus specification to this function with `assume_specification`) (note: the vstd library provides some specification for the Rust std library, but it is currently limited)
+   --> /home/jasper/work/jasper-ui-engine-verus/evidence/text-display-version-kernel/negative_wrong_version.rs:447:9
     |
- 35 | pub closed spec fn native_component_version_model(view: &NativeTextView) -> Option<u64> { if view.document.owned_value().is_some() ...
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ function `native_component_version_model` is reachable at visibility `pub`
+447 |         (self.session == caller && self.document.is_open()).then_some(self.context)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |
-note: but type `NativeTextView` is only usable at visibility `pub(crate)`
-   --> <repo>/evidence/text-display-version-kernel/negative_wrong_version.rs:387:1
-    |
-387 | pub(crate) struct NativeTextView {
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    = note: `#[warn(private_interfaces)]` on by default
+    = help: The following declaration may resolve this error:
+            pub assume_specification<T> [core::bool::<impl bool>::then_some] (_0: bool, _1: T) -> std::option::Option<T>
+            where
+            T: std::marker::Destruct,;
 
-error: postcondition not satisfied
-   --> <repo>/evidence/text-display-version-kernel/negative_wrong_version.rs:441:17
-    |
-441 |         ensures result==text_display_version_model(self,owner,context),
-    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
-...
-444 |         Some(0)
-    |         ------- at the end of the function body
-
-error: aborting due to 1 previous error; 1 warning emitted
+error: aborting due to 1 previous error
 

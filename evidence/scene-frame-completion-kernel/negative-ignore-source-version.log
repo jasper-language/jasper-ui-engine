@@ -1,41 +1,41 @@
 verification results:: 1 verified, 1 errors
 note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
-  --> <repo>/evidence/scene-frame-completion-kernel/negative_ignore_source_version.rs:19:1
+  --> /home/jasper/work/jasper-ui-engine-verus/evidence/scene-frame-completion-kernel/negative_ignore_source_version.rs:37:1
    |
-19 | / pub(crate) fn complete_scene_frame(source_ok:bool,source_version:u64,next:u64,candidate_ready:bool)
-20 | |     ->(result:Result<(),SceneUpdateError>)
+37 | / pub(crate) fn complete_scene_frame(source_ok:bool,source_version:u64,next:u64,candidate_ready:bool)
+38 | |     ->(result:Result<(),SceneUpdateError>)
    | |_________________________________________^
 
 error: postcondition not satisfied
-  --> <repo>/evidence/scene-frame-completion-kernel/negative_ignore_source_version.rs:21:17
+  --> /home/jasper/work/jasper-ui-engine-verus/evidence/scene-frame-completion-kernel/negative_ignore_source_version.rs:39:17
    |
-21 |           ensures match result {
+39 |           ensures match result {
    |  _________________^
-22 | |             Err(SceneUpdateError::SourceRejected)=>!source_ok || source_version!=next,
-23 | |             Err(SceneUpdateError::NativeRejected)=>source_ok && source_version==next && !candidate_ready,
-24 | |             Ok(())=>source_ok && source_version==next && candidate_ready,
+40 | |             Err(SceneUpdateError::SourceRejected)=>!source_ok || source_version!=next,
+41 | |             Err(SceneUpdateError::NativeRejected)=>source_ok && source_version==next && !candidate_ready,
+42 | |             Ok(())=>source_ok && source_version==next && candidate_ready,
 ...  |
-30 | |             Err(SceneUpdateError::InvalidSuccessor {..})=>false,
-31 | |         },
+49 | |             Err(SceneUpdateError::InvalidSuccessor {..})=>false,
+50 | |         },
    | |_________^ failed this postcondition
 ...
-35 |           return Err(SceneUpdateError::NativeRejected);
+54 |           return Err(SceneUpdateError::NativeRejected);
    |           -------------------------------------------- at this exit
 
 error: postcondition not satisfied
-  --> <repo>/evidence/scene-frame-completion-kernel/negative_ignore_source_version.rs:21:17
+  --> /home/jasper/work/jasper-ui-engine-verus/evidence/scene-frame-completion-kernel/negative_ignore_source_version.rs:39:17
    |
-21 |           ensures match result {
+39 |           ensures match result {
    |  _________________^
-22 | |             Err(SceneUpdateError::SourceRejected)=>!source_ok || source_version!=next,
-23 | |             Err(SceneUpdateError::NativeRejected)=>source_ok && source_version==next && !candidate_ready,
-24 | |             Ok(())=>source_ok && source_version==next && candidate_ready,
+40 | |             Err(SceneUpdateError::SourceRejected)=>!source_ok || source_version!=next,
+41 | |             Err(SceneUpdateError::NativeRejected)=>source_ok && source_version==next && !candidate_ready,
+42 | |             Ok(())=>source_ok && source_version==next && candidate_ready,
 ...  |
-30 | |             Err(SceneUpdateError::InvalidSuccessor {..})=>false,
-31 | |         },
+49 | |             Err(SceneUpdateError::InvalidSuccessor {..})=>false,
+50 | |         },
    | |_________^ failed this postcondition
 ...
-37 |       Ok(())
+56 |       Ok(())
    |       ------ at the end of the function body
 
 error: aborting due to 2 previous errors

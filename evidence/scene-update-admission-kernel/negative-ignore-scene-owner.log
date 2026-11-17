@@ -1,73 +1,76 @@
 verification results:: 4 verified, 1 errors
 note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
-  --> <repo>/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:44:1
+  --> /home/jasper/work/jasper-ui-engine-verus/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:64:1
    |
-44 | / pub(crate) fn admit_scene_update(owner:u64,caller:u64,current:u64,expected:u64,next:u64,
-45 | |     count:usize,open:bool)->(result:Result<(),SceneUpdateError>)
+64 | / pub(crate) fn admit_scene_update(owner:u64,caller:u64,current:u64,expected:u64,next:u64,
+65 | |     count:usize,open:bool)->(result:Result<(),SceneUpdateError>)
    | |_______________________________________________________________^
 
 error: postcondition not satisfied
-  --> <repo>/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:46:17
+  --> /home/jasper/work/jasper-ui-engine-verus/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:66:17
    |
-46 |           ensures match result {
+66 |           ensures match result {
    |  _________________^
-47 | |             Err(SceneUpdateError::OwnerMismatch)=>owner!=caller,
-48 | |             Err(SceneUpdateError::Closed)=>owner==caller && !open,
-49 | |             Err(SceneUpdateError::EmptyFrame)=>owner==caller && open && count==0,
+67 | |             Err(SceneUpdateError::OwnerMismatch)=>owner!=caller,
+68 | |             Err(SceneUpdateError::Closed)=>owner==caller && !open,
+69 | |             Err(SceneUpdateError::EmptyFrame)=>owner==caller && open && count==0,
 ...  |
-61 | |                 && current<u64::MAX && next as int==current as int+1,
-62 | |         },
+82 | |                 && current<u64::MAX && next as int==current as int+1,
+83 | |         },
    | |_________^ failed this postcondition
 ...
-72 |           return Err(SceneUpdateError::CapacityExceeded);
-   |           ---------------------------------------------- at this exit
-
-error: postcondition not satisfied
-  --> <repo>/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:46:17
-   |
-46 |           ensures match result {
-   |  _________________^
-47 | |             Err(SceneUpdateError::OwnerMismatch)=>owner!=caller,
-48 | |             Err(SceneUpdateError::Closed)=>owner==caller && !open,
-49 | |             Err(SceneUpdateError::EmptyFrame)=>owner==caller && open && count==0,
-...  |
-61 | |                 && current<u64::MAX && next as int==current as int+1,
-62 | |         },
-   | |_________^ failed this postcondition
-...
-75 |           return Err(SceneUpdateError::StaleVersion { expected, current });
+93 |           return Err(SceneUpdateError::StaleVersion { expected, current });
    |           ---------------------------------------------------------------- at this exit
 
 error: postcondition not satisfied
-  --> <repo>/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:46:17
+  --> /home/jasper/work/jasper-ui-engine-verus/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:66:17
    |
-46 |           ensures match result {
+66 |           ensures match result {
    |  _________________^
-47 | |             Err(SceneUpdateError::OwnerMismatch)=>owner!=caller,
-48 | |             Err(SceneUpdateError::Closed)=>owner==caller && !open,
-49 | |             Err(SceneUpdateError::EmptyFrame)=>owner==caller && open && count==0,
+67 | |             Err(SceneUpdateError::OwnerMismatch)=>owner!=caller,
+68 | |             Err(SceneUpdateError::Closed)=>owner==caller && !open,
+69 | |             Err(SceneUpdateError::EmptyFrame)=>owner==caller && open && count==0,
 ...  |
-61 | |                 && current<u64::MAX && next as int==current as int+1,
-62 | |         },
+82 | |                 && current<u64::MAX && next as int==current as int+1,
+83 | |         },
    | |_________^ failed this postcondition
 ...
-69 |           return Err(SceneUpdateError::EmptyFrame);
+95 | /     match next_ui_update_version(current, expected) {
+96 | |         Some(successor) if next == successor => Ok(()),
+97 | |         _ => Err(SceneUpdateError::InvalidSuccessor { expected, next }),
+98 | |     }
+   | |_____- at the end of the function body
+
+error: postcondition not satisfied
+  --> /home/jasper/work/jasper-ui-engine-verus/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:66:17
+   |
+66 |           ensures match result {
+   |  _________________^
+67 | |             Err(SceneUpdateError::OwnerMismatch)=>owner!=caller,
+68 | |             Err(SceneUpdateError::Closed)=>owner==caller && !open,
+69 | |             Err(SceneUpdateError::EmptyFrame)=>owner==caller && open && count==0,
+...  |
+82 | |                 && current<u64::MAX && next as int==current as int+1,
+83 | |         },
+   | |_________^ failed this postcondition
+...
+90 |           return Err(SceneUpdateError::EmptyFrame);
    |           ---------------------------------------- at this exit
 
 error: postcondition not satisfied
-  --> <repo>/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:46:17
+  --> /home/jasper/work/jasper-ui-engine-verus/evidence/scene-update-admission-kernel/negative_ignore_scene_owner.rs:66:17
    |
-46 |           ensures match result {
+66 |           ensures match result {
    |  _________________^
-47 | |             Err(SceneUpdateError::OwnerMismatch)=>owner!=caller,
-48 | |             Err(SceneUpdateError::Closed)=>owner==caller && !open,
-49 | |             Err(SceneUpdateError::EmptyFrame)=>owner==caller && open && count==0,
+67 | |             Err(SceneUpdateError::OwnerMismatch)=>owner!=caller,
+68 | |             Err(SceneUpdateError::Closed)=>owner==caller && !open,
+69 | |             Err(SceneUpdateError::EmptyFrame)=>owner==caller && open && count==0,
 ...  |
-61 | |                 && current<u64::MAX && next as int==current as int+1,
-62 | |         },
+82 | |                 && current<u64::MAX && next as int==current as int+1,
+83 | |         },
    | |_________^ failed this postcondition
 ...
-66 |           return Err(SceneUpdateError::Closed);
+87 |           return Err(SceneUpdateError::Closed);
    |           ------------------------------------ at this exit
 
 error: aborting due to 4 previous errors

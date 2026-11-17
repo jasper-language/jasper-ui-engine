@@ -3,32 +3,32 @@
   "status": "proved",
   "scope": "Exact legacy tag-preservation predicate retained for source compatibility; the transactional scene path now rebuilds native elements and no longer consumes this predicate; constructor mapping, maps and whole mutation frame unproved.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
+  "source_sha256": "650606fff9ca8415aa07d0478b76f153484aaa4e3633735dc769ee99797830e4",
   "sources": {
-    "src/native_adapter/native_scene.rs": "88c35d8fe51f138d7254121d9c1d7741abf0817a3b2022e0333dded0bff22eac",
-    "src/semantics.rs": "a698a75a61554e48a1dfcd2644544d071340037e96df276c58dd331bc1740755"
+    "src/native_adapter/native_scene.rs": "650606fff9ca8415aa07d0478b76f153484aaa4e3633735dc769ee99797830e4",
+    "src/semantics.rs": "059ae6d805f7c3564167acbba03caac701a192faccb001a06defc119c919a904"
   },
-  "kernel_sha256": "c132d2e1d10b7b34d2524b509751c21b3d8b9133971bfd4b329fb35b6fbac6b2",
+  "kernel_sha256": "590a237cf069d8c108d32d7a639cc66a940bcaaa166cf4bb60db01abb45e654d",
   "dependencies": {
-    "role-type": "cad90bc2ac24e004873b2641e0aa09bd9e09f36c93ed7f67e795a68293e3a019",
-    "native-button-role": "967f42acd9861679ab5451f9270406431a2583aca766d5d609e22cf42260b360"
+    "role-type": "8a44b3ac26e161cd8846e52271c6a80322141eca5309845a9e10dc5fb5472fd8",
+    "native-button-role": "842166f3afc6a1985d7a72ed6e0c75b087aeea657f8d7098bbd16e358471cf54"
   },
-  "proof_sha256": "b30e0bb75b5f50a79862cecef3c5fa9cd135af3311cb2f7659544f48be589c15",
-  "runner_sha256": "0bd75b322ab6e5a005035dd7ba75bafa8838c5072a7c08b05302d00023f3716e",
+  "proof_sha256": "3a011a611523dc34cc69d17f421ff957daae2177a9b4765ea0b7a0335cbd044d",
+  "runner_sha256": "20c535cc7e1bbb67bef89c5b24724141c98292edf5fe2b826fcaabfb005d6f5f",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
-    "<home>/.local/share/jasper-ui-verification/verus-x86-linux/verus",
+    "/home/jasper/verus/verus",
     "--crate-type",
     "lib",
-    "<repo>/evidence/semantic-role-tag-kernel/kernel.rs"
+    "/home/jasper/work/jasper-ui-engine-verus/evidence/semantic-role-tag-kernel/kernel.rs"
   ],
   "exit_code": 0,
   "solver": {
-    "path": "<home>/.local/share/jasper-ui-verification/verus-x86-linux/z3",
+    "path": "/home/jasper/verus/z3",
     "version": "Z3 version 4.16.0 - 64 bit\n",
     "explicit_override": null
   },
-  "verified_obligations": 3,
+  "verified_obligations": 5,
   "negative_controls": [
     {
       "name": "wrong-native-class",

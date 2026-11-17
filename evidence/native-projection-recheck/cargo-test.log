@@ -1,0 +1,106 @@
+ Downloading crates ...
+  Downloaded rand_xorshift v0.4.0
+  Downloaded ppv-lite86 v0.2.21
+  Downloaded rand_chacha v0.9.0
+  Downloaded rand_core v0.9.5
+  Downloaded rand v0.9.5
+  Downloaded proptest v1.9.0
+   Compiling libc v0.2.191
+   Compiling getrandom v0.3.4
+   Compiling cfg-if v1.0.5
+   Compiling zerocopy v0.8.63
+   Compiling rand_core v0.9.5
+   Compiling autocfg v1.5.1
+   Compiling num-traits v0.2.19
+   Compiling jasper-ui-input-identity-verification v0.0.0 (/home/jasper/work/jasper-ui-engine-verus/verification/input-identity)
+   Compiling ppv-lite86 v0.2.21
+   Compiling jasper-ui-native-projection-verification v0.0.0 (/home/jasper/work/jasper-ui-engine-verus/verification/native-projection)
+   Compiling rand_chacha v0.9.0
+error[E0425]: cannot find type `DesktopPointerState` in this scope
+    --> /home/jasper/work/jasper-ui-engine-verus/verification/native-projection/target/debug/build/jasper-ui-input-identity-verification/68de2dd4395061ea/out/actual.rs:1005:14
+     |
+1005 |     pointer: DesktopPointerState,
+     |              ^^^^^^^^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find type `DesktopTouchState` in this scope
+    --> /home/jasper/work/jasper-ui-engine-verus/verification/native-projection/target/debug/build/jasper-ui-input-identity-verification/68de2dd4395061ea/out/actual.rs:1006:12
+     |
+1006 |     touch: DesktopTouchState,
+     |            ^^^^^^^^^^^^^^^^^ not found in this scope
+
+warning: unused import: `std::collections::BTreeSet`
+    --> /home/jasper/work/jasper-ui-engine-verus/verification/native-projection/target/debug/build/jasper-ui-input-identity-verification/68de2dd4395061ea/out/actual.rs:1002:5
+     |
+1002 | use std::collections::BTreeSet; use std::time::Instant;
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+error[E0560]: struct `DesktopInput` has no field named `pointer_id`
+   --> /home/jasper/work/jasper-ui-engine-verus/verification/input-identity/src/lib.rs:317:34
+    |
+317 |     let mut desktop=DesktopInput{pointer_id:PointerId(0),position:Point{x:0.0,y:0.0},pressed:std::collections::BTreeSet::new(),modi...
+    |                                  ^^^^^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+317 -     let mut desktop=DesktopInput{pointer_id:PointerId(0),position:Point{x:0.0,y:0.0},pressed:std::collections::BTreeSet::new(),modifiers:Modifiers::default(),start:std::time::Instant::now()};
+317 +     let mut desktop=DesktopInput{pointer:PointerId(0),position:Point{x:0.0,y:0.0},pressed:std::collections::BTreeSet::new(),modifiers:Modifiers::default(),start:std::time::Instant::now()};
+    |
+
+error[E0560]: struct `DesktopInput` has no field named `position`
+   --> /home/jasper/work/jasper-ui-engine-verus/verification/input-identity/src/lib.rs:317:58
+    |
+317 |     let mut desktop=DesktopInput{pointer_id:PointerId(0),position:Point{x:0.0,y:0.0},pressed:std::collections::BTreeSet::new(),modi...
+    |                                                          ^^^^^^^^ `DesktopInput` does not have this field
+    |
+    = note: available fields are: `pointer`, `touch`
+
+error[E0560]: struct `DesktopInput` has no field named `pressed`
+   --> /home/jasper/work/jasper-ui-engine-verus/verification/input-identity/src/lib.rs:317:86
+    |
+317 | ...ointerId(0),position:Point{x:0.0,y:0.0},pressed:std::collections::BTreeSet::new(),modifiers:Modifiers::default(),start:std::time...
+    |                                            ^^^^^^^ `DesktopInput` does not have this field
+    |
+    = note: available fields are: `pointer`, `touch`
+
+error[E0560]: struct `DesktopInput` has no field named `modifiers`
+   --> /home/jasper/work/jasper-ui-engine-verus/verification/input-identity/src/lib.rs:317:128
+    |
+317 | ...ssed:std::collections::BTreeSet::new(),modifiers:Modifiers::default(),start:std::time::Instant::now()};
+    |                                           ^^^^^^^^^ `DesktopInput` does not have this field
+    |
+    = note: available fields are: `pointer`, `touch`
+
+error[E0609]: no field `pointer_id` on type `DesktopInput`
+   --> /home/jasper/work/jasper-ui-engine-verus/verification/input-identity/src/lib.rs:322:24
+    |
+322 |     assert_eq!(desktop.pointer_id.0,0);assert_eq!(desktop.position.x,0.0);assert!(desktop.pressed.is_empty());
+    |                        ^^^^^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+322 -     assert_eq!(desktop.pointer_id.0,0);assert_eq!(desktop.position.x,0.0);assert!(desktop.pressed.is_empty());
+322 +     assert_eq!(desktop.pointer.0,0);assert_eq!(desktop.position.x,0.0);assert!(desktop.pressed.is_empty());
+    |
+
+error[E0609]: no field `position` on type `DesktopInput`
+   --> /home/jasper/work/jasper-ui-engine-verus/verification/input-identity/src/lib.rs:322:59
+    |
+322 |     assert_eq!(desktop.pointer_id.0,0);assert_eq!(desktop.position.x,0.0);assert!(desktop.pressed.is_empty());
+    |                                                           ^^^^^^^^ unknown field
+    |
+    = note: available fields are: `pointer`, `touch`, `start`
+
+error[E0609]: no field `pressed` on type `DesktopInput`
+   --> /home/jasper/work/jasper-ui-engine-verus/verification/input-identity/src/lib.rs:322:91
+    |
+322 |     assert_eq!(desktop.pointer_id.0,0);assert_eq!(desktop.position.x,0.0);assert!(desktop.pressed.is_empty());
+    |                                                                                           ^^^^^^^ unknown field
+    |
+    = note: available fields are: `pointer`, `touch`, `start`
+
+Some errors have detailed explanations: E0425, E0560, E0609.
+For more information about an error, try `rustc --explain E0425`.
+warning: `jasper-ui-input-identity-verification` (lib) generated 1 warning
+error: could not compile `jasper-ui-input-identity-verification` (lib) due to 9 previous errors; 1 warning emitted

@@ -3,26 +3,26 @@
   "status": "proved",
   "scope": "Exact source-success, exact successor version and detached-candidate readiness gate before active replacement; source patch semantics, candidate construction and replacement assignment are excluded.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "071092371c3d5c70594bc66d4b03cee651491bc1ad1a93ab4c0d7ac35e323ea4",
+  "source_sha256": "650606fff9ca8415aa07d0478b76f153484aaa4e3633735dc769ee99797830e4",
   "sources": {
-    "src/native_adapter/native_scene.rs": "071092371c3d5c70594bc66d4b03cee651491bc1ad1a93ab4c0d7ac35e323ea4"
+    "src/native_adapter/native_scene.rs": "650606fff9ca8415aa07d0478b76f153484aaa4e3633735dc769ee99797830e4"
   },
   "kernel_sha256": "c294b6e76b86280d9c03562858f4cbb62c1f6cb8f6716eaf6a8097defd0d0c2c",
   "dependencies": {
-    "scene-update-error-type": "256606b123f0efa48b755744e08ea821890120a43d4fcfbb60cb9c74f24a8875"
+    "scene-update-error-type": "b08202ef44f2292f6f48327a411ccfffa0edfd8ca1a406348f6317148de4bc12"
   },
-  "proof_sha256": "0552292c208851decf5f7bcf3f9d7749c8c2e88ed7c1507bf7d1f30feb3017eb",
-  "runner_sha256": "9aac303c7b1f05df3ecb673001616a8910a6155452fbb2496f5190611d039d6d",
+  "proof_sha256": "ae5749a694191c75782f39c1e9b3b22ac42c2ab143e91c343de38731358e9ab0",
+  "runner_sha256": "20c535cc7e1bbb67bef89c5b24724141c98292edf5fe2b826fcaabfb005d6f5f",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
-    "<home>/verus/verus",
+    "/home/jasper/verus/verus",
     "--crate-type",
     "lib",
-    "<repo>/evidence/scene-frame-completion-kernel/kernel.rs"
+    "/home/jasper/work/jasper-ui-engine-verus/evidence/scene-frame-completion-kernel/kernel.rs"
   ],
   "exit_code": 0,
   "solver": {
-    "path": "<home>/verus/z3",
+    "path": "/home/jasper/verus/z3",
     "version": "Z3 version 4.16.0 - 64 bit\n",
     "explicit_override": null
   },
