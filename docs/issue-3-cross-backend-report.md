@@ -1,0 +1,43 @@
+# Issue #3 Native/Web 双后端验证状态
+
+日期：2026-11-17。本文是审计报告，不把历史测试扩大为双后端黄金用例完成。
+
+## 1. 已有证据（仅据仓库记录）
+
+| 证据 | 范围 | 不能推出 |
+|---|---|---|
+| appfw `CONTRACT-v1` §3.1–3.2 | 主题映射、JUI 2 握手、qemu 宿主视觉回归、SSR/stdio 回归 | typed UI IR 或同一 IR 双后端执行 |
+| 引擎 Native CPU/GPU 测试 | Blitz/Parley/Vello、事务、输入、AccessKit、E2–E15 | Web CSS 等价 |
+| appfw `jasper.ui.html` 测试 | Element → HTML、无 JS 表单 | 与 Native 像素/布局一致 |
+| theme `tests` | 三主题 Token、能力和降级 | 真实 Windows/macOS 宿主验收 |
+| 本轮新增候选 | 图片、浮层、Grid/Table、主题事务测试 | 架构批准或跨后端完成 |
+
+## 2. 双后端矩阵
+
+| 黄金场景 | Native CPU | Native GPU | Web SSR | 真浏览器 | Linux/Mac/Windows 宿主 |
+|---|---|---|---|---|---|
+| 设置页/三主题 | 历史候选，未在本审计复跑 | 历史部分证据，未复跑 | 部分结构测试 | 未执行 | 未完成 |
+| 数据表格/Grid/定位 | 候选能力测试 | 未覆盖 | 未映射新能力 | 未执行 | 未完成 |
+| 创建表单/IME/撤销 | 候选能力测试 | 不适用 | 无 JS 表单子集 | 未执行真实 IME | 未完成 |
+| Dialog/Menu/Popover | 候选能力测试 | 候选能力未完整 | 仅 role 映射 | 未执行 | 未完成 |
+| 图片/SVG/DPI | 候选能力测试 | 候选一致性测试 | 未映射 | 未执行 | 未完成 |
+| 滚动/虚拟化 | 候选范围查询测试 | 未覆盖 | 未映射 | 未执行 | 未完成 |
+
+## 3. 本轮未运行项
+
+- 未启动 QEMU/真实窗口；
+- 未运行 appfw 全量 JVM、SSR、desktop、visual；
+- 未建立 typed UI IR，因此没有“同一 IR 输入”可执行；
+- 未执行 Windows/macOS 宿主；
+- 未新增或重跑形式化证明。
+
+## 4. 进入下一阶段的最低验收
+
+1. 一份 typed IR fixture 同时编码为 Native frame 与 Web DOM/CSS；
+2. 设置页、表单、表格、Dialog/Menu 四个场景；
+3. Native CPU 全测、Native GPU 可运行场景；
+4. Web SSR HTML 结构/ARIA/表单动作 golden；
+5. 真浏览器截图和交互；
+6. 差异表包含像素/结构/字体/交互/能力降级，不用单一“通过”概括。
+
+未满足以上条件前，issue #3 的跨后端验证报告状态保持 `not_run`。

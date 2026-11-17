@@ -29,6 +29,11 @@
 | [status.md](status.md) | 已实现/未实现/未验证的逐项状态 |
 | [verification.md](verification.md) | 数学证明硬门槛、性质登记、执行与信任边界 |
 | [batch-boundaries.md](batch-boundaries.md) | 语义更新/绘制/传输及内置/自带宿主边界 |
+| [issue-3-baseline-audit.md](issue-3-baseline-audit.md) | Issue #3 基线审计：现有 PSS/JUI 2/ScenePatch/Web 映射的可复用、冲突与缺失 |
+| [issue-3-semantic-scope.md](issue-3-semantic-scope.md) | HTML-like/CSS-like 元素、事件、布局和样式的建议兼容范围 |
+| [issue-3-signal-ui-ir-contract.md](issue-3-signal-ui-ir-contract.md) | Reactive Signal → typed UI IR → Native/Web 双后端契约建议 |
+| [issue-3-migration-plan.md](issue-3-migration-plan.md) | 渐进迁移、回滚、风险与待裁决项 |
+| [issue-3-cross-backend-report.md](issue-3-cross-backend-report.md) | Native/Web 双后端验证矩阵与尚未运行项 |
 | [host-rendering.md](host-rendering.md) | Surface 代数、DPI/尺寸、暂停/恢复/退休、GPU TextureView/present 与能力矩阵 |
 | [platform-hosts.md](platform-hosts.md) | 跨平台宿主责任、Linux/Windows/macOS/移动端与 jasper-os 边界 |
 | [android.md](android.md) | Android NativeActivity、GPU Surface、触摸与前后台生命周期 |
