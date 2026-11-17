@@ -279,6 +279,15 @@ scripts/verify-in-vm.sh bash -c 'python3 scripts/verify-version.py --verus "$HOM
 未验收：真实 Framework 主题 Signal/组件树接线、原生主机 visual regression、切换动画和
 多窗口并发主题切换形式化证明。
 
+## P0-A 样式能力协商（同一主题分支，2026-11-17）
+
+| 项 | 位置 | 现有替代证据 |
+|---|---|---|
+| capability/key/value 三段式准入与稳定拒绝原因 | `host_capabilities.rs::{StyleRequest,negotiate_style_requests}` | capability 单元测试覆盖四类拒绝 |
+| 与真实 `xstyle` 解析器共用语义 | `Style::apply_xstyle` | 协商测试使用真实解析器而非平行语法 |
+
+六步形式化链暂缓；真实 Host hello 适配和 Jasper `EngineStyleMapper` 端到端回归在 appfw 侧接线时验收。
+
 **规格同步（`scripts/verify-version.py`）**：首次运行时三个 `NATIVE SCENE TYPE` 依赖内核均失败（`not_verified`，rustc
 E0433/E0425：`jasper_ui_engine::motion::MotionState`、`MaterialState`、`scene_edit::EditState` 在证明文件中无定义）。这是证明外壳缺少
 新字段类型声明，不是代码缺陷：仿照既有 `blitz_dom::NodeId` / `BaseDocument` 做法，在 `native-scene-type` 的 `spec_prelude` 中补三个

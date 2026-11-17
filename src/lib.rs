@@ -93,6 +93,10 @@ pub use graphics::{
     SelectionFallback,
 };
 pub use hit_test::{hit_test as hit_test_at, hit_test_path};
+pub use host_capabilities::{
+    negotiate_style_requests, CapabilityStatus, HostCapabilityMatrix, StyleNegotiation,
+    StyleRejection, StyleRejectionReason, StyleRequest,
+};
 pub use input::{
     InputEvent, PointerEvent, PointerKind, PointerMotionCoalescer, PointerMotionPredictor,
     PointerPhase, PointerTracker,

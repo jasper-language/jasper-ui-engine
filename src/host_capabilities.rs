@@ -116,6 +116,121 @@ impl HostCapabilityMatrix {
     }
 }
 
+/// One Framework style capability request exchanged through the host `hello`/style channel.
+/// Framework 经宿主 `hello`/样式通道发送的一项能力请求。
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StyleRequest {
+    pub capability: String,
+    pub key: String,
+    pub value: String,
+}
+
+impl StyleRequest {
+    pub fn new(
+        capability: impl Into<String>,
+        key: impl Into<String>,
+        value: impl Into<String>,
+    ) -> Self {
+        Self {
+            capability: capability.into(),
+            key: key.into(),
+            value: value.into(),
+        }
+    }
+}
+
+/// Why one style request was not admitted.
+/// 一项样式请求未被准入的原因。
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StyleRejectionReason {
+    UnknownCapability,
+    UnknownKey,
+    KeyOutsideCapability,
+    InvalidValue,
+}
+
+/// Structured rejection; no alternate semantics are silently substituted.
+/// 结构化拒绝；不会静默替换成其他语义。
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StyleRejection {
+    pub request: StyleRequest,
+    pub reason: StyleRejectionReason,
+}
+
+/// Result of negotiating a request list against this build's exact style capability table.
+/// 针对本次构建精确样式能力表的请求协商结果。
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct StyleNegotiation {
+    pub accepted: Vec<StyleRequest>,
+    pub rejected: Vec<StyleRejection>,
+}
+
+impl StyleNegotiation {
+    pub fn is_complete(&self) -> bool {
+        self.rejected.is_empty()
+    }
+}
+
+/// Validate style requests against the capability table and the real `xstyle` parser. A
+/// capability-only entry (`svg`) accepts an empty key/value and makes no style change.
+/// 用能力表与真实 `xstyle` 解析器校验样式请求。纯格式能力（`svg`）接受空键值且不改变样式。
+pub fn negotiate_style_requests(requests: &[StyleRequest]) -> StyleNegotiation {
+    let mut result = StyleNegotiation::default();
+    for request in requests {
+        let capability = crate::style::EXTENDED_STYLE_CAPABILITIES
+            .iter()
+            .find(|item| item.name == request.capability);
+        let Some(capability) = capability else {
+            result.rejected.push(StyleRejection {
+                request: request.clone(),
+                reason: StyleRejectionReason::UnknownCapability,
+            });
+            continue;
+        };
+        if capability.xstyle_keys.is_empty() {
+            if request.key.is_empty() {
+                result.accepted.push(request.clone());
+            } else {
+                result.rejected.push(StyleRejection {
+                    request: request.clone(),
+                    reason: StyleRejectionReason::KeyOutsideCapability,
+                });
+            }
+            continue;
+        }
+        if !capability.xstyle_keys.contains(&request.key.as_str()) {
+            let known = crate::style::EXTENDED_STYLE_CAPABILITIES
+                .iter()
+                .flat_map(|item| item.xstyle_keys)
+                .any(|key| *key == request.key);
+            result.rejected.push(StyleRejection {
+                request: request.clone(),
+                reason: if known {
+                    StyleRejectionReason::KeyOutsideCapability
+                } else {
+                    StyleRejectionReason::UnknownKey
+                },
+            });
+            continue;
+        }
+        let mut style = crate::style::Style::default();
+        match style.apply_xstyle(&request.key, &request.value) {
+            Ok(()) => result.accepted.push(request.clone()),
+            Err(crate::style::XStyleError::UnknownKey(_)) => result.rejected.push(StyleRejection {
+                request: request.clone(),
+                reason: StyleRejectionReason::UnknownKey,
+            }),
+            Err(crate::style::XStyleError::InvalidValue { .. }) => {
+                result.rejected.push(StyleRejection {
+                    request: request.clone(),
+                    reason: StyleRejectionReason::InvalidValue,
+                })
+            }
+        }
+    }
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use super::CapabilityStatus::{
@@ -176,5 +291,33 @@ mod tests {
                 assert_ne!(claim, NativeContract);
             }
         }
+    }
+
+    #[test]
+    fn style_requests_return_stable_structured_acceptance_and_rejections() {
+        let result = negotiate_style_requests(&[
+            StyleRequest::new("image", "image", "src(logo) fit(contain)"),
+            StyleRequest::new("svg", "", ""),
+            StyleRequest::new("grid", "grid-template-columns", "1fr 20% auto"),
+            StyleRequest::new("unknown", "image", "src(x)"),
+            StyleRequest::new("grid", "image", "src(x)"),
+            StyleRequest::new("grid", "not-a-key", "1"),
+            StyleRequest::new("grid", "grid-template-rows", "0fr"),
+        ]);
+        assert_eq!(result.accepted.len(), 3);
+        assert_eq!(
+            result
+                .rejected
+                .iter()
+                .map(|item| item.reason)
+                .collect::<Vec<_>>(),
+            vec![
+                StyleRejectionReason::UnknownCapability,
+                StyleRejectionReason::KeyOutsideCapability,
+                StyleRejectionReason::UnknownKey,
+                StyleRejectionReason::InvalidValue,
+            ]
+        );
+        assert!(!result.is_complete());
     }
 }
