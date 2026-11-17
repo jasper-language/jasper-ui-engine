@@ -130,6 +130,9 @@ fn accesskit_node(node: &AccessibilityNode, transform: Option<Affine>) -> Node {
     if node.disabled {
         out.set_disabled();
     }
+    if node.modal {
+        out.set_modal();
+    }
     if let Some(rect) = node.bounds {
         let (x, y) = (rect.origin.x as f64, rect.origin.y as f64);
         out.set_bounds(KitRect {

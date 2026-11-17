@@ -234,12 +234,122 @@ impl OverlayState {
         true
     }
 
-    pub(super) fn carry_from(&mut self, previous: &Self) {
+    pub(super) fn carry_from(&mut self, previous: &Self, previous_focus: Option<NodeId>) {
         self.events = previous.events.clone();
         for id in &self.order {
-            self.return_focus
-                .insert(*id, previous.return_focus.get(id).copied().flatten());
+            let returning = previous
+                .return_focus
+                .get(id)
+                .copied()
+                .flatten()
+                .or(previous_focus);
+            self.return_focus.insert(*id, returning);
         }
+    }
+
+    fn focus_node(view: &mut NativeScene, id: NodeId) -> bool {
+        if !view.focus_eligible(id) || !view.overlays.allows_interaction(view, id) {
+            return false;
+        }
+        let Some(element) = view.nodes.get(&id).map(|(element, _)| *element) else {
+            return false;
+        };
+        let Some(document) = view.document.as_mut() else {
+            return false;
+        };
+        document.set_focus_to(element);
+        document.resolve(0.0);
+        view.sync_edit_session(true);
+        view.focused_node(view.owner, view.scene_version) == Some(id)
+    }
+
+    fn focusables(&self, view: &NativeScene, overlay: NodeId) -> Vec<NodeId> {
+        view.source_preorder()
+            .into_iter()
+            .map(|node| node.id)
+            .filter(|id| {
+                super::source_subtree_contains(&view.parents, *id, overlay)
+                    && view.focus_eligible(*id)
+            })
+            .collect()
+    }
+
+    /// Move focus into a newly active auto-focus overlay, or back into a trapping overlay when
+    /// focus is outside it.
+    pub(super) fn apply_auto_focus(&mut self, view: &mut NativeScene) {
+        let focused = view.focused_node(view.owner, view.scene_version);
+        for overlay in self.order.iter().rev() {
+            if self.suppressed.contains_key(overlay) {
+                continue;
+            }
+            let Some(spec) = view
+                .source
+                .find(*overlay)
+                .and_then(|node| node.style.overlay)
+            else {
+                continue;
+            };
+            let inside = focused
+                .is_some_and(|id| super::source_subtree_contains(&view.parents, id, *overlay));
+            if spec.focus.auto && !inside {
+                if let Some(target) = self.focusables(view, *overlay).first().copied() {
+                    let _ = Self::focus_node(view, target);
+                }
+            }
+            return;
+        }
+    }
+
+    /// Restore the return target when focus was inside an overlay removed by this frame.
+    pub(super) fn restore_removed_focus(
+        &mut self,
+        view: &mut NativeScene,
+        previous: &Self,
+        previous_parents: &BTreeMap<NodeId, Option<NodeId>>,
+        previous_focus: Option<NodeId>,
+    ) {
+        let Some(focused) = previous_focus else {
+            return;
+        };
+        let removed = previous.order.iter().rev().find(|overlay| {
+            !self.order.contains(overlay)
+                && super::source_subtree_contains(previous_parents, focused, **overlay)
+        });
+        let Some(overlay) = removed.copied() else {
+            return;
+        };
+        let target = previous.return_focus.get(&overlay).copied().flatten();
+        if let Some(target) = target {
+            let _ = Self::focus_node(view, target);
+        }
+    }
+
+    /// Tab target inside the topmost focus-trapping overlay. `Some(None)` means the trap has no
+    /// focusable node and still consumes Tab; `None` means no trap applies.
+    pub(super) fn tab_target(
+        &self,
+        view: &NativeScene,
+        current: Option<NodeId>,
+        backward: bool,
+    ) -> Option<Option<NodeId>> {
+        let overlay = self.order.iter().rev().find(|id| {
+            !self.suppressed.contains_key(id)
+                && view
+                    .source
+                    .find(**id)
+                    .and_then(|node| node.style.overlay)
+                    .is_some_and(|spec| spec.traps_focus())
+        })?;
+        let focusables = self.focusables(view, *overlay);
+        let target = match current.and_then(|id| focusables.iter().position(|item| *item == id)) {
+            Some(index) if backward => focusables
+                .get((index + focusables.len() - 1) % focusables.len())
+                .copied(),
+            Some(index) => focusables.get((index + 1) % focusables.len()).copied(),
+            None if backward => focusables.last().copied(),
+            None => focusables.first().copied(),
+        };
+        Some(target)
     }
 
     pub(super) fn info(&self, view: &NativeScene) -> Vec<OverlayInfo> {
@@ -507,6 +617,91 @@ mod tests {
         assert!(
             view.focus_from_host(OWNER, source.version(), NodeId(4), &mut |event| focus
                 .push(event),)
+        );
+    }
+
+    #[test]
+    fn auto_focus_traps_tab_and_restores_focus_when_the_overlay_closes() {
+        let mut spec = OverlaySpec::anchored(NodeId(3)).offset(44.0, 0.0);
+        spec.modal = true;
+        spec.focus = crate::overlay::OverlayFocus {
+            trap: true,
+            restore: true,
+            auto: true,
+        };
+        let mut source = scene(spec);
+        let overlay_style = source.root.children[0].children[1].style.clone();
+        source.root.children[0].children[1].style.overlay = None;
+        let mut view = NativeScene::from_scene(OWNER, &source, &[], 200, 120).unwrap();
+        assert!(view.focus_from_host(OWNER, source.version(), NodeId(3), &mut |_| {},));
+        assert!(view.apply_patches(
+            OWNER,
+            source.version(),
+            source.version() + 1,
+            &[crate::scene::ScenePatch::UpdateStyle {
+                id: NodeId(4),
+                style: overlay_style.clone(),
+            }],
+        ));
+        assert_eq!(
+            view.focused_node(OWNER, source.version() + 1),
+            Some(NodeId(4))
+        );
+        let key = crate::native_keys::HostKeyInput {
+            key: "Tab",
+            code: "Tab",
+            pressed: true,
+            repeat: false,
+            composing: false,
+            modifiers: Default::default(),
+            location: crate::native_keys::KeyLocation::Standard,
+        };
+        assert!(view.key_with_activation_from_host(
+            OWNER,
+            source.version() + 1,
+            &key,
+            &mut |_| Default::default(),
+            &mut |_| {},
+            &mut |_| {},
+        ));
+        assert_eq!(
+            view.focused_node(OWNER, source.version() + 1),
+            Some(NodeId(4))
+        );
+        let mut closed = overlay_style;
+        closed.overlay = None;
+        assert!(view.apply_patches(
+            OWNER,
+            source.version() + 1,
+            source.version() + 2,
+            &[crate::scene::ScenePatch::UpdateStyle {
+                id: NodeId(4),
+                style: closed,
+            }],
+        ));
+        assert_eq!(
+            view.focused_node(OWNER, source.version() + 2),
+            Some(NodeId(3))
+        );
+    }
+
+    #[cfg(feature = "accesskit-pending")]
+    #[test]
+    fn modal_overlay_is_marked_in_accesskit() {
+        let mut spec = OverlaySpec::anchored(NodeId(3)).offset(44.0, 0.0);
+        spec.modal = true;
+        let source = scene(spec);
+        let view = NativeScene::from_scene(OWNER, &source, &[], 200, 120).unwrap();
+        let tree = view
+            .accessibility_tree_from_host(OWNER, source.version())
+            .unwrap();
+        let update = tree.to_accesskit(accesskit::Affine::IDENTITY).unwrap();
+        assert!(
+            update
+                .nodes
+                .iter()
+                .find(|(id, _)| id.0 == NodeId(4).0)
+                .is_some_and(|(_, node)| node.is_modal())
         );
     }
 }

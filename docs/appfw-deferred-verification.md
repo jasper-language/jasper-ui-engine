@@ -228,10 +228,11 @@ scripts/verify-in-vm.sh bash -c 'python3 scripts/verify-version.py --verus "$HOM
 | 视口避让、翻转、限宽高与锚点布局 | `overlay.rs::place_overlay`、`native_adapter/scene_overlay.rs` | 单元测试与 `scene_overlay` 像素/几何测试 |
 | 源节点提升、layer/源序绘制、父裁剪脱离 | `native_adapter/scene_overlay.rs::configure` | 父级 `overflow:hidden` 外像素测试 |
 | 外部点击阻断、Escape/outside `dismiss-request` | `scene_overlay.rs`、`native_scene.rs` | 输入阻断与事件内容测试 |
-| 模态焦点门 | `scene_overlay.rs::allows_interaction` | 外部焦点拒绝测试 |
+| 模态焦点门、自动聚焦、Tab 循环与关闭恢复 | `scene_overlay.rs::{allows_interaction,apply_auto_focus,tab_target,restore_removed_focus}` | 外部焦点拒绝、自动聚焦、Tab 循环与恢复测试 |
+| AccessKit modal 标记 | `access_tree.rs`、`access_kit.rs` | AccessKit 节点 `is_modal` 测试 |
 
-仍未实现/验收：Tab 焦点陷阱与关闭后焦点恢复、AccessKit `modal`/背景 inert、复杂嵌套浮层的
-逐层关闭归属、真实菜单/对话框组件与平台窗口级弹窗。不得据此宣告整项 P0-A 已关闭。
+仍未实现/验收：复杂嵌套浮层的逐层关闭归属、真实菜单/对话框组件、平台窗口级弹窗与
+多显示器边界；不得据此宣告整项 P0-A 已关闭。
 
 **规格同步（`scripts/verify-version.py`）**：首次运行时三个 `NATIVE SCENE TYPE` 依赖内核均失败（`not_verified`，rustc
 E0433/E0425：`jasper_ui_engine::motion::MotionState`、`MaterialState`、`scene_edit::EditState` 在证明文件中无定义）。这是证明外壳缺少

@@ -400,6 +400,7 @@ impl NativeScene {
         if !configured {
             return None;
         }
+        view.with_overlay_state(|overlays, view| overlays.apply_auto_focus(view));
         Some(view)
     }
     /// Shared native construction for initial snapshots and admitted insertion.
@@ -619,6 +620,7 @@ impl NativeScene {
             })
             .filter(|id| !self.frame_retires_node(*id, patches));
         let (width, height) = viewport.window_size;
+        let previous_focus = self.focused_node(self.owner, self.scene_version);
         let mut candidate = Self::from_scene_with_context(
             self.owner,
             &source,
@@ -670,7 +672,18 @@ impl NativeScene {
         candidate.material = self.material.clone();
         // E14: the edit session survives frames (engine-local, no version of its own).
         candidate.carry_edit_from(self, patches);
-        candidate.overlays.carry_from(&self.overlays);
+        candidate
+            .overlays
+            .carry_from(&self.overlays, previous_focus);
+        candidate.with_overlay_state(|overlays, candidate| {
+            overlays.restore_removed_focus(
+                candidate,
+                &self.overlays,
+                &self.parents,
+                previous_focus,
+            );
+            overlays.apply_auto_focus(candidate);
+        });
         Some(candidate)
     }
     /// A frame that removes a node also retires its native press/focus identity. Reusing
@@ -960,6 +973,23 @@ impl NativeScene {
         }
         let before = self.focused_node(caller, version);
         let escape = input.key == "Escape" && input.pressed && !input.composing;
+        if input.key == "Tab"
+            && input.pressed
+            && !input.composing
+            && !input.modifiers.control
+            && !input.modifiers.alt
+            && !input.modifiers.meta
+        {
+            if let Some(target) =
+                self.overlays
+                    .tab_target(self, before, input.modifiers.shift)
+            {
+                if let Some(target) = target {
+                    let _ = self.focus_from_host(caller, version, target, focus);
+                }
+                return true;
+            }
+        }
         if before.is_some_and(|id| !self.overlays.allows_interaction(self, id)) {
             if escape {
                 self.with_overlay_state(|overlays, view| overlays.escape_request(view));
@@ -2177,6 +2207,11 @@ impl NativeScene {
                 },
                 text_selection: edit.map(|(_, selection)| selection),
                 disabled: semantics.disabled,
+                modal: self
+                    .source
+                    .find(id)
+                    .and_then(|node| node.style.overlay)
+                    .is_some_and(|overlay| overlay.modal),
                 bounds: self.node_bounds_from_host(caller, version, id),
                 focused: focused == Some(id),
                 // The kernel's `is_button` input is "activatable by role" since E12.

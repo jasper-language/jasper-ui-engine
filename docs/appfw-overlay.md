@@ -1,7 +1,7 @@
 # P0-A 场景浮层
 
-状态（2026-11-17）：原生投影、定位、输入阻断、关闭请求与 CPU 像素验收完成。
-焦点陷阱、焦点恢复和平台级原生弹窗仍属后续交付，不宣称整项关闭。
+状态（2026-11-17）：原生投影、定位、输入阻断、关闭请求、自动聚焦、Tab 焦点陷阱、
+关闭后焦点恢复、AccessKit modal 标记与 CPU 像素验收完成。平台级原生窗口弹窗仍属后续交付。
 
 ## 契约
 
@@ -36,4 +36,5 @@ cargo test --locked --lib --features native-engine-cpu scene_overlay -- --nocapt
 ```
 
 已覆盖：父级 `overflow:hidden` 外仍可见、锚点下方偏移定位、`node_bounds` 与最终放置一致、
-层级阻断外部点击、`dismiss-request` 内容，以及模态层拒绝外部焦点。
+层级阻断外部点击、`dismiss-request` 内容、模态层拒绝外部焦点、自动聚焦、Tab 循环、
+关闭后恢复打开前焦点，以及 AccessKit `modal`。
