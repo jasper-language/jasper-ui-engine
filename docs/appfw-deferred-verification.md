@@ -264,6 +264,21 @@ scripts/verify-in-vm.sh bash -c 'python3 scripts/verify-version.py --verus "$HOM
 仍未验收：跨行/跨列及 colspan/rowspan 测量、sticky 实际滚动像素、复杂 nested Grid/Table、
 多显示器/真实 DPI 视觉矩阵和布局形式化证明。
 
+## P0-A 主题原子切换（分支 `appfw/p0a-theme`，2026-11-17）
+
+六步形式化链暂缓；连续真实帧与像素测试不代替整帧事务证明。现有证明内核仍覆盖帧版本、
+更新准入、帧完成顺序和候选换入；新增三主题压力测试不修改这些内核。
+
+| 项 | 位置 | 现有替代证据 |
+|---|---|---|
+| 三套中立样式循环与业务 NodeId/无障碍身份 | `native_theme_transaction.rs` | 七次切换后节点 ID 顺序与焦点完全相同 |
+| 编辑缓冲/IME 预编辑跨样式帧 | E14 scene edit carry | `"Nameq"` 与预编辑 `"中"` 每轮保持 |
+| 滚动状态跨样式帧 | 源场景 + candidate restore | 偏移 12px 每轮保持 |
+| 失败整帧回退与像素不变 | 原 frame transaction | NaN 样式 `try_apply` 拒绝、旧帧逐字节不变 |
+
+未验收：真实 Framework 主题 Signal/组件树接线、原生主机 visual regression、切换动画和
+多窗口并发主题切换形式化证明。
+
 **规格同步（`scripts/verify-version.py`）**：首次运行时三个 `NATIVE SCENE TYPE` 依赖内核均失败（`not_verified`，rustc
 E0433/E0425：`jasper_ui_engine::motion::MotionState`、`MaterialState`、`scene_edit::EditState` 在证明文件中无定义）。这是证明外壳缺少
 新字段类型声明，不是代码缺陷：仿照既有 `blitz_dom::NodeId` / `BaseDocument` 做法，在 `native-scene-type` 的 `spec_prelude` 中补三个
