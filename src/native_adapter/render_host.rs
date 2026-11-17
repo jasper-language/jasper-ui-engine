@@ -8,6 +8,7 @@
 use crate::native::host::SceneHostView;
 #[cfg(feature = "gpu-pending")]
 use crate::native::host::{GpuFrameError, GpuRenderer};
+use crate::image_resource::{ImageError, ImageInfo, ImageLimits, ImageReport};
 use crate::native::{SceneFocusEvent, SceneQuota, SceneUpdate, SceneUpdateError};
 use crate::scene::{NodeId, Scene, ScenePatch};
 #[cfg(feature = "cpu-pending")]
@@ -478,6 +479,34 @@ impl HostRenderer {
     /// E5 上一绘制帧的材质报告；见 `Engine::backdrop_report`。
     pub fn backdrop_report(&self, owner: u64) -> Option<crate::native::BackdropReport> {
         self.inner.backdrop_report(owner)
+    }
+
+    /// Host-owned image resources; see `Engine::insert_image`.
+    /// 宿主持有的图片资源；见 `Engine::insert_image`。
+    pub fn insert_image(
+        &mut self,
+        owner: u64,
+        id: &str,
+        bytes: &[u8],
+        density: f32,
+    ) -> Result<ImageInfo, ImageError> {
+        self.inner.insert_image(owner, id, bytes, density)
+    }
+
+    pub fn remove_image(&mut self, owner: u64, id: &str) -> Option<bool> {
+        self.inner.remove_image(owner, id)
+    }
+
+    pub fn set_image_limits(
+        &mut self,
+        owner: u64,
+        limits: ImageLimits,
+    ) -> Option<Result<(), ImageError>> {
+        self.inner.set_image_limits(owner, limits)
+    }
+
+    pub fn image_report(&self, owner: u64) -> Option<ImageReport> {
+        self.inner.image_report(owner)
     }
 
     /// Semantic activation through the live surface generation; see `Engine::activate`.

@@ -267,6 +267,12 @@ pub struct Style {
     /// E15：Text 节点内容盒高于文字（固定高度）时文字的垂直位置。None 时由节点自身的 flex 对齐决定（默认靠上，像素不变）。
     /// 从不改变节点布局尺寸、命中区与 `node_bounds`；只作用于 Text 节点；不参与过渡。
     pub text_align_vertical: Option<TextAlignVertical>,
+    /// P0-A image content: a host-injected resource (bitmap or SVG) drawn in the content box,
+    /// under the node's children and text, clipped to the (rounded) content box. The image never
+    /// changes layout: the node is sized by its own style exactly like a Rect. None: no image.
+    /// P0-A 图片内容：宿主注入的资源（位图或 SVG）画在内容盒内，位于子节点与文字之下，按（圆角）内容盒裁剪。
+    /// 图片从不改变布局：节点尺寸只由自身样式决定，与 Rect 相同。None 为无图片（默认）。
+    pub image: Option<ImageStyle>,
 }
 
 impl Default for Style {
@@ -311,6 +317,7 @@ impl Default for Style {
             backdrop: None,
             line_height: None,
             text_align_vertical: None,
+            image: None,
         }
     }
 }
@@ -485,6 +492,13 @@ impl Style {
         self
     }
 
+    /// P0-A image content (see `ImageStyle`).
+    /// P0-A 图片内容（见 `ImageStyle`）。
+    pub fn image(mut self, image: Option<ImageStyle>) -> Self {
+        self.image = image;
+        self
+    }
+
     pub fn text_align_vertical(mut self, align: Option<TextAlignVertical>) -> Self {
         self.text_align_vertical = align;
         self
@@ -556,6 +570,7 @@ impl Style {
             && self.background_gradient.as_ref().is_none_or(Gradient::valid)
             && self.backdrop.as_ref().is_none_or(Backdrop::valid)
             && self.line_height.as_ref().is_none_or(LineHeight::valid)
+            && self.image.as_ref().is_none_or(ImageStyle::valid)
     }
 }
 
@@ -1251,6 +1266,126 @@ impl Backdrop {
     }
 }
 
+/// Longest image resource id, in bytes.
+/// 图片资源 id 的最大字节数。
+pub const MAX_IMAGE_ID_BYTES: usize = 128;
+
+/// A resource id is 1..=`MAX_IMAGE_ID_BYTES` bytes of ASCII letters, digits and `. _ - : / @ +`:
+/// no whitespace, quotes, parentheses, commas or semicolons, so it is carried verbatim in an
+/// `xstyle` value and in a JUI 2 field without escaping.
+/// 资源 id 为 1..=`MAX_IMAGE_ID_BYTES` 字节的 ASCII 字母、数字与 `. _ - : / @ +`：不含空白、引号、括号、
+/// 逗号与分号，因此可原样放入 `xstyle` 取值与 JUI 2 字段，无需转义。
+pub fn image_id_valid(id: &str) -> bool {
+    (1..=MAX_IMAGE_ID_BYTES).contains(&id.len())
+        && id
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'_' | b'-' | b':' | b'/' | b'@' | b'+'))
+}
+
+/// How the image is fitted into the content box (CSS `object-fit`).
+/// 图片如何适配内容盒（同 CSS `object-fit`）。
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum ObjectFit {
+    /// Stretch to the box, ignoring the aspect ratio (the CSS initial value).
+    /// 拉伸铺满内容盒，不保持宽高比（CSS 初始值）。
+    #[default]
+    Fill,
+    /// Largest size that fits inside the box, aspect ratio kept (letterboxed).
+    /// 保持宽高比、完整放入内容盒的最大尺寸（留边）。
+    Contain,
+    /// Smallest size that covers the box, aspect ratio kept (cropped).
+    /// 保持宽高比、铺满内容盒的最小尺寸（裁切）。
+    Cover,
+    /// Natural size (logical px), cropped by the box.
+    /// 自然尺寸（逻辑像素），超出内容盒部分裁掉。
+    None,
+    /// `None` when the natural size fits, otherwise `Contain`.
+    /// 自然尺寸放得下时同 `None`，否则同 `Contain`。
+    ScaleDown,
+}
+
+impl ObjectFit {
+    /// The `xstyle` keyword (CSS spelling).
+    /// `xstyle` 关键字（与 CSS 拼写相同）。
+    pub const fn keyword(self) -> &'static str {
+        match self {
+            ObjectFit::Fill => "fill",
+            ObjectFit::Contain => "contain",
+            ObjectFit::Cover => "cover",
+            ObjectFit::None => "none",
+            ObjectFit::ScaleDown => "scale-down",
+        }
+    }
+
+    pub fn from_keyword(text: &str) -> Option<Self> {
+        Some(match text {
+            "fill" => ObjectFit::Fill,
+            "contain" => ObjectFit::Contain,
+            "cover" => ObjectFit::Cover,
+            "none" => ObjectFit::None,
+            "scale-down" => ObjectFit::ScaleDown,
+            _ => return None,
+        })
+    }
+}
+
+/// P0-A image content of a node. `source` names a resource the host injected into the view
+/// (`SceneHostView::insert_image`); the engine never fetches anything itself. `align_x/align_y`
+/// place the fitted image in the box (CSS `object-position` as fractions: 0 start, 0.5 centre,
+/// 1 end). `tint`, when set, recolours every painted pixel to the tint colour keeping the image's
+/// coverage (alpha × tint alpha): monochrome icons. SVG `currentColor` is the node's `color`.
+/// 节点的 P0-A 图片内容。`source` 指向宿主注入本视图的资源（`SceneHostView::insert_image`），引擎自身从不获取任何资源。
+/// `align_x/align_y` 决定适配后的图片在盒内的位置（CSS `object-position` 的比例形式：0 起始、0.5 居中、1 末端）。
+/// `tint` 设置时把每个已绘像素改为着色色并保留图片覆盖度（alpha × 着色 alpha），用于单色图标。SVG 的
+/// `currentColor` 取节点的 `color`。
+#[derive(Clone, Debug, PartialEq)]
+pub struct ImageStyle {
+    pub source: String,
+    pub fit: ObjectFit,
+    pub align_x: f32,
+    pub align_y: f32,
+    pub tint: Option<Color>,
+}
+
+impl ImageStyle {
+    /// `fill`, centred, untinted.
+    /// `fill`、居中、不着色。
+    pub fn new(source: impl Into<String>) -> Self {
+        Self {
+            source: source.into(),
+            fit: ObjectFit::Fill,
+            align_x: 0.5,
+            align_y: 0.5,
+            tint: None,
+        }
+    }
+
+    pub fn fit(mut self, fit: ObjectFit) -> Self {
+        self.fit = fit;
+        self
+    }
+
+    pub fn align(mut self, x: f32, y: f32) -> Self {
+        self.align_x = x;
+        self.align_y = y;
+        self
+    }
+
+    pub fn tint(mut self, color: Color) -> Self {
+        self.tint = Some(color);
+        self
+    }
+
+    /// Valid id and alignment fractions in 0..=1.
+    /// id 合法且对齐比例在 0..=1。
+    pub fn valid(&self) -> bool {
+        image_id_valid(&self.source)
+            && [self.align_x, self.align_y]
+                .iter()
+                .all(|v| v.is_finite() && (0.0..=1.0).contains(v))
+    }
+}
+
 /// One extended style capability as declared to the runtime (JUI 2 `hello` token) and the
 /// `xstyle` keys it covers. Names follow the Jasper theme degradation matrix.
 /// 向运行时声明的一项扩展样式能力（JUI 2 `hello` 令牌）及其覆盖的 `xstyle` 键；名称沿用 Jasper 主题降级矩阵。
@@ -1311,6 +1446,19 @@ pub const EXTENDED_STYLE_CAPABILITIES: &[StyleCapability] = &[
     StyleCapability {
         name: "text-valign",
         xstyle_keys: &["text-valign", "line-height"],
+    },
+    // P0-A: bitmap images (PNG/JPEG/WebP) through the `image` key; requires a render feature.
+    // P0-A：经 `image` 键的位图（PNG/JPEG/WebP）；需要渲染特性。
+    StyleCapability {
+        name: "image",
+        xstyle_keys: &["image"],
+    },
+    // P0-A: SVG resources (rasterised per device pixel size, `currentColor`, tint) for the same
+    // `image` key. A format capability: it adds no key of its own.
+    // P0-A：同一 `image` 键可引用 SVG 资源（按设备像素尺寸光栅化、`currentColor`、着色）。这是格式能力，不另加键。
+    StyleCapability {
+        name: "svg",
+        xstyle_keys: &[],
     },
 ];
 
@@ -1792,6 +1940,68 @@ fn format_backdrop(b: &Backdrop) -> String {
     parts.join(";")
 }
 
+/// `none`, or `src(<id>)` plus optional `fit(<keyword>)`, `align(<x>,<y>)`, `tint(<colour>)`,
+/// each at most once, separated by `;` or whitespace.
+/// `none`，或 `src(<id>)` 加可选的 `fit(<关键字>)`、`align(<x>,<y>)`、`tint(<颜色>)`，各至多一次，以 `;` 或空白分隔。
+fn parse_image(text: &str) -> Option<Option<ImageStyle>> {
+    let text = text.trim();
+    if text == "none" {
+        return Some(None);
+    }
+    let mut source = None;
+    let mut out = ImageStyle::new(String::new());
+    let mut seen = [false; 4];
+    for part in text
+        .split(|c: char| c == ';' || c.is_ascii_whitespace())
+        .filter(|p| !p.is_empty())
+    {
+        let open = part.find('(')?;
+        let name = &part[..open];
+        let args: Vec<&str> = part[open + 1..].strip_suffix(')')?.split(',').collect();
+        let slot = match (name, args.as_slice()) {
+            ("src", [id]) if image_id_valid(id) => {
+                source = Some((*id).to_owned());
+                0
+            }
+            ("fit", [k]) => {
+                out.fit = ObjectFit::from_keyword(k)?;
+                1
+            }
+            ("align", [x, y]) => {
+                out.align_x = parse_number(x)?;
+                out.align_y = parse_number(y)?;
+                2
+            }
+            ("tint", [c]) => {
+                out.tint = Some(parse_color(c)?);
+                3
+            }
+            _ => return None,
+        };
+        if std::mem::replace(&mut seen[slot], true) {
+            return None;
+        }
+    }
+    out.source = source?;
+    Some(Some(out))
+}
+
+fn format_image(i: &ImageStyle) -> String {
+    let mut parts = vec![
+        format!("src({})", i.source),
+        format!("fit({})", i.fit.keyword()),
+        format!(
+            "align({},{})",
+            format_number(i.align_x),
+            format_number(i.align_y)
+        ),
+    ];
+    if let Some(c) = i.tint {
+        parts.push(format!("tint({})", format_color(c)));
+    }
+    parts.join(";")
+}
+
 impl Style {
     /// Applies one JUI 2 `xstyle` pair (see `docs/appfw-style-e2-e10.md` for the grammar).
     /// On error the style is unchanged. Values are validated with `extended_style_valid`.
@@ -1899,6 +2109,9 @@ impl Style {
                 }
                 "backdrop" => {
                     next.backdrop = parse_backdrop(value_trimmed).ok_or_else(invalid)?;
+                }
+                "image" => {
+                    next.image = parse_image(value_trimmed).ok_or_else(invalid)?;
                 }
                 "text-valign" => {
                     next.text_align_vertical = match value_trimmed {
@@ -2038,6 +2251,9 @@ impl Style {
         }
         if let Some(b) = &self.backdrop {
             pairs.push(("backdrop", format_backdrop(b)));
+        }
+        if let Some(i) = &self.image {
+            pairs.push(("image", format_image(i)));
         }
         if let Some(a) = self.text_align_vertical {
             pairs.push((

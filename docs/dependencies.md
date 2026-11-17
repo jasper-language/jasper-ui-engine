@@ -14,6 +14,8 @@
 | `pollster` | 0.4.0 | MIT OR Apache-2.0 | 在同步宿主里等待 wgpu 的异步适配器枚举 | 已锁定；随 `gpu` 特性 |
 | `softbuffer` | 0.4.8 | MIT OR Apache-2.0 | 桌面软件帧缓冲呈现（可选特性 `desktop`） | 已锁定；`examples/window -- --once` 实跑通过 |
 | `accesskit_winit` | 0.34.2 | MIT OR Apache-2.0 | 窗口平台无障碍适配器；Linux/AT-SPI、Windows/UIA、macOS、Android、iOS | 已锁定；`desktop-accessibility` 在 Ubuntu Wayland/AT-SPI 实测 |
+| `image` | 0.25.10 | MIT OR Apache-2.0 | P0-A PNG/JPEG/WebP 解码；仅启用 `png`、`jpeg`、`webp` | 已锁定；CPU/GPU 图片像素测试通过 |
+| `resvg` / `usvg` | 0.48.1 | Apache-2.0 OR MIT | P0-A SVG 解析与按目标尺寸光栅化；不启用系统字体/内嵌位图路径 | 已锁定；SVG 渲染测试通过 |
 
 > `tiny-skia` 是纯 Rust 的 Skia 子集，不引入 C++/系统图形库。BSD-3-Clause 与 Apache-2.0 兼容；已有声明见仓库根目录 `THIRD_PARTY_LICENSES.md`。
 > `cosmic-text` 为可选特性；默认构建仍使用 `SimpleTextEngine` 的近似测量，开启 `real-text` 后由系统字体与真实 shaping 接管。
@@ -29,10 +31,10 @@
 | `accesskit` | 原生无障碍桥 | MIT / Apache-2.0 | 已接入固定 0.25.2；平台窗口适配由 `accesskit_winit` 提供 |
 | `jaso`（jasper-os，锁定提交） | `.jaso` 读取、信任、模块表；可选 `ui-plugin-pending` | Apache-2.0 | 格式 beta 期间可能升号 |
 | `libc` | 插件映像 `mmap` / `mprotect`；可选 `ui-plugin-pending` | MIT / Apache-2.0 | 仅 unix |
-| `image` | 位图解码 | MIT / Apache-2.0 | 编码器范围、内存上限 |
-| `resvg` / `usvg` | 静态 SVG | **MPL-2.0** | 与 Apache-2.0 兼容评审、NOTICE、文件级 copyleft |
+| `image` | 位图解码 | 已接入固定 0.25.10；MIT OR Apache-2.0 | 仅 png/jpeg/webp，额度与坏输入已验证 |
+| `resvg` / `usvg` | 静态 SVG | 已接入固定 0.48.1；Apache-2.0 OR MIT | 仅目标尺寸光栅化，形式化与平台视觉矩阵待补 |
 
-> `resvg/usvg` 的 MPL-2.0 不是 Apache-2.0，但通常可与 Apache-2.0 项目组合；引入前必须做正式许可证评审并保留 NOTICE。不要在未评审时直接打包发布。
+> `resvg/usvg 0.48.1` 的 crate 元数据为 Apache-2.0 OR MIT；本项目采用 Apache-2.0 分支。传递依赖仍需按发布清单整体审计。
 
 ## 明确不引入
 

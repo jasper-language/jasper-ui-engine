@@ -62,6 +62,13 @@ accesskit_winit = { version = "=0.34.2", optional = true }
 # jasper-os 共用的 `.jaso` 读取器，锁定到提交；复用解析器，不复制。
 jaso = { git = "https://github.com/jasper-language/jasper-os", rev = "0f1e5c1b70dea503bceee33a745c2c6f312a9824", features = ["alloc"], optional = true }
 libc = { version = "=0.2.191", optional = true }
+# P0-A images: bitmap decoding through the audited `image` crate (PNG/JPEG/WebP codecs only:
+# png, zune-jpeg, image-webp) and SVG through resvg/usvg (no text, no system fonts, no nested
+# raster images). Both MIT OR Apache-2.0; same `image` version Blitz already locks.
+# P0-A 图片：位图经可审计的 `image` crate 解码（只开 PNG/JPEG/WebP：png、zune-jpeg、image-webp），
+# SVG 经 resvg/usvg 光栅化（不开文字、系统字体与内嵌位图）。均为 MIT OR Apache-2.0；`image` 与 Blitz 已锁定版本相同。
+image = { version = "=0.25.10", optional = true, default-features = false, features = ["png", "jpeg", "webp"] }
+resvg = { version = "=0.48.1", optional = true, default-features = false }
 
 [features]
 default = []
@@ -73,7 +80,7 @@ native-engine-cpu = ["native-engine", "native-blitz-cpu-pending"]
 native-blitz-pending = ["dep:blitz-dom", "dep:blitz-traits", "dep:fontique", "dep:keyboard-types", "dep:parley", "dep:unicode-segmentation"]
 native-blitz-cpu-pending = ["native-blitz-pending", "cpu-pending"]
 # Shared source uses this internal cfg in both crates.
-cpu-pending = ["native-blitz-pending", "dep:blitz-paint", "dep:anyrender", "dep:anyrender_vello_cpu", "dep:peniko"]
+cpu-pending = ["native-blitz-pending", "dep:blitz-paint", "dep:anyrender", "dep:anyrender_vello_cpu", "dep:peniko", "dep:image", "dep:resvg"]
 # Native GPU candidate: headless offscreen render + readback; adapter supplied by the platform.
 gpu-pending = ["cpu-pending", "dep:anyrender_vello_hybrid", "dep:vello_gpu", "dep:wgpu_context", "dep:vello_common", "dep:rustc-hash", "dep:wgpu", "dep:pollster"]
 accesskit-pending = ["native-blitz-pending", "dep:accesskit"]

@@ -75,6 +75,11 @@ pinned exactly (`=x.y.z`, or a fixed git revision for Blitz).
 | keyboard-types | =0.8.3 | MIT OR Apache-2.0 | https://github.com/rust-windowing/keyboard-types |
 | accesskit | =0.25.2 | MIT OR Apache-2.0 | https://github.com/AccessKit/accesskit |
 | accesskit_winit | =0.34.2 | MIT OR Apache-2.0 | https://github.com/AccessKit/accesskit |
+| image | =0.25.10 | MIT OR Apache-2.0 | https://github.com/image-rs/image |
+| resvg | =0.48.1 | Apache-2.0 OR MIT | https://github.com/linebender/resvg |
+| usvg | =0.48.1 | Apache-2.0 OR MIT | https://github.com/linebender/resvg |
+| svgtypes (via usvg) | =0.16.2 | Apache-2.0 OR MIT | https://github.com/linebender/svgtypes |
+| tiny-skia (via resvg) | =0.12.0 | BSD-3-Clause | https://github.com/linebender/tiny-skia |
 | android_logger (Android host) | =0.15.1 | MIT OR Apache-2.0 | https://github.com/rust-mobile/android_logger |
 | DejaVu Sans (Android host font) | system DejaVu 2.37 package | Bitstream Vera / DejaVu Fonts License | https://dejavu-fonts.github.io/License.html |
 | Droid Sans Fallback (Android CJK host font) | system fonts-droid-fallback package | Apache-2.0 | https://android.googlesource.com/platform/frameworks/base/ |

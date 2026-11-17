@@ -263,6 +263,7 @@ pub(crate) struct NativeScene {
     motion: jasper_ui_engine::motion::MotionState,
     material: MaterialState,
     edit: scene_edit::EditState,
+    images: crate::image_resource::ImageStore,
 }
 // END VERIFIED NATIVE SCENE TYPE
 
@@ -379,6 +380,7 @@ impl NativeScene {
             motion: jasper_ui_engine::motion::MotionState::default(),
             material: MaterialState::default(),
             edit: scene_edit::EditState::default(),
+            images: crate::image_resource::ImageStore::default(),
         };
         if !view.append_prepared_subtree(&scene.root, None, body, prepared) {
             return None;
@@ -660,6 +662,7 @@ impl NativeScene {
         candidate.material = self.material.clone();
         // E14: the edit session survives frames (engine-local, no version of its own).
         candidate.carry_edit_from(self, patches);
+        candidate.images = self.images.clone();
         Some(candidate)
     }
     /// A frame that removes a node also retires its native press/focus identity. Reusing
@@ -1214,6 +1217,62 @@ impl NativeScene {
         self.semantics.get(&id)
     }
 
+    pub(crate) fn insert_image_from_host(
+        &mut self,
+        caller: u64,
+        id: &str,
+        bytes: &[u8],
+        density: f32,
+    ) -> Result<crate::image_resource::ImageInfo, crate::image_resource::ImageError> {
+        if caller != self.owner {
+            return Err(crate::image_resource::ImageError::Rejected);
+        }
+        if !self.document.is_open() {
+            return Err(crate::image_resource::ImageError::Rejected);
+        }
+        let info = self.images.insert(id, bytes, density)?;
+        self.invalidate_frame();
+        Ok(info)
+    }
+
+    pub(crate) fn remove_image_from_host(
+        &mut self,
+        caller: u64,
+        id: &str,
+    ) -> Option<bool> {
+        if caller != self.owner || !self.document.is_open() {
+            return None;
+        }
+        let removed = self.images.remove(id);
+        self.invalidate_frame();
+        Some(removed)
+    }
+
+    pub(crate) fn set_image_limits_from_host(
+        &mut self,
+        caller: u64,
+        limits: crate::image_resource::ImageLimits,
+    ) -> Option<Result<(), crate::image_resource::ImageError>> {
+        if caller != self.owner || !self.document.is_open() {
+            return None;
+        }
+        let result = self.images.set_limits(limits);
+        if result.is_ok() {
+            self.invalidate_frame();
+        }
+        Some(result)
+    }
+
+    pub(crate) fn image_report_from_host(
+        &self,
+        caller: u64,
+    ) -> Option<crate::image_resource::ImageReport> {
+        if caller != self.owner || !self.document.is_open() {
+            return None;
+        }
+        Some(self.images.report())
+    }
+
     /// Host supplies physical surface extent and DPI; scene version is independent.
     /// Candidate scale bound matches text-view policy; no window/GPU/OS operation is owned here.
     pub(crate) fn set_viewport_from_host(
@@ -1235,6 +1294,86 @@ impl NativeScene {
         viewport.hidpi_scale = scale;
         document.set_viewport(viewport);
         document.resolve(0.0);
+        true
+    }
+    /// Rebuild the exact device-pixel raster of every displayed image node into Blitz's
+    /// background-image slot. The displayed pixels therefore use the same document painting for
+    /// CPU and GPU; misses and quota failures paint the node background and are reported.
+    /// 把每个已显示图片节点按精确设备像素尺寸生成的光栅放入 Blitz 的 background-image 槽位。
+    /// 因此 CPU 与 GPU 共用同一文档绘制；缺失与额度失败保留节点背景并进入报告。
+    fn sync_images(&mut self) -> bool {
+        self.images.begin_frame();
+        let scale = self
+            .document
+            .as_ref()
+            .map(|document| document.viewport().scale_f64())
+            .unwrap_or(1.0);
+        let images: Vec<_> = self
+            .source_preorder()
+            .into_iter()
+            .filter_map(|node| {
+                self.source_displayed(node.id)
+                    .then(|| {
+                        let style = self.presented_of(node);
+                        style.image.clone().map(|image| (node.id, image, style.color))
+                    })
+                    .flatten()
+            })
+            .collect();
+        for (id, style, color) in images {
+            let Some(border) = self.layout_box(id) else {
+                continue;
+            };
+            let Some((element, _)) = self.nodes.get(&id).copied() else {
+                return false;
+            };
+            let Some(edges) = self
+                .document
+                .as_ref()
+                .and_then(|document| document.get_node(element))
+                .map(|node| node.final_layout())
+            else {
+                return false;
+            };
+            let content_width = (border.width
+                - edges.border.left
+                - edges.border.right
+                - edges.padding.left
+                - edges.padding.right)
+                .max(0.0);
+            let content_height = (border.height
+                - edges.border.top
+                - edges.border.bottom
+                - edges.padding.top
+                - edges.padding.bottom)
+                .max(0.0);
+            let width = (f64::from(content_width) * scale).ceil().max(0.0) as u32;
+            let height = (f64::from(content_height) * scale).ceil().max(0.0) as u32;
+            let raster = self.images.raster(&style, color, width, height, scale);
+            let Some(image_data) = self
+                .document
+                .as_mut()
+                .and_then(|document| document.get_node_mut(element))
+                .and_then(|node| node.element_data_mut())
+                .and_then(|element| element.background_images.first_mut())
+                .and_then(Option::as_mut)
+            else {
+                self.images
+                    .fail(id, &style.source, crate::image_resource::ImageNodeError::Missing);
+                continue;
+            };
+            match raster {
+                Ok(raster) => {
+                    image_data.status = blitz_dom::node::Status::Ok;
+                    image_data.image = blitz_dom::node::ImageData::Raster(raster);
+                }
+                Err(error) => {
+                    image_data.status = blitz_dom::node::Status::Error;
+                    image_data.image = blitz_dom::node::ImageData::None;
+                    self.images.fail(id, &style.source, error);
+                }
+            }
+        }
         true
     }
     /// Presented opacity product of the node and its ancestors, and the padding boxes of the
@@ -2136,8 +2275,15 @@ impl NativeScene {
         if caller != self.owner {
             return None;
         }
-        let document = self.document.as_mut()?;
-        let (width, height) = document.viewport().window_size;
+        let (width, height, scale) = {
+            let document = self.document.as_ref()?;
+            let viewport = document.viewport();
+            (
+                viewport.window_size.0,
+                viewport.window_size.1,
+                viewport.scale_f64(),
+            )
+        };
         let bytes = crate::cpu_budget::cpu_frame_bytes(width, height, max_bytes)?;
         if let Some((cached_width, cached_height, cached)) = &self.frame_cache {
             if crate::frame_schedule::frame_reuse_admits(
@@ -2152,7 +2298,9 @@ impl NativeScene {
                 return Some((cached.clone(), FrameDamage::Unchanged));
             }
         }
-        let scale = document.viewport().scale_f64();
+        if !self.sync_images() {
+            return None;
+        }
         let rings = self.overlays();
         let glass = self.glass_specs();
         let budget = self.material.budget;
@@ -2228,6 +2376,9 @@ impl NativeScene {
             admitted.push((node, layer.commands));
         }
         if caller != self.owner || version != self.scene_version {
+            return None;
+        }
+        if !self.sync_images() {
             return None;
         }
         let rings = self.overlays();
@@ -2566,8 +2717,15 @@ impl NativeScene {
         if caller != self.owner || version != self.scene_version {
             return Err(GpuFrameError::Rejected);
         }
-        let document = self.document.as_mut().ok_or(GpuFrameError::Rejected)?;
-        let (width, height) = document.viewport().window_size;
+        let (width, height, scale) = {
+            let document = self.document.as_ref().ok_or(GpuFrameError::Rejected)?;
+            let viewport = document.viewport();
+            (
+                viewport.window_size.0,
+                viewport.window_size.1,
+                viewport.scale_f64(),
+            )
+        };
         let bytes = crate::cpu_budget::cpu_frame_bytes(width, height, max_bytes)
             .ok_or(GpuFrameError::Rejected)?;
         if let Some((cached_width, cached_height, cached)) = &self.frame_cache {
@@ -2583,7 +2741,9 @@ impl NativeScene {
                 return Ok((cached.clone(), FrameDamage::Unchanged));
             }
         }
-        let scale = document.viewport().scale_f64();
+        if !self.sync_images() {
+            return Err(GpuFrameError::Rejected);
+        }
         let rings = self.overlays();
         let glass = self.glass_specs();
         let budget = self.material.budget;
@@ -2605,6 +2765,7 @@ impl NativeScene {
             self.material.report = report;
             gpu.release_images(images);
         }
+        gpu.release_images(self.images.take_retired());
         let pixels = pixels?;
         if pixels.len() != bytes {
             return Err(GpuFrameError::Readback(format!(
@@ -2774,6 +2935,9 @@ impl NativeScene {
         crate::cpu_budget::cpu_frame_bytes(width, height, max_render_bytes)
             .ok_or(GpuFrameError::Rejected)?;
         self.invalidate_frame();
+        if !self.sync_images() {
+            return Err(GpuFrameError::Rejected);
+        }
         let rings = self.overlays();
         let glass = self.glass_specs();
         let budget = self.material.budget;
@@ -2795,6 +2959,7 @@ impl NativeScene {
             self.material.report = report;
             gpu.release_images(images);
         }
+        gpu.release_images(self.images.take_retired());
         if result.is_ok() {
             // Presentation pixels live in the host's texture, not in this CPU cache.
             self.frame_cache = None;
@@ -3730,11 +3895,22 @@ fn extended_style_properties(
     // border box). None is `none`, so a node without a gradient paints exactly as before.
     values.push((
         "background-image",
-        match &style.background_gradient {
-            None => "none".to_owned(),
-            Some(g) => css_gradient(g),
+        match (&style.image, &style.background_gradient) {
+            (Some(image), None) => format!(
+                "url(\"about:blank#jasper-image-{}\")",
+                image.source
+            ),
+            (None, None) => "none".to_owned(),
+            (None, Some(g)) => css_gradient(g),
+            (Some(_), Some(_)) => return None,
         },
     ));
+    if style.image.is_some() {
+        values.push(("background-size", "100% 100%".to_owned()));
+        values.push(("background-repeat", "no-repeat".to_owned()));
+        values.push(("background-origin", "content-box".to_owned()));
+        values.push(("background-clip", "content-box".to_owned()));
+    }
     // E5: the backdrop filter only tags the node's effect layer (`material::tag_css`); neither
     // renderer applies it, the engine composes the material itself (`material.rs`).
     values.push((

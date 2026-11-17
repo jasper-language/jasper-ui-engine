@@ -149,6 +149,9 @@ mod glyph_skew;
 #[cfg(feature = "gpu-pending")]
 #[path = "native_adapter/gpu_render.rs"]
 mod gpu_render;
+#[cfg(feature = "cpu-pending")]
+#[path = "native_adapter/image_resource.rs"]
+mod image_resource;
 #[cfg(feature = "native-blitz-pending")]
 #[path = "native_adapter/material.rs"]
 mod material;

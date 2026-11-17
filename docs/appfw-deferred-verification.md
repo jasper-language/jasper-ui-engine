@@ -218,6 +218,22 @@ scripts/verify-in-vm.sh bash -c 'python3 scripts/verify-version.py --verus "$HOM
 | `NATIVE SCENE TYPE` → UI-SCENE-HOST-IDENTITY-001 `scene-host-identity` | 已重证 2026-11-17 JasperNative04 Verus 0.2026.10.18.7d82994：proved（11；2/2） |
 | UI-ACCESS-ACTIONS-001 `access_actions` | 内核与依赖区段逐字未变，现有证据哈希仍匹配，未重跑（文字描述按上表读作「按角色可激活」） |
 
+## P0-A 图片/SVG 资源（分支 `appfw/p0a-images`，2026-11-17）
+
+新增 Rust 的完整六步链暂缓；不得把 CPU/GPU 像素测试当作形式化证明。
+
+| 项 | 位置 | 现有替代证据 |
+|---|---|---|
+| 图片 id/object-fit/tint 解析与规范输出 | `style.rs` | 图片资源单元测试、`native_images` |
+| 格式识别、声明尺寸/编码额度准入、原子替换 | `image_resource.rs::decode/insert` | PNG、坏 PNG、GIF、超尺寸与替换测试 |
+| 资源与 LRU 光栅缓存、帧固定、替换/删除失效 | `image_resource.rs::ImageStore` | 命中、淘汰、额度、替换与删除单元测试 |
+| 预乘缩放、object-fit 合成、tint、SVG 光栅化 | `image_resource.rs::{compose_bitmap,fit_rect,apply_tint,compose_svg}` | 像素单元测试；PNG/SVG 原生文档集成 |
+| 节点内容盒 DPI 光栅同步与失败报告 | `native_scene.rs::sync_images` | `native_images`；CPU/GPU 四采样一致 |
+| 资源额度/报告宿主入口 | `facade.rs`、`render_host.rs` | 非归属方拒绝、坏输入保留旧资源、删除报告 |
+
+未覆盖：JPEG/WebP 真实夹具像素（仅解码准入单元）、恶意编码器模糊测试、SVG 全特性矩阵、
+超大规模图片内存压力、macOS/Windows 发布包许可审计。
+
 **规格同步（`scripts/verify-version.py`）**：首次运行时三个 `NATIVE SCENE TYPE` 依赖内核均失败（`not_verified`，rustc
 E0433/E0425：`jasper_ui_engine::motion::MotionState`、`MaterialState`、`scene_edit::EditState` 在证明文件中无定义）。这是证明外壳缺少
 新字段类型声明，不是代码缺陷：仿照既有 `blitz_dom::NodeId` / `BaseDocument` 做法，在 `native-scene-type` 的 `spec_prelude` 中补三个

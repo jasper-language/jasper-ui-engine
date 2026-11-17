@@ -15,6 +15,7 @@ pub use scene_events::{role_activates_on_click,role_activates_on_key,ScenePointe
 pub use crate::render_host::{HostRenderError,HostRenderer};
 pub use crate::surface_lifecycle::{SurfaceLifecycleError,SurfaceState,SurfaceStatus};
 pub use crate::text_edit::{CaretBlink,SceneEditEvent,SceneEditEventKind,SceneEditState};
+pub use crate::image_resource::{ImageError,ImageFormat,ImageInfo,ImageLimits,ImageNodeError,ImageNodeReport,ImageReport};
 
 /// Embedding-host adapter; application declarations use Scene/ScenePatch values above.
 /// This module does not acquire windows, surfaces, devices or OS services.
@@ -670,6 +671,32 @@ impl SceneHostView {
     /// 视图为 None。不调用任何平台无障碍 API。
     pub fn accessibility_tree(&self,owner:u64,version:u64)->Option<AccessibilityTree> {
         self.inner.accessibility_tree_from_host(owner,version)
+    }
+    /// Insert or atomically replace host-owned encoded PNG/JPEG/WebP/SVG bytes. The engine never
+    /// fetches a resource. `density` maps bitmap pixels to logical pixels (`2.0` for `@2x`).
+    /// Pixels of image nodes update on the next frame; an error leaves the prior resource intact.
+    /// 插入或原子替换宿主提供的编码 PNG/JPEG/WebP/SVG 字节；引擎从不自行获取资源。`density` 把位图
+    /// 像素映射为逻辑像素（`@2x` 为 2.0）。图片节点在下一帧更新；错误时旧资源不变。
+    pub fn insert_image(&mut self,owner:u64,id:&str,bytes:&[u8],density:f32)
+        ->Result<ImageInfo,ImageError> {
+        self.inner.insert_image_from_host(owner,id,bytes,density)
+    }
+    /// Remove a host resource and invalidate every cached raster derived from it.
+    /// 删除宿主资源并使其派生的全部光栅失效。
+    pub fn remove_image(&mut self,owner:u64,id:&str)->Option<bool> {
+        self.inner.remove_image_from_host(owner,id)
+    }
+    /// Configure decode, resource, and raster-cache quotas for this view. The new cache limit is
+    /// applied immediately; existing resources stay until the host removes them.
+    /// 配置本视图的解码、资源与光栅缓存额度；新缓存额度立即生效，已有资源保留到宿主删除。
+    pub fn set_image_limits(&mut self,owner:u64,limits:ImageLimits)
+        ->Option<Result<(),ImageError>> {
+        self.inner.set_image_limits_from_host(owner,limits)
+    }
+    /// Image failures of the last painted frame plus resource/cache occupancy and counters.
+    /// 上一绘制帧的图片失败，以及资源/缓存占用与计数。
+    pub fn image_report(&self,owner:u64)->Option<ImageReport> {
+        self.inner.image_report_from_host(owner)
     }
     /// Semantic activation of an enabled, visible node whose role `role_activates_on_click`
     /// (Button, Checkbox, Radio, Switch, Link, MenuItem, ListItem).
