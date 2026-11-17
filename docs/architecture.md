@@ -26,7 +26,7 @@ host-interface integration; (3) interaction/lifecycle and external-service clien
 The following original implementation description is historical prototype context;
 it is not authorization to rebuild capabilities already provided by Blitz.
 
-Issue #3 (HTML/CSS-like semantics + Jasper reactive Signal) direction is
+Issue #3 (HTML/CSS-like semantics + Jasper State/Derived reactivity) direction is
 approved by the user as 1A–6A. A typed UI IR owned by the Jasper Language/UI
 layer is now the public cross-backend contract; JUI 2 and Rust `ScenePatch`
 remain Native transport/execution snapshots. Public PSS/`xstyle` growth stays

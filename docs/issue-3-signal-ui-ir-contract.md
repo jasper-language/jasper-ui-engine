@@ -7,15 +7,15 @@
 1. `jasper.signal.SignalBus`：Command/Query/Subscription 应用消息总线；
 2. `jasper.ui.State/Derived`：UI 响应式依赖追踪。
 
-Issue #3 中的 responsive Signal 指第 2 类。建议正式命名：
-
-- reactive：`ReactiveSignal<T>`, `Computed<T>`, `ReactiveScope`；
-- application bus：保留 `SignalBus/Command/Query`；
-- 禁止文档和 API 仅写 “Signal” 而不说明是哪一种。
+Issue #3 中的响应式能力当前继续由 `jasper.ui.State<T>` / `Derived<T>` 承担。
+用户已修正裁决：暂不新增 `ReactiveSignal<T>` / `Computed<T>` 名称、语言关键字或专用语法；
+是否将响应式机制抽为 Jasper 通用标准库，须在 UI 外出现真实可验证需求后另行研究。
+`jasper.signal.SignalBus` 保持独立。文档使用“UI 响应式状态”或明确写出
+`State/Derived`，避免只写含糊的 “Signal”。
 
 ## 2. 所有权
 
-- Jasper Language/Framework 持有 reactive Signal、依赖图、组件状态、主题和业务身份；
+- Jasper UI Framework 持有 `State/Derived`、依赖图、组件状态、主题和业务身份；
 - Native/Web Engine 不维护业务 Signal，不重新执行组件 render；
 - Engine 只接收已合并、带 revision/generation 的 UI IR frame；
 - 平台 Host 持有窗口、IME、剪贴板、字体来源和系统无障碍桥。
@@ -119,7 +119,7 @@ Native 现有候选场景事务可作为实现基线，但 typed IR validator �
 
 每帧至少可查询：
 
-- signal write/invalidated/dirty/render counts；
+- State/Derived write/invalidated/dirty/render counts；
 - IR op counts by kind；
 - reject path/code；
 - resource cache/eviction/missing；
@@ -129,7 +129,7 @@ Native 现有候选场景事务可作为实现基线，但 typed IR validator �
 
 ## 10. 待用户裁决
 
-1. reactive Signal 的正式命名；
+1. 跨领域响应式标准库的模块归属与命名（独立研究，不是 `ir-v0` 前置条件）；
 2. UiKey generation 是否能由现有 NodeId + frame ledger 推导，还是需要新 public id；
 3. CSS 文本是否只作为导入/导出工具，还是需要运行时入口；
 4. 允许的 Native/Web 视觉差异和阈值；

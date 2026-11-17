@@ -32,7 +32,7 @@
 | [issue-3-baseline-audit.md](issue-3-baseline-audit.md) | Issue #3 基线审计：现有 PSS/JUI 2/ScenePatch/Web 映射的可复用、冲突与缺失 |
 | [issue-3-decisions-approved.md](issue-3-decisions-approved.md) | 用户正式裁决 1A–6A、强制约束和后续状态 |
 | [issue-3-semantic-scope.md](issue-3-semantic-scope.md) | HTML-like/CSS-like 元素、事件、布局和样式的建议兼容范围 |
-| [issue-3-signal-ui-ir-contract.md](issue-3-signal-ui-ir-contract.md) | Reactive Signal → typed UI IR → Native/Web 双后端契约建议 |
+| [issue-3-signal-ui-ir-contract.md](issue-3-signal-ui-ir-contract.md) | State/Derived → typed UI IR → Native/Web 双后端契约建议 |
 | [issue-3-migration-plan.md](issue-3-migration-plan.md) | 渐进迁移、回滚、风险与待裁决项 |
 | [issue-3-cross-backend-report.md](issue-3-cross-backend-report.md) | Native/Web 双后端验证矩阵与尚未运行项 |
 | [host-rendering.md](host-rendering.md) | Surface 代数、DPI/尺寸、暂停/恢复/退休、GPU TextureView/present 与能力矩阵 |

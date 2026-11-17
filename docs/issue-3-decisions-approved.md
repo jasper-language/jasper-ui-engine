@@ -1,13 +1,16 @@
 # Issue #3 架构裁决记录（已批准）
 
-裁决日期：2026-11-17。用户于私有 issue #4 正式确认：**1A / 2A / 3A / 4A / 5A / 6A**。
+裁决日期：2026-11-17。用户于私有 issue #4 正式确认第 2–6 项为 A，并补充修正第 1 项：
+**保留现有 `jasper.ui.State<T>` / `Derived<T>`，暂不引入 `ReactiveSignal<T>` / `Computed<T>` 公共名称。**
 
 本记录是架构方向批准，不表示 typed UI IR、ABI、双后端一致性或跨平台验收已经实现。
 
 ## 1. 裁决摘要
 
-1. Reactive 能力采用 `ReactiveSignal<T>` / `Computed<T>`；保留
-   `jasper.signal.SignalBus` 作为 Command/Query/Subscription 总线。
+1. 保留 `jasper.ui.State<T>` / `Derived<T>` 作为当前响应式 API 基线；依赖追踪、动态依赖、
+   批量更新和卸载清理复用并验证现有实现。暂不新增 `ReactiveSignal<T>` / `Computed<T>` 公共名称，
+   也不新增语言关键字或专用语法。`jasper.signal.SignalBus` 保持独立，负责
+   Command/Query/Subscription 应用消息传递。跨领域响应式标准库归属留作独立研究事项。
 2. 公共身份采用 `UiKey { semantic_id: u64, generation: u64 }`，由 Framework 分配；
    同一身份域内旧组合永不复用，generation 耗尽显式拒绝。
 3. Typed Style 是唯一规范；CSS 文本仅作导入/导出/互操作输入。
@@ -18,7 +21,8 @@
 
 ## 2. 强制约束
 
-- Reactive Signal 是 Jasper 通用响应式能力，不是 Engine 或某组件库私有运行时。
+- 当前 UI 响应式能力继续由 `State/Derived` 承担；是否抽成 Jasper 通用标准库另行研究，
+  不作为 `ir-v0` 前置条件。
 - `UiKey` 必须绑定 UI 会话/身份域；跨进程事件还须带 owner/session、frame revision、
   permission context。捕获、焦点、IME、异步续体、资源身份分别准入。
 - 公共属性由 Typed Property Registry 定义：类型、默认值、继承/层叠、支持等级、动画性、

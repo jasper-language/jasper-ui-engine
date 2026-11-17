@@ -31,7 +31,7 @@
 - Runtime diff 输出 typed UiFrame；
 - JUI 2 encoder 成为 Native transport；
 - HtmlRenderer 消费 typed IR/CSS mapping，不再读 Engine Style 词表；
-- State/Derived 正式映射 ReactiveSignal/Computed。
+- 保留 `State<T>/Derived<T>` 作为当前 UI 响应式 API；不把改名或通用标准库抽象作为迁移前置条件。
 
 ### P3：后端映射
 
@@ -69,7 +69,7 @@
 | 风险 | 影响 | 缓解 |
 |---|---|---|
 | NodeId 回收导致旧事件命中 | 编辑/点击错投 | UiKey generation + revision-bound event |
-| Double Signal 命名 | API/文档混淆 | 明确 ReactiveSignal 与 SignalBus |
+| Double Signal 命名 | API/文档混淆 | 保留 State/Derived 与 SignalBus，禁止混称 |
 | 双语义期 | 同一功能两套映射 | IR adapter + 单一 property registry |
 | Web CSS 手写分叉 | Native/Web 外观和可访问性不同 | typed mapping + golden cases |
 | 主题在 backend 重算 | 品牌主题泄漏、双后端差异 | Framework 先解析 theme，IR 只含最终语义 |

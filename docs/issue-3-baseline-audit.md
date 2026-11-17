@@ -25,7 +25,7 @@ Blitz 映射和 Web CSS 映射。这正是 issue #3 指出的长期风险。
 目标结构应为：
 
 ```text
-Jasper Element + Reactive Signal
+Jasper Element + State/Derived
         ↓ 依赖追踪 / 批量合并
 版本化类型化 UI IR
         ↓                         ↓
@@ -41,7 +41,7 @@ JUI 2 和 Rust `ScenePatch` 都只能作为 backend transport/execution snapshot
 | 层/能力 | 当前实现 | 判定 | 原因/处理 |
 |---|---|---|---|
 | `Element` 树 | kind、role、variant、size、content、semantics、children、bindings、key | **可复用** | 已具备中立声明骨架；需改为 typed IR 的声明模型，移除对 Engine Style 字符串的依赖 |
-| `State<T>` / `Derived<T>` | 依赖追踪、惰性、动态依赖、批处理、卸载清理 | **可复用** | 与 reactive Signal 需求最接近；当前名称和 `jasper.signal` Command/Query 总线冲突，需正式命名裁决 |
+| `State<T>` / `Derived<T>` | 依赖追踪、惰性、动态依赖、批处理、卸载清理 | **保留为当前 UI 响应式基线** | 用户修正裁决：暂不改名、不另立 `ReactiveSignal/Computed`；通用标准库归属另行研究 |
 | `Runtime` reconciler | 事件/异步续体批次、父先子、稳定 key、最小补丁、主题换样式 | **可复用** | 输出目标应从 Engine `ScenePatch` 改为 typed UI IR frame |
 | Component/SignalBus | Command/Query bus、取消、授权上下文 | **可复用但概念不同** | 这是 application SignalBus，不是 reactive dependency Signal；禁止混称 |
 | JUI 2 | 帧、Insert/Style/Semantics/Text/Scroll/Remove、事件、hello/env | **保留为 Native transport** | 可继续承载 Native host 兼容；不能作为 Web 契约，也不应新增公共视觉语义 |
@@ -105,5 +105,5 @@ Web：
 2. 立即冻结新的公共 `Style`/`xstyle` 增长；新能力先进入 typed style/IR 提案。
 3. JUI 2 与 Rust `ScenePatch` 明确降为 Native transport/execution snapshot。
 4. 先定义 typed UI IR v0，再做任何 PSS 删除、字段迁移或 Web 重写。
-5. `jasper.signal`（Command/Query bus）与 reactive Signal 必须使用不同正式名称。
+5. `jasper.signal`（Command/Query bus）与 `State/Derived` 保持不同抽象；当前不扩张响应式命名。
 6. 未通过双后端 golden case 的能力只能标记为 Native candidate，不能标记跨后端完成。
