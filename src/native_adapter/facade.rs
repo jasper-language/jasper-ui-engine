@@ -15,6 +15,7 @@ pub use scene_events::{role_activates_on_click,role_activates_on_key,ScenePointe
 pub use crate::render_host::{HostRenderError,HostRenderer};
 pub use crate::surface_lifecycle::{SurfaceLifecycleError,SurfaceState,SurfaceStatus};
 pub use crate::text_edit::{CaretBlink,SceneEditEvent,SceneEditEventKind,SceneEditState};
+pub use crate::overlay::{DismissReason,OutsidePress,OverlayAlign,OverlayAnchor,OverlayAvoid,OverlayDismiss,OverlayEvent,OverlayEventKind,OverlayFocus,OverlayInfo,OverlayPlacement,OverlaySide,OverlaySpec,OverlaySuppression};
 
 /// Embedding-host adapter; application declarations use Scene/ScenePatch values above.
 /// This module does not acquire windows, surfaces, devices or OS services.
@@ -670,6 +671,18 @@ impl SceneHostView {
     /// 视图为 None。不调用任何平台无障碍 API。
     pub fn accessibility_tree(&self,owner:u64,version:u64)->Option<AccessibilityTree> {
         self.inner.accessibility_tree_from_host(owner,version)
+    }
+    /// P0-A overlays in paint order with final placement or suppression reason. None for a
+    /// foreign owner, stale version or closed view.
+    /// P0-A 浮层按绘制顺序、最终位置或抑制原因；非归属方、过期版本或已关闭视图为 None。
+    pub fn overlays(&self,owner:u64,version:u64)->Option<Vec<OverlayInfo>> {
+        self.inner.overlays_from_host(owner,version)
+    }
+    /// Drain overlay dismiss requests since the last call. The engine never closes an overlay;
+    /// the Framework applies the resulting scene update. None for a foreign owner.
+    /// 取出自上次调用以来的浮层关闭请求。引擎从不自行关闭浮层；Framework 应用相应场景更新。
+    pub fn take_overlay_events(&mut self,owner:u64)->Option<Vec<OverlayEvent>> {
+        self.inner.take_overlay_events_from_host(owner)
     }
     /// Semantic activation of an enabled, visible node whose role `role_activates_on_click`
     /// (Button, Checkbox, Radio, Switch, Link, MenuItem, ListItem).
