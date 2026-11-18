@@ -49,6 +49,10 @@ Windows Ink、Apple Pencil、Android MotionEvent 和 Linux libinput 的专用适
 - 外部文本内容只接受宿主注入的服务快照；同步预编辑窗口只显示 transient preedit，不是编辑器或 IME 引擎。
 - Xvfb 提供实际 X11 protocol Surface，已覆盖创建、呈现、重设尺寸和单帧退出；合成器、vsync、真实 session suspend/resume 与系统无障碍桥仍不属于本示例验收。
 - `scripts/interact-window-xvfb.sh FONT OUT_DIR` 通过 xdotool 点击实际 X11 窗口，调用方仅在收到激活并完成视觉更新后退出的诊断模式下必须报告 `activated=1`。
+- `scripts/system-window-smoke.py LATIN_FONT CJK_FONT OUT_DIR` 不依赖 xdotool，直接通过
+  libX11/libXtst 注入 X11 系统窗口事件，并检查 Save 点击、普通键盘 revision 推进和
+  IBus/libpinyin `你好` 提交。它要求 Xvfb、xwininfo、dbus-run-session 与 IBus/libpinyin；
+  合成输入和虚拟显示不等于物理桌面/Wayland 合成器验收。
 - `--features desktop-accessibility` 在 `examples/window` 中建立 AccessKit winit 适配器；
   Linux 经 AT-SPI，Windows 由同一可选依赖选择 UIA，macOS/Android/iOS 使用各自平台实现。
   该特性不把 AT-SPI、UIA 或 winit 类型带入默认核心构建。

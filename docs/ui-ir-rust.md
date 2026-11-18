@@ -319,6 +319,9 @@ Web 后端和正式宿主仍需分别验收。
 - 独立 `verification/input-identity`：`5 passed`；独立 `verification/read-boundary`：
   `64 passed`。后者补齐了 `ScenePatch::Move` 的独立 oracle，并把随机 patch 属性测试扩展到
   Move 而不删除既有 host 测试；
+- `scripts/system-window-smoke.py` 固化本轮可复现系统窗口路径：独立 Xvfb、XTest 点击、
+  普通键盘 revision 和隔离 session bus 中的 IBus/libpinyin 提交；脚本使用合成输入，
+  不替代物理桌面或真实 Wayland 合成器测试；
 - Clippy 成功退出；仓库仍保留已登记的非阻塞历史 warning。
 
 运行前注入了 Latin/CJK、regular/bold/italic 测试字体；这些计数只对应当前 Linux 测试环境。

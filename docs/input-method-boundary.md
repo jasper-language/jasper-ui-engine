@@ -135,3 +135,7 @@ Parley 布局返回逻辑光标矩形。`examples/window` 在每次外部文本�
 该结果验证了 Rust 桌面宿主的事件转译、组合态所有权与提交装配。它仍使用虚拟 X11 显示和
 合成输入，不证明物理键盘、Mutter/Wayland 合成器级输入、候选窗定位、完整 IME 服务或
 跨平台输入法已经验收。
+
+复现入口：`scripts/system-window-smoke.py LATIN_FONT CJK_FONT OUT_DIR`。脚本启动独立
+Xvfb 和 session bus，先验证 XTest 点击与普通键盘，再启动 IBus/libpinyin 并检查
+`External display 中文你好` 的最终快照；不把该合成输入结果扩大为物理设备验收。
