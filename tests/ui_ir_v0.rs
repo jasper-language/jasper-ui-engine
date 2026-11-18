@@ -324,6 +324,47 @@ fn native_style_projection_preserves_grid_and_reports_extended_field_losses() {
 }
 
 #[test]
+fn native_node_projection_recovers_public_tree_semantics_events_and_styles() {
+    use jasper_ui_engine::ui_ir::{SemanticRole, UiOp};
+
+    let frame = UiFrame::from_json_slice(&fixture("settings-page.ir.json")).unwrap();
+    let document = NativeUiDocument::from_frame(&frame).unwrap();
+    let root = UiKey::new(1, 1);
+    let projection = document
+        .project_compatibility_node(root)
+        .unwrap()
+        .unwrap();
+    assert!(projection.losses.is_empty(), "{:?}", projection.losses);
+    assert_eq!(projection.node.key, root);
+    let children = projection.node.children.as_ref().unwrap();
+    assert_eq!(children.len(), 3);
+    let field = &children[1];
+    assert_eq!(field.key, UiKey::new(3, 1));
+    assert_eq!(field.element.content.as_deref(), Some("Alice"));
+    assert_eq!(field.semantics.role, SemanticRole::TextField);
+    assert_eq!(
+        field.events.as_ref().unwrap()[0].action.as_str(),
+        "name"
+    );
+
+    let replay = UiFrame {
+        ir_version: jasper_ui_engine::ui_ir::IR_VERSION.into(),
+        identity_domain: document.identity_domain().into(),
+        owner: document.owner().into(),
+        session: document.session().into(),
+        expected_revision: 1,
+        next_revision: 2,
+        ops: vec![UiOp::insert(None, 0, projection.node.clone())],
+    };
+    let replay_document = NativeUiDocument::from_frame(&replay).unwrap();
+    let replay_projection = replay_document
+        .project_compatibility_node(root)
+        .unwrap()
+        .unwrap();
+    assert_eq!(replay_projection, projection);
+}
+
+#[test]
 fn duplicate_and_zero_generations_are_rejected_before_native_mapping() {
     let bytes = fixture("settings-page.ir.json");
     let mut value: serde_json::Value = serde_json::from_slice(&bytes).unwrap();

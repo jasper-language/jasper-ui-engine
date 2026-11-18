@@ -91,14 +91,17 @@ caret 几何与 `UiKey` 一并返回，不暴露 backend 节点身份。
 - `project_native_style_with_context` 接受节点精确的 image `ResourceRef` 与 overlay 锚点
   `UiKey`，可无损投影相应 candidate 字段；
 - `NativeUiDocument::project_compatibility_style(UiKey)` 自动从当前节点映射这两项上下文；
+- `NativeUiDocument::project_compatibility_node(UiKey)` 递归恢复 `UiNode` 子树、element、
+  semantics、events、children 和每节点 style，并以 `UiKey` 为键聚合 `NativeNodeLoss`；
 - box/flex/Grid/position/paint/typography 中当前 Typed v0.1 可表达的字段会投影；
 - Native shadow、单侧 border、outline、text decoration、hit-slop、transform、motion、
   gradient、material、image、overlay 等字段逐项进入 `losses`；
 - image/overlay 在没有 exact resource/UiKey 上下文时不会伪造身份，而是保留为损失；
 - 只有 `is_lossless() == true` 才表示本次投影没有遗漏非默认 Native 字段。
 
-这不是完整 legacy reverse/JUI 2 adapter，也不宣布 Native Scene 可恢复 Framework 的组件声明、
-Signal 依赖或事件会话。Grid 投影仍继承 candidate/`host_accepted=false` 状态。
+子树快照会把可表达 Native 默认显式化，并对无子节点/空事件列表使用规范化 `None`；它不恢复
+resource history、environment、identity retirement history、Framework 组件声明、Signal 依赖、
+事件会话或正式 ABI。Grid 投影仍继承 candidate/`host_accepted=false` 状态。
 
 ## Native 映射状态
 
@@ -187,7 +190,7 @@ Web 后端和正式宿主仍需分别验收。
 
 - `native-engine-cpu,accesskit-pending` 完整 `cargo test` 成功退出：库测试
   `271 passed, 1 ignored`（忽略项是显式性能测量），全部集成测试和 doc-test 通过；
-- 同一特性集的 `ui_ir_v0`：`37 passed`；
+- 同一特性集的 `ui_ir_v0`：`38 passed`；
 - 软件 Vulkan（lvp/llvmpipe）+ `gpu-pending` 的 `ui_ir_v0`：`36 passed`；
 - Clippy 成功退出；仓库仍保留已登记的非阻塞历史 warning。
 

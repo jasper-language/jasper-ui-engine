@@ -25,9 +25,9 @@ pub use compat::{
     NativeStyleProjection,
 };
 pub use native::{
-    MappedProperty, MappingIssue, MappingIssueKind, NativeSceneUpdate, NativeUiDocument,
-    NativeActivationSource, NativePropertyProfile, NativeUiFrameError, SupportLevel,
-    NATIVE_PROPERTY_PROFILE, native_property_profile,
+    native_property_profile, MappedProperty, MappingIssue, MappingIssueKind, NativeActivationSource,
+    NativeNodeLoss, NativePropertyProfile, NativeSceneUpdate, NativeUiDocument, NativeUiFrameError,
+    NativeUiNodeProjection, SupportLevel, NATIVE_PROPERTY_PROFILE,
 };
 
 /// The only IR version this profile reads.

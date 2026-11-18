@@ -14,7 +14,7 @@ use crate::overlay::{
     OverlaySide as NativeOverlaySide, OverlaySpec,
 };
 use crate::scene::{Node, NodeId, NodeKind, Scene, SceneError, ScenePatch};
-use crate::semantics::{HeadingLevel, Role, Semantics};
+use crate::semantics::{HeadingLevel, LivePoliteness, Role, Semantics};
 use crate::style::{
     Align as NativeAlign, Color as NativeColor, CornerRadii, Display as NativeDisplay,
     FlexDirection as NativeFlexDirection, FlexWrap as NativeFlexWrap,
@@ -170,6 +170,21 @@ pub struct NativeSceneUpdate {
     pub expected_revision: u64,
     pub next_revision: u64,
     pub patches: Vec<ScenePatch>,
+}
+
+/// One field omitted or normalized by a Native subtree compatibility projection.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NativeNodeLoss {
+    pub path: String,
+    pub detail: String,
+}
+
+/// Read-only semantic snapshot reconstructed from an active Native subtree.
+#[derive(Clone, Debug, PartialEq)]
+pub struct NativeUiNodeProjection {
+    pub node: UiNode,
+    /// Losses grouped by public identity; absent means every projected field was representable.
+    pub losses: BTreeMap<UiKey, Vec<NativeNodeLoss>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -438,6 +453,88 @@ impl NativeUiDocument {
                 overlay_anchor,
             },
         ))
+    }
+
+    /// Project one active subtree into the public UiNode shape without claiming that Signal
+    /// dependencies, component declarations, resource history or a formal ABI can be recovered.
+    pub fn project_compatibility_node(
+        &self,
+        key: UiKey,
+    ) -> Option<Result<NativeUiNodeProjection, UiIrError>> {
+        self.node_for_key(key)?;
+        let mut losses = BTreeMap::new();
+        Some(self.project_compatibility_node_inner(key, &mut losses).map(
+            |node| NativeUiNodeProjection { node, losses },
+        ))
+    }
+
+    fn project_compatibility_node_inner(
+        &self,
+        key: UiKey,
+        losses: &mut BTreeMap<UiKey, Vec<NativeNodeLoss>>,
+    ) -> Result<UiNode, UiIrError> {
+        let node_id = self
+            .node_for_key(key)
+            .ok_or_else(|| incomplete_projection("node identity is not active"))?;
+        let node = self
+            .scene
+            .find(node_id)
+            .ok_or_else(|| incomplete_projection("Native node is missing"))?;
+        let element = *self
+            .element_kinds
+            .get(&key)
+            .ok_or_else(|| incomplete_projection("element kind mapping is missing"))?;
+        let style = self
+            .project_compatibility_style(key)
+            .ok_or_else(|| incomplete_projection("style mapping is missing"))??;
+        if !style.losses.is_empty() {
+            losses.insert(
+                key,
+                style
+                    .losses
+                    .into_iter()
+                    .map(|loss| NativeNodeLoss {
+                        path: loss.path.into(),
+                        detail: loss.detail.into(),
+                    })
+                    .collect(),
+            );
+        }
+        let semantics = project_compatibility_semantics(
+            &node.semantics,
+            &format!("{key:?}.semantics"),
+            losses,
+            key,
+        )?;
+        let content = match &node.kind {
+            NodeKind::Text(text) => Some(text.clone()),
+            _ => None,
+        };
+        let events = self.event_bindings.get(&key).map(|bindings| {
+            bindings
+                .values()
+                .cloned()
+                .collect::<Vec<EventBinding>>()
+        });
+        let mut children = Vec::new();
+        for child in &node.children {
+            let child_key = self
+                .key_for_node(child.id)
+                .ok_or_else(|| incomplete_projection("child identity is missing"))?;
+            children.push(self.project_compatibility_node_inner(child_key, losses)?);
+        }
+        Ok(UiNode {
+            key,
+            element: UiElement {
+                kind: element,
+                content,
+                attributes: None,
+            },
+            semantics,
+            style: Some(style.style),
+            events,
+            children: (!children.is_empty()).then_some(children),
+        })
     }
 
     /// Admit an event against this document's current owner/session/revision and internal map.
@@ -1837,6 +1934,74 @@ impl DocumentBuilder {
                 ),
             )
         })
+    }
+}
+
+fn project_compatibility_semantics(
+    source: &Semantics,
+    path: &str,
+    losses: &mut BTreeMap<UiKey, Vec<NativeNodeLoss>>,
+    key: UiKey,
+) -> Result<UiSemantics, UiIrError> {
+    let (role, level) = match source.role {
+        Role::Container => (SemanticRole::Container, None),
+        Role::Text => (SemanticRole::Text, None),
+        Role::Button => (SemanticRole::Button, None),
+        Role::TextField => (SemanticRole::TextField, None),
+        Role::TextArea => (SemanticRole::TextArea, None),
+        Role::Checkbox => (SemanticRole::Checkbox, None),
+        Role::Radio => (SemanticRole::Radio, None),
+        Role::Switch => (SemanticRole::Switch, None),
+        Role::Slider => (SemanticRole::Slider, None),
+        Role::Image => (SemanticRole::Image, None),
+        Role::Link => (SemanticRole::Link, None),
+        Role::List => (SemanticRole::List, None),
+        Role::ListItem => (SemanticRole::ListItem, None),
+        Role::Table => (SemanticRole::Table, None),
+        Role::TableRow => (SemanticRole::TableRow, None),
+        Role::TableCell => (SemanticRole::TableCell, None),
+        Role::Dialog => (SemanticRole::Dialog, None),
+        Role::Popover => (SemanticRole::Popover, None),
+        Role::Tooltip => (SemanticRole::Tooltip, None),
+        Role::Menu => (SemanticRole::Menu, None),
+        Role::MenuItem => (SemanticRole::MenuItem, None),
+        Role::ScrollView => (SemanticRole::ScrollView, None),
+        Role::Heading(level) => (SemanticRole::Heading, Some(level.get())),
+        Role::Status => (SemanticRole::Status, None),
+        Role::Live(politeness) => {
+            if politeness == LivePoliteness::Assertive {
+                losses.entry(key).or_default().push(NativeNodeLoss {
+                    path: format!("{path}.role"),
+                    detail: "Typed SemanticRole::Live does not encode assertive politeness".into(),
+                });
+            }
+            (SemanticRole::Live, None)
+        }
+        Role::Alert => (SemanticRole::Alert, None),
+        Role::Form => (SemanticRole::Form, None),
+        Role::Unknown => {
+            return Err(incomplete_projection(
+                "Native unknown semantics role has no Typed UI role",
+            ))
+        }
+    };
+    Ok(UiSemantics {
+        role,
+        label: source.label.clone(),
+        description: source.description.clone(),
+        value: source.value.clone(),
+        disabled: source.disabled,
+        focusable: source.focusable,
+        hidden: source.hidden,
+        selected: source.selected,
+        level,
+    })
+}
+
+fn incomplete_projection(detail: impl Into<String>) -> UiIrError {
+    UiIrError::Invalid {
+        path: "$.compatibility".into(),
+        detail: detail.into(),
     }
 }
 
