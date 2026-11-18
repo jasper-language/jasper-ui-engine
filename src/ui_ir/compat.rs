@@ -162,6 +162,11 @@ fn project_legacy_scene_node(
         });
     }
     let element_kind = legacy_element_kind(&source.kind, source.semantics.role)?;
+    losses.entry(key).or_default().push(NativeNodeLoss {
+        path: "element.kind".into(),
+        detail: "Legacy Scene does not store ElementKind; it was inferred from NodeKind and semantic role"
+            .into(),
+    });
     let overlay_anchor = match source.style.overlay.map(|overlay| overlay.anchor) {
         Some(NativeOverlayAnchor::Node(anchor)) => identities.get(&anchor).copied(),
         _ => None,
@@ -174,19 +179,13 @@ fn project_legacy_scene_node(
             overlay_anchor,
         },
     )?;
-    if !style.losses.is_empty() {
-        losses.insert(
-            key,
-            style
-                .losses
-                .into_iter()
-                .map(|loss| NativeNodeLoss {
-                    path: loss.path.into(),
-                    detail: loss.detail.into(),
-                })
-                .collect(),
-        );
-    }
+    losses
+        .entry(key)
+        .or_default()
+        .extend(style.losses.into_iter().map(|loss| NativeNodeLoss {
+            path: loss.path.into(),
+            detail: loss.detail.into(),
+        }));
     let semantics = super::native::project_compatibility_semantics(
         &source.semantics,
         "$.legacy-scene.semantics",

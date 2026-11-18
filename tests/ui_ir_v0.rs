@@ -734,6 +734,10 @@ fn legacy_scene_reverse_projection_requires_explicit_identity_and_reports_events
         .losses
         .get(&UiKey::new(1, 1))
         .is_some_and(|losses| losses.iter().any(|loss| loss.path == "events")));
+    assert!(projection
+        .losses
+        .get(&UiKey::new(1, 1))
+        .is_some_and(|losses| losses.iter().any(|loss| loss.path == "element.kind")));
 
     let replay = UiFrame {
         ir_version: jasper_ui_engine::ui_ir::IR_VERSION.into(),

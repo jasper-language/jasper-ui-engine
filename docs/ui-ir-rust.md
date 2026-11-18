@@ -94,7 +94,8 @@ caret 几何与 `UiKey` 一并返回，不暴露 backend 节点身份。
 - `project_native_style(&NativeStyle, ElementKind)` 返回 `NativeStyleProjection`；
 - `project_legacy_scene(&Scene, &BTreeMap<NodeId, UiKey>)` 执行 raw Legacy Scene 的损失感知
   反向投影；每个 NodeId 必须显式映射，缺失或重复 UiKey 拒绝。Scene 不保存事件绑定，
-  image 也没有 generation；这些字段进入 losses，Canvas 因 Typed v0.1 无对应 kind 拒绝；
+  也不保存原始 ElementKind；element kind 只能推断并逐节点进入 losses。image 没有
+  generation、事件绑定无法恢复；Canvas 因 Typed v0.1 无对应 kind 拒绝；
 - `project_native_style_to_jui2(&NativeStyle)` 将可表达的基础字段投影为 JUI 2 `style`
   键值、扩展字段投影为 `xstyle` 键值，并报告 JUI 2 wire 不支持的 display、wrap/shrink、
   text-align/direction 等字段；扩展键仍需宿主 hello 协商；
