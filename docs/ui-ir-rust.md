@@ -230,7 +230,7 @@ fixture 实际映射出的 `mapped_properties` 与 profile 一致。
 | 焦点与编辑一致性 | 当前 focus/编辑目标必须等于授权 UiKey；Move 保持焦点、按下、编辑缓冲与 IME | 已覆盖 Native |
 | 资源生命周期 | Prepare/Commit/Release、generation、节点引用、上传/删除与 GPU/CPU image 测试 | 已覆盖当前 image/SVG 路径 |
 | 活动宿主同步 | detached mapping、精确 Surface generation、原子 ScenePatch 和 reduce-motion 同提交 | 已覆盖 Rust host |
-| Property Registry | 公共 registry 固定摘要；Native profile 逐项一致；candidate 不冒充 accepted | 已覆盖 consumer profile |
+| Property Registry | 公共 registry 固定摘要；Native profile 与 51 个属性逐项一致；另有 mapping-site 守卫防止 profile 增项后漏接映射；candidate 不冒充 accepted | 已覆盖 consumer profile 与映射入口 |
 | 回滚与兼容 | Native Style/Typed Style 双向受限投影、raw Legacy Scene 显式 identity 反向投影、JUI 2 initial/successor/event 桥及逐项损失已测试；三份 canonical 初始帧和 settings 双帧流经旧 Host CPU reader 接受；旧 raw Scene/ScenePatch、PSS/xstyle、LegacyEngine 测试继续通过 | Rust 兼容桥已覆盖；无条件可逆与真实平台未验收 |
 | Web / 真浏览器 | 未执行 | 未验收 |
 | 真实硬件 GPU / 平台宿主 | Intel UHD 630 与 NVIDIA RTX 3060 Vulkan 离屏 UI IR 全量测试通过；NVIDIA RTX 3060 硬件窗口 `gpu_window --once` present 成功；Intel 窗口因 Surface/adapter queue family 不兼容失败；Xvfb X11 系统窗口级 XTest 指针/键盘与 IBus/libpinyin 预编辑/提交通过；desktop-accessibility host 在 AT-SPI 总线发布 Settings/Name/Save 树，Save `DoAction` 回环到 JUI 2 click | 部分覆盖；物理桌面/真实 Wayland 合成器输入与硬件窗口完整无障碍未验收；硬件窗口只覆盖 NVIDIA 单帧基础场景 |
@@ -269,6 +269,8 @@ Web 后端和正式宿主仍需分别验收。
   max channel delta 1）；不代表硬件窗口 Surface/swapchain 呈现；
 - 在预编辑 cursor 与候选几何改动后重跑同一硬件对照：NVIDIA RTX 3060 仍为
   `157/153600`、Intel UHD 630 仍为 `141/153600`，最大通道差均为 1；
+- 新增 property mapping-site 守卫后，当前全特性 `ui_ir_v0` 为 `50 passed`；该测试确认
+  registry/profile 的 51 个属性都仍有对应映射入口，不替代逐字段运行时行为验收；
 - `gpu_window --once` 在 NVIDIA RTX 3060/Vulkan 上成功：
   `Bgra8UnormSrgb`、present `Fifo`、frame 1、device generation 1；Intel UHD 630
   能创建 adapter，但其 X11 Surface 报 adapter queue family 不兼容，因此 Intel 硬件窗口不计通过；

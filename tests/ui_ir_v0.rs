@@ -120,6 +120,20 @@ fn typed_property_profile_matches_the_pinned_registry() {
 }
 
 #[test]
+fn every_native_profile_property_has_a_mapping_site() {
+    let source = include_str!("../src/ui_ir/native.rs");
+    let missing: Vec<_> = NATIVE_PROPERTY_PROFILE
+        .iter()
+        .map(|profile| profile.property)
+        .filter(|property| !source.contains(&format!("self.mark(\"{property}\"")))
+        .collect();
+    assert!(
+        missing.is_empty(),
+        "Native profile properties without mapping sites: {missing:?}"
+    );
+}
+
+#[test]
 fn native_style_projection_round_trips_representable_fields() {
     use jasper_ui_engine::style::{
         Align, Color, Display, FlexDirection, FlexWrap, FontStyle, Justify,

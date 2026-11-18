@@ -47,6 +47,6 @@
 | `ir-v0` Schema | Language/UI draft；Rust Native consumer implemented / tested |
 | Typed Property Registry | upstream registry pinned；Rust profile implemented / tested |
 | 兼容 adapter | `UiFrame → ScenePatch`、受限 Native Style ↔ Typed Style、raw Legacy Scene → UiNode（显式 identity + loss report）、Native Style/Semantics → JUI 2 键值、NativeUiDocument/SceneUpdate → JUI 2 initial/successor frame、UiKey → JUI 2 event 行、UiNode 子树/资源/环境/identity 快照及直接文档恢复 implemented / tested；三份 canonical initial frame、settings initial+successor 双帧流和 typed event lines 已与旧 Host CPU reader/formatter 对齐，真实窗口 CPU softbuffer smoke 产生完整 pointer/focus/click，交互流经 host 注入 text input/Enter 产生 `text-commit Alice Bob`；Xvfb X11/XTest 系统窗口级鼠标与键盘事件经 winit/`DesktopInput` 完成 Save 激活和文本 revision 推进，IBus/libpinyin XIM 预编辑与提交得到 `External display 中文你好`；Intel/NVIDIA 硬件 Vulkan 离屏 `ui_ir_v0` 通过，NVIDIA 硬件窗口单帧 present 通过；desktop-accessibility host 在 AT-SPI 总线发布 Settings/Name/Save 注册树，Save `DoAction` 返回 true 并映射为 JUI 2 click，Intel 窗口受 Surface/adapter queue family 限制；Table role/Move/Scene events 等损失仍显式报告；无条件可逆 adapter、物理桌面/真实 Wayland 合成器输入与 IME、硬件窗口完整无障碍及 Intel 硬件窗口验收 not complete |
-| 候选能力映射 | in progress；Grid/Position/Image/Overlay 仍 candidate、`host_accepted=false` |
+| 候选能力映射 | implemented / tested；Grid/Position/Image/Overlay 仍 candidate、`host_accepted=false`，不因映射已执行而提升为宿主验收 |
 | 双后端 golden case | not run |
 | 正式 ABI | not started |
