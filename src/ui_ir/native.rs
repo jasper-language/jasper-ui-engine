@@ -214,9 +214,13 @@ pub struct NativeUiCompatibilitySnapshot {
     pub losses: BTreeMap<UiKey, Vec<NativeNodeLoss>>,
 }
 
+pub const NATIVE_COMPATIBILITY_SNAPSHOT_FORMAT: &str =
+    "jasper-ui-native-compatibility/1";
+
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct NativeUiCompatibilitySnapshotWire {
+    format: String,
     identity_domain: String,
     identity: UiIdentitySnapshot,
     owner: String,
@@ -241,6 +245,7 @@ impl NativeUiCompatibilitySnapshot {
     pub fn to_json_vec(&self) -> Result<Vec<u8>, UiIrError> {
         self.validate()?;
         let wire = NativeUiCompatibilitySnapshotWire {
+            format: NATIVE_COMPATIBILITY_SNAPSHOT_FORMAT.into(),
             identity_domain: self.identity_domain.clone(),
             identity: self.identity.clone(),
             owner: self.owner.clone(),
@@ -276,6 +281,12 @@ impl NativeUiCompatibilitySnapshot {
                 path: "$.compatibility".into(),
                 detail: error.to_string(),
             })?;
+        if wire.format != NATIVE_COMPATIBILITY_SNAPSHOT_FORMAT {
+            return Err(incomplete_projection(format!(
+                "unsupported compatibility snapshot format {:?}",
+                wire.format
+            )));
+        }
         let mut mapped_properties = BTreeMap::new();
         for (property, value) in wire.mapped_properties {
             let profile = native_property_profile(&property).ok_or_else(|| {

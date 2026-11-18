@@ -552,6 +552,14 @@ fn native_compatibility_snapshot_includes_environment_and_live_resources() {
         ),
         Err(jasper_ui_engine::ui_ir::UiIrError::Json { .. })
     ));
+    let mut wire: serde_json::Value = serde_json::from_slice(&encoded).unwrap();
+    wire["format"] = serde_json::json!("jasper-ui-native-compatibility/2");
+    assert!(matches!(
+        jasper_ui_engine::ui_ir::NativeUiCompatibilitySnapshot::from_json_slice(
+            &serde_json::to_vec(&wire).unwrap()
+        ),
+        Err(jasper_ui_engine::ui_ir::UiIrError::Invalid { .. })
+    ));
 
     let mut bad_identity = snapshot.clone();
     bad_identity.identity_domain = "other/window".into();
