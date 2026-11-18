@@ -59,7 +59,11 @@ fn scene() -> Scene {
             .direction(FlexDirection::Column),
     );
     for (id, role) in roles {
-        root = root.child(control(id, role, false));
+        let mut node = control(id, role, false);
+        if id == 8 {
+            node.semantics.selected = true;
+        }
+        root = root.child(node);
     }
     root = root.child(control(9, Role::Checkbox, true));
     root = root.child(Node::text(NodeId(10), "plain"));
@@ -171,6 +175,12 @@ fn role_tables() {
     for role in [
         Role::Text,
         Role::TextField,
+        Role::TextArea,
+        Role::Table,
+        Role::TableRow,
+        Role::TableCell,
+        Role::Popover,
+        Role::Tooltip,
         Role::Container,
         Role::Slider,
         Role::Status,
@@ -318,6 +328,7 @@ fn semantic_activation_and_actions_cover_roles() {
 #[test]
 fn new_roles_map_to_accesskit_with_level_and_live() {
     use jasper_ui_engine::native::host::accesskit::{Affine, Live, Role as KitRole};
+    use jasper_ui_engine::native::host::accesskit_role;
     let (engine, v) = engine();
     let update = engine
         .accessibility_tree(OWNER, v)
@@ -345,6 +356,13 @@ fn new_roles_map_to_accesskit_with_level_and_live() {
     );
     assert_eq!(kit(16).role(), KitRole::Form);
     assert_eq!(kit(2).live(), None);
+    assert_eq!(accesskit_role(Role::TextArea), KitRole::MultilineTextInput);
+    assert_eq!(accesskit_role(Role::Table), KitRole::Table);
+    assert_eq!(accesskit_role(Role::TableRow), KitRole::Row);
+    assert_eq!(accesskit_role(Role::TableCell), KitRole::Cell);
+    assert_eq!(accesskit_role(Role::Popover), KitRole::Group);
+    assert_eq!(accesskit_role(Role::Tooltip), KitRole::Tooltip);
+    assert_eq!(kit(8).is_selected(), Some(true));
     // The reference consumer accepts the tree.
     let _ = accesskit_consumer::Tree::new(update, true);
 }

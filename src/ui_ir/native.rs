@@ -70,6 +70,14 @@ pub struct MappedProperty {
     pub host_accepted: bool,
 }
 
+/// Patch projection of one admitted successor frame for an existing Native SceneHostView.
+#[derive(Clone, Debug, PartialEq)]
+pub struct NativeSceneUpdate {
+    pub expected_revision: u64,
+    pub next_revision: u64,
+    pub patches: Vec<ScenePatch>,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum NativeUiFrameError {
     InvalidIr(UiIrError),
@@ -181,6 +189,15 @@ impl NativeUiDocument {
     /// Atomically apply a successor frame. Mapping is performed on a detached clone; an error
     /// leaves the previous document and revision untouched.
     pub fn apply_frame(&mut self, frame: &UiFrame) -> Result<(), NativeUiFrameError> {
+        self.apply_frame_with_patches(frame).map(|_| ())
+    }
+
+    /// Apply a successor and return the exact patch batch for an active Native SceneHostView.
+    /// The batch includes one no-op root style patch that advances the scene version.
+    pub fn apply_frame_with_patches(
+        &mut self,
+        frame: &UiFrame,
+    ) -> Result<NativeSceneUpdate, NativeUiFrameError> {
         frame.validate()?;
         let authority = Authority {
             identity_domain: frame.identity_domain.clone(),
@@ -210,10 +227,15 @@ impl NativeUiDocument {
             resources: self.resources.clone(),
             environment: self.environment.clone(),
             mapped_properties: self.mapped_properties.clone(),
+            patches: Vec::new(),
         };
-        let next = builder.apply_successor(frame)?;
+        let (next, patches) = builder.apply_successor(frame)?;
         *self = next;
-        Ok(())
+        Ok(NativeSceneUpdate {
+            expected_revision: frame.expected_revision,
+            next_revision: frame.next_revision,
+            patches,
+        })
     }
 
     pub fn scene(&self) -> &Scene {
@@ -319,6 +341,7 @@ struct DocumentBuilder {
     resources: BTreeMap<String, ResourceState>,
     environment: UiEnvironment,
     mapped_properties: BTreeMap<&'static str, MappedProperty>,
+    patches: Vec<ScenePatch>,
 }
 
 impl DocumentBuilder {
@@ -337,6 +360,7 @@ impl DocumentBuilder {
             resources: BTreeMap::new(),
             environment: UiEnvironment::default(),
             mapped_properties: BTreeMap::new(),
+            patches: Vec::new(),
         }
     }
 
@@ -345,7 +369,7 @@ impl DocumentBuilder {
             return Err(NativeUiFrameError::MissingRoot);
         }
         // Scene starts at version one. Advance exactly once to the admitted frame revision.
-        self.advance_scene_version(1, revision)?;
+        self.advance_scene_version(1, revision, false)?;
         Ok(NativeUiDocument {
             authority: self.authority,
             revision,
@@ -363,31 +387,39 @@ impl DocumentBuilder {
         })
     }
 
-    fn apply_successor(mut self, frame: &UiFrame) -> Result<NativeUiDocument, NativeUiFrameError> {
+    fn apply_successor(
+        mut self,
+        frame: &UiFrame,
+    ) -> Result<(NativeUiDocument, Vec<ScenePatch>), NativeUiFrameError> {
         let expected = self.revision;
-        self.advance_scene_version(expected, frame.next_revision)?;
+        self.advance_scene_version(expected, frame.next_revision, true)?;
         self.apply_ops(&frame.ops)?;
-        Ok(NativeUiDocument {
-            authority: self.authority,
-            revision: frame.next_revision,
-            scene: self.scene,
-            next_node_id: self.next_node_id,
-            key_to_node: self.key_to_node,
-            node_to_key: self.node_to_key,
-            element_kinds: self.element_kinds,
-            event_bindings: self.event_bindings,
-            resource_refs: self.resource_refs,
-            resource_generations: self.resource_generations,
-            resources: self.resources,
-            environment: self.environment,
-            mapped_properties: self.mapped_properties,
-        })
+        let patches = self.patches.clone();
+        Ok((
+            NativeUiDocument {
+                authority: self.authority,
+                revision: frame.next_revision,
+                scene: self.scene,
+                next_node_id: self.next_node_id,
+                key_to_node: self.key_to_node,
+                node_to_key: self.node_to_key,
+                element_kinds: self.element_kinds,
+                event_bindings: self.event_bindings,
+                resource_refs: self.resource_refs,
+                resource_generations: self.resource_generations,
+                resources: self.resources,
+                environment: self.environment,
+                mapped_properties: self.mapped_properties,
+            },
+            patches,
+        ))
     }
 
     fn advance_scene_version(
         &mut self,
         expected: u64,
         next: u64,
+        record_patch: bool,
     ) -> Result<(), NativeUiFrameError> {
         if next != expected.saturating_add(1) {
             return Err(NativeUiFrameError::Revision {
@@ -397,9 +429,14 @@ impl DocumentBuilder {
         }
         let root = self.scene.root.id;
         let style = self.scene.root.style.clone();
+        let patch = ScenePatch::UpdateStyle { id: root, style };
         self.scene
-            .apply_batch_at(expected, &[ScenePatch::UpdateStyle { id: root, style }])
-            .map_err(native_scene_error)
+            .apply_batch_at(expected, std::slice::from_ref(&patch))
+            .map_err(native_scene_error)?;
+        if record_patch {
+            self.patches.push(patch);
+        }
+        Ok(())
     }
 
     fn apply_ops(&mut self, ops: &[UiOp]) -> Result<(), NativeUiFrameError> {
@@ -479,6 +516,11 @@ impl DocumentBuilder {
                 "insertion index exceeds the parent child count",
             ));
         }
+        self.patches.push(ScenePatch::Insert {
+            parent,
+            index,
+            node: node.clone(),
+        });
         parent_node.children.insert(index, node);
         Ok(())
     }
@@ -524,20 +566,7 @@ impl DocumentBuilder {
     fn build_node(&mut self, path: &str, node: &UiNode) -> Result<Node, NativeUiFrameError> {
         let key = node.key;
         let id = self.key_to_node[&key];
-        if node
-            .element
-            .attributes
-            .as_ref()
-            .is_some_and(|attributes| !attributes.is_empty())
-        {
-            return Err(issue(
-                &format!("{path}.node.element.attributes"),
-                None,
-                SupportLevel::Unsupported,
-                MappingIssueKind::InformationLoss,
-                "element attributes have no UI IR v0 Native representation",
-            ));
-        }
+        validate_element_transport(&format!("{path}.node.element"), &node.element)?;
         let kind = native_node_kind(&node.element);
         let semantics = self.map_semantics(&format!("{path}.node.semantics"), &node.semantics)?;
         let style = if let Some(typed) = &node.style {
@@ -577,15 +606,6 @@ impl DocumentBuilder {
         path: &str,
         source: &UiSemantics,
     ) -> Result<Semantics, NativeUiFrameError> {
-        if source.selected {
-            return Err(issue(
-                &format!("{path}.selected"),
-                None,
-                SupportLevel::Required,
-                MappingIssueKind::InformationLoss,
-                "the existing Rust Semantics value has no selected state",
-            ));
-        }
         if source.role != SemanticRole::Heading && source.level.is_some() {
             return Err(issue(
                 &format!("{path}.level"),
@@ -601,14 +621,20 @@ impl DocumentBuilder {
             SemanticRole::Button => Role::Button,
             SemanticRole::Link => Role::Link,
             SemanticRole::TextField => Role::TextField,
+            SemanticRole::TextArea => Role::TextArea,
             SemanticRole::Checkbox => Role::Checkbox,
             SemanticRole::Radio => Role::Radio,
             SemanticRole::Switch => Role::Switch,
             SemanticRole::Slider => Role::Slider,
             SemanticRole::List => Role::List,
             SemanticRole::ListItem => Role::ListItem,
+            SemanticRole::Table => Role::Table,
+            SemanticRole::TableRow => Role::TableRow,
+            SemanticRole::TableCell => Role::TableCell,
             SemanticRole::Image => Role::Image,
             SemanticRole::Dialog => Role::Dialog,
+            SemanticRole::Popover => Role::Popover,
+            SemanticRole::Tooltip => Role::Tooltip,
             SemanticRole::Menu => Role::Menu,
             SemanticRole::MenuItem => Role::MenuItem,
             SemanticRole::ScrollView => Role::ScrollView,
@@ -633,26 +659,9 @@ impl DocumentBuilder {
                 })?,
             ),
             SemanticRole::Status => Role::Status,
+            SemanticRole::Live => Role::Live(crate::semantics::LivePoliteness::Polite),
             SemanticRole::Alert => Role::Alert,
             SemanticRole::Form => Role::Form,
-            SemanticRole::TextArea
-            | SemanticRole::Table
-            | SemanticRole::TableRow
-            | SemanticRole::TableCell
-            | SemanticRole::Popover
-            | SemanticRole::Tooltip
-            | SemanticRole::Live => {
-                return Err(issue(
-                    &format!("{path}.role"),
-                    None,
-                    SupportLevel::Required,
-                    MappingIssueKind::InformationLoss,
-                    format!(
-                        "Native semantic role {:?} is not representable",
-                        source.role
-                    ),
-                ))
-            }
         };
         Ok(Semantics {
             role,
@@ -662,6 +671,7 @@ impl DocumentBuilder {
             disabled: source.disabled,
             focusable: source.focusable,
             hidden: source.hidden,
+            selected: source.selected,
         })
     }
 
@@ -1177,20 +1187,14 @@ impl DocumentBuilder {
             .or(old_element_kind)
             .unwrap_or(ElementKind::Container);
         if let Some(element) = &op.fields.element {
-            if element
-                .attributes
-                .as_ref()
-                .is_some_and(|attributes| !attributes.is_empty())
-            {
-                return Err(issue(
-                    &format!("{path}.fields.element.attributes"),
-                    None,
-                    SupportLevel::Unsupported,
-                    MappingIssueKind::InformationLoss,
-                    "element attributes have no UI IR v0 Native representation",
-                ));
-            }
+            validate_element_transport(&format!("{path}.fields.element"), element)?;
         }
+        let old_kind = self
+            .scene
+            .find(node_id)
+            .ok_or_else(|| stale_mapping(path, op.key))?
+            .kind
+            .clone();
         let semantics = if let Some(value) = &op.fields.semantics {
             Some(self.map_semantics(&format!("{path}.fields.semantics"), value)?)
         } else {
@@ -1201,6 +1205,36 @@ impl DocumentBuilder {
         } else {
             None
         };
+        let replacement_kind = op.fields.element.as_ref().map(native_node_kind);
+        let text_update = match (&old_kind, &replacement_kind) {
+            (_, None) => None,
+            (NodeKind::Text(_), Some(NodeKind::Text(text))) => Some(text.clone()),
+            (NodeKind::Container, Some(NodeKind::Container))
+            | (NodeKind::Rect, Some(NodeKind::Rect)) => None,
+            _ => return Err(issue(
+                &format!("{path}.fields.element.kind"),
+                None,
+                SupportLevel::Required,
+                MappingIssueKind::InformationLoss,
+                "element-kind replacement cannot be projected to the existing ScenePatch contract",
+            )),
+        };
+        let mut projected = Vec::new();
+        if let Some(semantics) = &semantics {
+            projected.push(ScenePatch::UpdateSemantics {
+                id: node_id,
+                semantics: semantics.clone(),
+            });
+        }
+        if let Some(style) = &style {
+            projected.push(ScenePatch::UpdateStyle {
+                id: node_id,
+                style: style.clone(),
+            });
+        }
+        if let Some(text) = text_update {
+            projected.push(ScenePatch::UpdateText { id: node_id, text });
+        }
         let node = find_node_mut(&mut self.scene.root, node_id)
             .ok_or_else(|| stale_mapping(path, op.key))?;
         if let Some(element) = &op.fields.element {
@@ -1224,6 +1258,7 @@ impl DocumentBuilder {
                     .collect(),
             );
         }
+        self.patches.extend(projected);
         Ok(())
     }
 
@@ -1262,6 +1297,11 @@ impl DocumentBuilder {
                 "move index exceeds the parent child count",
             ));
         }
+        self.patches.push(ScenePatch::Move {
+            id: key_id,
+            parent: parent_id,
+            index,
+        });
         parent.children.insert(index, moved);
         Ok(())
     }
@@ -1279,6 +1319,7 @@ impl DocumentBuilder {
         }
         let removed = remove_node(&mut self.scene.root, node_id)
             .ok_or_else(|| stale_mapping(path, op.key))?;
+        self.patches.push(ScenePatch::Remove { id: node_id });
         let mut retired = Vec::new();
         collect_keys(&removed, &self.node_to_key, &mut retired);
         for key in retired {
@@ -1475,6 +1516,52 @@ impl DocumentBuilder {
             )
         })
     }
+}
+
+fn validate_element_transport(path: &str, element: &UiElement) -> Result<(), NativeUiFrameError> {
+    if element
+        .attributes
+        .as_ref()
+        .is_some_and(|attributes| !attributes.is_empty())
+    {
+        return Err(issue(
+            &format!("{path}.attributes"),
+            None,
+            SupportLevel::Unsupported,
+            MappingIssueKind::InformationLoss,
+            "element attributes have no UI IR v0 Native representation",
+        ));
+    }
+    if element
+        .content
+        .as_ref()
+        .is_some_and(|content| !content.is_empty())
+        && !matches!(
+            element.kind,
+            ElementKind::Text
+                | ElementKind::Button
+                | ElementKind::Link
+                | ElementKind::TextField
+                | ElementKind::TextArea
+                | ElementKind::Checkbox
+                | ElementKind::Radio
+                | ElementKind::Switch
+                | ElementKind::Slider
+                | ElementKind::ListItem
+                | ElementKind::TableCell
+                | ElementKind::MenuItem
+                | ElementKind::Tooltip
+        )
+    {
+        return Err(issue(
+            &format!("{path}.content"),
+            None,
+            SupportLevel::Unsupported,
+            MappingIssueKind::InformationLoss,
+            "this element kind has no content projection in UI IR v0 Native mapping",
+        ));
+    }
+    Ok(())
 }
 
 fn native_node_kind(element: &UiElement) -> NodeKind {

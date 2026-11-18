@@ -20,8 +20,8 @@ pub use events::{
 };
 pub use identity::{IdentityError, UiIdentityLedger};
 pub use native::{
-    MappedProperty, MappingIssue, MappingIssueKind, NativeUiDocument, NativeUiFrameError,
-    SupportLevel,
+    MappedProperty, MappingIssue, MappingIssueKind, NativeSceneUpdate, NativeUiDocument,
+    NativeUiFrameError, SupportLevel,
 };
 
 /// The only IR version this profile reads.

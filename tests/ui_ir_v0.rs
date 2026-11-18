@@ -1,4 +1,3 @@
-#[cfg(feature = "native-blitz-cpu-pending")]
 use jasper_ui_engine::semantics::Role;
 use jasper_ui_engine::ui_ir::{
     MappingIssueKind, NativeUiDocument, NativeUiFrameError, SupportLevel, UiEventContext,
@@ -66,6 +65,40 @@ fn unknown_ir_fields_are_not_silently_ignored() {
 }
 
 #[test]
+fn unprojected_content_and_kind_changes_fail_without_advancing_revision() {
+    let bytes = fixture("settings-page.ir.json");
+    let mut value: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    value["ops"][0]["node"]["element"]["content"] = serde_json::json!("not representable");
+    let error =
+        NativeUiDocument::from_json_slice(&serde_json::to_vec(&value).unwrap()).unwrap_err();
+    let NativeUiFrameError::Mapping(issue) = error else {
+        panic!("expected a structured mapping issue");
+    };
+    assert_eq!(issue.kind, MappingIssueKind::InformationLoss);
+    assert!(issue.path.ends_with(".element.content"));
+
+    let mut document = NativeUiDocument::from_json_slice(&bytes).unwrap();
+    let before = document.scene().clone();
+    let mut frame: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    frame["expected_revision"] = serde_json::json!(2);
+    frame["next_revision"] = serde_json::json!(3);
+    frame["ops"] = serde_json::json!([{
+        "op": "update",
+        "key": { "semantic_id": 3, "generation": 1 },
+        "fields": { "element": { "kind": "container" } }
+    }]);
+    let frame = UiFrame::from_json_slice(&serde_json::to_vec(&frame).unwrap()).unwrap();
+    let error = document.apply_frame_with_patches(&frame).unwrap_err();
+    let NativeUiFrameError::Mapping(issue) = error else {
+        panic!("expected a structured kind-projection issue");
+    };
+    assert_eq!(issue.kind, MappingIssueKind::InformationLoss);
+    assert!(issue.path.ends_with(".fields.element.kind"));
+    assert_eq!(document.revision(), 2);
+    assert_eq!(document.scene(), &before);
+}
+
+#[test]
 fn dialog_fixture_retains_candidate_overlay_and_position_status() {
     let document = NativeUiDocument::from_json_slice(&fixture("dialog-overlay.ir.json")).unwrap();
     assert_eq!(document.revision(), 2);
@@ -87,13 +120,67 @@ fn dialog_fixture_retains_candidate_overlay_and_position_status() {
 }
 
 #[test]
-fn table_semantics_reject_instead_of_claiming_lossy_native_equivalence() {
-    let error = NativeUiDocument::from_json_slice(&fixture("data-table.ir.json")).unwrap_err();
-    let NativeUiFrameError::Mapping(issue) = error else {
-        panic!("expected a structured mapping issue, got {error:?}");
+fn table_semantics_are_preserved_in_the_native_scene() {
+    let document = NativeUiDocument::from_json_slice(&fixture("data-table.ir.json")).unwrap();
+    let role = |key| {
+        document
+            .scene()
+            .find(document.node_for_key(UiKey::new(key, 1)).unwrap())
+            .unwrap()
+            .semantics
+            .role
     };
-    assert_eq!(issue.kind, MappingIssueKind::InformationLoss);
-    assert!(issue.path.ends_with(".semantics.role"));
+    assert_eq!(role(20), Role::Table);
+    assert_eq!(role(21), Role::TableRow);
+    assert_eq!(role(22), Role::TableCell);
+    assert_eq!(role(23), Role::TableCell);
+}
+
+#[test]
+fn text_area_and_popup_roles_keep_their_schema_identity() {
+    let bytes = fixture("settings-page.ir.json");
+    let mut value: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    value["ops"][0]["node"]["children"][1]["element"]["kind"] = serde_json::json!("text-area");
+    value["ops"][0]["node"]["children"][1]["semantics"]["role"] = serde_json::json!("text-area");
+    let document = NativeUiDocument::from_json_slice(&serde_json::to_vec(&value).unwrap()).unwrap();
+    let field = document.node_for_key(UiKey::new(3, 1)).unwrap();
+    assert_eq!(
+        document.scene().find(field).unwrap().semantics.role,
+        Role::TextArea
+    );
+
+    value["ops"][0]["node"]["children"][1]["semantics"]["selected"] = serde_json::json!(true);
+    let document = NativeUiDocument::from_json_slice(&serde_json::to_vec(&value).unwrap()).unwrap();
+    let field = document.node_for_key(UiKey::new(3, 1)).unwrap();
+    assert!(document.scene().find(field).unwrap().semantics.selected);
+
+    value["ops"][0]["node"]["children"][1]["element"] = serde_json::json!({ "kind": "popover" });
+    value["ops"][0]["node"]["children"][1]["semantics"]["role"] = serde_json::json!("popover");
+    let document = NativeUiDocument::from_json_slice(&serde_json::to_vec(&value).unwrap()).unwrap();
+    let field = document.node_for_key(UiKey::new(3, 1)).unwrap();
+    assert_eq!(
+        document.scene().find(field).unwrap().semantics.role,
+        Role::Popover
+    );
+
+    value["ops"][0]["node"]["children"][1]["element"] =
+        serde_json::json!({ "kind": "tooltip", "content": "Help" });
+    value["ops"][0]["node"]["children"][1]["semantics"]["role"] = serde_json::json!("tooltip");
+    let document = NativeUiDocument::from_json_slice(&serde_json::to_vec(&value).unwrap()).unwrap();
+    let field = document.node_for_key(UiKey::new(3, 1)).unwrap();
+    assert_eq!(
+        document.scene().find(field).unwrap().semantics.role,
+        Role::Tooltip
+    );
+
+    value["ops"][0]["node"]["children"][1]["element"] = serde_json::json!({ "kind": "container" });
+    value["ops"][0]["node"]["children"][1]["semantics"]["role"] = serde_json::json!("live");
+    let document = NativeUiDocument::from_json_slice(&serde_json::to_vec(&value).unwrap()).unwrap();
+    let field = document.node_for_key(UiKey::new(3, 1)).unwrap();
+    assert_eq!(
+        document.scene().find(field).unwrap().semantics.role,
+        Role::Live(jasper_ui_engine::semantics::LivePoliteness::Polite)
+    );
 }
 
 #[test]
@@ -167,10 +254,15 @@ fn successor_frames_update_move_remove_and_advance_atomically() {
             "op": "update",
             "key": { "semantic_id": 3, "generation": 1 },
             "fields": {
+                "element": { "kind": "text-field", "content": "Alicia" },
                 "semantics": {
                     "role": "text-field",
                     "label": "Display name",
                     "focusable": true
+                },
+                "style": {
+                    "box": { "height": { "unit": "px", "value": 36 } },
+                    "paint": { "background": "#FFFFFFFF" }
                 },
                 "events": [{ "event": "text-commit", "action": "rename" }]
             }
@@ -187,9 +279,14 @@ fn successor_frames_update_move_remove_and_advance_atomically() {
         }
     ]);
     let frame = UiFrame::from_json_slice(&serde_json::to_vec(&frame).unwrap()).unwrap();
-    document.apply_frame(&frame).unwrap();
+    let mut replay = document.scene().clone();
+    let projection = document.apply_frame_with_patches(&frame).unwrap();
+    replay
+        .apply_batch_at(2, &projection.patches)
+        .expect("projected successor batch");
     assert_eq!(document.revision(), 3);
     assert_eq!(document.scene().version(), 3);
+    assert_eq!(&replay, document.scene());
     assert_eq!(
         document.environment().appearance,
         Some(jasper_ui_engine::ui_ir::Appearance::Dark)
@@ -198,6 +295,10 @@ fn successor_frames_update_move_remove_and_advance_atomically() {
     assert_eq!(
         document.scene().find(field).unwrap().semantics.label,
         "Display name"
+    );
+    assert_eq!(
+        document.scene().find(field).unwrap().text_content(),
+        Some("Alicia")
     );
     assert_eq!(
         document.scene().root.children[1].id,
@@ -344,4 +445,167 @@ fn same_settings_fixture_executes_through_scene_host_view_and_cpu_renderer() {
             .any(|pixel| pixel.iter().any(|byte| *byte != 0)),
         "the canonical settings fixture must produce visible pixels"
     );
+}
+
+#[cfg(feature = "native-blitz-cpu-pending")]
+#[test]
+fn projected_successor_patches_update_an_active_scene_host_view() {
+    use jasper_ui_engine::native::host::SceneHostView;
+
+    const OWNER: u64 = 72;
+    let bytes = fixture("settings-page.ir.json");
+    let mut document = NativeUiDocument::from_json_slice(&bytes).unwrap();
+    let font = std::fs::read(
+        std::env::var("JASPER_UI_TEST_FONT")
+            .expect("JASPER_UI_TEST_FONT must name an injected font"),
+    )
+    .unwrap();
+    let mut view = SceneHostView::new(OWNER, document.scene(), &font, 480, 320).unwrap();
+    let button = document.node_for_key(UiKey::new(4, 1)).unwrap();
+    assert!(view.focus(OWNER, 2, button, &mut |_| {}));
+
+    let mut frame: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    frame["expected_revision"] = serde_json::json!(2);
+    frame["next_revision"] = serde_json::json!(3);
+    frame["ops"] = serde_json::json!([
+        {
+            "op": "update",
+            "key": { "semantic_id": 3, "generation": 1 },
+            "fields": {
+                "element": { "kind": "text-field", "content": "Alicia" },
+                "semantics": {
+                    "role": "text-field",
+                    "label": "Display name",
+                    "focusable": true
+                },
+                "style": {
+                    "box": { "height": { "unit": "px", "value": 36 } },
+                    "paint": { "background": "#FFFFFFFF" }
+                }
+            }
+        },
+        {
+            "op": "move",
+            "key": { "semantic_id": 4, "generation": 1 },
+            "parent": { "semantic_id": 1, "generation": 1 },
+            "index": 1
+        }
+    ]);
+    let frame = UiFrame::from_json_slice(&serde_json::to_vec(&frame).unwrap()).unwrap();
+    let update = document.apply_frame_with_patches(&frame).unwrap();
+    view.try_apply(
+        OWNER,
+        update.expected_revision,
+        update.next_revision,
+        &update.patches,
+    )
+    .expect("live host accepts the same projected frame");
+    assert_eq!(
+        view.focused_node(OWNER, update.next_revision),
+        Some(button),
+        "moving a focused node preserves its UiKey-backed Native identity"
+    );
+
+    let semantics = view.semantics(OWNER, update.next_revision).unwrap();
+    let field = document.node_for_key(UiKey::new(3, 1)).unwrap();
+    assert_eq!(
+        semantics
+            .nodes
+            .iter()
+            .find(|item| item.node == field)
+            .unwrap()
+            .semantics
+            .label,
+        "Display name"
+    );
+    assert_eq!(
+        view.semantics(OWNER, update.next_revision)
+            .unwrap()
+            .nodes
+            .iter()
+            .find(|item| item.semantics.role == Role::Form)
+            .unwrap()
+            .children[1],
+        document.node_for_key(UiKey::new(4, 1)).unwrap()
+    );
+}
+
+#[cfg(feature = "native-blitz-cpu-pending")]
+#[test]
+fn same_data_table_fixture_executes_and_exposes_table_semantics() {
+    use jasper_ui_engine::native::host::SceneHostView;
+
+    const OWNER: u64 = 71;
+    const WIDTH: u32 = 640;
+    const HEIGHT: u32 = 320;
+    let font = std::fs::read(
+        std::env::var("JASPER_UI_TEST_FONT")
+            .expect("JASPER_UI_TEST_FONT must name an injected font"),
+    )
+    .unwrap();
+    let document = NativeUiDocument::from_json_slice(&fixture("data-table.ir.json")).unwrap();
+    let mut view = SceneHostView::new(OWNER, document.scene(), &font, WIDTH, HEIGHT)
+        .expect("Native table construction");
+    let semantics = view.semantics(OWNER, document.revision()).unwrap();
+    let role = |key| {
+        semantics
+            .nodes
+            .iter()
+            .find(|item| item.node == document.node_for_key(UiKey::new(key, 1)).unwrap())
+            .map(|item| item.semantics.role)
+            .unwrap()
+    };
+    assert_eq!(role(20), Role::Table);
+    assert_eq!(role(21), Role::TableRow);
+    assert_eq!(role(22), Role::TableCell);
+
+    let mut pixels = vec![0u8; (WIDTH * HEIGHT * 4) as usize];
+    assert!(view.render_to_surface(
+        OWNER,
+        document.revision(),
+        &mut pixels,
+        (WIDTH * 4) as usize,
+        48 * 1024 * 1024,
+    ));
+    assert!(pixels
+        .chunks_exact(4)
+        .any(|pixel| pixel.iter().any(|byte| *byte != 0)));
+}
+
+#[cfg(feature = "native-blitz-cpu-pending")]
+#[test]
+fn same_dialog_fixture_executes_with_candidate_overlay_metadata() {
+    use jasper_ui_engine::native::host::SceneHostView;
+
+    const OWNER: u64 = 73;
+    const WIDTH: u32 = 640;
+    const HEIGHT: u32 = 480;
+    let font = std::fs::read(
+        std::env::var("JASPER_UI_TEST_FONT")
+            .expect("JASPER_UI_TEST_FONT must name an injected font"),
+    )
+    .unwrap();
+    let document = NativeUiDocument::from_json_slice(&fixture("dialog-overlay.ir.json")).unwrap();
+    let mut view = SceneHostView::new(OWNER, document.scene(), &font, WIDTH, HEIGHT)
+        .expect("Native dialog construction");
+    let overlays = view.overlays(OWNER, document.revision()).unwrap();
+    assert_eq!(overlays.len(), 1);
+    let dialog = document.node_for_key(UiKey::new(32, 1)).unwrap();
+    assert_eq!(overlays[0].overlay, dialog);
+    assert_eq!(overlays[0].spec.layer, 100);
+    assert!(overlays[0].spec.modal);
+    assert_eq!(overlays[0].spec.scrim.map(|color| color.a), Some(0x80));
+    assert!(overlays[0].placement.is_some());
+
+    let mut pixels = vec![0u8; (WIDTH * HEIGHT * 4) as usize];
+    assert!(view.render_to_surface(
+        OWNER,
+        document.revision(),
+        &mut pixels,
+        (WIDTH * 4) as usize,
+        64 * 1024 * 1024,
+    ));
+    assert!(pixels
+        .chunks_exact(4)
+        .any(|pixel| pixel.iter().any(|byte| *byte != 0)));
 }

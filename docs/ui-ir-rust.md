@@ -47,6 +47,8 @@ Jasper Language/UI 共有层；Rust 不反向定义公共语义。
 
 - 先在 detached clone 上完成整帧映射，成功后替换；
 - 支持 insert/update/move/remove/resource/environment；
+- `apply_frame_with_patches` 为活动 `SceneHostView` 返回同一终态的 `ScenePatch` 批次；
+- `ScenePatch::Move` 保持节点身份与焦点，不用 remove+insert 近似重排；
 - 维护 `UiKey ↔ NodeId`、事件 action、资源 generation 与 element kind；
 - style 无法无损表达时返回 `NativeUiFrameError::Mapping(MappingIssue)`；
 - revision 与 `Scene::version()` 同步推进。
@@ -57,10 +59,14 @@ Jasper Language/UI 共有层；Rust 不反向定义公共语义。
 |---|---|---|
 | box/flex/paint/typography 基础子集 | implemented / tested | 设置页 fixture 经真实 Native CPU 执行 |
 | 事件绑定与准入 | implemented / tested | click/text-commit、owner/session/revision/permission/generation 拒绝 |
+| 活动宿主后继帧 | implemented / tested | `apply_frame_with_patches` 生成 patch，真实 SceneHostView 应用并与 detached 文档终态一致 |
+| Table/Row/Cell 语义 | implemented / tested | 公共角色、ARIA 和 AccessKit Table/Row/Cell 保留，data-table fixture Native CPU 可执行 |
+| TextArea 语义与编辑 | implemented / tested | 保留 MultilineTextInput、换行输入、行内 Home/End、上下移动与多行编辑缓冲 |
+| Popover/Tooltip 语义 | implemented / tested | Native 语义角色保留；AccessKit 分别投影为 Group/Tooltip，Popover 的宿主平台细节仍为 candidate |
+| Selected 状态 | implemented / tested | Semantics、AccessibilityNode、ARIA 与 AccessKit selected 状态贯通 |
 | Grid、Position、Image、Overlay | candidate | 可映射到现有候选字段，`host_accepted = false` |
 | 部分 flex 组合 | structured reject | wrap、shrink、baseline、space-around/evenly 目前无 Native 等价字段 |
 | 部分文字属性 | structured reject | 非默认水平 align、显式 bidi direction、baseline vertical align |
-| table/table-row/table-cell 语义 | structured reject | 现有 Rust `Semantics::Role` 不能无损表达 |
 | element attributes | structured reject | v0.1 Native profile 无通用属性袋 |
 
 拒绝使用字段路径、property、support level、issue kind 和 detail。candidate 映射不会被改写成
@@ -72,8 +78,8 @@ Jasper Language/UI 共有层；Rust 不反向定义公共语义。
 固定 FNV-1a 摘要。当前覆盖：
 
 - `settings-page.ir.json`：Schema 解析、Native 映射、真实 SceneHostView、语义、几何和 CPU 渲染；
-- `data-table.ir.json`：Schema 解析；Native 对不可表达的 table role 显式拒绝；
-- `dialog-overlay.ir.json`：Schema 解析、candidate overlay/position 映射与状态保留。
+- `data-table.ir.json`：Schema 解析、Table/Row/Cell 语义、真实 SceneHostView 与 CPU 渲染；
+- `dialog-overlay.ir.json`：Schema 解析、candidate overlay/position、真实 SceneHostView overlay 查询与 CPU 渲染。
 
 ## 证据状态
 
@@ -81,7 +87,7 @@ Jasper Language/UI 共有层；Rust 不反向定义公共语义。
 |---|---|
 | Schema | appfw v0.1 draft；Rust consumer profile 已实现 |
 | Rust structural tests | passed |
-| Native CPU same-fixture execution | passed on Linux x86_64 test environment |
+| Native CPU same-fixture execution | all three canonical fixtures passed on Linux x86_64 test environment |
 | Native GPU same-fixture | not run in this slice |
 | Web SSR / real browser | not run in this slice |
 | Real platform host acceptance | not run |

@@ -182,6 +182,54 @@ fn focus_starts_a_session_and_typing_moves_the_caret_without_versions() {
 }
 
 #[test]
+fn text_area_uses_the_same_in_scene_edit_session_without_role_loss() {
+    let mut source = scene("ab");
+    source.root.children[0].semantics.role = Role::TextArea;
+    let version = source.version();
+    let mut engine =
+        Engine::with_fonts(OWNER, &source, &[&font()], W, H).expect("native text-area import");
+    assert!(engine.focus(OWNER, version, FIELD, &mut |_| {}));
+    assert!(engine.text_input(OWNER, version, "c\nd"));
+    let state = engine.edit_state(OWNER, version).unwrap().unwrap();
+    assert_eq!(state.text, "abc\nd");
+    assert!(engine.key(
+        OWNER,
+        version,
+        &HostKeyInput {
+            key: "Enter",
+            code: "Enter",
+            pressed: true,
+            repeat: false,
+            composing: false,
+            modifiers: Modifiers::default(),
+            location: KeyLocation::Standard,
+        },
+        &mut |_| EventReply::default(),
+        &mut |_| {},
+    ));
+    assert_eq!(
+        engine.edit_state(OWNER, version).unwrap().unwrap().text,
+        "abc\nd\n"
+    );
+    assert!(engine
+        .take_edit_events(OWNER)
+        .unwrap()
+        .iter()
+        .all(|event| !matches!(event.kind, SceneEditEventKind::Commit(_))));
+    let semantics = engine.semantics(OWNER, version).unwrap();
+    assert_eq!(
+        semantics
+            .nodes
+            .iter()
+            .find(|node| node.node == FIELD)
+            .unwrap()
+            .semantics
+            .role,
+        Role::TextArea
+    );
+}
+
+#[test]
 fn caret_blinks_on_the_host_clock_and_stays_under_reduce_motion() {
     let mut f = Fixture::new("ab");
     assert_eq!(f.e.caret_blink(OWNER, 0.0).unwrap().visible, false);

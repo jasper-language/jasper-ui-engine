@@ -2464,6 +2464,7 @@ impl NativeScene {
                 },
                 text_selection: edit.map(|(_, selection)| selection),
                 disabled: semantics.disabled,
+                selected: semantics.selected,
                 modal: self
                     .source
                     .find(id)
@@ -3573,6 +3574,7 @@ fn semantic_attributes(semantics: &Semantics) -> Vec<(&'static str, String)> {
     let role = match semantics.role {
         Role::Button => Some("button"),
         Role::TextField => Some("textbox"),
+        Role::TextArea => Some("textbox"),
         Role::Checkbox => Some("checkbox"),
         Role::Radio => Some("radio"),
         Role::Switch => Some("switch"),
@@ -3581,7 +3583,12 @@ fn semantic_attributes(semantics: &Semantics) -> Vec<(&'static str, String)> {
         Role::Link => Some("link"),
         Role::List => Some("list"),
         Role::ListItem => Some("listitem"),
+        Role::Table => Some("table"),
+        Role::TableRow => Some("row"),
+        Role::TableCell => Some("cell"),
         Role::Dialog => Some("dialog"),
+        Role::Popover => Some("group"),
+        Role::Tooltip => Some("tooltip"),
         Role::Menu => Some("menu"),
         Role::MenuItem => Some("menuitem"),
         Role::ScrollView => Some("region"),
@@ -3597,6 +3604,7 @@ fn semantic_attributes(semantics: &Semantics) -> Vec<(&'static str, String)> {
     }
     match semantics.role {
         Role::Heading(level) => values.push(("aria-level", level.get().to_string())),
+        Role::TextArea => values.push(("aria-multiline", "true".to_owned())),
         Role::Live(politeness) => values.push((
             "aria-live",
             match politeness {
@@ -3618,6 +3626,9 @@ fn semantic_attributes(semantics: &Semantics) -> Vec<(&'static str, String)> {
     }
     values.push(("aria-disabled", semantics.disabled.to_string()));
     values.push(("aria-hidden", semantics.hidden.to_string()));
+    if semantics.selected {
+        values.push(("aria-selected", "true".to_owned()));
+    }
     if semantics.disabled && semantics.role == Role::Button {
         values.push(("disabled", String::new()));
     }
@@ -3845,7 +3856,11 @@ pub(crate) enum TextShape {
 impl TextShape {
     pub(crate) fn of(node: &Node) -> Self {
         match node.kind {
-            NodeKind::Text(_) if node.semantics.role == Role::TextField => TextShape::Field,
+            NodeKind::Text(_)
+                if matches!(node.semantics.role, Role::TextField | Role::TextArea) =>
+            {
+                TextShape::Field
+            }
             NodeKind::Text(_) => TextShape::Text,
             _ => TextShape::NotText,
         }
@@ -5252,6 +5267,7 @@ mod tests {
             disabled: true,
             focusable: true,
             hidden: false,
+            selected: false,
         };
         let mut node = Node::text(NodeId(2), "Save");
         node.semantics = supplied.clone();
@@ -5744,6 +5760,7 @@ mod semantic_attribute_update_tests {
             disabled: true,
             hidden: true,
             focusable: true,
+            selected: false,
         };
         let mut source = Scene::new(
             Node::container(NodeId(1)).child(Node::text(NodeId(2), "Text").with_semantics(initial)),

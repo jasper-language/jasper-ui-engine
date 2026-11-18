@@ -44,6 +44,8 @@ pub struct AccessibilityNode {
     /// E14：引擎编辑此 TextField 期间的选区，(anchor, caret) 为 `value`（此时即编辑缓冲）内的 UTF-8 偏移；否则为 None。
     pub text_selection: Option<(usize, usize)>,
     pub disabled: bool,
+    /// Framework selection state for selectable roles.
+    pub selected: bool,
     /// P0-A: this overlay blocks interaction with content outside it.
     /// P0-A：该浮层阻断其外内容的交互。
     pub modal: bool,

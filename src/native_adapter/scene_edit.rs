@@ -167,9 +167,17 @@ impl NativeScene {
                 _ => source.clone(),
             };
             let committed = (start != source).then(|| start.clone());
+            let multiline = self
+                .semantics
+                .get(&node)
+                .is_some_and(|semantics| semantics.role == Role::TextArea);
             self.edit.session = Some(EditSession {
                 node,
-                buffer: EditBuffer::new(&start),
+                buffer: if multiline {
+                    EditBuffer::new_multiline(&start)
+                } else {
+                    EditBuffer::new(&start)
+                },
                 source,
                 committed,
                 blink_origin: None,
@@ -243,14 +251,20 @@ impl NativeScene {
         let command = m.control || m.meta;
         let word = m.control || m.alt;
         let b = &mut session.buffer;
+        let multiline = b.is_multiline();
         let changed = |c: bool, effect: Effect| if c { effect } else { Effect::Nothing };
         let effect = match input.key {
             "Backspace" => changed(b.backspace(word), Effect::Edited),
             "Delete" => changed(b.delete(word), Effect::Edited),
             "ArrowLeft" => changed(b.move_left(m.shift, word), Effect::Moved),
             "ArrowRight" => changed(b.move_right(m.shift, word), Effect::Moved),
+            "ArrowUp" if multiline => changed(b.move_vertical(false, m.shift), Effect::Moved),
+            "ArrowDown" if multiline => changed(b.move_vertical(true, m.shift), Effect::Moved),
+            "Home" if command => changed(b.document_home(m.shift), Effect::Moved),
+            "End" if command => changed(b.document_end(m.shift), Effect::Moved),
             "Home" => changed(b.home(m.shift), Effect::Moved),
             "End" => changed(b.end(m.shift), Effect::Moved),
+            "Enter" if multiline => changed(b.insert("\n"), Effect::Edited),
             "Enter" => Effect::Commit,
             "Escape" => Effect::Revert,
             k if command && k.eq_ignore_ascii_case("a") => changed(b.select_all(), Effect::Moved),

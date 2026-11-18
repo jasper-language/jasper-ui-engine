@@ -213,8 +213,9 @@ fn focused_role(tree: &SemanticsTree, node: NodeId) -> Option<Role> {
 }
 
 fn is_editable_target(tree: &SemanticsTree, node: NodeId) -> bool {
-    tree.find(node)
-        .is_some_and(|item| item.role == Role::TextField && !item.disabled && !item.hidden)
+    tree.find(node).is_some_and(|item| {
+        matches!(item.role, Role::TextField | Role::TextArea) && !item.disabled && !item.hidden
+    })
 }
 
 #[cfg(test)]

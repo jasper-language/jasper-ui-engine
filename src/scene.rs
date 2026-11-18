@@ -205,6 +205,12 @@ pub enum ScenePatch {
         id: NodeId,
         offset: Point,
     },
+    /// Moves an existing node without changing its identity or interaction state.
+    Move {
+        id: NodeId,
+        parent: NodeId,
+        index: usize,
+    },
     Remove {
         id: NodeId,
     },
@@ -218,6 +224,8 @@ pub enum SceneError {
     NodeNotFound(NodeId),
     DuplicateNode(NodeId),
     CannotRemoveRoot,
+    CannotMoveRoot,
+    MoveIntoDescendant(NodeId),
     NotText(NodeId),
     NotCanvas(NodeId),
     StaleVersion {
@@ -490,6 +498,31 @@ fn apply_tree_patch(root: &mut Node, patch: ScenePatch) -> Result<(), SceneError
             }
             None => Err(SceneError::NodeNotFound(id)),
         },
+        ScenePatch::Move { id, parent, index } => {
+            if root.id.0 == id.0 {
+                return Err(SceneError::CannotMoveRoot);
+            }
+            let moved = match find_node(&*root, id).cloned() {
+                Some(node) => node,
+                None => return Err(SceneError::NodeNotFound(id)),
+            };
+            if find_node(&*root, parent).is_none() {
+                return Err(SceneError::NodeNotFound(parent));
+            }
+            if find_node(&moved, parent).is_some() {
+                return Err(SceneError::MoveIntoDescendant(id));
+            }
+            if !remove_node(root, id) {
+                return Err(SceneError::NodeNotFound(id));
+            }
+            let parent_node = match find_node_mut(root, parent) {
+                Some(node) => node,
+                None => return Err(SceneError::NodeNotFound(parent)),
+            };
+            let len = parent_node.children.len();
+            parent_node.children.insert(index.min(len), moved);
+            Ok(())
+        }
         ScenePatch::UpdateText { id, text } => match find_node_mut(root, id) {
             Some(node) => match &mut node.kind {
                 NodeKind::Text(existing) => {
@@ -1246,6 +1279,72 @@ mod tests {
         assert_eq!(scene.version(), 2);
         assert_eq!(scene.find(id(2)).unwrap().text_content(), Some("updated"));
         assert_eq!(scene.validate(), Ok(()));
+    }
+
+    #[test]
+    fn move_preserves_identity_reorders_and_rejects_invalid_targets() {
+        let mut scene = Scene::new(
+            Node::container(id(1))
+                .child(Node::container(id(2)).child(Node::container(id(4))))
+                .child(Node::container(id(3))),
+        );
+        let child = scene.find(id(4)).cloned().unwrap();
+        scene
+            .apply(ScenePatch::Move {
+                id: id(4),
+                parent: id(1),
+                index: 99,
+            })
+            .unwrap();
+        assert_eq!(
+            scene
+                .root
+                .children
+                .iter()
+                .map(|node| node.id)
+                .collect::<Vec<_>>(),
+            vec![id(2), id(3), id(4)]
+        );
+        assert_eq!(scene.find(id(4)), Some(&child));
+
+        let before = scene.clone();
+        assert_eq!(
+            scene.apply(ScenePatch::Move {
+                id: id(1),
+                parent: id(3),
+                index: 0,
+            }),
+            Err(SceneError::CannotMoveRoot)
+        );
+        assert_eq!(
+            scene.apply(ScenePatch::Move {
+                id: id(2),
+                parent: id(5),
+                index: 0,
+            }),
+            Err(SceneError::NodeNotFound(id(5)))
+        );
+        assert_eq!(
+            scene.apply(ScenePatch::Move {
+                id: id(3),
+                parent: id(99),
+                index: 0,
+            }),
+            Err(SceneError::NodeNotFound(id(99)))
+        );
+        assert_eq!(scene, before);
+
+        let mut nested = Scene::new(
+            Node::container(id(1)).child(Node::container(id(2)).child(Node::container(id(3)))),
+        );
+        assert_eq!(
+            nested.apply(ScenePatch::Move {
+                id: id(2),
+                parent: id(3),
+                index: 0,
+            }),
+            Err(SceneError::MoveIntoDescendant(id(2)))
+        );
     }
 
     #[test]

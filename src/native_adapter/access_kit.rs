@@ -64,6 +64,7 @@ pub fn accesskit_role(role: Role) -> KitRole {
         Role::Text => KitRole::Label,
         Role::Button => KitRole::Button,
         Role::TextField => KitRole::TextInput,
+        Role::TextArea => KitRole::MultilineTextInput,
         Role::Checkbox => KitRole::CheckBox,
         Role::Radio => KitRole::RadioButton,
         Role::Switch => KitRole::Switch,
@@ -72,7 +73,13 @@ pub fn accesskit_role(role: Role) -> KitRole {
         Role::Link => KitRole::Link,
         Role::List => KitRole::List,
         Role::ListItem => KitRole::ListItem,
+        Role::Table => KitRole::Table,
+        Role::TableRow => KitRole::Row,
+        Role::TableCell => KitRole::Cell,
         Role::Dialog => KitRole::Dialog,
+        // AccessKit has no standalone Popover role; Group preserves the explicit grouping.
+        Role::Popover => KitRole::Group,
+        Role::Tooltip => KitRole::Tooltip,
         Role::Menu => KitRole::Menu,
         Role::MenuItem => KitRole::MenuItem,
         Role::ScrollView => KitRole::ScrollView,
@@ -129,6 +136,9 @@ fn accesskit_node(node: &AccessibilityNode, transform: Option<Affine>) -> Node {
     }
     if node.disabled {
         out.set_disabled();
+    }
+    if node.selected {
+        out.set_selected(true);
     }
     if node.modal {
         out.set_modal();

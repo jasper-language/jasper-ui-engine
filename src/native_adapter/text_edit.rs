@@ -94,6 +94,7 @@ pub(crate) struct EditBuffer {
     anchor: usize,
     caret: usize,
     preedit: Option<Preedit>,
+    multiline: bool,
 }
 
 /// Field text admits no control characters (a single-line field): they are dropped on input.
@@ -102,18 +103,57 @@ pub(crate) fn sanitize(text: &str) -> String {
     text.chars().filter(|c| !c.is_control()).collect()
 }
 
+/// Multiline text admits LF while dropping other controls; CRLF and bare CR become LF.
+/// 多行文本保留 LF、丢弃其他控制字符；CRLF 与裸 CR 规范化为 LF。
+pub(crate) fn sanitize_multiline(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut chars = text.chars().peekable();
+    while let Some(c) = chars.next() {
+        match c {
+            '\r' => {
+                if chars.peek() == Some(&'\n') {
+                    chars.next();
+                }
+                out.push('\n');
+            }
+            '\n' => out.push('\n'),
+            c if !c.is_control() => out.push(c),
+            _ => {}
+        }
+    }
+    out
+}
+
 impl EditBuffer {
     /// Buffer holding `text` (control characters dropped) with the caret at its end.
     /// 持有 `text`（丢弃控制字符）、光标在末尾的缓冲。
     pub fn new(text: &str) -> Self {
-        let text = sanitize(text);
+        Self::new_with_mode(text, false)
+    }
+
+    /// Multiline buffer preserving paragraph separators.
+    /// 保留段落分隔符的多行缓冲。
+    pub fn new_multiline(text: &str) -> Self {
+        Self::new_with_mode(text, true)
+    }
+
+    fn new_with_mode(text: &str, multiline: bool) -> Self {
+        let text = if multiline {
+            sanitize_multiline(text)
+        } else {
+            sanitize(text)
+        };
         let end = text.len();
         Self {
             text,
             anchor: end,
             caret: end,
             preedit: None,
+            multiline,
         }
+    }
+    pub fn is_multiline(&self) -> bool {
+        self.multiline
     }
     pub fn text(&self) -> &str {
         &self.text
@@ -197,7 +237,11 @@ impl EditBuffer {
     /// 在选区处插入已提交文本（丢弃控制字符）；结束组合。无变化时为 false。
     pub fn insert(&mut self, text: &str) -> bool {
         self.preedit = None;
-        let text = sanitize(text);
+        let text = if self.multiline {
+            sanitize_multiline(text)
+        } else {
+            sanitize(text)
+        };
         if text.is_empty() && !self.has_selection() {
             return false;
         }
@@ -314,12 +358,62 @@ impl EditBuffer {
         };
         self.place(to, extend)
     }
+    fn line_start(&self, offset: usize) -> usize {
+        self.text[..offset].rfind('\n').map_or(0, |index| index + 1)
+    }
+    fn line_end(&self, offset: usize) -> usize {
+        self.text[offset..]
+            .find('\n')
+            .map_or(self.text.len(), |index| offset + index)
+    }
+    fn line_column(&self, line_start: usize, offset: usize) -> usize {
+        self.text[line_start..offset].graphemes(true).count()
+    }
+    fn offset_at_column(&self, line_start: usize, column: usize) -> usize {
+        self.text[line_start..]
+            .grapheme_indices(true)
+            .take_while(|(_, grapheme)| *grapheme != "\n")
+            .nth(column)
+            .map_or_else(
+                || self.line_end(line_start),
+                |(index, _)| line_start + index,
+            )
+    }
+    /// Caret to the start of the current visual line.
     pub fn home(&mut self, extend: bool) -> bool {
+        self.place(self.line_start(self.caret), extend)
+    }
+    /// Caret to the end of the current visual line.
+    pub fn end(&mut self, extend: bool) -> bool {
+        self.place(self.line_end(self.caret), extend)
+    }
+    /// Caret to the start or end of the whole document.
+    pub fn document_home(&mut self, extend: bool) -> bool {
         self.place(0, extend)
     }
-    pub fn end(&mut self, extend: bool) -> bool {
-        let end = self.text.len();
-        self.place(end, extend)
+    pub fn document_end(&mut self, extend: bool) -> bool {
+        self.place(self.text.len(), extend)
+    }
+    /// Move one visual line while preserving the grapheme column where possible.
+    pub fn move_vertical(&mut self, down: bool, extend: bool) -> bool {
+        if !self.multiline {
+            return false;
+        }
+        let start = self.line_start(self.caret);
+        let column = self.line_column(start, self.caret);
+        let target_start = if down {
+            let end = self.line_end(self.caret);
+            if end == self.text.len() {
+                return false;
+            }
+            end + 1
+        } else {
+            if start == 0 {
+                return false;
+            }
+            self.line_start(start - 1)
+        };
+        self.place(self.offset_at_column(target_start, column), extend)
     }
     pub fn select_all(&mut self) -> bool {
         let before = (self.anchor, self.caret);
@@ -356,7 +450,7 @@ impl EditBuffer {
     /// Replace everything (external update): caret at the end, no selection, no composition.
     /// 整体替换（外部更新）：光标在末尾，无选区，无组合。
     pub fn replace_all(&mut self, text: &str) {
-        *self = Self::new(text);
+        *self = Self::new_with_mode(text, self.multiline);
     }
 }
 
@@ -382,6 +476,28 @@ mod tests {
         assert!(b.delete(false));
         assert_eq!(b.text(), "bcd");
         assert_eq!(b.caret(), 0);
+    }
+
+    #[test]
+    fn multiline_mode_preserves_lf_and_navigates_visual_lines() {
+        let mut b = EditBuffer::new_multiline("ab\r\ncde\rf\tg");
+        assert!(b.is_multiline());
+        assert_eq!(b.text(), "ab\ncde\nfg");
+        assert_eq!(b.caret(), b.text().len());
+        b.set_caret(4, false);
+        assert!(b.move_vertical(false, false));
+        assert_eq!(b.caret(), 1);
+        assert!(b.move_vertical(true, false));
+        assert_eq!(b.caret(), 4);
+        assert!(b.end(false));
+        assert_eq!(b.caret(), 6);
+        assert!(b.home(false));
+        assert_eq!(b.caret(), 3);
+        assert!(b.insert("\nQ"));
+        assert_eq!(b.text(), "ab\n\nQcde\nfg");
+        b.replace_all("x\r\ny");
+        assert_eq!(b.text(), "x\ny");
+        assert!(b.is_multiline());
     }
 
     #[test]

@@ -13,6 +13,7 @@ pub enum Role {
     Text,
     Button,
     TextField,
+    TextArea,
     Checkbox,
     Radio,
     Switch,
@@ -21,7 +22,12 @@ pub enum Role {
     Link,
     List,
     ListItem,
+    Table,
+    TableRow,
+    TableCell,
     Dialog,
+    Popover,
+    Tooltip,
     Menu,
     MenuItem,
     ScrollView,
@@ -84,6 +90,7 @@ pub struct Semantics {
     pub disabled: bool,
     pub focusable: bool,
     pub hidden: bool,
+    pub selected: bool,
 }
 // END VERIFIED SCENE SEMANTICS TYPE
 
@@ -122,6 +129,11 @@ impl Semantics {
         self.hidden = hidden;
         self
     }
+
+    pub fn selected(mut self, selected: bool) -> Self {
+        self.selected = selected;
+        self
+    }
 }
 
 /// One node in the accessibility snapshot.
@@ -135,6 +147,7 @@ pub struct SemanticsNode {
     pub disabled: bool,
     pub focusable: bool,
     pub hidden: bool,
+    pub selected: bool,
     pub children: Vec<SemanticsNode>,
 }
 
@@ -182,6 +195,7 @@ fn snapshot(node: &Node) -> SemanticsNode {
         disabled: semantics.disabled,
         focusable: semantics.focusable,
         hidden: semantics.hidden,
+        selected: semantics.selected,
         children: node.children.iter().map(snapshot).collect(),
     }
 }

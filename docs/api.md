@@ -16,7 +16,7 @@ Framework 产生 `native::SceneUpdate { expected_version, next_version, patches 
 
 **按角色激活（E12）**：引擎统一产出激活。指针：按下与抬起在同一控件内的主键点击，对 `role_activates_on_click` 的角色（Button、Checkbox、Radio、Switch、Link、MenuItem、ListItem）给出 `SceneEventKind::Activate`；键盘：`key_with_activation` 对聚焦控件按 `role_activates_on_key`（Enter：Button/Link/MenuItem；Space：Button/Checkbox/Radio/Switch/MenuItem/ListItem）报告 `SceneActivationEvent`；非重复、无 ctrl/alt/meta、键事件未阻止默认时才激活。禁用或隐藏节点从不激活。原 `key` 不报告激活。`Engine::activate` 与无障碍树的 activate 动作用同一角色表。未阻止默认的主键按下聚焦最近的可聚焦祖先，在焦点控件内完成的点击保持焦点，点击可聚焦控件之外失焦（与浏览器一致）。
 
-**新角色（E11）**：`Role::Heading(HeadingLevel)`（1..=6，`HeadingLevel::new` 构造）、`Status`、`Live(LivePoliteness::{Polite, Assertive})`、`Alert`、`Form`；AccessKit 映射为 Heading（level，1 起）/Status（live polite）/Region（live 按参数）/Alert（live assertive）/Form。
+**新角色（E11）**：`Role::Heading(HeadingLevel)`（1..=6，`HeadingLevel::new` 构造）、`Status`、`Live(LivePoliteness::{Polite, Assertive})`、`Alert`、`Form`；AccessKit 映射为 Heading（level，1 起）/Status（live polite）/Region（live 按参数）/Alert（live assertive）/Form。Typed IR consumer 另保留 `TextArea`、`Table`、`TableRow`、`TableCell`、`Popover`、`Tooltip`；AccessKit 映射为 MultilineTextInput、Table、Row、Cell、Group、Tooltip。`TextArea` 使用多行编辑缓冲，Enter 插入换行，失焦提交。`Semantics::selected` 贯通语义快照、ARIA `aria-selected` 与 AccessKit selected 状态。
 
 **宿主接口（E13）**：`HostRenderer::node_bounds`、`activate`、`key_with_activation` 经 Surface 代数准入后转发。
 
@@ -50,7 +50,8 @@ GPU 渲染（`gpu-pending`）：`GpuRenderer::new_headless()` 不带呈现表面
 
 `ui_ir` 严格读取 Jasper Language/UI 共有层拥有的 v0.1 Schema，不反向定义公共语义。`UiFrame`
 校验后才可构造 `NativeUiDocument`；后者维护公共 `UiKey` 与内部 `scene::NodeId` 的隔离映射，
-并在 detached document 上原子应用后继帧。
+并在 detached document 上原子应用后继帧。`apply_frame_with_patches` 同时返回活动
+`SceneHostView` 可应用的 `ScenePatch` 批次。
 
 ```rust
 use jasper_ui_engine::ui_ir::{NativeUiDocument, UiKey};
@@ -143,6 +144,7 @@ scene.apply(ScenePatch::Remove { id: NodeId(2) })?;
 
 - `NodeId` 在场景生命周期内稳定；重复 ID 会报 `SceneError::DuplicateNode`。
 - `ScenePatch::SetScroll` 更新节点滚动偏移，走同一套版本/原子批。
+- `ScenePatch::Move { id, parent, index }` 在同批事务中保持节点身份重排，并保留可继续准入的焦点/指针状态。
 - `Scene::version()` 单调递增；`apply` / `apply_batch` **原子**（失败不改变场景/版本）。
 - `apply_batch_at(expected, patches)` 拒绝过期批次，返回 `SceneError::StaleVersion`。
 - `LayoutTree.scene_version` / `FrameStats.scene_version` 把版本带到宿主。
