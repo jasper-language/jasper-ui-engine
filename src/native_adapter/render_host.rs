@@ -272,8 +272,17 @@ impl HostRenderer {
         let update = candidate
             .apply_frame_with_patches(frame)
             .map_err(TypedUiApplyError::Frame)?;
+        let reduce_motion = candidate.environment().reduce_motion;
+        if reduce_motion.is_some() && self.reduce_motion(owner).is_none() {
+            return Err(TypedUiApplyError::Host(SceneUpdateError::OwnerMismatch));
+        }
         self.try_apply_ui_ir(owner, &update)
             .map_err(TypedUiApplyError::Host)?;
+        if let Some(on) = reduce_motion {
+            if !self.set_reduce_motion(owner, on) {
+                return Err(TypedUiApplyError::Host(SceneUpdateError::Closed));
+            }
+        }
         *document = candidate;
         Ok(update)
     }
@@ -534,6 +543,9 @@ impl HostRenderer {
     /// E7 宿主「减少动态」环境；见 `Engine::set_reduce_motion`。与 Surface 生命周期无关（属场景设置）。
     pub fn set_reduce_motion(&mut self, owner: u64, on: bool) -> bool {
         self.inner.set_reduce_motion(owner, on)
+    }
+    pub fn reduce_motion(&self, owner: u64) -> Option<bool> {
+        self.inner.reduce_motion(owner)
     }
 
     /// E5 material budget; see `Engine::set_backdrop_budget` (a scene setting, like reduce-motion).

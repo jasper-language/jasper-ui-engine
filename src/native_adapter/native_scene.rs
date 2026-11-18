@@ -2748,6 +2748,9 @@ impl NativeScene {
         }
         true
     }
+    pub(crate) fn reduce_motion_from_host(&self, caller: u64) -> Option<bool> {
+        (caller == self.owner && self.document.is_open()).then_some(self.motion.reduce_motion())
+    }
     /// E5: per-frame CPU budget for blurred materials (`BackdropBudget::DEFAULT` initially;
     /// `FALLBACK_ONLY` paints every material as its fallback). A change repaints. False for a
     /// foreign caller or a closed view.

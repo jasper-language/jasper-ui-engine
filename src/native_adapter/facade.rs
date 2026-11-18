@@ -929,6 +929,7 @@ impl SceneHostView {
     /// E7：宿主「减少动态」环境。开启时运行中的过渡立即结束；之后尺寸/变换变化立即生效，其他属性用规则的
     /// `reduce=` 替代曲线（没有则立即）。非归属方或已关闭视图为 false。
     pub fn set_reduce_motion(&mut self,owner:u64,on:bool)->bool {self.inner.set_reduce_motion_from_host(owner,on)}
+    pub fn reduce_motion(&self,owner:u64)->Option<bool> {self.inner.reduce_motion_from_host(owner)}
     /// E5 materials: per-frame CPU budget for blurred backdrops (`BackdropBudget::DEFAULT`
     /// initially). Over budget a material paints its solid fallback and is listed in
     /// `backdrop_report`; `BackdropBudget::FALLBACK_ONLY` never blurs. False for a foreign owner

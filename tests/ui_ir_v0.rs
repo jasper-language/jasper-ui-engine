@@ -787,17 +787,23 @@ fn host_renderer_gates_typed_ui_frame_atomically_across_suspend_resume() {
     let mut frame: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     frame["expected_revision"] = serde_json::json!(2);
     frame["next_revision"] = serde_json::json!(3);
-    frame["ops"] = serde_json::json!([{
-        "op": "update",
-        "key": { "semantic_id": 3, "generation": 1 },
-        "fields": {
-            "semantics": {
-                "role": "text-field",
-                "label": "Display name",
-                "focusable": true
+    frame["ops"] = serde_json::json!([
+        {
+            "op": "update",
+            "key": { "semantic_id": 3, "generation": 1 },
+            "fields": {
+                "semantics": {
+                    "role": "text-field",
+                    "label": "Display name",
+                    "focusable": true
+                }
             }
+        },
+        {
+            "op": "env",
+            "env": { "reduce_motion": true }
         }
-    }]);
+    ]);
     let frame = UiFrame::from_json_slice(&serde_json::to_vec(&frame).unwrap()).unwrap();
     let suspended = host
         .suspend(OWNER, 2, active.generation, &mut |_| {})
@@ -815,6 +821,7 @@ fn host_renderer_gates_typed_ui_frame_atomically_across_suspend_resume() {
         .unwrap();
     assert_eq!(update.next_revision, 3);
     assert_eq!(document.revision(), 3);
+    assert_eq!(host.reduce_motion(OWNER), Some(true));
     let mut pixels = vec![0u8; (WIDTH * HEIGHT * 4) as usize];
     assert!(host.render_to_surface(
         OWNER,

@@ -63,7 +63,7 @@ pointer 优先 `click`，其余使用 `activate`，不会把未绑定的键盘�
 |---|---|---|
 | box/flex/paint/typography 基础子集 | implemented / tested | 设置页 fixture 经真实 Native CPU 执行 |
 | 事件绑定与准入 | implemented / tested | click/text-commit、owner/session/revision/permission/generation 拒绝；Native NodeId 只能经 UiKey 上下文映射，activation 来源显式区分 |
-| 活动宿主后继帧 | implemented / tested | `apply_frame_with_patches` 生成 patch；`HostRenderer::try_apply_ui_frame` 将 IR mapping、Surface generation 与 Native 事务合成原子准入；暂停时 document/view 均不推进 |
+| 活动宿主后继帧 | implemented / tested | `apply_frame_with_patches` 生成 patch；`HostRenderer::try_apply_ui_frame` 将 IR mapping、Surface generation、Native 事务与 reduce-motion 环境合成原子准入；暂停时 document/view 均不推进 |
 | Table/Row/Cell 语义 | implemented / tested | 公共角色、ARIA 和 AccessKit Table/Row/Cell 保留，data-table fixture Native CPU 可执行 |
 | TextArea 语义与编辑 | implemented / tested | 保留 MultilineTextInput、换行输入、行内 Home/End、上下移动与多行编辑缓冲 |
 | Popover/Tooltip 语义 | implemented / tested | Native 语义角色保留；AccessKit 分别投影为 Group/Tooltip，Popover 的宿主平台细节仍为 candidate |
