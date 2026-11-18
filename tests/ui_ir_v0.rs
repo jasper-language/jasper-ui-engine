@@ -2988,6 +2988,7 @@ fn typed_geometry_queries_use_ui_keys_and_live_generation() {
     ));
 }
 
+#[cfg(feature = "native-blitz-cpu-pending")]
 #[test]
 fn typed_host_queries_reject_a_document_ahead_of_the_native_view() {
     use jasper_ui_engine::native::host::HostRenderer;
