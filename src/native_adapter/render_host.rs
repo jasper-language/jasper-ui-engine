@@ -736,6 +736,27 @@ impl HostRenderer {
         self.inner.focused_node(owner, version)
     }
 
+    pub fn typed_focused_node(
+        &self,
+        owner: u64,
+        version: u64,
+        document: &NativeUiDocument,
+    ) -> Result<Option<UiKey>, TypedUiTargetError> {
+        if version != document.revision() {
+            return Err(TypedUiTargetError::RevisionMismatch {
+                host: version,
+                document: document.revision(),
+            });
+        }
+        self.focused_node(owner, version)
+            .map(|node| {
+                document
+                    .key_for_node(node)
+                    .ok_or(TypedUiTargetError::UnmappedTarget)
+            })
+            .transpose()
+    }
+
     pub fn accessibility_tree(
         &self,
         owner: u64,

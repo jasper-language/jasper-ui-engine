@@ -1066,6 +1066,10 @@ fn typed_focus_text_and_ime_use_the_same_admitted_ui_key() {
         }]
     );
     assert_eq!(
+        host.typed_focused_node(OWNER, 2, &document).unwrap(),
+        Some(UiKey::new(3, 1))
+    );
+    assert_eq!(
         host.typed_text_input(OWNER, 2, generation, &document, &context, field, "!")
             .unwrap(),
         UiKey::new(3, 1)
