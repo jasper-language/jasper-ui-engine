@@ -69,6 +69,8 @@ Native 回调携带 `NodeId` 时使用 `admit_native_event`/`admit_activation`�
 映射，授权仍以 `UiEventContext.target` 的 `UiKey` 和上下文为准。
 宿主只能通过 `committed_resource` 取得可消费的 Prepared+Commit 资源；`active_resource` 仍可查询
 Prepared 中间态，但不表示允许上传或绘制。
+`HostRenderer::insert_ui_image` 只接受当前 document revision 对应的精确 Committed
+`ResourceRef`；错误 id/generation、错误宿主 revision 和不可作为图片的 kind 都拒绝。
 `HostRenderer::try_apply_ui_frame` 会在 detached document 上完成 IR 映射，再经 Surface
 活跃代数与 Native 事务准入；任一侧拒绝都不推进 document 或活动视图。
 成功后同时应用 IR `reduce_motion`；其他 appearance/density/text-scale 字段仍作为已解析环境

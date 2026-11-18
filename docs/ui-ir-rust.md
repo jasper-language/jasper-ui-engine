@@ -71,7 +71,7 @@ Focus、pointer capture、IME、scroll 等非 binding 操作使用 `admit_native
 | Popover/Tooltip 语义 | implemented / tested | Native 语义角色保留；AccessKit 分别投影为 Group/Tooltip，Popover 的宿主平台细节仍为 candidate |
 | Selected 状态 | implemented / tested | Semantics、AccessibilityNode、ARIA 与 AccessKit selected 状态贯通 |
 | Typed Accessibility Tree | implemented / tested | 节点、root、focus 与 children 无损投影为 UiKey；版本不一致和未映射 NodeId 拒绝 |
-| 资源生命周期 | implemented / tested | Prepare 仅是 pending、不替换旧 Committed；Commit 原子提升；Release 只释放 active；含代数复用拒绝、节点移除后 Release 与宿主 `insert_image` 实际解码/绘制 |
+| 资源生命周期 | implemented / tested | Prepare 仅是 pending、不替换旧 Committed；Commit 原子提升；Release 只释放 active；宿主仅能通过 `insert_ui_image` 上传精确 Committed ResourceRef；含代数复用拒绝、节点移除后 Release 与实际解码/绘制 |
 | Environment | implemented / tested | 首帧和后继帧的 reduce-motion 均应用到 Native host；appearance/density/text-scale 保留为 Framework 环境语义 |
 | Grid、Position、Image、Overlay | candidate | 可映射到现有候选字段，`host_accepted = false`；Grid columns/rows/gap 与 Position/Overlay/Image 均已有 Native 执行测试 |
 | 部分 flex 组合 | structured reject | wrap、shrink、baseline、space-around/evenly 目前无 Native 等价字段 |

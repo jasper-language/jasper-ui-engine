@@ -12,7 +12,7 @@ pub use native_events::{NativeFocusEvent as TextFocusEvent,NativePointerEvent as
 pub use jasper_ui_engine::input::Modifiers;
 pub use native_events::NativeEventReply as EventReply;
 pub use scene_events::{role_activates_on_click,role_activates_on_key,ScenePointerInput,SceneKeyEvent,SceneEvent,SceneEventKind,SceneSemanticsNode,SceneSemanticsSnapshot,SceneActivationEvent,SceneFocusEvent};
-pub use crate::render_host::{HostRenderError,HostRenderer,TypedUiApplyError};
+pub use crate::render_host::{HostRenderError,HostRenderer,TypedUiApplyError,TypedUiResourceError};
 pub use crate::surface_lifecycle::{SurfaceLifecycleError,SurfaceState,SurfaceStatus};
 pub use crate::text_edit::{CaretBlink,SceneEditEvent,SceneEditEventKind,SceneEditState};
 pub use crate::image_resource::{ImageError,ImageFormat,ImageInfo,ImageLimits,ImageNodeError,ImageNodeReport,ImageReport};
@@ -25,7 +25,7 @@ pub use crate::typed_accessibility::{typed_accessibility_tree,TypedAccessibility
 /// This module does not acquire windows, surfaces, devices or OS services.
 pub mod host {
 use super::*;
-pub use crate::render_host::{HostRenderError,HostRenderer,TypedUiApplyError};
+pub use crate::render_host::{HostRenderError,HostRenderer,TypedUiApplyError,TypedUiResourceError};
 pub use crate::surface_lifecycle::{SurfaceLifecycleError,SurfaceState,SurfaceStatus};
 pub use jasper_ui_engine::input_identity::{UiInputBinding,UiInputContext,UiInputTicket};
 pub use jasper_ui_engine::composition_identity::UiCompositionToken;

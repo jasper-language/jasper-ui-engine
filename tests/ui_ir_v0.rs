@@ -1129,7 +1129,7 @@ fn grid_candidate_enters_real_native_layout() {
 #[cfg(feature = "native-blitz-cpu-pending")]
 #[test]
 fn committed_ir_resource_reaches_the_live_native_image_store() {
-    use jasper_ui_engine::native::host::SceneHostView;
+    use jasper_ui_engine::native::host::{HostRenderer, TypedUiResourceError};
 
     const OWNER: u64 = 75;
     const WIDTH: u32 = 480;
@@ -1141,7 +1141,8 @@ fn committed_ir_resource_reaches_the_live_native_image_store() {
             .expect("JASPER_UI_TEST_FONT must name an injected font"),
     )
     .unwrap();
-    let mut view = SceneHostView::new(OWNER, document.scene(), &font, WIDTH, HEIGHT).unwrap();
+    let mut host = HostRenderer::new(OWNER, document.scene(), &font, WIDTH, HEIGHT).unwrap();
+    let generation = host.surface_status(OWNER).unwrap().generation;
     let mut frame: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     frame["expected_revision"] = serde_json::json!(2);
     frame["next_revision"] = serde_json::json!(3);
@@ -1178,13 +1179,7 @@ fn committed_ir_resource_reaches_the_live_native_image_store() {
     ]);
     let frame = UiFrame::from_json_slice(&serde_json::to_vec(&frame).unwrap()).unwrap();
     let update = document.apply_frame_with_patches(&frame).unwrap();
-    view.try_apply(
-        OWNER,
-        update.expected_revision,
-        update.next_revision,
-        &update.patches,
-    )
-    .unwrap();
+    host.try_apply_ui_ir(OWNER, &update).unwrap();
     assert_eq!(
         document
             .committed_resource("logo")
@@ -1197,21 +1192,29 @@ fn committed_ir_resource_reaches_the_live_native_image_store() {
     image
         .write_to(&mut encoded, image::ImageFormat::Png)
         .unwrap();
-    view.insert_image(OWNER, "logo", encoded.get_ref(), 1.0)
+    let resource = document.committed_resource("logo").unwrap().clone();
+    let mut stale = resource.clone();
+    stale.generation += 1;
+    assert!(matches!(
+        host.insert_ui_image(OWNER, &document, &stale, encoded.get_ref(), 1.0),
+        Err(TypedUiResourceError::ResourceNotCommitted { .. })
+    ));
+    host.insert_ui_image(OWNER, &document, &resource, encoded.get_ref(), 1.0)
         .unwrap();
     let image_node = document.node_for_key(UiKey::new(9, 1)).unwrap();
-    assert!(view
-        .node_bounds(OWNER, update.next_revision, image_node)
+    assert!(host
+        .node_bounds(OWNER, update.next_revision, generation, image_node)
         .is_some());
     let mut pixels = vec![0u8; (WIDTH * HEIGHT * 4) as usize];
-    assert!(view.render_to_surface(
+    assert!(host.render_to_surface(
         OWNER,
         update.next_revision,
+        generation,
         &mut pixels,
         (WIDTH * 4) as usize,
         64 * 1024 * 1024,
     ));
-    let report = view.image_report(OWNER).unwrap();
+    let report = host.image_report(OWNER).unwrap();
     assert_eq!(report.resources, 1);
     assert!(report.failed.is_empty(), "{:?}", report.failed);
 }

@@ -5,17 +5,19 @@
 //! authenticated owner, version and presentation generations, and coordinates pause/resume/retire.
 //! 它不持有窗口、原生 Surface、GPU 设备或交换链；只把宿主持有资源绑定到已认证归属、版本与
 //! 呈现代数，并协调暂停、恢复和退休。
+use crate::image_resource::{ImageError, ImageInfo, ImageLimits, ImageReport};
 use crate::native::host::SceneHostView;
 #[cfg(feature = "gpu-pending")]
 use crate::native::host::{GpuFrameError, GpuRenderer};
-use crate::image_resource::{ImageError, ImageInfo, ImageLimits, ImageReport};
 use crate::native::{SceneFocusEvent, SceneQuota, SceneUpdate, SceneUpdateError};
 use crate::scene::{NodeId, Scene, ScenePatch};
-use crate::ui_ir::{NativeSceneUpdate, NativeUiDocument, NativeUiFrameError, UiFrame};
 #[cfg(feature = "cpu-pending")]
 use crate::surface_lifecycle::RenderedPixels;
 use crate::surface_lifecycle::{
     SurfaceCoordinator, SurfaceLifecycleError, SurfaceStatus, SurfaceStepError,
+};
+use crate::ui_ir::{
+    NativeSceneUpdate, NativeUiDocument, NativeUiFrameError, ResourceKind, ResourceRef, UiFrame,
 };
 
 /// Host coordinator failure. A lifecycle rejection precedes all native engine work.
@@ -51,12 +53,47 @@ impl std::fmt::Display for TypedUiApplyError {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Frame(error) => write!(formatter, "Typed UI IR frame rejected: {error}"),
-            Self::Host(error) => write!(formatter, "Native host rejected Typed UI IR frame: {error}"),
+            Self::Host(error) => {
+                write!(formatter, "Native host rejected Typed UI IR frame: {error}")
+            }
         }
     }
 }
 
 impl std::error::Error for TypedUiApplyError {}
+
+/// Rejection of a host resource upload that is not the current committed Typed IR resource.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum TypedUiResourceError {
+    HostRevision { document: u64, current: Option<u64> },
+    ResourceNotCommitted { id: String, generation: u64 },
+    UnsupportedKind(ResourceKind),
+    Image(ImageError),
+}
+
+impl std::fmt::Display for TypedUiResourceError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::HostRevision { document, current } => write!(
+                formatter,
+                "Typed IR document revision {document} does not match host revision {current:?}"
+            ),
+            Self::ResourceNotCommitted { id, generation } => write!(
+                formatter,
+                "resource {id:?} generation {generation} is not the committed Typed IR resource"
+            ),
+            Self::UnsupportedKind(kind) => {
+                write!(
+                    formatter,
+                    "resource kind {kind:?} cannot be uploaded as an image"
+                )
+            }
+            Self::Image(error) => error.fmt(formatter),
+        }
+    }
+}
+
+impl std::error::Error for TypedUiResourceError {}
 
 impl From<SurfaceLifecycleError> for HostRenderError {
     fn from(error: SurfaceLifecycleError) -> Self {
@@ -134,8 +171,7 @@ impl HostRenderer {
         width: u32,
         height: u32,
     ) -> Option<Self> {
-        let mut host =
-            Self::with_fonts(owner, document.scene(), fonts, width, height)?;
+        let mut host = Self::with_fonts(owner, document.scene(), fonts, width, height)?;
         if let Some(on) = document.environment().reduce_motion {
             if !host.set_reduce_motion(owner, on) {
                 return None;
@@ -608,6 +644,42 @@ impl HostRenderer {
         density: f32,
     ) -> Result<ImageInfo, ImageError> {
         self.inner.insert_image(owner, id, bytes, density)
+    }
+
+    /// Upload bytes only for the exact committed resource named by the current Typed IR document.
+    pub fn insert_ui_image(
+        &mut self,
+        owner: u64,
+        document: &NativeUiDocument,
+        resource: &ResourceRef,
+        bytes: &[u8],
+        density: f32,
+    ) -> Result<ImageInfo, TypedUiResourceError> {
+        let current = self
+            .inner
+            .snapshot_identity(owner)
+            .map(|(version, _)| version);
+        if current != Some(document.revision()) {
+            return Err(TypedUiResourceError::HostRevision {
+                document: document.revision(),
+                current,
+            });
+        }
+        if document.committed_resource(&resource.id) != Some(resource) {
+            return Err(TypedUiResourceError::ResourceNotCommitted {
+                id: resource.id.clone(),
+                generation: resource.generation,
+            });
+        }
+        if !matches!(
+            resource.kind,
+            ResourceKind::Image | ResourceKind::Svg | ResourceKind::Icon
+        ) {
+            return Err(TypedUiResourceError::UnsupportedKind(resource.kind));
+        }
+        self.inner
+            .insert_image(owner, &resource.id, bytes, density)
+            .map_err(TypedUiResourceError::Image)
     }
 
     pub fn remove_image(&mut self, owner: u64, id: &str) -> Option<bool> {
