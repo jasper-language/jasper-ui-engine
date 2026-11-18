@@ -883,6 +883,77 @@ fn same_dialog_fixture_executes_with_candidate_overlay_metadata() {
 
 #[cfg(feature = "native-blitz-cpu-pending")]
 #[test]
+fn grid_candidate_enters_real_native_layout() {
+    use jasper_ui_engine::native::host::SceneHostView;
+
+    const OWNER: u64 = 78;
+    let bytes = fixture("settings-page.ir.json");
+    let mut document = NativeUiDocument::from_json_slice(&bytes).unwrap();
+    let font = std::fs::read(
+        std::env::var("JASPER_UI_TEST_FONT")
+            .expect("JASPER_UI_TEST_FONT must name an injected font"),
+    )
+    .unwrap();
+    let mut view = SceneHostView::new(OWNER, document.scene(), &font, 480, 320).unwrap();
+    let mut frame: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    frame["expected_revision"] = serde_json::json!(2);
+    frame["next_revision"] = serde_json::json!(3);
+    frame["ops"] = serde_json::json!([{
+        "op": "insert",
+        "parent": { "semantic_id": 1, "generation": 1 },
+        "index": 3,
+        "node": {
+            "key": { "semantic_id": 10, "generation": 1 },
+            "element": { "kind": "container" },
+            "semantics": { "role": "container", "label": "Grid" },
+            "style": {
+                "box": { "height": { "unit": "px", "value": 40 } },
+                "grid": {
+                    "columns": [
+                        { "unit": "px", "value": 100 },
+                        { "unit": "fr", "value": 1 }
+                    ],
+                    "rows": [{ "unit": "px", "value": 40 }],
+                    "gap": 4
+                }
+            },
+            "children": [
+                {
+                    "key": { "semantic_id": 11, "generation": 1 },
+                    "element": { "kind": "text", "content": "A" },
+                    "semantics": { "role": "text", "label": "A" }
+                },
+                {
+                    "key": { "semantic_id": 12, "generation": 1 },
+                    "element": { "kind": "text", "content": "B" },
+                    "semantics": { "role": "text", "label": "B" }
+                }
+            ]
+        }
+    }]);
+    let frame = UiFrame::from_json_slice(&serde_json::to_vec(&frame).unwrap()).unwrap();
+    let update = document.apply_frame_with_patches(&frame).unwrap();
+    view.try_apply(
+        OWNER,
+        update.expected_revision,
+        update.next_revision,
+        &update.patches,
+    )
+    .unwrap();
+    let columns = document.mapped_properties()["grid.columns"];
+    assert_eq!(columns.support, SupportLevel::Candidate);
+    assert!(!columns.host_accepted);
+    let a = document.node_for_key(UiKey::new(11, 1)).unwrap();
+    let b = document.node_for_key(UiKey::new(12, 1)).unwrap();
+    let a = view.node_bounds(OWNER, update.next_revision, a).unwrap();
+    let b = view.node_bounds(OWNER, update.next_revision, b).unwrap();
+    assert!((a.width() - 100.0).abs() < 0.5, "first grid track: {a:?}");
+    assert!(b.x() >= a.x() + a.width() + 3.5, "grid gap: {a:?} {b:?}");
+    assert!(b.width() > 300.0, "fractional second track: {b:?}");
+}
+
+#[cfg(feature = "native-blitz-cpu-pending")]
+#[test]
 fn committed_ir_resource_reaches_the_live_native_image_store() {
     use jasper_ui_engine::native::host::SceneHostView;
 
