@@ -245,7 +245,7 @@ Web 后端和正式宿主仍需分别验收。
 |---|---|
 | Schema | appfw v0.1 draft；Rust consumer profile 已实现 |
 | Rust structural tests | passed |
-| Rust Clippy | `cargo clippy --lib --tests` 成功退出；仍保留非阻塞工程 warning，不作为形式化证明 |
+| Rust Clippy | `cargo clippy --all-features --lib --tests` 成功退出；仍保留非阻塞工程 warning，不作为形式化证明 |
 | Native CPU same-fixture execution | all three canonical fixtures passed on Linux x86_64 test environment |
 | Native GPU same-fixture | settings-page passed with llvmpipe/Vulkan, Intel UHD 630/Vulkan and NVIDIA RTX 3060/Vulkan; hardware max channel delta 1 |
 | Web SSR / real browser | not run in this slice |
