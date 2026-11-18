@@ -2,6 +2,7 @@ use jasper_ui_engine::semantics::Role;
 use jasper_ui_engine::ui_ir::{
     MappingIssueKind, NativeActivationSource, NativeUiDocument, NativeUiFrameError, ResourceKind,
     SupportLevel, UiEventContext, UiEventKind, UiFrame, UiKey, UiPermission, UiPermissionContext,
+    NATIVE_PROPERTY_PROFILE, native_property_profile,
 };
 use std::path::PathBuf;
 
@@ -39,6 +40,82 @@ fn canonical_fixtures_are_pinned_to_the_appfw_schema_copy() {
             frame,
             "typed IR round-trip: {name}"
         );
+    }
+}
+
+#[test]
+fn typed_property_profile_matches_the_pinned_registry() {
+    let bytes = fixture("typed-properties-v0.json");
+    assert_eq!(fnv1a(&bytes), 0xd982_c4a7_aecc_04be);
+    let registry: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    let properties = registry["properties"].as_object().unwrap();
+    assert_eq!(properties.len(), NATIVE_PROPERTY_PROFILE.len());
+
+    let support = |name: &str| match name {
+        "required" => SupportLevel::Required,
+        "optional" => SupportLevel::Optional,
+        "host-owned" => SupportLevel::HostOwned,
+        "web-only" => SupportLevel::WebOnly,
+        "native-only" => SupportLevel::NativeOnly,
+        "candidate" => SupportLevel::Candidate,
+        "unsupported" => SupportLevel::Unsupported,
+        other => panic!("unknown registry support level {other:?}"),
+    };
+    let mut seen = std::collections::BTreeSet::new();
+    for profile in NATIVE_PROPERTY_PROFILE {
+        assert!(
+            seen.insert(profile.property),
+            "duplicate Native profile property {:?}",
+            profile.property
+        );
+        let property = properties
+            .get(profile.property)
+            .unwrap_or_else(|| panic!("{} is absent from the registry", profile.property));
+        assert_eq!(
+            profile.support,
+            support(property["support"].as_str().unwrap()),
+            "{} support differs from the registry",
+            profile.property
+        );
+        if let Some(host_acceptance) = property.get("host_acceptance") {
+            assert_eq!(
+                profile.host_accepted,
+                host_acceptance.as_bool().unwrap(),
+                "{} host acceptance differs from the registry",
+                profile.property
+            );
+        }
+        if profile.support == SupportLevel::Candidate {
+            assert!(
+                !profile.host_accepted,
+                "candidate property {} cannot claim host acceptance",
+                profile.property
+            );
+        }
+        assert_eq!(
+            native_property_profile(profile.property),
+            Some(profile)
+        );
+    }
+    assert!(
+        properties.keys().all(|name| seen.contains(name.as_str())),
+        "Native profile omits a registered property"
+    );
+
+    for name in [
+        "settings-page.ir.json",
+        "data-table.ir.json",
+        "dialog-overlay.ir.json",
+    ] {
+        let document = NativeUiDocument::from_json_slice(&fixture(name)).unwrap();
+        for (property, mapped) in document.mapped_properties() {
+            let profile = native_property_profile(property).unwrap();
+            assert_eq!(mapped.support, profile.support, "{name}: {property}");
+            assert_eq!(
+                mapped.host_accepted, profile.host_accepted,
+                "{name}: {property}"
+            );
+        }
     }
 }
 

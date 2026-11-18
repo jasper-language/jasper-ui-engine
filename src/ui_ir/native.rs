@@ -78,6 +78,90 @@ pub struct MappedProperty {
     pub host_accepted: bool,
 }
 
+/// Native consumer mirror of one property in the Language/UI Typed Property Registry.
+///
+/// This table is a backend capability view, not a second public semantic authority. Tests pin
+/// its names, support levels, and host acceptance to the canonical registry fixture.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct NativePropertyProfile {
+    pub property: &'static str,
+    pub support: SupportLevel,
+    pub host_accepted: bool,
+}
+
+pub const NATIVE_PROPERTY_PROFILE: &[NativePropertyProfile] = &[
+    native_property("box.width", SupportLevel::Required, true),
+    native_property("box.height", SupportLevel::Required, true),
+    native_property("box.min_width", SupportLevel::Required, true),
+    native_property("box.max_width", SupportLevel::Required, true),
+    native_property("box.min_height", SupportLevel::Required, true),
+    native_property("box.max_height", SupportLevel::Required, true),
+    native_property("box.padding", SupportLevel::Required, true),
+    native_property("box.margin", SupportLevel::Required, true),
+    native_property("flex.direction", SupportLevel::Required, true),
+    native_property("flex.wrap", SupportLevel::Optional, false),
+    native_property("flex.grow", SupportLevel::Required, true),
+    native_property("flex.shrink", SupportLevel::Optional, false),
+    native_property("flex.align_items", SupportLevel::Required, true),
+    native_property("flex.justify_content", SupportLevel::Required, true),
+    native_property("flex.gap", SupportLevel::Required, true),
+    native_property("grid.columns", SupportLevel::Candidate, false),
+    native_property("grid.rows", SupportLevel::Candidate, false),
+    native_property("grid.column", SupportLevel::Candidate, false),
+    native_property("grid.row", SupportLevel::Candidate, false),
+    native_property("grid.gap", SupportLevel::Candidate, false),
+    native_property("position.kind", SupportLevel::Candidate, false),
+    native_property("position.inset", SupportLevel::Candidate, false),
+    native_property("position.z_index", SupportLevel::Candidate, false),
+    native_property("position.order", SupportLevel::Required, false),
+    native_property("paint.color", SupportLevel::Required, true),
+    native_property("paint.background", SupportLevel::Required, true),
+    native_property("paint.border", SupportLevel::Required, true),
+    native_property("paint.radii", SupportLevel::Required, true),
+    native_property("paint.opacity", SupportLevel::Required, true),
+    native_property("typography.family", SupportLevel::Required, true),
+    native_property("typography.size", SupportLevel::Required, true),
+    native_property("typography.weight", SupportLevel::Required, true),
+    native_property("typography.style", SupportLevel::Required, true),
+    native_property("typography.line_height", SupportLevel::Optional, true),
+    native_property("typography.align", SupportLevel::Required, true),
+    native_property("typography.vertical_align", SupportLevel::Required, true),
+    native_property("typography.direction", SupportLevel::Required, true),
+    native_property("image.resource", SupportLevel::Candidate, false),
+    native_property("image.fit", SupportLevel::Candidate, false),
+    native_property("image.align_x", SupportLevel::Candidate, false),
+    native_property("image.align_y", SupportLevel::Candidate, false),
+    native_property("image.tint", SupportLevel::Candidate, false),
+    native_property("overlay.layer", SupportLevel::Candidate, false),
+    native_property("overlay.anchor", SupportLevel::Candidate, false),
+    native_property("overlay.side", SupportLevel::Candidate, false),
+    native_property("overlay.align", SupportLevel::Candidate, false),
+    native_property("overlay.offset", SupportLevel::Candidate, false),
+    native_property("overlay.cross_offset", SupportLevel::Candidate, false),
+    native_property("overlay.margin", SupportLevel::Candidate, false),
+    native_property("overlay.modal", SupportLevel::Candidate, false),
+    native_property("overlay.scrim", SupportLevel::Candidate, false),
+];
+
+const fn native_property(
+    property: &'static str,
+    support: SupportLevel,
+    host_accepted: bool,
+) -> NativePropertyProfile {
+    NativePropertyProfile {
+        property,
+        support,
+        host_accepted,
+    }
+}
+
+/// Return the stable Native consumer view for one canonical property name.
+pub fn native_property_profile(property: &str) -> Option<&'static NativePropertyProfile> {
+    NATIVE_PROPERTY_PROFILE
+        .iter()
+        .find(|entry| entry.property == property)
+}
+
 /// Patch projection of one admitted successor frame for an existing Native SceneHostView.
 #[derive(Clone, Debug, PartialEq)]
 pub struct NativeSceneUpdate {
@@ -852,12 +936,12 @@ impl DocumentBuilder {
                 };
             }
             if let Some(value) = value.wrap {
-                self.mark("flex.wrap", SupportLevel::Required, true);
+                self.mark("flex.wrap", SupportLevel::Optional, false);
                 if value != FlexWrap::Nowrap {
                     return Err(issue(
                         &format!("{path}.flex.wrap"),
                         Some("flex.wrap"),
-                        SupportLevel::Required,
+                        SupportLevel::Optional,
                         MappingIssueKind::InformationLoss,
                         "wrapped flex lines are not represented by the current Native Style",
                     ));
@@ -868,12 +952,12 @@ impl DocumentBuilder {
                 style.flex_grow = native_f32(&format!("{path}.flex.grow"), value, true)?;
             }
             if let Some(value) = value.shrink {
-                self.mark("flex.shrink", SupportLevel::Required, true);
+                self.mark("flex.shrink", SupportLevel::Optional, false);
                 native_f32(&format!("{path}.flex.shrink"), value, true)?;
                 return Err(issue(
                     &format!("{path}.flex.shrink"),
                     Some("flex.shrink"),
-                    SupportLevel::Required,
+                    SupportLevel::Optional,
                     MappingIssueKind::Unsupported,
                     "the current Native Style has no flex shrink field",
                 ));
@@ -1060,13 +1144,13 @@ impl DocumentBuilder {
                 };
             }
             if let Some(value) = value.line_height {
-                self.mark("typography.line_height", SupportLevel::Required, true);
+                self.mark("typography.line_height", SupportLevel::Optional, true);
                 let length =
                     match native_length(&format!("{path}.typography.line_height"), value)? {
                         NativeLength::Auto => return Err(issue(
                             &format!("{path}.typography.line_height"),
                             Some("typography.line_height"),
-                            SupportLevel::Required,
+                            SupportLevel::Optional,
                             MappingIssueKind::Unsupported,
                             "auto line-height is not expressible in the Native line-height field",
                         )),
@@ -1077,7 +1161,7 @@ impl DocumentBuilder {
                     return Err(issue(
                         &format!("{path}.typography.line_height"),
                         Some("typography.line_height"),
-                        SupportLevel::Required,
+                        SupportLevel::Optional,
                         MappingIssueKind::Unsupported,
                         "line-height must resolve to a positive finite pixel value",
                     ));
@@ -1267,13 +1351,27 @@ impl DocumentBuilder {
     }
 
     fn mark(&mut self, property: &'static str, support: SupportLevel, host_accepted: bool) {
-        self.mapped_properties.insert(
-            property,
-            MappedProperty {
+        let canonical = native_property_profile(property);
+        debug_assert!(
+            canonical.is_some(),
+            "mapped property {property:?} is absent from the Native profile",
+        );
+        debug_assert!(
+            canonical.is_none_or(|entry| {
+                entry.support == support && entry.host_accepted == host_accepted
+            }),
+            "mapped property {property:?} disagrees with the Native profile",
+        );
+        let mapped = canonical
+            .map(|entry| MappedProperty {
+                support: entry.support,
+                host_accepted: entry.host_accepted,
+            })
+            .unwrap_or(MappedProperty {
                 support,
                 host_accepted,
-            },
-        );
+            });
+        self.mapped_properties.insert(property, mapped);
     }
 
     fn update(&mut self, path: &str, op: &UpdateOp) -> Result<(), NativeUiFrameError> {

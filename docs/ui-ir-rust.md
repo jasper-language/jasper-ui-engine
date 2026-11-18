@@ -65,6 +65,8 @@ Focus、Key、Pointer、键盘激活和 AccessKit 动作的 Typed 回调分别�
 - `ScenePatch::Move` 保持节点身份、焦点、指针按下与 TextArea 编辑缓冲/IME 预编辑，不用 remove+insert 近似重排；
 - 每帧从最终 Scene 重建 image 引用；未 Prepare/Commit、generation 不匹配、仍被节点引用时 Release 均整帧拒绝；
 - 维护 `UiKey ↔ NodeId`、事件 action、资源 generation 与 element kind；
+- `NATIVE_PROPERTY_PROFILE` 是公共 Typed Property Registry 的只读 Native consumer 镜像，
+  记录 property、support 与 `host_accepted`；它不是第二套公共语义权威；
 - style 无法无损表达时返回 `NativeUiFrameError::Mapping(MappingIssue)`；
 - revision 与 `Scene::version()` 同步推进。
 
@@ -102,6 +104,11 @@ Focus、Key、Pointer、键盘激活和 AccessKit 动作的 Typed 回调分别�
 - `settings-page.ir.json`：Schema 解析、Native 映射、真实 SceneHostView、语义、几何和 CPU 渲染；
 - `data-table.ir.json`：Schema 解析、Table/Row/Cell 语义、真实 SceneHostView 与 CPU 渲染；
 - `dialog-overlay.ir.json`：Schema 解析、candidate overlay/position、真实 SceneHostView overlay 查询与 CPU 渲染。
+
+同目录的 `typed-properties-v0.json` 来自 appfw 的
+`docs/ui-ir-v0/schema/typed-properties-v0.json`，以固定 FNV-1a 摘要校验。测试要求 Native profile
+逐项覆盖 registry 名称与 support，显式 `host_acceptance=false` 不得被镜像成已接纳，并检查三份
+fixture 实际映射出的 `mapped_properties` 与 profile 一致。
 
 ## 证据状态
 
