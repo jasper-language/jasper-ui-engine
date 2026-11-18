@@ -447,6 +447,80 @@ fn native_style_projects_to_jui2_with_explicit_wire_losses() {
 }
 
 #[test]
+fn native_semantics_projects_to_jui2_with_explicit_wire_losses() {
+    use jasper_ui_engine::semantics::{HeadingLevel, LivePoliteness, Role, Semantics};
+    use jasper_ui_engine::ui_ir::project_native_semantics_to_jui2;
+
+    let heading = Semantics {
+        role: Role::Heading(HeadingLevel::new(2).unwrap()),
+        label: "Title\tline\nnext".into(),
+        disabled: true,
+        focusable: true,
+        ..Semantics::default()
+    };
+    let projection = project_native_semantics_to_jui2(&heading);
+    assert!(projection.losses.is_empty(), "{:?}", projection.losses);
+    assert!(projection
+        .fields
+        .iter()
+        .any(|(key, value)| key == "role" && value == "heading"));
+    assert!(projection
+        .fields
+        .iter()
+        .any(|(key, value)| key == "level" && value == "2"));
+    assert!(projection
+        .fields
+        .iter()
+        .any(|(key, value)| key == "label" && value == "Title\tline\nnext"));
+    assert!(projection
+        .fields
+        .iter()
+        .any(|(key, value)| key == "disabled" && value == "true"));
+
+    let live = Semantics {
+        role: Role::Live(LivePoliteness::Assertive),
+        ..Semantics::default()
+    };
+    let projection = project_native_semantics_to_jui2(&live);
+    assert!(projection
+        .fields
+        .iter()
+        .any(|(key, value)| key == "role" && value == "live"));
+    assert!(projection
+        .fields
+        .iter()
+        .any(|(key, value)| key == "live" && value == "assertive"));
+
+    let table = Semantics {
+        role: Role::TableCell,
+        selected: true,
+        ..Semantics::default()
+    };
+    let projection = project_native_semantics_to_jui2(&table);
+    let paths: Vec<_> = projection.losses.iter().map(|loss| loss.path).collect();
+    assert!(paths.contains(&"semantics.role"));
+    assert!(paths.contains(&"semantics.selected"));
+    assert!(projection
+        .fields
+        .iter()
+        .any(|(key, value)| key == "role" && value == "container"));
+
+    let text_area = Semantics {
+        role: Role::TextArea,
+        ..Semantics::default()
+    };
+    let projection = project_native_semantics_to_jui2(&text_area);
+    assert!(projection
+        .fields
+        .iter()
+        .any(|(key, value)| key == "role" && value == "text-field"));
+    assert!(projection
+        .losses
+        .iter()
+        .any(|loss| loss.path == "semantics.role"));
+}
+
+#[test]
 fn native_node_projection_recovers_public_tree_semantics_events_and_styles() {
     use jasper_ui_engine::ui_ir::{SemanticRole, UiOp};
 

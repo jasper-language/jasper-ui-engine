@@ -73,6 +73,8 @@ let scene = document.scene();
 `ui_ir::project_native_style_to_jui2` 进一步提供 JUI 2 `style`/`xstyle` 键值的损失感知投影；
 不支持的 wire 字段进入 losses，扩展键仍受宿主 hello 能力协商。该桥不承载 `UiKey`、事件、
 resource generation 或 environment，不能替代完整 JUI 2 adapter。
+`ui_ir::project_native_semantics_to_jui2` 同样损失感知地投影 role/heading/live 与常用语义
+字段；无对应 JUI 2 role 或 selected 状态进入 losses。
 `NativeUiDocument::project_compatibility_node(UiKey)` 进一步恢复只读 `UiNode` 子树及逐节点损失；
 `project_compatibility_snapshot()` 还包括 authority、revision、environment 与当前
 active/prepared resources，以及可恢复的 identity generation/live 游标。快照规范化默认/空

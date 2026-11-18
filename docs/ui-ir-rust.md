@@ -95,6 +95,8 @@ caret 几何与 `UiKey` 一并返回，不暴露 backend 节点身份。
 - `project_native_style_to_jui2(&NativeStyle)` 将可表达的基础字段投影为 JUI 2 `style`
   键值、扩展字段投影为 `xstyle` 键值，并报告 JUI 2 wire 不支持的 display、wrap/shrink、
   text-align/direction 等字段；扩展键仍需宿主 hello 协商；
+- `project_native_semantics_to_jui2(&Semantics)` 投影基础 role、heading level、live
+  politeness 和常用语义字段；TextArea/Table/Popover/Tooltip/selected 等 wire 缺口显式报告；
 - `project_native_style_with_context` 接受节点精确的 image `ResourceRef` 与 overlay 锚点
   `UiKey`，可无损投影相应 candidate 字段；
 - `NativeUiDocument::project_compatibility_style(UiKey)` 自动从当前节点映射这两项上下文；
@@ -238,8 +240,8 @@ Web 后端和正式宿主仍需分别验收。
 
 - `native-engine-cpu,accesskit-pending` 完整 `cargo test` 成功退出：库测试
   `272 passed, 1 ignored`（忽略项是显式性能测量），全部集成测试和 doc-test 通过；
-- 同一特性集的 `ui_ir_v0`：`43 passed`；
-- 软件 Vulkan（lvp/llvmpipe）+ `gpu-pending` 的 `ui_ir_v0`：`44 passed`；
+- 同一特性集的 `ui_ir_v0`：`44 passed`；
+- 软件 Vulkan（lvp/llvmpipe）+ `gpu-pending` 的 `ui_ir_v0`：`45 passed`；
 - 无 Native 特性的 Legacy 库测试：`180 passed`；`cargo check --no-default-features
   --all-targets` 成功；
 - Clippy 成功退出；仓库仍保留已登记的非阻塞历史 warning。

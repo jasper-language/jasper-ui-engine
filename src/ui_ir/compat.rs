@@ -13,6 +13,7 @@ use crate::overlay::{
     OverlayAlign as NativeOverlayAlign, OverlayAnchor as NativeOverlayAnchor,
     OverlaySide as NativeOverlaySide,
 };
+use crate::semantics::{LivePoliteness, Role, Semantics};
 use crate::style::{
     Align as NativeAlign, Color as NativeColor, Display as NativeDisplay,
     FlexDirection as NativeFlexDirection, FlexWrap as NativeFlexWrap,
@@ -44,6 +45,13 @@ pub struct Jui2StyleProjection {
     pub base: Vec<(String, String)>,
     /// Extension fields carried by a JUI 2 `xstyle` line; host capability negotiation is external.
     pub xstyle: Vec<(String, String)>,
+    pub losses: Vec<NativeStyleLoss>,
+}
+
+/// Loss-aware projection of Native semantics into JUI 2 `sem` fields.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Jui2SemanticsProjection {
+    pub fields: Vec<(String, String)>,
     pub losses: Vec<NativeStyleLoss>,
 }
 
@@ -429,6 +437,109 @@ pub fn project_native_style_to_jui2(source: &NativeStyle) -> Jui2StyleProjection
             .collect(),
         losses,
     }
+}
+
+/// Project Native semantics into the unchanged legacy JUI 2 transport vocabulary.
+pub fn project_native_semantics_to_jui2(source: &Semantics) -> Jui2SemanticsProjection {
+    let mut fields = Vec::new();
+    let mut losses = Vec::new();
+    let role = match source.role {
+        Role::Container => "container",
+        Role::Text => "text",
+        Role::Button => "button",
+        Role::TextField => "text-field",
+        Role::TextArea => {
+            losses.push(NativeStyleLoss {
+                path: "semantics.role",
+                detail: "JUI 2 role vocabulary has no text-area role",
+            });
+            "text-field"
+        }
+        Role::Checkbox => "checkbox",
+        Role::Radio => "radio",
+        Role::Switch => "switch",
+        Role::Slider => "slider",
+        Role::Image => "image",
+        Role::Link => "link",
+        Role::List => "list",
+        Role::ListItem => "list-item",
+        Role::Table | Role::TableRow | Role::TableCell => {
+            losses.push(NativeStyleLoss {
+                path: "semantics.role",
+                detail: "JUI 2 role vocabulary has no table roles",
+            });
+            "container"
+        }
+        Role::Dialog => "dialog",
+        Role::Popover => {
+            losses.push(NativeStyleLoss {
+                path: "semantics.role",
+                detail: "JUI 2 role vocabulary has no popover role",
+            });
+            "container"
+        }
+        Role::Tooltip => {
+            losses.push(NativeStyleLoss {
+                path: "semantics.role",
+                detail: "JUI 2 role vocabulary has no tooltip role",
+            });
+            "text"
+        }
+        Role::Menu => "menu",
+        Role::MenuItem => "menu-item",
+        Role::ScrollView => "scroll-view",
+        Role::Heading(level) => {
+            fields.push(("level".into(), level.get().to_string()));
+            "heading"
+        }
+        Role::Status => "status",
+        Role::Live(politeness) => {
+            fields.push((
+                "live".into(),
+                match politeness {
+                    LivePoliteness::Polite => "polite",
+                    LivePoliteness::Assertive => "assertive",
+                }
+                .into(),
+            ));
+            "live"
+        }
+        Role::Alert => "alert",
+        Role::Form => "form",
+        Role::Unknown => {
+            losses.push(NativeStyleLoss {
+                path: "semantics.role",
+                detail: "JUI 2 role vocabulary has no unknown role",
+            });
+            "container"
+        }
+    };
+    fields.insert(0, ("role".into(), role.into()));
+    for (key, value) in [
+        ("label", &source.label),
+        ("description", &source.description),
+        ("value", &source.value),
+    ] {
+        if !value.is_empty() {
+            fields.push((key.into(), value.clone()));
+        }
+    }
+    for (key, value) in [
+        ("disabled", source.disabled),
+        ("focusable", source.focusable),
+        ("hidden", source.hidden),
+    ] {
+        if value {
+            fields.push((key.into(), "true".into()));
+        }
+    }
+    if source.selected {
+        losses.push(NativeStyleLoss {
+            path: "semantics.selected",
+            detail: "JUI 2 semantics vocabulary has no selected field",
+        });
+    }
+    Jui2SemanticsProjection { fields, losses }
 }
 
 fn jui2_number(value: f32) -> String {
