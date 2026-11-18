@@ -705,6 +705,70 @@ fn native_node_projection_recovers_public_tree_semantics_events_and_styles() {
 }
 
 #[test]
+fn legacy_scene_reverse_projection_requires_explicit_identity_and_reports_events_loss() {
+    use jasper_ui_engine::scene::Node;
+    use jasper_ui_engine::ui_ir::project_legacy_scene;
+
+    fn collect(
+        document: &NativeUiDocument,
+        node: &Node,
+        identities: &mut std::collections::BTreeMap<
+            jasper_ui_engine::scene::NodeId,
+            UiKey,
+        >,
+    ) {
+        identities.insert(node.id, document.key_for_node(node.id).unwrap());
+        for child in &node.children {
+            collect(document, child, identities);
+        }
+    }
+
+    let document = NativeUiDocument::from_json_slice(&fixture("settings-page.ir.json")).unwrap();
+    let scene = document.scene().clone();
+    let mut identities = std::collections::BTreeMap::new();
+    collect(&document, &scene.root, &mut identities);
+    let projection = project_legacy_scene(&scene, &identities).unwrap();
+    assert_eq!(projection.node.key, UiKey::new(1, 1));
+    assert_eq!(projection.node.children.as_ref().unwrap().len(), 3);
+    assert!(projection
+        .losses
+        .get(&UiKey::new(1, 1))
+        .is_some_and(|losses| losses.iter().any(|loss| loss.path == "events")));
+
+    let replay = UiFrame {
+        ir_version: jasper_ui_engine::ui_ir::IR_VERSION.into(),
+        identity_domain: document.identity_domain().into(),
+        owner: document.owner().into(),
+        session: document.session().into(),
+        expected_revision: 1,
+        next_revision: 2,
+        ops: vec![jasper_ui_engine::ui_ir::UiOp::insert(
+            None,
+            0,
+            projection.node.clone(),
+        )],
+    };
+    let replay = NativeUiDocument::from_frame(&replay).unwrap();
+    assert_eq!(replay.scene().find(replay.scene().root.id).unwrap().children.len(), 3);
+
+    let mut missing = identities.clone();
+    missing.remove(&jasper_ui_engine::scene::NodeId(3));
+    assert!(matches!(
+        project_legacy_scene(&scene, &missing),
+        Err(jasper_ui_engine::ui_ir::UiIrError::Invalid { .. })
+    ));
+    let mut duplicate = identities.clone();
+    duplicate.insert(
+        jasper_ui_engine::scene::NodeId(3),
+        duplicate[&jasper_ui_engine::scene::NodeId(2)],
+    );
+    assert!(matches!(
+        project_legacy_scene(&scene, &duplicate),
+        Err(jasper_ui_engine::ui_ir::UiIrError::Invalid { .. })
+    ));
+}
+
+#[test]
 fn native_compatibility_snapshot_includes_environment_and_live_resources() {
     use jasper_ui_engine::ui_ir::{
         Appearance, ElementKind, ImageFit, ImageStyle, NativeNodeLoss, ResourceAdmission,

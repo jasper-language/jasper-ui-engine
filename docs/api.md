@@ -70,6 +70,9 @@ let scene = document.scene();
 它不构成完整 Scene/JUI 2 反向 adapter。节点级调用使用
 `NativeUiDocument::project_compatibility_style(UiKey)`；显式调用
 `project_native_style_with_context` 时可提供精确 image `ResourceRef` 与 overlay `UiKey` 锚点。
+`ui_ir::project_legacy_scene` 对 raw Legacy `Scene` 执行树级反向投影，但要求调用方提供完整
+`NodeId → UiKey` 映射；缺失/重复映射拒绝，事件绑定与 image generation 作为 loss 返回，
+Canvas 直接拒绝。它不是无条件可逆 adapter。
 `ui_ir::project_native_style_to_jui2` 进一步提供 JUI 2 `style`/`xstyle` 键值的损失感知投影；
 不支持的 wire 字段进入 losses，扩展键仍受宿主 hello 能力协商。该桥不承载 `UiKey`、事件、
 resource generation 或 environment，不能替代完整 JUI 2 adapter。

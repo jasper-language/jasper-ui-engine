@@ -13,7 +13,7 @@ use crate::overlay::{
     OverlayAlign as NativeOverlayAlign, OverlayAnchor as NativeOverlayAnchor,
     OverlaySide as NativeOverlaySide,
 };
-use crate::scene::{Node, NodeId, NodeKind, ScenePatch};
+use crate::scene::{Node, NodeId, NodeKind, Scene, ScenePatch};
 use crate::semantics::{LivePoliteness, Role, Semantics};
 use crate::style::{
     Align as NativeAlign, Color as NativeColor, Display as NativeDisplay,
@@ -24,6 +24,7 @@ use crate::style::{
     TextAlign as NativeTextAlign, TextAlignVertical as NativeTextAlignVertical,
     TextDirection as NativeTextDirection,
 };
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
 /// One non-default Native-only field omitted from the Typed projection.
@@ -86,6 +87,13 @@ pub enum Jui2EventKind {
     DismissRequest(String),
 }
 
+/// Reverse projection of a raw Legacy Scene with caller-supplied public identity.
+#[derive(Clone, Debug, PartialEq)]
+pub struct LegacySceneProjection {
+    pub node: UiNode,
+    pub losses: BTreeMap<UiKey, Vec<NativeNodeLoss>>,
+}
+
 /// Optional node-local context needed to reverse image and overlay candidate values.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct NativeStyleContext<'a> {
@@ -100,6 +108,144 @@ impl NativeStyleProjection {
     pub fn is_lossless(&self) -> bool {
         self.losses.is_empty()
     }
+}
+
+/// Project a raw Legacy Scene into Typed UI nodes.
+///
+/// The Scene has no public identity or event-binding store. Every node therefore requires an
+/// explicit `NodeId -> UiKey` mapping, and event bindings are reported as lost rather than
+/// invented. Image resource generations are likewise unavailable and are reported through the
+/// existing style losses.
+pub fn project_legacy_scene(
+    scene: &Scene,
+    identities: &BTreeMap<NodeId, UiKey>,
+) -> Result<LegacySceneProjection, UiIrError> {
+    scene.validate().map_err(|error| UiIrError::Invalid {
+        path: "$.legacy-scene".into(),
+        detail: format!("{error:?}"),
+    })?;
+    let mut used = BTreeSet::new();
+    let mut losses = BTreeMap::new();
+    let node = project_legacy_scene_node(
+        &scene.root,
+        identities,
+        &mut used,
+        &mut losses,
+    )?;
+    losses
+        .entry(node.key)
+        .or_default()
+        .push(NativeNodeLoss {
+            path: "events".into(),
+            detail: "Legacy Scene has no event-binding store; bindings cannot be recovered".into(),
+        });
+    Ok(LegacySceneProjection { node, losses })
+}
+
+fn project_legacy_scene_node(
+    source: &Node,
+    identities: &BTreeMap<NodeId, UiKey>,
+    used: &mut BTreeSet<UiKey>,
+    losses: &mut BTreeMap<UiKey, Vec<NativeNodeLoss>>,
+) -> Result<UiNode, UiIrError> {
+    let key = identities.get(&source.id).copied().ok_or_else(|| UiIrError::Invalid {
+        path: "$.legacy-scene.identity".into(),
+        detail: format!("no UiKey supplied for NodeId({})", source.id.0),
+    })?;
+    if key.generation == 0 || !used.insert(key) {
+        return Err(UiIrError::Invalid {
+            path: "$.legacy-scene.identity".into(),
+            detail: format!(
+                "invalid or duplicate UiKey mapping {}:{}",
+                key.semantic_id, key.generation
+            ),
+        });
+    }
+    let element_kind = legacy_element_kind(&source.kind, source.semantics.role)?;
+    let overlay_anchor = match source.style.overlay.map(|overlay| overlay.anchor) {
+        Some(NativeOverlayAnchor::Node(anchor)) => identities.get(&anchor).copied(),
+        _ => None,
+    };
+    let style = project_native_style_with_context(
+        &source.style,
+        element_kind,
+        NativeStyleContext {
+            image_resource: None,
+            overlay_anchor,
+        },
+    )?;
+    if !style.losses.is_empty() {
+        losses.insert(
+            key,
+            style
+                .losses
+                .into_iter()
+                .map(|loss| NativeNodeLoss {
+                    path: loss.path.into(),
+                    detail: loss.detail.into(),
+                })
+                .collect(),
+        );
+    }
+    let semantics = super::native::project_compatibility_semantics(
+        &source.semantics,
+        "$.legacy-scene.semantics",
+        losses,
+        key,
+    )?;
+    let content = match &source.kind {
+        NodeKind::Text(text) => Some(text.clone()),
+        _ => None,
+    };
+    let mut children = Vec::with_capacity(source.children.len());
+    for child in &source.children {
+        children.push(project_legacy_scene_node(
+            child, identities, used, losses,
+        )?);
+    }
+    Ok(UiNode {
+        key,
+        element: UiElement {
+            kind: element_kind,
+            content,
+            attributes: None,
+        },
+        semantics,
+        style: Some(style.style),
+        events: None,
+        children: (!children.is_empty()).then_some(children),
+    })
+}
+
+fn legacy_element_kind(kind: &NodeKind, role: Role) -> Result<ElementKind, UiIrError> {
+    if matches!(kind, NodeKind::Canvas(_)) {
+        return Err(UiIrError::Invalid {
+            path: "$.legacy-scene.kind".into(),
+            detail: "Typed UI v0.1 has no Canvas element kind".into(),
+        });
+    }
+    Ok(match role {
+        Role::Button => ElementKind::Button,
+        Role::TextField => ElementKind::TextField,
+        Role::TextArea => ElementKind::TextArea,
+        Role::Checkbox => ElementKind::Checkbox,
+        Role::Radio => ElementKind::Radio,
+        Role::Switch => ElementKind::Switch,
+        Role::Slider => ElementKind::Slider,
+        Role::Image => ElementKind::Image,
+        Role::Link => ElementKind::Link,
+        Role::ListItem => ElementKind::ListItem,
+        Role::TableCell => ElementKind::TableCell,
+        Role::MenuItem => ElementKind::MenuItem,
+        Role::Tooltip => ElementKind::Tooltip,
+        _ => {
+            if matches!(kind, NodeKind::Text(_)) {
+                ElementKind::Text
+            } else {
+                ElementKind::Container
+            }
+        }
+    })
 }
 
 /// Project one admitted Native style. The caller supplies the element kind because Native table

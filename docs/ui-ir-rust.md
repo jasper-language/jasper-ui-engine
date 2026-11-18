@@ -92,6 +92,9 @@ caret 几何与 `UiKey` 一并返回，不暴露 backend 节点身份。
 `src/ui_ir/compat.rs` 提供受限的 legacy Native 兼容投影：
 
 - `project_native_style(&NativeStyle, ElementKind)` 返回 `NativeStyleProjection`；
+- `project_legacy_scene(&Scene, &BTreeMap<NodeId, UiKey>)` 执行 raw Legacy Scene 的损失感知
+  反向投影；每个 NodeId 必须显式映射，缺失或重复 UiKey 拒绝。Scene 不保存事件绑定，
+  image 也没有 generation；这些字段进入 losses，Canvas 因 Typed v0.1 无对应 kind 拒绝；
 - `project_native_style_to_jui2(&NativeStyle)` 将可表达的基础字段投影为 JUI 2 `style`
   键值、扩展字段投影为 `xstyle` 键值，并报告 JUI 2 wire 不支持的 display、wrap/shrink、
   text-align/direction 等字段；扩展键仍需宿主 hello 协商；
@@ -252,8 +255,8 @@ Web 后端和正式宿主仍需分别验收。
 
 - `native-engine-cpu,accesskit-pending` 完整 `cargo test` 成功退出：库测试
   `272 passed, 1 ignored`（忽略项是显式性能测量），全部集成测试和 doc-test 通过；
-- 同一特性集的 `ui_ir_v0`：`47 passed`；
-- 软件 Vulkan（lvp/llvmpipe）+ `gpu-pending` 的 `ui_ir_v0`：`48 passed`；
+- 同一特性集的 `ui_ir_v0`：`48 passed`；
+- 软件 Vulkan（lvp/llvmpipe）+ `gpu-pending` 的 `ui_ir_v0`：`49 passed`；
 - 无 Native 特性的 Legacy 库测试：`180 passed`；`cargo check --no-default-features
   --all-targets` 成功；
 - 旧 `jasper-ui-host --headless` reader 在 `/tmp` 副本中指向本分支后分别接受

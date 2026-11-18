@@ -2405,7 +2405,7 @@ impl DocumentBuilder {
     }
 }
 
-fn project_compatibility_semantics(
+pub(super) fn project_compatibility_semantics(
     source: &Semantics,
     path: &str,
     losses: &mut BTreeMap<UiKey, Vec<NativeNodeLoss>>,
