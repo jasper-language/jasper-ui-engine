@@ -107,7 +107,9 @@ caret 几何与 `UiKey` 一并返回，不暴露 backend 节点身份。
 - image/overlay 在没有 exact resource/UiKey 上下文时不会伪造身份，而是保留为损失；
 - 只有 `is_lossless() == true` 才表示本次投影没有遗漏非默认 Native 字段。
 
-快照会把可表达 Native 默认显式化，并对无子节点/空事件列表使用规范化 `None`；全文档快照
+恢复 API 默认只接受 `losses` 为空的快照；含 Native-only 字段遗漏时必须先补齐或明确改用诊断
+流程，不能静默恢复成语义不同的文档。快照会把可表达 Native 默认显式化，并对无子节点/空事件
+列表使用规范化 `None`；全文档快照
 包含 identity retirement 游标，但只包含当前 resource 状态，不包含 released resource
 tombstones/history、Framework 组件声明、Signal 依赖、事件会话或正式 ABI。Grid 投影仍继承
 candidate/`host_accepted=false` 状态。

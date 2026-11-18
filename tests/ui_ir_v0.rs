@@ -368,7 +368,7 @@ fn native_node_projection_recovers_public_tree_semantics_events_and_styles() {
 fn native_compatibility_snapshot_includes_environment_and_live_resources() {
     use jasper_ui_engine::ui_ir::{
         Appearance, ElementKind, ResourceAdmission, ResourceKind, ResourceRef, SemanticRole,
-        UiElement, UiEnvironment, UiNode, UiOp, UiSemantics,
+        NativeNodeLoss, UiElement, UiEnvironment, UiNode, UiOp, UiSemantics,
     };
 
     let committed = ResourceRef {
@@ -459,6 +459,22 @@ fn native_compatibility_snapshot_includes_environment_and_live_resources() {
         restored.project_compatibility_snapshot().unwrap(),
         snapshot
     );
+    let mut lossy = snapshot.clone();
+    lossy.losses.insert(
+        snapshot.root.key,
+        vec![NativeNodeLoss {
+            path: "style.shadow".into(),
+            detail: "native-only field".into(),
+        }],
+    );
+    assert!(matches!(
+        lossy.to_initial_frame(),
+        Err(jasper_ui_engine::ui_ir::UiIrError::Invalid { .. })
+    ));
+    assert!(matches!(
+        NativeUiDocument::from_compatibility_snapshot(&lossy),
+        Err(jasper_ui_engine::ui_ir::UiIrError::Invalid { .. })
+    ));
 }
 
 #[test]

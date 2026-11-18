@@ -213,6 +213,7 @@ impl NativeUiCompatibilitySnapshot {
     /// Rebuild a fresh initial frame from this snapshot. This is intentionally restricted to
     /// generation-one identities because an initial frame cannot reproduce retirement history.
     pub fn to_initial_frame(&self) -> Result<UiFrame, UiIrError> {
+        ensure_lossless_restore(self)?;
         ensure_initial_generations(&self.root)?;
         let mut ops = Vec::new();
         for state in self.resources.values() {
@@ -818,6 +819,7 @@ impl DocumentBuilder {
     }
 
     fn restore(snapshot: &NativeUiCompatibilitySnapshot) -> Result<NativeUiDocument, UiIrError> {
+        ensure_lossless_restore(snapshot)?;
         if snapshot.identity.identity_domain != snapshot.identity_domain {
             return Err(incomplete_projection(
                 "identity snapshot domain does not match the document authority",
@@ -2273,6 +2275,19 @@ fn ensure_initial_generations(node: &UiNode) -> Result<(), UiIrError> {
         ensure_initial_generations(child)?;
     }
     Ok(())
+}
+
+fn ensure_lossless_restore(snapshot: &NativeUiCompatibilitySnapshot) -> Result<(), UiIrError> {
+    if snapshot.losses.is_empty() {
+        return Ok(());
+    }
+    Err(UiIrError::Invalid {
+        path: "$.compatibility.losses".into(),
+        detail: format!(
+            "cannot restore a lossy snapshot: {} identities contain omitted Native fields",
+            snapshot.losses.len()
+        ),
+    })
 }
 
 fn validate_element_transport(path: &str, element: &UiElement) -> Result<(), NativeUiFrameError> {
