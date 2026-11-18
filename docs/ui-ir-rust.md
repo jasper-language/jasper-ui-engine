@@ -257,6 +257,9 @@ Web 后端和正式宿主仍需分别验收。
 
 - `native-engine-cpu` + `desktop` 完整 `cargo test` 成功退出：库测试
   `282 passed, 1 ignored`（忽略项是显式性能测量），全部集成测试和 doc-test 通过；
+- 单作业串行 `--all-features` 验证成功退出：库测试 `290 passed, 1 ignored`；
+  `ui_ir_v0` `49 passed`；Native AccessKit `3 passed`；交互生命周期 `7 passed`；
+  UI plugin gate `13 passed`。未把并行链接时磁盘耗尽后的单次 all-targets 调用计为通过；
 - 同一特性集的 `ui_ir_v0`：`48 passed`；
 - 软件 Vulkan（lvp/llvmpipe）+ `gpu-pending` 的 `ui_ir_v0`：`49 passed`；
 - 硬件 Vulkan 离屏的 `ui_ir_v0`：Intel UHD 630 `49 passed`（141/153600 pixels differ,
