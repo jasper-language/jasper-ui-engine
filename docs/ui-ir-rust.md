@@ -258,6 +258,7 @@ Web 后端和正式宿主仍需分别验收。
   --all-targets` 成功；
 - 旧 `jasper-ui-host --headless` reader 在 `/tmp` 副本中指向本分支后接受 settings 初始
   frame：`ack 2`，`accepted 1 / rejected 0`，生成 480×320 PNG，并输出完整 dump/bounds；
+  副本只为新增 SceneError/Role 变体补了 exhaustive match 分支，reader 协议逻辑未改；
   原 host 仓库未修改。该证据只覆盖 CPU headless transport，不包含真实平台窗口；
 - Clippy 成功退出；仓库仍保留已登记的非阻塞历史 warning。
 
