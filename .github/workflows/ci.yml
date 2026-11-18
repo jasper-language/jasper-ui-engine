@@ -50,6 +50,20 @@ jobs:
               --no-default-features --features desktop-accessibility --example window
           done
 
+  no-std-core:
+    # Host-independent data/state core for bare-metal consumers.
+    # 面向裸机消费者的宿主无关数据/状态核心。
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly-2026-10-17
+        with:
+          targets: x86_64-unknown-none
+      - name: Check bare-metal core
+        run: >-
+          cargo check --locked --target x86_64-unknown-none
+          --no-default-features --features no-std-core --lib
+
   test:
     runs-on: ubuntu-latest
     steps:
