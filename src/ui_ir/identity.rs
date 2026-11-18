@@ -53,6 +53,28 @@ impl UiIdentityLedger {
         Ok(UiKey::new(semantic_id, generation))
     }
 
+    /// Claim one exact Framework-assigned key. The generation must be the next generation for
+    /// this semantic identity; a retired pair or skipped generation is rejected.
+    pub fn claim(&mut self, key: UiKey) -> Result<(), IdentityError> {
+        let record = self.records.entry(key.semantic_id).or_insert(Record {
+            last_generation: 0,
+            live: false,
+        });
+        if record.live {
+            return Err(IdentityError::AlreadyLive(key.semantic_id));
+        }
+        let Some(generation) = record.last_generation.checked_add(1) else {
+            return Err(IdentityError::GenerationExhausted(key.semantic_id));
+        };
+        let expected = UiKey::new(key.semantic_id, generation);
+        if key != expected {
+            return Err(IdentityError::UnexpectedGeneration { expected, actual: key });
+        }
+        record.last_generation = generation;
+        record.live = true;
+        Ok(())
+    }
+
     /// Retire the exact live identity. A stale key cannot retire its successor.
     pub fn retire(&mut self, key: UiKey) -> Result<(), IdentityError> {
         let Some(record) = self.records.get_mut(&key.semantic_id) else {
@@ -103,6 +125,7 @@ pub enum IdentityError {
     Unknown(UiKey),
     Stale(UiKey),
     Retired(UiKey),
+    UnexpectedGeneration { expected: UiKey, actual: UiKey },
 }
 
 impl fmt::Display for IdentityError {
@@ -129,6 +152,11 @@ impl fmt::Display for IdentityError {
                 f,
                 "identity {}:{} is retired",
                 key.semantic_id, key.generation
+            ),
+            Self::UnexpectedGeneration { expected, actual } => write!(
+                f,
+                "identity {}:{} is not the next generation {}:{}",
+                actual.semantic_id, actual.generation, expected.semantic_id, expected.generation
             ),
         }
     }
@@ -180,5 +208,28 @@ mod tests {
         let second = ledger.allocate(7).unwrap();
         assert_eq!(ledger.retire(first), Err(IdentityError::Stale(first)));
         assert_eq!(ledger.admit(second), Ok(()));
+    }
+
+    #[test]
+    fn exact_claim_rejects_skips_and_never_reuses_a_retired_pair() {
+        let mut ledger = UiIdentityLedger::new("orders-app/window-main").unwrap();
+        assert_eq!(
+            ledger.claim(UiKey::new(7, 2)),
+            Err(IdentityError::UnexpectedGeneration {
+                expected: UiKey::new(7, 1),
+                actual: UiKey::new(7, 2),
+            })
+        );
+        ledger.claim(UiKey::new(7, 1)).unwrap();
+        ledger.retire(UiKey::new(7, 1)).unwrap();
+        assert_eq!(
+            ledger.claim(UiKey::new(7, 1)),
+            Err(IdentityError::UnexpectedGeneration {
+                expected: UiKey::new(7, 2),
+                actual: UiKey::new(7, 1),
+            })
+        );
+        ledger.claim(UiKey::new(7, 2)).unwrap();
+        assert_eq!(ledger.admit(UiKey::new(7, 1)), Err(IdentityError::Stale(UiKey::new(7, 1))));
     }
 }

@@ -177,6 +177,7 @@ pub enum NativeUiFrameError {
     InvalidIr(UiIrError),
     Revision { expected: u64, actual: u64 },
     AuthorityMismatch,
+    Identity { path: String, error: IdentityError },
     MissingRoot,
     DuplicateRoot,
     Mapping(MappingIssue),
@@ -195,6 +196,9 @@ impl fmt::Display for NativeUiFrameError {
             }
             Self::AuthorityMismatch => {
                 write!(f, "frame identity domain, owner or session changed")
+            }
+            Self::Identity { path, error } => {
+                write!(f, "identity admission failed at {path}: {error}")
             }
             Self::MissingRoot => write!(f, "the mapped scene has no root insertion"),
             Self::DuplicateRoot => write!(f, "the scene already has a root"),
@@ -235,6 +239,7 @@ struct ResourceState {
 #[derive(Clone, Debug)]
 pub struct NativeUiDocument {
     authority: Authority,
+    identity: UiIdentityLedger,
     revision: u64,
     scene: Scene,
     next_node_id: u64,
@@ -270,7 +275,13 @@ impl NativeUiDocument {
             owner: frame.owner.clone(),
             session: frame.session.clone(),
         };
-        let mut builder = DocumentBuilder::new(authority);
+        let identity = UiIdentityLedger::new(frame.identity_domain.clone()).map_err(|error| {
+            NativeUiFrameError::Identity {
+                path: "$.identity_domain".into(),
+                error,
+            }
+        })?;
+        let mut builder = DocumentBuilder::new(authority, identity);
         builder.apply_ops(&frame.ops)?;
         builder.finish(frame.next_revision)
     }
@@ -304,6 +315,7 @@ impl NativeUiDocument {
         }
         let builder = DocumentBuilder {
             authority: self.authority.clone(),
+            identity: self.identity.clone(),
             revision: self.revision,
             scene: self.scene.clone(),
             next_node_id: self.next_node_id,
@@ -346,6 +358,10 @@ impl NativeUiDocument {
 
     pub fn session(&self) -> &str {
         &self.authority.session
+    }
+
+    pub fn current_identity(&self, semantic_id: u64) -> Option<UiKey> {
+        self.identity.current(semantic_id)
     }
 
     pub fn node_for_key(&self, key: UiKey) -> Option<NodeId> {
@@ -524,6 +540,7 @@ impl NativeUiDocument {
 #[derive(Clone, Debug)]
 struct DocumentBuilder {
     authority: Authority,
+    identity: UiIdentityLedger,
     revision: u64,
     scene: Scene,
     next_node_id: u64,
@@ -541,9 +558,10 @@ struct DocumentBuilder {
 }
 
 impl DocumentBuilder {
-    fn new(authority: Authority) -> Self {
+    fn new(authority: Authority, identity: UiIdentityLedger) -> Self {
         Self {
             authority,
+            identity,
             revision: 0,
             scene: Scene::new(Node::container(NodeId(0))),
             next_node_id: 1,
@@ -571,6 +589,7 @@ impl DocumentBuilder {
         self.validate_style_resources()?;
         Ok(NativeUiDocument {
             authority: self.authority,
+            identity: self.identity,
             revision,
             scene: self.scene,
             next_node_id: self.next_node_id,
@@ -600,6 +619,7 @@ impl DocumentBuilder {
         Ok((
             NativeUiDocument {
                 authority: self.authority,
+                identity: self.identity,
                 revision: frame.next_revision,
                 scene: self.scene,
                 next_node_id: self.next_node_id,
@@ -729,6 +749,12 @@ impl DocumentBuilder {
     }
 
     fn reserve_node_keys(&mut self, path: &str, node: &UiNode) -> Result<(), NativeUiFrameError> {
+        self.identity
+            .claim(node.key)
+            .map_err(|error| NativeUiFrameError::Identity {
+                path: path.into(),
+                error,
+            })?;
         if self.key_to_node.contains_key(&node.key) {
             return Err(issue(
                 path,
@@ -1504,6 +1530,12 @@ impl DocumentBuilder {
         let mut retired = Vec::new();
         collect_keys(&removed, &self.node_to_key, &mut retired);
         for key in retired {
+            self.identity.retire(key).map_err(|error| {
+                NativeUiFrameError::Identity {
+                    path: path.into(),
+                    error,
+                }
+            })?;
             if let Some(node) = self.key_to_node.remove(&key) {
                 self.node_to_key.remove(&node);
                 self.node_resource_refs.remove(&node);

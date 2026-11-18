@@ -31,6 +31,7 @@ Jasper Language/UI 共有层；Rust 不反向定义公共语义。
 - 首次分配 generation 1；
 - retirement 后只分配 `last + 1`；
 - 旧组合不可复用；
+- `NativeUiDocument` 在每个 insert/remove 中原子 claim/retire 精确 `UiKey`；
 - identity domain 为空时拒绝构造 ledger；
 - `u64::MAX` 显式返回 `GenerationExhausted`，不回绕。
 

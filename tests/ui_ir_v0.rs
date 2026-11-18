@@ -450,6 +450,58 @@ fn successor_frames_update_move_remove_and_advance_atomically() {
 }
 
 #[test]
+fn native_document_never_reuses_a_removed_ui_key_and_accepts_the_next_generation() {
+    let bytes = fixture("settings-page.ir.json");
+    let mut document = NativeUiDocument::from_json_slice(&bytes).unwrap();
+    let removed = UiKey::new(2, 1);
+    assert_eq!(document.current_identity(2), Some(removed));
+
+    let mut remove: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    remove["expected_revision"] = serde_json::json!(2);
+    remove["next_revision"] = serde_json::json!(3);
+    remove["ops"] = serde_json::json!([{ "op": "remove", "key": removed }]);
+    let remove = UiFrame::from_json_slice(&serde_json::to_vec(&remove).unwrap()).unwrap();
+    document.apply_frame(&remove).unwrap();
+    assert!(document.node_for_key(removed).is_none());
+    assert_eq!(document.current_identity(2), None);
+
+    let reinsert = |generation: u64, revision: u64| {
+        let mut frame: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        frame["expected_revision"] = serde_json::json!(revision);
+        frame["next_revision"] = serde_json::json!(revision + 1);
+        frame["ops"] = serde_json::json!([{
+            "op": "insert",
+            "parent": { "semantic_id": 1, "generation": 1 },
+            "index": 0,
+            "node": {
+                "key": { "semantic_id": 2, "generation": generation },
+                "element": { "kind": "text", "content": "Recreated" },
+                "semantics": { "role": "heading", "label": "Recreated", "level": 1 }
+            }
+        }]);
+        UiFrame::from_json_slice(&serde_json::to_vec(&frame).unwrap()).unwrap()
+    };
+
+    let reuse = reinsert(1, 3);
+    assert!(matches!(
+        document.apply_frame(&reuse),
+        Err(NativeUiFrameError::Identity {
+            error: jasper_ui_engine::ui_ir::IdentityError::UnexpectedGeneration { .. },
+            ..
+        })
+    ));
+    assert_eq!(document.revision(), 3);
+    assert_eq!(document.current_identity(2), None);
+
+    let next = UiKey::new(2, 2);
+    document.apply_frame(&reinsert(2, 3)).unwrap();
+    assert_eq!(document.revision(), 4);
+    assert_eq!(document.current_identity(2), Some(next));
+    assert!(document.node_for_key(next).is_some());
+    assert!(document.node_for_key(removed).is_none());
+}
+
+#[test]
 fn resource_generations_reject_prepare_commit_release_misuse_and_reuse() {
     let bytes = fixture("settings-page.ir.json");
     let mut document = NativeUiDocument::from_json_slice(&bytes).unwrap();
