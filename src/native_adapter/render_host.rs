@@ -2376,8 +2376,20 @@ impl HostRenderer {
             && self.inner.deactivate(owner, version, focus)
     }
 
+    /// Clear Native focus without clearing hover or pointer-press state.
+    pub fn clear_focus(
+        &mut self,
+        owner: u64,
+        version: u64,
+        generation: u64,
+        focus: &mut impl FnMut(SceneFocusEvent),
+    ) -> bool {
+        self.surface.render_allowed(owner, generation)
+            && self.inner.clear_focus(owner, version, focus)
+    }
+
     /// Typed window/application deactivation. The current focus, its Focus binding and a
-    /// pending IME cancellation are admitted before Native clears hover, press and focus.
+    /// pending edit-end event are admitted before Native clears hover, press and focus.
     pub fn typed_deactivate(
         &mut self,
         owner: u64,
@@ -2385,6 +2397,32 @@ impl HostRenderer {
         generation: u64,
         document: &NativeUiDocument,
         context: &UiEventContext,
+        focus: &mut impl FnMut(TypedUiFocusEvent),
+    ) -> Result<Option<UiKey>, TypedUiTargetError> {
+        self.typed_focus_removal(owner, version, generation, document, context, true, focus)
+    }
+
+    /// Clear Typed focus while preserving Native hover and pointer-press state.
+    pub fn typed_clear_focus(
+        &mut self,
+        owner: u64,
+        version: u64,
+        generation: u64,
+        document: &NativeUiDocument,
+        context: &UiEventContext,
+        focus: &mut impl FnMut(TypedUiFocusEvent),
+    ) -> Result<Option<UiKey>, TypedUiTargetError> {
+        self.typed_focus_removal(owner, version, generation, document, context, false, focus)
+    }
+
+    fn typed_focus_removal(
+        &mut self,
+        owner: u64,
+        version: u64,
+        generation: u64,
+        document: &NativeUiDocument,
+        context: &UiEventContext,
+        deactivate: bool,
         focus: &mut impl FnMut(TypedUiFocusEvent),
     ) -> Result<Option<UiKey>, TypedUiTargetError> {
         if version != document.revision() {
@@ -2422,7 +2460,7 @@ impl HostRenderer {
         )
         .map_err(map_edit_end_target_error)?;
         let mut mapping_error = false;
-        let accepted = self.deactivate(owner, version, generation, &mut |event| {
+        let mut sink = |event: SceneFocusEvent| {
             if let Some(target) = document.key_for_node(event.node) {
                 focus(TypedUiFocusEvent {
                     target,
@@ -2432,7 +2470,12 @@ impl HostRenderer {
             } else {
                 mapping_error = true;
             }
-        });
+        };
+        let accepted = if deactivate {
+            self.deactivate(owner, version, generation, &mut sink)
+        } else {
+            self.clear_focus(owner, version, generation, &mut sink)
+        };
         if mapping_error {
             return Err(TypedUiTargetError::UnmappedTarget);
         }

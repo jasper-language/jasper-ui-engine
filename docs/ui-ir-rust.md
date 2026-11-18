@@ -55,7 +55,8 @@ Pointer Down/Up/Move 的绑定按实际接收节点单独准入；嵌套内容�
 该激活绑定也按真实控件身份准入，不会错误地强迫回调目标等于最初的 Pointer 命中节点。
 Focus 切换、AccessKit Focus 与 Pointer Down 若会触发失焦提交或结束正在进行的组合，
 `text-commit`/`ime-cancel` binding 会在 Native 焦点变化前按实际将发生的编辑事件预准入；
-`typed_deactivate` 以同样顺序清除焦点、按下和悬停，并只向调用方返回旧焦点的 `UiKey`。
+`typed_clear_focus` 以同样顺序只清除焦点并保留按下/悬停；`typed_deactivate` 则清除焦点、
+按下和悬停，两者都只向调用方返回旧焦点的 `UiKey`。
 `typed_key`/`typed_key_with_activation` 对会改动编辑缓冲或选区的按键在默认编辑行为前要求
 TextEdit；Enter 产生提交时预准入 `text-commit`，不能只凭 Keyboard 修改文本框。
 Focus、Key、Pointer、键盘激活和 AccessKit 动作的 Typed 回调分别使用

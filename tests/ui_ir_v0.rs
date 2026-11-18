@@ -1742,6 +1742,82 @@ fn typed_focus_change_preadmits_commit_and_ime_cancel() {
         Some(UiKey::new(3, 1))
     );
     assert!(matches!(
+        host.typed_clear_focus(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &no_ime,
+            &mut |_| {},
+        ),
+        Err(TypedUiTargetError::Admission(
+            jasper_ui_engine::ui_ir::UiEventAdmissionError::PermissionDenied { .. }
+        ))
+    ));
+    assert_eq!(
+        host.typed_focused_node(OWNER, 2, &document).unwrap(),
+        Some(UiKey::new(3, 1))
+    );
+    let mut cleared = Vec::new();
+    assert_eq!(
+        host.typed_clear_focus(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &field_context,
+            &mut |event| cleared.push(event),
+        )
+        .unwrap(),
+        Some(UiKey::new(3, 1))
+    );
+    assert_eq!(
+        host.typed_focused_node(OWNER, 2, &document).unwrap(),
+        None
+    );
+    assert_eq!(
+        cleared,
+        vec![jasper_ui_engine::native::TypedUiFocusEvent {
+            target: UiKey::new(3, 1),
+            focused: false,
+            admitted: Some(jasper_ui_engine::ui_ir::AdmittedEvent {
+                target: UiKey::new(3, 1),
+                event: UiEventKind::Focus,
+                action: "focus-name".into(),
+            }),
+        }]
+    );
+    let events = host
+        .typed_take_edit_events(OWNER, &document, &field_context, false)
+        .unwrap();
+    assert_eq!(events.len(), 1);
+    assert_eq!(
+        events[0].kind,
+        SceneEditEventKind::CompositionCancelled
+    );
+
+    host.typed_focus(
+        OWNER,
+        2,
+        generation,
+        &document,
+        &field_context,
+        field,
+        &mut |_| {},
+    )
+    .unwrap();
+    host.typed_set_preedit(
+        OWNER,
+        2,
+        generation,
+        &document,
+        &field_context,
+        field,
+        Some("界"),
+        None,
+    )
+    .unwrap();
+    assert!(matches!(
         host.typed_deactivate(
             OWNER,
             2,
