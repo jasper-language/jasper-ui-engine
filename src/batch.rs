@@ -1,6 +1,7 @@
 //! Versioned UiBatch encoding.
 //! 渲染批可在进程内、IPC 或网络间复用；解码必须做边界检查。
 
+use crate::nostd_prelude::*;
 use crate::geometry::{Point, Rect};
 use crate::paint::PaintOp;
 use crate::style::Color;

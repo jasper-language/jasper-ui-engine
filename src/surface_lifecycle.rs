@@ -42,8 +42,8 @@ pub enum SurfaceLifecycleError {
 }
 // END VERIFIED SURFACE LIFECYCLE ERROR TYPE
 
-impl std::fmt::Display for SurfaceLifecycleError {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for SurfaceLifecycleError {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::WrongOwner => write!(formatter, "surface callback owner does not match"),
             Self::WrongState => write!(formatter, "surface lifecycle state rejects the transition"),
@@ -53,7 +53,7 @@ impl std::fmt::Display for SurfaceLifecycleError {
     }
 }
 
-impl std::error::Error for SurfaceLifecycleError {}
+impl core::error::Error for SurfaceLifecycleError {}
 
 // BEGIN VERIFIED SURFACE LIFECYCLE STORAGE TYPE
 /// One host-owned surface generation. It contains no native handle and performs no I/O.

@@ -14,6 +14,7 @@
 //! 限高），并带模态、关闭请求与焦点行为；另含纯函数定位算法与对外事件/查询值。
 //! 本模块不依赖 Blitz 或任何后端类型：原生适配层消费这些值，Framework 只产生与接收它们。引擎从不自行关闭浮层：
 //! 外部按下、Escape 与锚点丢失都作为 `OverlayEvent`（`dismiss-request`）报告，由 Framework 决定。
+use crate::nostd_prelude::*;
 use crate::geometry::Rect;
 use crate::scene::NodeId;
 use crate::style::Color;

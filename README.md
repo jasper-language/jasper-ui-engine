@@ -29,6 +29,8 @@ Jasper UI 的 **宿主无关 Native 引擎底座**（Rust）。它只负责底�
   - **内置宿主**：由平台把引擎作为系统 UI 服务提供，应用不携带引擎。
   - **自带宿主**：应用像 Flutter 一样把引擎/框架一起打包。
 - 引擎不能假设 POSIX、窗口系统或 GPU 一定存在；因此平台/窗口/GPU/文字/渲染都通过 trait 隔离。
+- `no-std-core` 提供 `no_std + alloc` 的数据/状态与最小软件路径，并已通过
+  `x86_64-unknown-none` 编译；Blitz/Vello 和平台宿主仍属 std 特性。
 - Jasper UI Framework、UI IR、Web 后端归 Jasper 侧；本仓库只做 Rust 原生执行层。
 
 ## v0.1 已实现

@@ -1,6 +1,8 @@
 //! Generation-checked opaque handles for the future native boundary; this freezes no ABI.
 //! 面向后续原生边界的代际检查不透明句柄；此处不冻结任何 ABI。
 
+use crate::nostd_prelude::*;
+
 // BEGIN VERIFIED HANDLE TYPE
 /// Opaque index and generation; the all-zero value is never live.
 /// 不透明的下标与代数；全零值永远无效。

@@ -14,7 +14,7 @@
 | 能力 | 源码证据 | 当前边界 |
 |---|---|---|
 | 场景树、补丁、版本 | `scene.rs` | clone 后应用、成功后替换；版本准入内核已证明，整个事务仍未证明；插入全部后代 ID 检查；`Move` 保持身份与交互状态 |
-| Typed UI IR v0.1 consumer | `ui_ir/`、`tests/ui_ir_v0.rs` | 严格读取/校验、UiKey generation、事件上下文、Native 原子映射、Property Registry profile、Focus/Key/Pointer/Scroll/编辑/IME/Overlay/AccessKit Typed 事件与查询、Table/TextArea/Popup 语义及 v0 flex/text 映射；三份 fixture 经真实 CPU 执行，设置页另有 llvmpipe GPU 对照；Web/真实硬件/正式宿主/形式化未验收 |
+| Typed UI IR v0.1 consumer | `ui_ir/`、`tests/ui_ir_v0.rs` | 严格读取/校验、UiKey generation、事件上下文、Native 原子映射、Property Registry profile、Focus/Key/Pointer/Scroll/编辑/IME/Overlay/AccessKit Typed 事件与查询、Table/TextArea/Popup 语义及 v0 flex/text 映射；三份 fixture 经真实 CPU 执行，设置页另有 llvmpipe GPU 对照；另有 `no-std-core` 通过 `x86_64-unknown-none` 编译，但 HostRenderer/Blitz/Vello/平台配置仍为 std；Web/真实硬件/正式宿主/形式化未验收 |
 | 几何、颜色、PSS | `geometry.rs`、`style.rs` | 尺寸/百分比/min-max/边距/间距/对齐/边框等子集，不是完整 CSS |
 | Taffy 布局 | `layout.rs`、`tests/layout_consistency.rs` | 公开 Display 仅 Block/Flex/None；**Grid 未接入公开样式与映射** |
 | 近似文字测量 | `text.rs` | 默认 SimpleTextEngine，不具备真实字体度量 |

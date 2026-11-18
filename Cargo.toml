@@ -10,7 +10,7 @@ rust-version = "1.89"
 [dependencies]
 # Taffy is the layout executor for the portable Flex/Grid/Block subset.
 # Version is pinned after `cargo info` / license check (MIT); see docs/status.md.
-taffy = "0.15.0"
+taffy = { version = "0.15.0", default-features = false, features = ["alloc", "taffy_tree", "flexbox", "flexbox_balance", "grid", "block_layout", "float_layout", "calc", "content_size", "detailed_layout_info"] }
 # tiny-skia is a pure-Rust 2D rasterizer (BSD-3-Clause) used by the optional
 # Canvas component renderer. Disable default features to keep the dependency
 # surface small; the `std` feature is required by this crate.
@@ -25,8 +25,8 @@ wgpu = { version = "=30.0.1", optional = true }
 pollster = { version = "=0.4.0", optional = true }
 softbuffer = { version = "0.4.8", optional = true }
 # Typed UI IR framing and canonical fixture ingestion. Both are MIT OR Apache-2.0.
-serde = { version = "=1.0.229", features = ["derive"] }
-serde_json = { version = "=1.0.145", default-features = false, features = ["std"] }
+serde = { version = "=1.0.229", default-features = false, features = ["derive", "alloc"] }
+serde_json = { version = "=1.0.145", default-features = false, features = ["alloc"] }
 
 # Replacement stack candidates: source-pinned, build/acceptance pending.
 # Explicit font injection; no Parley system-font discovery or CPU GPU dependency.
@@ -36,6 +36,7 @@ parley = { version = "=0.12.0", optional = true, default-features = false, featu
 
 # Shared pinned native adapter; defaults do not acquire a window or system fonts.
 # 共用固定原生适配器；默认不取得窗口或系统字体。
+libm = { version = "=0.2.16", optional = true }
 blitz-dom = { git = "https://github.com/DioxusLabs/blitz", rev = "52739472460824ec7f1624ab135c09a4bbc99219", default-features = false, features = ["complex-scripts"], optional = true }
 blitz-traits = { git = "https://github.com/DioxusLabs/blitz", rev = "52739472460824ec7f1624ab135c09a4bbc99219", default-features = false, optional = true }
 blitz-paint = { git = "https://github.com/DioxusLabs/blitz", rev = "52739472460824ec7f1624ab135c09a4bbc99219", default-features = false, optional = true }
@@ -75,6 +76,7 @@ resvg = { version = "=0.48.1", optional = true, default-features = false }
 
 [features]
 default = []
+no-std-core = ["dep:libm"]
 # Application-facing native engine names. These forward to the implementation
 # features retained during the migration; the acceptance status is documented
 # separately and is not implied by the shorter feature name.

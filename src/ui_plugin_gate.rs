@@ -4,6 +4,9 @@
 //! `ui.*` is a versioned UI host namespace, not part of the Native ABI v1 core; see `docs/abi.md`.
 //! `ui.*` 是版本化的 UI 宿主命名空间，不属于 Native ABI v1 核心；见 `docs/abi.md`。
 
+#[cfg(jasper_no_std_core)]
+use crate::nostd_prelude::*;
+
 /// Value of the manifest key `ui.abi` this host implements.
 /// 本宿主实现的清单键 `ui.abi` 取值。
 pub const UI_PLUGIN_ABI: &str = "1";

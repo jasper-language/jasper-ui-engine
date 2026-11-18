@@ -1,9 +1,10 @@
 //! Authenticated event-target admission after IR structural validation.
 
+use crate::nostd_prelude::*;
+use alloc::collections::BTreeSet;
+use core::fmt;
 use super::{EventBinding, UiEventKind, UiFrame, UiKey};
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeSet;
-use std::fmt;
 
 /// The permission needed to route a bound event. Backend `NodeId` is never accepted here.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -259,4 +260,4 @@ impl fmt::Display for UiEventAdmissionError {
     }
 }
 
-impl std::error::Error for UiEventAdmissionError {}
+impl core::error::Error for UiEventAdmissionError {}

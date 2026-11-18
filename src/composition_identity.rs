@@ -1,5 +1,6 @@
 //! UI preedit/candidate-view ownership; not a general IME engine or document store.
 //! UI 预编辑/候选视图归属；不是通用输入法引擎或文档存储。
+use crate::nostd_prelude::*;
 use crate::input::{CompositionEvent, InputEvent, PreeditEvent};
 use crate::input_identity::{UiInputBinding, UiInputTicket};
 

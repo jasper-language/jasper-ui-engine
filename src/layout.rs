@@ -1,8 +1,9 @@
 //! Layout adapter.
 //! PSS 子集 → Taffy；Jasper 公共布局语义不直接暴露 Taffy 类型。
 
-use std::collections::HashMap;
+use alloc::collections::BTreeMap;
 
+use crate::nostd_prelude::*;
 use taffy::geometry::{Rect as TaffyRect, Size as TaffySize};
 use taffy::style::{
     AlignItems, BoxSizing, Dimension, Display as TaffyDisplay, FlexDirection as TaffyFlexDirection,
@@ -80,7 +81,7 @@ impl LayoutEngine for TaffyLayoutEngine {
         scene.validate().map_err(LayoutError::InvalidScene)?;
         let viewport = Size::new(viewport.width.max(0.0), viewport.height.max(0.0));
         let mut tree: TaffyTree<TextContext> = TaffyTree::new();
-        let mut taffy_ids: HashMap<NodeId, taffy::NodeId> = HashMap::new();
+        let mut taffy_ids: BTreeMap<NodeId, taffy::NodeId> = BTreeMap::new();
 
         let root = build_node(&mut tree, &scene.root, true, viewport, &mut taffy_ids)?;
         tree.compute_layout_with_measure(
@@ -146,7 +147,7 @@ fn build_node(
     node: &Node,
     is_root: bool,
     viewport: Size,
-    ids: &mut HashMap<NodeId, taffy::NodeId>,
+    ids: &mut BTreeMap<NodeId, taffy::NodeId>,
 ) -> Result<taffy::NodeId, LayoutError> {
     let style = map_style(&node.style, is_root, viewport);
     let taffy_id = match &node.kind {
@@ -181,7 +182,7 @@ fn collect_boxes(
     parent: Option<NodeId>,
     clip: Option<Rect>,
     parent_origin: Point,
-    ids: &HashMap<NodeId, taffy::NodeId>,
+    ids: &BTreeMap<NodeId, taffy::NodeId>,
     out: &mut Vec<LayoutBox>,
 ) -> Result<(), LayoutError> {
     let taffy_id = *ids.get(&node.id).ok_or(LayoutError::MissingNode(node.id))?;

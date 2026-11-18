@@ -1,6 +1,7 @@
 //! Host-independent input model.
 //! 平台适配层把原始事件规范化到这里；手势/输入法由 Jasper UI 层后续实现。
 
+use crate::nostd_prelude::*;
 use crate::geometry::{Point, Size};
 
 /// Stable pointer identity within one input session.
@@ -334,7 +335,7 @@ impl PointerMotionPredictor {
 pub struct PointerTracker {
     active: BTreeMap<PointerId, PointerEvent>,
 }
-use std::collections::BTreeMap;
+use alloc::collections::BTreeMap;
 // END VERIFIED POINTER TRACKER TYPE
 
 impl PointerTracker {

@@ -10,6 +10,9 @@
 //! 呈现值（弹簧另带速度）起一个通道，因此中途改目标不跳变。动画不消耗场景版本。没有运行中的通道、未接时钟时，
 //! 本模块不做任何工作。
 
+use alloc::collections::{BTreeMap, BTreeSet};
+
+use crate::nostd_prelude::*;
 use crate::scene::NodeId;
 use crate::style::{
     AnimatedProperties, Backdrop, BorderSide, BoxShadow, Color, Easing, Gradient, GradientShape,
@@ -17,7 +20,6 @@ use crate::style::{
     MAX_BACKDROP_SATURATION, MAX_EFFECT_EXTENT, MAX_TRANSFORM_ORIGIN, MAX_TRANSFORM_ROTATE, MAX_TRANSFORM_SCALE,
     MAX_TRANSFORM_TRANSLATE, MAX_TRANSITION_MS,
 };
-use std::collections::{BTreeMap, BTreeSet};
 
 /// Longest a spring may run (seconds); a spring still outside tolerance then snaps to target.
 /// 弹簧最长运行时间（秒）；届时仍未进入容差的弹簧直接落到目标值。
@@ -144,7 +146,7 @@ impl Spring {
             // |x0 + b·t|·e^(−wt) ≤ (|x0| + 2|b|/(e·w))·e^(−wt/2), as t·e^(−wt/2) ≤ 2/(e·w).
             let b = v0 + w * x0;
             (
-                x0.abs() + 2.0 * b.abs() / (std::f64::consts::E * w),
+                x0.abs() + 2.0 * b.abs() / (core::f64::consts::E * w),
                 w / 2.0,
             )
         } else if z < 1.0 {

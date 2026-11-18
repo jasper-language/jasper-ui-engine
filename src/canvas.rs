@@ -4,6 +4,7 @@
 //! 这不是浏览器的 `<canvas>` 后端，也不做位图存储：它只保存**可序列化的绘制指令**，
 //! 因此同一份 Canvas 可以在软件光栅、GPU、Web Canvas 2D 或远程客户端上重放。
 
+use crate::nostd_prelude::*;
 use crate::geometry::{Point, Rect};
 use crate::paint::PaintOp;
 use crate::style::Color;

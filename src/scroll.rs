@@ -7,8 +7,9 @@
 //! - 一次滚轮事件沿祖先链从内到外消费：内层到边界后，残余 delta 继续交给外层；
 //! - 仍在原型阶段：滚动条见 `scrollbar` 模块；没有过冲回弹。
 
-use std::collections::BTreeMap;
+use alloc::collections::BTreeMap;
 
+use crate::nostd_prelude::*;
 use crate::geometry::{Point, Rect, Size};
 use crate::layout::LayoutTree;
 use crate::scene::{NodeId, Scene, ScenePatch};

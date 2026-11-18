@@ -1,8 +1,9 @@
 //! Pointer routing with capture, built on hit testing.
 //! 平台无关：触摸/多点/触控笔共用同一套 PointerEvent。
 
-use std::collections::BTreeMap;
+use alloc::collections::BTreeMap;
 
+use crate::nostd_prelude::*;
 use crate::hit_test::hit_test_path;
 use crate::input::{InputError, PointerEvent, PointerId, PointerPhase, PointerTracker};
 use crate::layout::LayoutTree;

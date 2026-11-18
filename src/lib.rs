@@ -26,19 +26,103 @@
 //! engine.render(&scene).unwrap();
 //! ```
 
+#![cfg_attr(jasper_no_std_core, no_std)]
+
+extern crate alloc;
+
+#[cfg(jasper_no_std_core)]
+pub(crate) mod nostd_prelude {
+    pub use alloc::{
+        borrow::ToOwned,
+        boxed::Box,
+        format,
+        string::{String, ToString},
+        vec,
+        vec::Vec,
+    };
+    pub trait FloatExt: Sized {
+        fn floor(self) -> Self;
+        fn ceil(self) -> Self;
+        fn round(self) -> Self;
+        fn sqrt(self) -> Self;
+        fn powi(self, exponent: i32) -> Self;
+        fn powf(self, exponent: Self) -> Self;
+        fn fract(self) -> Self;
+        fn rem_euclid(self, rhs: Self) -> Self;
+        fn exp(self) -> Self;
+        fn ln(self) -> Self;
+        fn sin_cos(self) -> (Self, Self);
+        fn to_radians(self) -> Self;
+    }
+
+    impl FloatExt for f32 {
+        fn floor(self) -> Self { libm::floorf(self) }
+        fn ceil(self) -> Self { libm::ceilf(self) }
+        fn round(self) -> Self { libm::roundf(self) }
+        fn sqrt(self) -> Self { libm::sqrtf(self) }
+        fn powi(self, exponent: i32) -> Self {
+            libm::powf(self, exponent as f32)
+        }
+        fn powf(self, exponent: Self) -> Self { libm::powf(self, exponent) }
+        fn fract(self) -> Self { self - libm::truncf(self) }
+        fn rem_euclid(self, rhs: Self) -> Self {
+            let value = libm::fmodf(self, rhs);
+            if value < 0.0 { value + rhs.abs() } else { value }
+        }
+        fn exp(self) -> Self { libm::expf(self) }
+        fn ln(self) -> Self { libm::logf(self) }
+        fn sin_cos(self) -> (Self, Self) { (libm::sinf(self), libm::cosf(self)) }
+        fn to_radians(self) -> Self { self * (core::f32::consts::PI / 180.0) }
+    }
+
+    impl FloatExt for f64 {
+        fn floor(self) -> Self { libm::floor(self) }
+        fn ceil(self) -> Self { libm::ceil(self) }
+        fn round(self) -> Self { libm::round(self) }
+        fn sqrt(self) -> Self { libm::sqrt(self) }
+        fn powi(self, exponent: i32) -> Self {
+            libm::pow(self, exponent as f64)
+        }
+        fn powf(self, exponent: Self) -> Self { libm::pow(self, exponent) }
+        fn fract(self) -> Self { self - libm::trunc(self) }
+        fn rem_euclid(self, rhs: Self) -> Self {
+            let value = libm::fmod(self, rhs);
+            if value < 0.0 { value + rhs.abs() } else { value }
+        }
+        fn exp(self) -> Self { libm::exp(self) }
+        fn ln(self) -> Self { libm::log(self) }
+        fn sin_cos(self) -> (Self, Self) { (libm::sin(self), libm::cos(self)) }
+        fn to_radians(self) -> Self { self * (core::f64::consts::PI / 180.0) }
+    }
+}
+
+#[cfg(not(jasper_no_std_core))]
+pub(crate) mod nostd_prelude {
+    pub use std::{
+        borrow::ToOwned,
+        boxed::Box,
+        format,
+        string::{String, ToString},
+        vec,
+        vec::Vec,
+    };
+}
+
 pub mod backend;
 pub mod batch;
 pub mod canvas;
-#[cfg(feature = "canvas-tiny-skia")]
+#[cfg(all(feature = "canvas-tiny-skia", not(jasper_no_std_core)))]
 pub mod canvas_tiny_skia;
 pub mod composition_identity;
-#[cfg(feature = "desktop")]
+#[cfg(all(feature = "desktop", not(jasper_no_std_core)))]
 pub mod desktop;
 pub mod engine;
 pub mod geometry;
+#[cfg(not(jasper_no_std_core))]
 pub mod gesture;
-#[cfg(feature = "gpu")]
+#[cfg(all(feature = "gpu", not(jasper_no_std_core)))]
 pub mod gpu_wgpu;
+#[cfg(not(jasper_no_std_core))]
 pub mod graphics;
 pub mod handle;
 pub mod hit_test;
@@ -49,6 +133,7 @@ pub mod input_identity;
 pub mod keyboard;
 pub mod layout;
 mod legacy_engine;
+#[cfg(not(jasper_no_std_core))]
 pub mod motion;
 pub mod overlay;
 pub mod paint;
@@ -66,10 +151,10 @@ pub mod surface;
 pub mod surface_lifecycle;
 pub mod table;
 pub mod text;
-#[cfg(feature = "real-text")]
+#[cfg(all(feature = "real-text", not(jasper_no_std_core)))]
 pub mod text_cosmic;
 pub mod ui_plugin_gate;
-#[cfg(feature = "ui-plugin-pending")]
+#[cfg(all(feature = "ui-plugin-pending", not(jasper_no_std_core)))]
 pub mod ui_plugin_host;
 /// Consumer-side Rust profile of the Jasper Typed UI IR v0.1.
 /// 公共语义与 Schema 由 Jasper Language/UI 共有层拥有；本模块只做严格读取、校验与 Native 映射。
@@ -78,20 +163,20 @@ pub mod ui_ir;
 pub use backend::{BackendError, RenderBackend};
 pub use batch::{BatchError, UiBatch};
 pub use canvas::{Canvas, CanvasHitRegion, CanvasOp};
-#[cfg(feature = "canvas-tiny-skia")]
+#[cfg(all(feature = "canvas-tiny-skia", not(jasper_no_std_core)))]
 pub use canvas_tiny_skia::{render_canvas, CanvasRenderReport};
-#[cfg(feature = "desktop")]
+#[cfg(all(feature = "desktop", not(jasper_no_std_core)))]
 pub use desktop::{rgba_to_u32, DesktopInput, DesktopPointerState, PixelError};
 #[cfg(feature = "native-blitz-pending")]
 pub use engine::Engine;
 pub use engine::{EngineError, FrameStats, LegacyEngine};
 pub use geometry::{Edges, Point, Rect, Size};
-pub use gesture::{Gesture, GestureConfig, GestureRecognizer};
-#[cfg(feature = "gpu")]
+#[cfg(all(feature = "gpu", not(jasper_no_std_core)))]
 pub use gpu_wgpu::{
     adapter_kind, adapters as wgpu_adapters, describe as describe_wgpu_adapter,
     instance as wgpu_instance, select as select_wgpu_adapter,
 };
+#[cfg(not(jasper_no_std_core))]
 pub use graphics::{
     select_adapter, AdapterInfo, AdapterKind, AdapterSelection, GpuPreference, GraphicsSettings,
     SelectionFallback,
@@ -127,7 +212,7 @@ pub use style::{
 };
 pub use table::{TableCellMetrics, TableMetrics};
 pub use text::{SimpleTextEngine, TextEngine, TextMetrics};
-#[cfg(feature = "real-text")]
+#[cfg(all(feature = "real-text", not(jasper_no_std_core)))]
 pub use text_cosmic::CosmicTextEngine;
 
 // Pending third-party text adapter; full ordered verification remains required.

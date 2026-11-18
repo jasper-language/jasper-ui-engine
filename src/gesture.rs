@@ -1,8 +1,9 @@
 //! Reference gesture recognizer on top of routed pointer events.
 //! 宿主中立原语；Jasper UI 层可以替换/覆盖手势语义。
 
-use std::collections::BTreeMap;
+use alloc::collections::BTreeMap;
 
+use crate::nostd_prelude::*;
 use crate::geometry::Point;
 use crate::input::{MouseButton, PointerId, PointerPhase};
 use crate::pointer::PointerRoute;

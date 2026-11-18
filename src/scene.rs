@@ -1,11 +1,13 @@
 //! Instance scene tree with stable node identities and incremental patches.
 //! 实例层场景树；不是 Jasper 的声明层组件树，也不是 Web DOM。
 
+use alloc::collections::BTreeSet;
+
+use crate::nostd_prelude::*;
 use crate::canvas::Canvas;
 use crate::geometry::Point;
 use crate::semantics::Semantics;
 use crate::style::Style;
-use std::collections::BTreeSet;
 
 /// Stable identity of a node within a scene.
 // BEGIN VERIFIED NODE ID TYPE
@@ -161,7 +163,7 @@ impl Scene {
 
     /// Applies one patch atomically (clone-on-write for the prototype).
     pub fn apply(&mut self, patch: ScenePatch) -> Result<(), SceneError> {
-        self.apply_batch(std::slice::from_ref(&patch))
+        self.apply_batch(core::slice::from_ref(&patch))
     }
 
     /// Applies all patches or none. The version advances once on success.

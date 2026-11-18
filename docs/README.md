@@ -29,6 +29,7 @@
 | [status.md](status.md) | 已实现/未实现/未验证的逐项状态 |
 | [verification.md](verification.md) | 数学证明硬门槛、性质登记、执行与信任边界 |
 | [batch-boundaries.md](batch-boundaries.md) | 语义更新/绘制/传输及内置/自带宿主边界 |
+| [no-std-core.md](no-std-core.md) | `no_std + alloc` core feature、可用能力、宿主缺口和 bare-metal 验证 |
 | [issue-3-baseline-audit.md](issue-3-baseline-audit.md) | Issue #3 基线审计：现有 PSS/JUI 2/ScenePatch/Web 映射的可复用、冲突与缺失 |
 | [issue-3-decisions-approved.md](issue-3-decisions-approved.md) | 用户正式裁决 1A–6A、强制约束和后续状态 |
 | [issue-3-semantic-scope.md](issue-3-semantic-scope.md) | HTML-like/CSS-like 元素、事件、布局和样式的建议兼容范围 |

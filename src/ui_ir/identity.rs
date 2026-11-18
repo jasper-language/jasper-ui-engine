@@ -3,10 +3,11 @@
 //! This ledger is deliberately separate from every backend `NodeId`. It never reuses a
 //! `(semantic_id, generation)` pair and refuses exhaustion instead of wrapping.
 
+use crate::nostd_prelude::*;
+use alloc::collections::BTreeMap;
+use core::fmt;
 use super::UiKey;
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
-use std::fmt;
 
 #[derive(Clone, Debug)]
 struct Record {
@@ -231,7 +232,7 @@ impl fmt::Display for IdentityError {
     }
 }
 
-impl std::error::Error for IdentityError {}
+impl core::error::Error for IdentityError {}
 
 #[cfg(test)]
 mod tests {

@@ -7,6 +7,8 @@
 //! Windows Ink、Apple Pencil、Android MotionEvent 与 Linux libinput 适配器应先在此验证设备值，
 //! 再发布 [`PointerEvent`]。本模块不含平台 API，也不声明已实测任何物理设备。
 
+#[cfg(jasper_no_std_core)]
+use crate::nostd_prelude::*;
 use crate::geometry::{Point, Size};
 use crate::input::{Modifiers, MouseButton, PointerEvent, PointerId, PointerKind, PointerPhase};
 

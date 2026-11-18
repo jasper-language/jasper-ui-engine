@@ -1,6 +1,7 @@
 //! Portable style subset (PSS) used by the engine.
 //! 可移植样式子集；不是完整 CSS，公共语义由 Jasper UI 定义，这里只承载引擎需要的部分。
 
+use crate::nostd_prelude::*;
 use crate::geometry::Edges;
 
 /// A CSS-like length in logical pixels.
@@ -1721,8 +1722,8 @@ pub enum XStyleError {
     InvalidValue { key: String, value: String },
 }
 
-impl std::fmt::Display for XStyleError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for XStyleError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             XStyleError::UnknownKey(key) => write!(f, "unknown xstyle key `{key}`"),
             XStyleError::InvalidValue { key, value } => {
@@ -1732,7 +1733,7 @@ impl std::fmt::Display for XStyleError {
     }
 }
 
-impl std::error::Error for XStyleError {}
+impl core::error::Error for XStyleError {}
 
 pub(crate) fn parse_number(text: &str) -> Option<f32> {
     let text = text.trim();
@@ -1996,12 +1997,12 @@ fn parse_transition(text: &str) -> Option<Transition> {
     while let Some((field, tail)) = rest.split_first() {
         rest = tail;
         if let Some(delay) = field.strip_prefix("delay=") {
-            if std::mem::replace(&mut seen_delay, true) {
+            if core::mem::replace(&mut seen_delay, true) {
                 return None;
             }
             rule.delay_ms = parse_ms(delay)?;
         } else if let Some(reduce) = field.strip_prefix("reduce=") {
-            if std::mem::replace(&mut seen_reduce, true) {
+            if core::mem::replace(&mut seen_reduce, true) {
                 return None;
             }
             let (duration, easing) = match reduce.split_once('/') {
@@ -2087,7 +2088,7 @@ fn parse_transform(text: &str) -> Option<Transform2D> {
             }
             _ => return None,
         };
-        if std::mem::replace(&mut seen[slot], true) {
+        if core::mem::replace(&mut seen[slot], true) {
             return None;
         }
     }
@@ -2247,7 +2248,7 @@ fn parse_backdrop(text: &str) -> Option<Option<Backdrop>> {
             }
             _ => return None,
         };
-        if std::mem::replace(&mut seen[slot], true) {
+        if core::mem::replace(&mut seen[slot], true) {
             return None;
         }
     }
@@ -2311,7 +2312,7 @@ fn parse_image(text: &str) -> Option<Option<ImageStyle>> {
             }
             _ => return None,
         };
-        if std::mem::replace(&mut seen[slot], true) {
+        if core::mem::replace(&mut seen[slot], true) {
             return None;
         }
     }

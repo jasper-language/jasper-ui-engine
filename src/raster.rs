@@ -1,10 +1,9 @@
 //! Deterministic CPU rasterizer used by the headless backend and visual tests.
 //! 软件光栅只实现基础图元；GPU/Vello 后端的语义由同一显示列表约束。
 
-use std::fs;
-use std::io;
-use std::path::Path;
-
+use crate::nostd_prelude::*;
+#[cfg(not(jasper_no_std_core))]
+use std::{fs, io, path::Path};
 use crate::geometry::{Point, Rect};
 use crate::style::Color;
 use crate::surface::{rgba8_row_bytes, surface_span};
@@ -150,6 +149,7 @@ impl Canvas {
         out
     }
 
+    #[cfg(not(jasper_no_std_core))]
     pub fn save_ppm(&self, path: impl AsRef<Path>) -> io::Result<()> {
         fs::write(path, self.to_ppm())
     }

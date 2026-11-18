@@ -4,6 +4,8 @@
 //! identity. Any semantic or style field the current Native scene cannot represent is reported
 //! and rejects the frame by default.
 
+use alloc::collections::{BTreeMap, BTreeSet};
+use core::fmt;
 use super::events::{
     check_authority_values, check_permission, AdmittedEvent, AuthorityRef, UiEventAdmissionError,
 };
@@ -25,8 +27,6 @@ use crate::style::{
     TextAlignVertical as NativeVerticalAlign, TextDirection as NativeTextDirection,
 };
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeMap, BTreeSet};
-use std::fmt;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -74,7 +74,7 @@ impl fmt::Display for MappingIssue {
     }
 }
 
-impl std::error::Error for MappingIssue {}
+impl core::error::Error for MappingIssue {}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -491,7 +491,7 @@ impl fmt::Display for NativeUiFrameError {
     }
 }
 
-impl std::error::Error for NativeUiFrameError {}
+impl core::error::Error for NativeUiFrameError {}
 
 impl From<UiIrError> for NativeUiFrameError {
     fn from(value: UiIrError) -> Self {
@@ -1246,7 +1246,7 @@ impl DocumentBuilder {
         let style = self.scene.root.style.clone();
         let patch = ScenePatch::UpdateStyle { id: root, style };
         self.scene
-            .apply_batch_at(expected, std::slice::from_ref(&patch))
+            .apply_batch_at(expected, core::slice::from_ref(&patch))
             .map_err(native_scene_error)?;
         if record_patch {
             self.patches.push(patch);

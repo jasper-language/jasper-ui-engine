@@ -1,6 +1,8 @@
 //! Host-neutral UI resource admission; storage and authenticated sessions belong to the host.
 //! 宿主无关的 UI 资源准入；存储与已认证会话由宿主提供。
 
+use crate::nostd_prelude::*;
+
 // BEGIN VERIFIED RESOURCE GATE KERNEL
 /// Wire-visible identity, not a secret capability or a backing-memory owner.
 /// 可在线上传输的身份，不是秘密能力凭证，也不拥有底层内存。

@@ -7,6 +7,8 @@
 //! 旧 Native `Style` 到 Typed UI Style 的损失感知兼容投影。它不是完整反向 IR adapter；
 //! 能由当前 Typed Style 组表达的字段会投影，Native-only 字段则逐项登记，禁止静默丢失。
 
+use alloc::collections::{BTreeMap, BTreeSet};
+use core::fmt::Write as _;
 use super::*;
 use crate::geometry::Edges as NativeEdges;
 use crate::overlay::{
@@ -24,8 +26,6 @@ use crate::style::{
     TextAlign as NativeTextAlign, TextAlignVertical as NativeTextAlignVertical,
     TextDirection as NativeTextDirection,
 };
-use std::collections::{BTreeMap, BTreeSet};
-use std::fmt::Write as _;
 
 /// One non-default Native-only field omitted from the Typed projection.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

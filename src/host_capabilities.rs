@@ -1,6 +1,8 @@
 //! Declared rendering-host capabilities, kept separate from evidence of an actual host.
 //! 声明的渲染宿主能力；与任何实际宿主的运行证据分开。
 
+use crate::nostd_prelude::*;
+
 // BEGIN VERIFIED CAPABILITY STATUS TYPE
 /// What this build promises for one host-facing capability.
 /// 当前构建对一项宿主能力的承诺。

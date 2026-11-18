@@ -7,8 +7,9 @@
 //! 本模块只定义顺序与背压，不执行 IPC、认证或平台调用。桌面、移动或 jasper-os 宿主都可以用
 //! 同一规则承载 `UiBatch`、场景更新或规范化输入。
 
-use std::collections::VecDeque;
+use alloc::collections::VecDeque;
 
+use crate::nostd_prelude::*;
 /// Authenticated host session and reconnect epoch. The transport must obtain both from the host.
 /// 已认证的宿主会话与重连代数；传输层必须从宿主取得这两个值，不能信任消息载荷。
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

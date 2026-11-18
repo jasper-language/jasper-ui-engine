@@ -1,8 +1,9 @@
 //! Render backend contract and the headless software backend.
 //! GPU/window backends implement the same trait; the engine never depends on Vello types.
 
-use std::io;
-use std::path::Path;
+use crate::nostd_prelude::*;
+#[cfg(not(jasper_no_std_core))]
+use std::{io, path::Path};
 
 use crate::batch::UiBatch;
 use crate::geometry::Size;
@@ -38,6 +39,7 @@ pub enum BackendError {
 }
 // END VERIFIED NATIVE BACKEND ERROR TYPE
 
+#[cfg(not(jasper_no_std_core))]
 impl From<io::Error> for BackendError {
     fn from(error: io::Error) -> Self {
         BackendError::Io(error.to_string())
@@ -80,6 +82,7 @@ impl HeadlessBackend {
         &mut self.canvas
     }
 
+    #[cfg(not(jasper_no_std_core))]
     pub fn save_ppm(&self, path: impl AsRef<Path>) -> io::Result<()> {
         self.canvas.save_ppm(path)
     }
@@ -100,8 +103,8 @@ impl HeadlessBackend {
 
 impl RenderBackend for HeadlessBackend {
     fn resize(&mut self, size: Size) {
-        let width = size.width.max(1.0).round() as u32;
-        let height = size.height.max(1.0).round() as u32;
+        let width = (size.width.max(1.0) + 0.5) as u32;
+        let height = (size.height.max(1.0) + 0.5) as u32;
         if self.canvas.width() != width || self.canvas.height() != height {
             self.canvas = Canvas::new(width, height);
         }

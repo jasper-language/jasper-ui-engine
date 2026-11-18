@@ -7,9 +7,10 @@
 //! Jasper Language/UI 拥有规范 Schema；本模块只是后端兼容读取器，在任何 Native 修改前拒绝
 //! 非法或有歧义的输入。JSON 仅是 v0.1 交换表示，CSS 文本不进入这条路径。
 
+use crate::nostd_prelude::*;
+use alloc::collections::{BTreeMap, BTreeSet};
+use core::fmt;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::collections::BTreeSet;
-use std::fmt;
 
 mod events;
 mod identity;
@@ -430,7 +431,7 @@ pub struct UiElement {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub attributes: Option<std::collections::BTreeMap<String, AttributeValue>>,
+    pub attributes: Option<BTreeMap<String, AttributeValue>>,
 }
 
 impl UiElement {
@@ -1421,7 +1422,7 @@ fn parse_color(text: &str) -> Option<UiColor> {
     if !matches!(text.len(), 7 | 9) || !text.starts_with('#') {
         return None;
     }
-    let byte = |range: std::ops::Range<usize>| u8::from_str_radix(&text[range], 16).ok();
+    let byte = |range: core::ops::Range<usize>| u8::from_str_radix(&text[range], 16).ok();
     Some(UiColor {
         r: byte(1..3)?,
         g: byte(3..5)?,
@@ -1446,7 +1447,7 @@ impl fmt::Display for UiIrError {
     }
 }
 
-impl std::error::Error for UiIrError {}
+impl core::error::Error for UiIrError {}
 
 fn invalid<T>(path: &str, detail: impl Into<String>) -> Result<T, UiIrError> {
     Err(UiIrError::Invalid {
