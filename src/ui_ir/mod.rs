@@ -23,9 +23,10 @@ pub use identity::{
     IdentityError, IdentityRecordSnapshot, UiIdentityLedger, UiIdentitySnapshot,
 };
 pub use compat::{
-    project_native_semantics_to_jui2, project_native_style, project_native_style_to_jui2,
-    project_native_style_with_context, Jui2SemanticsProjection, Jui2StyleProjection,
-    NativeStyleContext, NativeStyleLoss, NativeStyleProjection,
+    project_jui2_initial_frame, project_native_semantics_to_jui2, project_native_style,
+    project_native_style_to_jui2, project_native_style_with_context, Jui2CompatibilityFrame,
+    Jui2SemanticsProjection, Jui2StyleProjection, NativeStyleContext, NativeStyleLoss,
+    NativeStyleProjection,
 };
 pub use native::{
     native_property_profile, MappedProperty, MappingIssue, MappingIssueKind, NativeActivationSource,

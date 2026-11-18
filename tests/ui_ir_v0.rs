@@ -521,6 +521,42 @@ fn native_semantics_projects_to_jui2_with_explicit_wire_losses() {
 }
 
 #[test]
+fn native_document_projects_to_loss_aware_jui2_initial_frame() {
+    use jasper_ui_engine::ui_ir::project_jui2_initial_frame;
+
+    let document = NativeUiDocument::from_json_slice(&fixture("settings-page.ir.json")).unwrap();
+    let frame = project_jui2_initial_frame(&document).unwrap();
+    assert!(frame.text.starts_with("frame\t1\t2\n"));
+    assert!(frame.text.ends_with("end\n"));
+    assert!(frame.text.contains("insert\t0\t0\t1\tcontainer\n"));
+    assert!(frame.text.contains("insert\t1\t0\t2\ttext\n"));
+    assert!(frame.text.contains("text\t2\tSettings\n"));
+    assert!(frame.text.contains("sem\t3\trole=text-field\tlabel=Name\tfocusable=true\n"));
+    assert!(frame
+        .losses
+        .iter()
+        .any(|loss| loss.path == "$.jui2.identity"));
+    assert!(frame
+        .losses
+        .iter()
+        .any(|loss| loss.path == "$.jui2.events"));
+
+    let mut value: serde_json::Value =
+        serde_json::from_slice(&fixture("settings-page.ir.json")).unwrap();
+    value["ops"][0]["node"]["children"][0]["element"]["content"] =
+        serde_json::json!("A\tB\nC");
+    value["ops"][0]["node"]["children"][0]["semantics"]["label"] =
+        serde_json::json!("A\tB\nC");
+    let document =
+        NativeUiDocument::from_json_slice(&serde_json::to_vec(&value).unwrap()).unwrap();
+    let frame = project_jui2_initial_frame(&document).unwrap();
+    assert!(frame.text.contains("text\t2\tA\\tB\\nC\n"));
+    assert!(frame
+        .text
+        .contains("sem\t2\trole=heading\tlevel=1\tlabel=A\\tB\\nC\n"));
+}
+
+#[test]
 fn native_node_projection_recovers_public_tree_semantics_events_and_styles() {
     use jasper_ui_engine::ui_ir::{SemanticRole, UiOp};
 

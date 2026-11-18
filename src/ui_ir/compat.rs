@@ -13,6 +13,7 @@ use crate::overlay::{
     OverlayAlign as NativeOverlayAlign, OverlayAnchor as NativeOverlayAnchor,
     OverlaySide as NativeOverlaySide,
 };
+use crate::scene::{Node, NodeId, NodeKind};
 use crate::semantics::{LivePoliteness, Role, Semantics};
 use crate::style::{
     Align as NativeAlign, Color as NativeColor, Display as NativeDisplay,
@@ -23,6 +24,7 @@ use crate::style::{
     TextAlign as NativeTextAlign, TextAlignVertical as NativeTextAlignVertical,
     TextDirection as NativeTextDirection,
 };
+use std::fmt::Write as _;
 
 /// One non-default Native-only field omitted from the Typed projection.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -53,6 +55,13 @@ pub struct Jui2StyleProjection {
 pub struct Jui2SemanticsProjection {
     pub fields: Vec<(String, String)>,
     pub losses: Vec<NativeStyleLoss>,
+}
+
+/// One loss-aware initial JUI 2 frame. This is not an incremental or reversible adapter.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Jui2CompatibilityFrame {
+    pub text: String,
+    pub losses: Vec<NativeNodeLoss>,
 }
 
 /// Optional node-local context needed to reverse image and overlay candidate values.
@@ -540,6 +549,190 @@ pub fn project_native_semantics_to_jui2(source: &Semantics) -> Jui2SemanticsProj
         });
     }
     Jui2SemanticsProjection { fields, losses }
+}
+
+/// Encode the current Native document as a fresh JUI 2 initial frame.
+///
+/// JUI 2 receives backend `NodeId`s only. `UiKey`, event bindings, resource payloads and
+/// generations, environment, and the current document revision are reported as losses rather
+/// than promoted into public identity.
+pub fn project_jui2_initial_frame(
+    document: &NativeUiDocument,
+) -> Result<Jui2CompatibilityFrame, UiIrError> {
+    let snapshot = document.project_compatibility_snapshot()?;
+    let mut losses = vec![NativeNodeLoss {
+        path: "$.jui2.identity".into(),
+        detail: "JUI 2 carries backend numeric node IDs, not UiKey identity".into(),
+    }];
+    if compatibility_node_has_events(&snapshot.root) {
+        losses.push(NativeNodeLoss {
+            path: "$.jui2.events".into(),
+            detail: "JUI 2 frame transport has no event-binding declaration".into(),
+        });
+    }
+    if !snapshot.resources.is_empty() {
+        losses.push(NativeNodeLoss {
+            path: "$.jui2.resources".into(),
+            detail: "resource payloads, kinds and generations travel outside JUI 2 frames".into(),
+        });
+    }
+    if snapshot.environment != UiEnvironment::default() {
+        losses.push(NativeNodeLoss {
+            path: "$.jui2.environment".into(),
+            detail: "JUI 2 environment is host state, not an initial frame operation".into(),
+        });
+    }
+    if document.revision() != 2 {
+        losses.push(NativeNodeLoss {
+            path: "$.jui2.revision".into(),
+            detail: format!(
+                "initial frame resets revision to 2; document revision is {}",
+                document.revision()
+            ),
+        });
+    }
+
+    let mut text = String::from("frame\t1\t2\n");
+    encode_jui2_node(
+        document,
+        &document.scene().root,
+        None,
+        0,
+        &mut text,
+        &mut losses,
+    )?;
+    text.push_str("end\n");
+    Ok(Jui2CompatibilityFrame { text, losses })
+}
+
+fn compatibility_node_has_events(node: &UiNode) -> bool {
+    node.events.as_ref().is_some_and(|events| !events.is_empty())
+        || node
+            .children
+            .as_deref()
+            .unwrap_or_default()
+            .iter()
+            .any(compatibility_node_has_events)
+}
+
+fn encode_jui2_node(
+    document: &NativeUiDocument,
+    node: &Node,
+    parent: Option<NodeId>,
+    index: usize,
+    text: &mut String,
+    losses: &mut Vec<NativeNodeLoss>,
+) -> Result<(), UiIrError> {
+    let key = document
+        .key_for_node(node.id)
+        .ok_or_else(|| UiIrError::Invalid {
+            path: "$.jui2".into(),
+            detail: "JUI 2 projection lacks a node UiKey".into(),
+        })?;
+    let path = format!("$.jui2.node[{}:{}]", key.semantic_id, key.generation);
+    let id = jui2_numeric(node.id.0, &format!("{path}.id"))?;
+    let parent = match parent {
+        Some(id) => jui2_numeric(id.0, &format!("{path}.parent"))?,
+        None => "0".into(),
+    };
+    let index = jui2_numeric(index as u64, &format!("{path}.index"))?;
+    let kind = match node.kind {
+        NodeKind::Container => "container",
+        NodeKind::Text(_) => "text",
+        NodeKind::Rect => "rect",
+        NodeKind::Canvas(_) => {
+            return Err(UiIrError::Invalid {
+                path: format!("{path}.kind"),
+                detail: "JUI 2 compatibility frame cannot encode a Canvas node".into(),
+            })
+        }
+    };
+    writeln!(text, "insert\t{parent}\t{index}\t{id}\t{kind}")
+        .expect("writing JUI 2 text to String cannot fail");
+    if let NodeKind::Text(value) = &node.kind {
+        writeln!(text, "text\t{id}\t{}", jui2_escape(value))
+            .expect("writing JUI 2 text to String cannot fail");
+    }
+    let style = project_native_style_to_jui2(&node.style);
+    if !style.base.is_empty() {
+        text.push_str("style\t");
+        text.push_str(&id);
+        for (key, value) in &style.base {
+            text.push('\t');
+            text.push_str(key);
+            text.push('=');
+            text.push_str(&jui2_escape(value));
+        }
+        text.push('\n');
+    }
+    if !style.xstyle.is_empty() {
+        text.push_str("xstyle\t");
+        text.push_str(&id);
+        for (key, value) in &style.xstyle {
+            text.push('\t');
+            text.push_str(key);
+            text.push('=');
+            text.push_str(&jui2_escape(value));
+        }
+        text.push('\n');
+    }
+    losses.extend(style.losses.into_iter().map(|loss| NativeNodeLoss {
+        path: format!("{path}.{}", loss.path),
+        detail: loss.detail.into(),
+    }));
+    let semantics = project_native_semantics_to_jui2(&node.semantics);
+    text.push_str("sem\t");
+    text.push_str(&id);
+    for (key, value) in &semantics.fields {
+        text.push('\t');
+        text.push_str(key);
+        text.push('=');
+        text.push_str(&jui2_escape(value));
+    }
+    text.push('\n');
+    losses.extend(
+        semantics
+            .losses
+            .into_iter()
+            .map(|loss| NativeNodeLoss {
+                path: format!("{path}.{}", loss.path),
+                detail: loss.detail.into(),
+            }),
+    );
+    for (child_index, child) in node.children.iter().enumerate() {
+        encode_jui2_node(
+            document,
+            child,
+            Some(node.id),
+            child_index,
+            text,
+            losses,
+        )?;
+    }
+    Ok(())
+}
+
+fn jui2_numeric(value: u64, path: &str) -> Result<String, UiIrError> {
+    if value > 999_999_999 {
+        return Err(UiIrError::Invalid {
+            path: path.into(),
+            detail: "JUI 2 transport accepts at most nine decimal digits".into(),
+        });
+    }
+    Ok(value.to_string())
+}
+
+fn jui2_escape(value: &str) -> String {
+    let mut out = String::with_capacity(value.len());
+    for ch in value.chars() {
+        match ch {
+            '\\' => out.push_str("\\\\"),
+            '\t' => out.push_str("\\t"),
+            '\n' => out.push_str("\\n"),
+            _ => out.push(ch),
+        }
+    }
+    out
 }
 
 fn jui2_number(value: f32) -> String {

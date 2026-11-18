@@ -46,7 +46,7 @@
 | 架构方向与六项裁决 | approved |
 | `ir-v0` Schema | Language/UI draft；Rust Native consumer implemented / tested |
 | Typed Property Registry | upstream registry pinned；Rust profile implemented / tested |
-| 兼容 adapter | `UiFrame → ScenePatch`、受限 Native Style ↔ Typed Style、Native Style → JUI 2 style/xstyle、Native Semantics → JUI 2 sem、UiNode 子树/资源/环境/identity 快照及直接文档恢复 implemented / tested；完整 legacy Scene reverse 与 JUI 2 节点/事件 frame adapter not complete |
+| 兼容 adapter | `UiFrame → ScenePatch`、受限 Native Style ↔ Typed Style、Native Style/Semantics → JUI 2 键值、NativeUiDocument → JUI 2 fresh initial frame、UiNode 子树/资源/环境/identity 快照及直接文档恢复 implemented / tested；完整 legacy Scene reverse、JUI 2 incremental/event adapter 与真实 host 回环 not complete |
 | 候选能力映射 | in progress；Grid/Position/Image/Overlay 仍 candidate、`host_accepted=false` |
 | 双后端 golden case | not run |
 | 正式 ABI | not started |

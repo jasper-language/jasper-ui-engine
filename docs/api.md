@@ -75,6 +75,9 @@ let scene = document.scene();
 resource generation 或 environment，不能替代完整 JUI 2 adapter。
 `ui_ir::project_native_semantics_to_jui2` 同样损失感知地投影 role/heading/live 与常用语义
 字段；无对应 JUI 2 role 或 selected 状态进入 losses。
+`ui_ir::project_jui2_initial_frame` 生成 JUI 2 初始 frame 文本，并转义 transport 字段。
+UiKey、events、resource generation、environment 与当前 revision 不能进入该 wire，均作为
+loss 返回；该 API 不生成增量帧，也尚未执行真实 host 回环。
 `NativeUiDocument::project_compatibility_node(UiKey)` 进一步恢复只读 `UiNode` 子树及逐节点损失；
 `project_compatibility_snapshot()` 还包括 authority、revision、environment 与当前
 active/prepared resources，以及可恢复的 identity generation/live 游标。快照规范化默认/空
