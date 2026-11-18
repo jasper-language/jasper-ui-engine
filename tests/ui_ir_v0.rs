@@ -1465,7 +1465,9 @@ fn typed_edit_drain_preserves_order_and_admits_commit_binding() {
 #[test]
 fn typed_ime_cancel_is_admitted_after_leaving_the_editing_field() {
     use jasper_ui_engine::native::host::HostRenderer;
-    use jasper_ui_engine::native::{SceneEditEventKind, TypedUiEditError};
+    use jasper_ui_engine::native::{
+        SceneEditEventKind, TypedUiEditError, TypedUiTargetError,
+    };
 
     const OWNER: u64 = 92;
     let mut value: serde_json::Value =
@@ -1521,6 +1523,29 @@ fn typed_ime_cancel_is_admitted_after_leaving_the_editing_field() {
     .unwrap();
 
     let button = document.node_for_key(UiKey::new(4, 1)).unwrap();
+    let button_without_ime = UiEventContext {
+        target: UiKey::new(4, 1),
+        permission_context: UiPermissionContext::new("focus-only", [UiPermission::Focus]),
+        ..field_context.clone()
+    };
+    assert!(matches!(
+        host.typed_focus(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &button_without_ime,
+            button,
+            &mut |_| {},
+        ),
+        Err(TypedUiTargetError::Admission(
+            jasper_ui_engine::ui_ir::UiEventAdmissionError::PermissionDenied { .. }
+        ))
+    ));
+    assert_eq!(
+        host.typed_focused_node(OWNER, 2, &document).unwrap(),
+        Some(UiKey::new(3, 1))
+    );
     let button_context = UiEventContext {
         target: UiKey::new(4, 1),
         ..field_context.clone()
@@ -1560,6 +1585,82 @@ fn typed_ime_cancel_is_admitted_after_leaving_the_editing_field() {
             .as_ref()
             .map(|event| (event.event, event.action.as_str())),
         Some((UiEventKind::ImeCancel, "cancel-name"))
+    );
+
+    host.typed_focus(
+        OWNER,
+        2,
+        generation,
+        &document,
+        &field_context,
+        field,
+        &mut |_| {},
+    )
+    .unwrap();
+    host.typed_set_preedit(
+        OWNER,
+        2,
+        generation,
+        &document,
+        &field_context,
+        field,
+        Some("组"),
+        None,
+    )
+    .unwrap();
+    assert!(matches!(
+        host.typed_deactivate(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &no_ime,
+            &mut |_| {},
+        ),
+        Err(TypedUiTargetError::Admission(
+            jasper_ui_engine::ui_ir::UiEventAdmissionError::PermissionDenied { .. }
+        ))
+    ));
+    assert_eq!(
+        host.typed_focused_node(OWNER, 2, &document).unwrap(),
+        Some(UiKey::new(3, 1))
+    );
+    let mut focus_out = Vec::new();
+    assert_eq!(
+        host.typed_deactivate(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &field_context,
+            &mut |event| focus_out.push(event),
+        )
+        .unwrap(),
+        Some(UiKey::new(3, 1))
+    );
+    assert_eq!(
+        host.typed_focused_node(OWNER, 2, &document).unwrap(),
+        None
+    );
+    assert_eq!(
+        focus_out,
+        vec![jasper_ui_engine::native::TypedUiFocusEvent {
+            target: UiKey::new(3, 1),
+            focused: false,
+            admitted: Some(jasper_ui_engine::ui_ir::AdmittedEvent {
+                target: UiKey::new(3, 1),
+                event: UiEventKind::Focus,
+                action: "focus-name".into(),
+            }),
+        }]
+    );
+    let events = host
+        .typed_take_edit_events(OWNER, &document, &field_context, false)
+        .unwrap();
+    assert_eq!(events.len(), 1);
+    assert_eq!(
+        events[0].kind,
+        SceneEditEventKind::CompositionCancelled
     );
 }
 

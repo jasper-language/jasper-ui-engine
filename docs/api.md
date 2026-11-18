@@ -69,6 +69,9 @@ Native 回调携带 `NodeId` 时使用 `admit_native_event`/`admit_activation`�
 映射，授权仍以 `UiEventContext.target` 的 `UiKey` 和上下文为准。
 HostRenderer 的 `typed_focus`、`typed_text_input`、`typed_set_preedit` 把目标授权与实际
 Focus/TextEdit/IME 操作合并到一次调用，避免授权后误传另一个 NodeId。
+`typed_focus` / `typed_accesskit_action(Focus)` / `typed_pointer(Down)` 在切换焦点前预准入
+可能产生的 `ime-cancel` binding；`typed_deactivate` 在清除焦点、按下与悬停之前完成相同检查，
+权限失败时不改变 Native 状态。窗口失活只能通过该 Typed 入口映射旧焦点回 `UiKey`。
 `typed_key` 还要求目标等于当前 Native focus，并持有 Keyboard permission。
 `typed_key_with_activation` 在键盘激活时要求 `activate` binding 和 Activate permission；
 只有 `click` 绑定时不会把 Enter/Space 的回调交给 Framework。
