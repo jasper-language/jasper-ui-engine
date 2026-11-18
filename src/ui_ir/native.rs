@@ -139,16 +139,10 @@ struct Authority {
     session: String,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum ResourceLife {
-    Prepared,
-    Committed,
-}
-
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 struct ResourceState {
-    resource: ResourceRef,
-    life: ResourceLife,
+    active: Option<ResourceRef>,
+    prepared: Option<ResourceRef>,
 }
 
 /// Validated, executable Native document profile for one admitted IR session.
@@ -281,22 +275,32 @@ impl NativeUiDocument {
     }
 
     pub fn resource_ref(&self, id: &str) -> Option<&ResourceRef> {
-        self.resource_refs
-            .get(id)
-            .or_else(|| self.resources.get(id).map(|state| &state.resource))
+        self.resource_refs.get(id).or_else(|| {
+            self.resources
+                .get(id)
+                .and_then(|state| state.active.as_ref().or(state.prepared.as_ref()))
+        })
     }
 
     /// Resource currently prepared or committed in this document.
     pub fn active_resource(&self, id: &str) -> Option<&ResourceRef> {
-        self.resources.get(id).map(|state| &state.resource)
+        self.resources
+            .get(id)
+            .and_then(|state| state.active.as_ref().or(state.prepared.as_ref()))
     }
 
     /// Resource that has completed both Prepare and Commit and may be consumed by a host.
     pub fn committed_resource(&self, id: &str) -> Option<&ResourceRef> {
         self.resources
             .get(id)
-            .filter(|state| state.life == ResourceLife::Committed)
-            .map(|state| &state.resource)
+            .and_then(|state| state.active.as_ref())
+    }
+
+    /// Resource prepared for a later Commit; it cannot replace the active resource yet.
+    pub fn prepared_resource(&self, id: &str) -> Option<&ResourceRef> {
+        self.resources
+            .get(id)
+            .and_then(|state| state.prepared.as_ref())
     }
 
     pub fn environment(&self) -> &UiEnvironment {
@@ -1442,7 +1446,7 @@ impl DocumentBuilder {
                     "resource kind changed without a new resource id",
                 ));
             }
-            if resource.generation < generation {
+            if resource.generation < generation && op.admission != ResourceAdmission::Release {
                 return Err(issue(
                     &format!("{path}.resource.generation"),
                     None,
@@ -1463,40 +1467,30 @@ impl DocumentBuilder {
         }
         match op.admission {
             ResourceAdmission::Prepare => {
-                if self
-                    .resources
-                    .get(&resource.id)
-                    .is_some_and(|state| state.resource == *resource)
-                {
-                    if self.resources[&resource.id].life == ResourceLife::Prepared {
+                if highest.is_some_and(|(_, generation)| generation == resource.generation) {
+                    let state = self.resources.entry(resource.id.clone()).or_default();
+                    if state.prepared.as_ref() == Some(resource)
+                        || state.active.as_ref() == Some(resource)
+                    {
                         return Ok(());
                     }
-                    return Err(issue(
-                        path,
-                        None,
-                        SupportLevel::Candidate,
-                        MappingIssueKind::InvalidState,
-                        "a committed resource generation cannot be prepared again",
-                    ));
-                }
-                if highest.is_some_and(|(_, generation)| generation == resource.generation) {
-                    return Err(issue(
-                        path,
-                        None,
-                        SupportLevel::Candidate,
-                        MappingIssueKind::InvalidState,
-                        "a released resource generation cannot be reused",
-                    ));
+                    let was_released = state.active.is_none() && state.prepared.is_none();
+                    if was_released {
+                        return Err(issue(
+                            path,
+                            None,
+                            SupportLevel::Candidate,
+                            MappingIssueKind::InvalidState,
+                            "a released resource generation cannot be reused",
+                        ));
+                    }
                 }
                 self.resource_generations
                     .insert(resource.id.clone(), (resource.kind, resource.generation));
-                self.resources.insert(
-                    resource.id.clone(),
-                    ResourceState {
-                        resource: resource.clone(),
-                        life: ResourceLife::Prepared,
-                    },
-                );
+                self.resources
+                    .entry(resource.id.clone())
+                    .or_default()
+                    .prepared = Some(resource.clone());
             }
             ResourceAdmission::Commit => {
                 let state = self.resources.get_mut(&resource.id).ok_or_else(|| {
@@ -1508,7 +1502,7 @@ impl DocumentBuilder {
                         "resource was not prepared",
                     )
                 })?;
-                if state.resource != *resource || state.life != ResourceLife::Prepared {
+                if state.prepared.as_ref() != Some(resource) {
                     return Err(issue(
                         path,
                         None,
@@ -1517,10 +1511,10 @@ impl DocumentBuilder {
                         "resource commit does not match the prepared generation",
                     ));
                 }
-                state.life = ResourceLife::Committed;
+                state.active = state.prepared.take();
             }
             ResourceAdmission::Release => {
-                let state = self.resources.get(&resource.id).ok_or_else(|| {
+                let state = self.resources.get_mut(&resource.id).ok_or_else(|| {
                     issue(
                         path,
                         None,
@@ -1529,7 +1523,7 @@ impl DocumentBuilder {
                         "resource was not live",
                     )
                 })?;
-                if state.resource != *resource {
+                if state.active.as_ref() != Some(resource) {
                     return Err(issue(
                         path,
                         None,
@@ -1538,7 +1532,10 @@ impl DocumentBuilder {
                         "resource release does not match the live generation",
                     ));
                 }
-                self.resources.remove(&resource.id);
+                state.active = None;
+                if state.prepared.is_none() {
+                    self.resources.remove(&resource.id);
+                }
             }
         }
         Ok(())
@@ -1561,19 +1558,23 @@ impl DocumentBuilder {
                         ),
                     ));
                 };
-                let Some(resource) = self.resources.get(&image.source) else {
+                let Some(resource) = self
+                    .resources
+                    .get(&image.source)
+                    .and_then(|state| state.active.as_ref())
+                else {
                     return Err(issue(
                         "$.scene",
                         Some("image.resource"),
                         SupportLevel::Candidate,
                         MappingIssueKind::InvalidState,
                         format!(
-                            "image style references resource {:?} without a prepared/committed generation",
+                            "image style references resource {:?} without a committed generation",
                             image.source
                         ),
                     ));
                 };
-                if resource.resource != resource_ref {
+                if *resource != resource_ref {
                     return Err(issue(
                         "$.scene",
                         Some("image.resource"),
@@ -1581,7 +1582,7 @@ impl DocumentBuilder {
                         MappingIssueKind::InvalidState,
                         format!(
                             "image style {:?} expects generation {}, but the active resource is generation {}",
-                            image.source, resource_ref.generation, resource.resource.generation
+                            image.source, resource_ref.generation, resource.generation
                         ),
                     ));
                 }
@@ -1630,7 +1631,7 @@ impl DocumentBuilder {
                     format!("image resource {id:?} is not active"),
                 )
             })?;
-            if state.resource != *resource_ref || state.life != ResourceLife::Committed {
+            if state.active.as_ref() != Some(resource_ref) {
                 return Err(issue(
                     "$.scene",
                     Some("image.resource"),

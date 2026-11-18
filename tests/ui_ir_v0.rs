@@ -416,19 +416,73 @@ fn resource_generations_reject_prepare_commit_release_misuse_and_reuse() {
             document.revision(),
             serde_json::json!([{
                 "op": "resource",
+                "resource": { "id": "logo", "generation": 2, "kind": "image" },
+                "admission": "prepare"
+            }]),
+        ))
+        .unwrap();
+    assert_eq!(
+        document
+            .committed_resource("logo")
+            .map(|resource| resource.generation),
+        Some(1)
+    );
+    assert_eq!(
+        document
+            .prepared_resource("logo")
+            .map(|resource| resource.generation),
+        Some(2)
+    );
+    document
+        .apply_frame(&operate(
+            document.revision(),
+            serde_json::json!([{
+                "op": "resource",
                 "resource": { "id": "logo", "generation": 1, "kind": "image" },
                 "admission": "release"
             }]),
         ))
         .unwrap();
     assert!(document.committed_resource("logo").is_none());
+    assert_eq!(
+        document
+            .prepared_resource("logo")
+            .map(|resource| resource.generation),
+        Some(2)
+    );
+    document
+        .apply_frame(&operate(
+            document.revision(),
+            serde_json::json!([{
+                "op": "resource",
+                "resource": { "id": "logo", "generation": 2, "kind": "image" },
+                "admission": "commit"
+            }]),
+        ))
+        .unwrap();
+    assert_eq!(
+        document
+            .committed_resource("logo")
+            .map(|resource| resource.generation),
+        Some(2)
+    );
+    document
+        .apply_frame(&operate(
+            document.revision(),
+            serde_json::json!([{
+                "op": "resource",
+                "resource": { "id": "logo", "generation": 2, "kind": "image" },
+                "admission": "release"
+            }]),
+        ))
+        .unwrap();
     let revision = document.revision();
     assert!(document
         .apply_frame(&operate(
             document.revision(),
             serde_json::json!([{
                 "op": "resource",
-                "resource": { "id": "logo", "generation": 1, "kind": "image" },
+                "resource": { "id": "logo", "generation": 2, "kind": "image" },
                 "admission": "prepare"
             }])
         ))
