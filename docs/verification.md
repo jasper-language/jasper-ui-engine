@@ -69,6 +69,8 @@ Loom 当前执行实际生产函数体的调用侧调度场景：两个线程共
 | UI-TEXT-OFFSET-001 | `text_geometry::text_offset_admits` | 布局文本长度等于源文本长度、偏移 ≤ 源文本长度（含末尾）且为字符边界时准入（充要） | proved，1 verified/0 errors，忽略长度不符/排除文本末尾两反例被拒；以匹配源码的 `evidence/text-offset-kernel/` 与六阶段报告为准；布局文本与源文本的内容相等由调用方逐字节比较；Parley 光标/命中几何与坐标换算为第三方信任边界，由 `tests/native_text_geometry.rs` 集成测试覆盖，不在证明范围 |
 | UI-TEXT-RANGE-001 | `text_geometry::text_range_admits` | 布局文本长度等于源文本长度、start ≤ end ≤ 源文本长度且两端均为字符边界时准入（充要）；等价于两端各自满足 UI-TEXT-OFFSET-001 且区间有序 | proved，1 verified/0 errors，接受反向区间/忽略终点边界两反例被拒；以匹配源码的 `evidence/text-range-kernel/` 与六阶段报告为准；Parley 选区几何与坐标换算为第三方信任边界，由 `tests/native_text_selection.rs` 集成测试覆盖，不在证明范围 |
 | UI-GPU-READBACK-001 | `gpu_render::gpu_readback_layout` | 宽或高为零、超过 65535 时为 None（与 CPU 路径同一尺寸上限）；否则返回（填充行字节数，缓冲字节数），填充行为 256 的倍数、不小于 4×宽且小于 4×宽+256，缓冲字节数 = 填充行 × 高，无溢出 | proved，2 verified/0 errors（乘法上界经 nonlinear_arith 断言），去掉行填充/放宽高度上限两反例被拒；以匹配源码的 `evidence/gpu-readback-kernel/` 与六阶段报告为准；wgpu 拷贝、缓冲映射、设备与 Vello hybrid 渲染为第三方信任边界，由 `tests/native_gpu_render.rs` 集成测试覆盖，不在证明范围 |
+| UI-CORE-FRAME-BYTES-001 | `core_renderer::core_frame_bytes` | 宽高均非零且不超过 65535 时返回精确 `width × height × 4`；任一边界失败时拒绝，计算无溢出 | not_verified；生产函数与 Verus 契约、正/反例入口已登记，独立 u128 Proptest 与 Miri 定向用例通过；固定 Verus 工具尚未在本机取得与执行，不能宣称 proved |
+| UI-CORE-FRAME-BUDGET-001 | `core_renderer::admit_core_frame_bytes` | 仅在有效 extent 且精确字节数不超过宿主额度时准入；恰好等于额度准入；未准入不进入 Canvas 分配 | not_verified；生产函数与 Verus 契约、正/反例入口已登记，独立 u128 Proptest 与 Miri 定向用例通过；固定 Verus 工具尚未在本机取得与执行。浮点 viewport 转换、分配和后端提交不在该切片 |
 | UI-GPU-DAMAGE-001 | `native_scene` 中 `render_gpu_with_damage` 及 GPU Surface 写入编排（`_with_damage`/`_damaged`） | 干净视图复用最近产出帧且不做 GPU 工作；新帧损伤相对最近产出帧（跨 CPU/GPU）；Surface 准入先于 GPU 工作；被拒/失败不写字节、不移动基准；写入失败丢弃缓存 | 六阶段均 N/A：编排代码调用 Blitz 绘制与 wgpu/Vello hybrid（第三方信任边界），不可在 Verus/Kani/Miri 下执行，也无可独立抽出的新判定；其判定全部委托给已证明内核 `frame_reuse_admits`、`frame_damage`（五步）、`write_damaged_frame`（五步）、`surface_span`/`rgba8_row_bytes`。替代证据：`tests/native_gpu_frame_damage.rs` 3 项（对照独立包围盒规格）、`tests/native_gpu_render.rs` 3 项，构建虚拟机 llvmpipe/Vulkan 实测；不计入六阶段完成数 |
 | UI-TEXT-DISPLAY-FONTS-001 | `native_view::NativeTextView::new_with_fonts`/`new_with_context` 与公开 `TextDisplayView::with_fonts` | 字体栈准入（空栈、超过 `MAX_INJECTED_FONTS`、任一文件无字体族）在构建任何文档之前完成并返回 None；准入通过后以宿主顺序回退栈构建与单字体构造相同的视图树；单字体 `new` 行为不变 | 六阶段均 N/A：新代码是上游 Blitz/fontique 构造之上的编排（第三方信任边界），无新判定；准入与回退序全部委托给已证明内核 `font_stack_count_admits`/`font_order_admits`（UI-FONT-ORDER-001，六步）。替代证据：`tests/native_text_display_fonts.rs` 3 项（回退顺序帧对照、四类拒绝与满额重复、命中随回退布局），构建虚拟机实测；不计入六阶段完成数 |
 | UI-ACCESS-ACTIONS-001 | `access_tree::access_actions` 及 AccessActions 类型 | 树中节点的 focus 动作当且仅当可聚焦且未禁用，activate 动作当且仅当为按钮且未禁用（与 focus/activate 入口的准入规则一致） | proved，2 verified/0 errors（含类型），禁用仍可聚焦/任意角色可激活两反例被拒；以匹配源码的 `evidence/access-actions-kernel/` 与六阶段报告为准；可见性剔除、遍历顺序、几何与焦点投影在 `native_scene` 中，由 `tests/native_accessibility_tree.rs` 集成测试覆盖（含对每个节点逐一核对 focus/activate 入口实际结果），不在证明范围 |
@@ -87,6 +89,20 @@ Loom 当前执行实际生产函数体的调用侧调度场景：两个线程共
 | UI-RESOURCE-LIFE-001 | 后续代际资源/宿主接口 | 旧/跨会话引用拒绝；释放/撤权后不可使用；额度保持 | not_verified；代际资源服务尚未实现 |
 | UI-THEME-STATE-001 | 样式更新与 Jasper 语义接缝 | 纯风格切换保持约定的值/焦点/选区/身份/滚动锚点 | not_verified；完整语义接缝尚未实现 |
 | UI-LAYOUT-HIT-001 | layout/paint/hit_test | 约定坐标/裁剪语义一致；文本命中结果合法 | not_verified；需定义浮点、字体与第三方布局边界 |
+
+Core frame 尺寸/预算切片当前可复现的补充证据：
+
+```sh
+cargo test --locked --manifest-path verification/read-boundary/Cargo.toml \
+  properties::core_frame_property -- --exact
+cargo +nightly-2026-10-17 miri test --locked \
+  --manifest-path verification/read-boundary/Cargo.toml \
+  memory::core_frame_boundaries -- --exact
+```
+
+两项通过只说明独立 u128 oracle 下的 256 例属性测试与 Miri 边界执行一致。Verus 入口
+`scripts/verify-version.py --kernel core-frame-bytes|core-frame-budget` 已登记，但固定
+464 MiB 工具包未在本机取得，因此状态保持 `not_verified`。
 
 这份表是义务登记，不是已证明清单。系统内置与应用自带宿主都受约束；实际平台输入/无障碍/视觉验收仍需单独进行。
 

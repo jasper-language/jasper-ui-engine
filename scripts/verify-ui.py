@@ -77,6 +77,7 @@ for file, markers in [
     ("src/native_adapter/access_tree.rs", ["ACCESS ACTIONS TYPE", "ACCESS ACTIONS KERNEL", "ACCESS CHANGE TYPE", "ACCESS CHANGE KERNEL"]),
     ("src/native_adapter/access_kit.rs", ["ACCESS REQUEST TYPE", "ACCESS REQUEST KERNEL"]),
     ("src/native_adapter/gpu_render.rs", ["GPU READBACK LAYOUT KERNEL"]),
+    ("src/core_renderer.rs", ["CORE FRAME BYTES KERNEL", "CORE FRAME BUDGET KERNEL"]),
     ("src/native_adapter/glyph_skew.rs", ["GLYPH SKEW KERNEL"]),
     ("src/native_adapter/native_scene.rs", ["SCENE UPDATE ERROR TYPE KERNEL", "SCENE FRAME COMPLETION KERNEL", "SCENE FRAME ORDER KERNEL", "SCENE INTERACTION RESTORE KERNEL"]),
     ("src/resource.rs", ["RESOURCE GATE KERNEL", "BYTES SLOT KERNEL"]),

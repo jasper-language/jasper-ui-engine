@@ -1,5 +1,7 @@
 //! Verification-only adapter around exact production byte-reader bodies.
 //! 验证专用适配层；运行体从生产源码原样提取，不进入 UI 发行依赖。
+extern crate alloc;
+
 use std::collections::BTreeSet;
 
 include!(concat!(env!("OUT_DIR"), "/production.rs"));
@@ -47,6 +49,29 @@ pub fn assert_surface_row(width: u32, budget: usize) {
         None
     };
     assert_eq!(rgba8_row_bytes(width, budget), expected);
+}
+
+/// Independent widened-integer oracle for the minimal CPU renderer's frame extent.
+/// 最小 CPU 渲染器帧 extent 的独立宽整数规格。
+pub fn assert_core_frame(width: u32, height: u32, budget: usize) {
+    let exact = width as u128 * height as u128 * 4;
+    let valid_extent = width > 0 && height > 0 && width <= 65535 && height <= 65535;
+    assert_eq!(
+        core_frame_bytes(width, height),
+        if valid_extent {
+            Some(exact as u64)
+        } else {
+            None
+        }
+    );
+    assert_eq!(
+        admit_core_frame_bytes(width, height, budget),
+        if valid_extent && exact <= budget as u128 {
+            Some(exact as u64)
+        } else {
+            None
+        }
+    );
 }
 
 /// Full-width oracle uses u128 so multiplication and addition do not wrap.
@@ -3752,6 +3777,16 @@ mod properties {
             assert_surface_row(width, width as usize);
         }
         #[test]
+        fn core_frame_property(width in any::<u32>(), height in any::<u32>(),
+                               budget in any::<usize>(), small_width in 1u32..8192,
+                               small_height in 1u32..8192, slack in 0usize..1024) {
+            assert_core_frame(width, height, budget);
+            let exact = small_width as usize * small_height as usize * 4;
+            assert_core_frame(small_width, small_height, exact);
+            assert_core_frame(small_width, small_height, exact.saturating_sub(1));
+            assert_core_frame(small_width, small_height, exact + slack);
+        }
+        #[test]
         fn endpoint_property(total in any::<usize>(), pos in any::<usize>(), len in any::<usize>()) {
             assert_endpoint(total, pos, len);
         }
@@ -3768,6 +3803,23 @@ mod properties {
 #[cfg(test)]
 mod memory {
     use super::*;
+
+    #[test]
+    fn core_frame_boundaries() {
+        for (width, height) in [
+            (0, 1),
+            (1, 0),
+            (1, 1),
+            (2, 2),
+            (65535, 1),
+            (65536, 1),
+            (u32::MAX, 1),
+        ] {
+            for budget in [0, 1, 15, 16, 64 * 1024 * 1024, usize::MAX] {
+                assert_core_frame(width, height, budget);
+            }
+        }
+    }
 
     #[test]
     fn handle_table_boundaries() {

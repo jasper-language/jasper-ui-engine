@@ -65,6 +65,26 @@ fn normalize_finite_dimension(value: f32) -> f32 {
     }
 }
 
+// BEGIN VERIFIED CORE FRAME BYTES KERNEL
+pub(crate) fn core_frame_bytes(width: u32, height: u32) -> Option<u64> {
+    if width == 0 || height == 0 || width > 65535 || height > 65535 {
+        return None;
+    }
+    Some(width as u64 * height as u64 * 4)
+}
+// END VERIFIED CORE FRAME BYTES KERNEL
+
+// BEGIN VERIFIED CORE FRAME BUDGET KERNEL
+pub(crate) fn admit_core_frame_bytes(width: u32, height: u32, max_bytes: usize) -> Option<u64> {
+    let bytes = core_frame_bytes(width, height)?;
+    if bytes > max_bytes as u64 {
+        None
+    } else {
+        Some(bytes)
+    }
+}
+// END VERIFIED CORE FRAME BUDGET KERNEL
+
 impl CoreRgbaRenderer {
     pub fn new(size: Size, text: Box<dyn TextEngine>) -> Self {
         Self {
@@ -140,8 +160,9 @@ impl CoreRgbaRenderer {
         }
         let width = (self.size.width + 0.5) as u32;
         let height = (self.size.height + 0.5) as u32;
-        let required_bytes = u64::from(width) * u64::from(height) * 4;
-        if required_bytes > self.max_frame_bytes as u64 {
+        let required_bytes =
+            core_frame_bytes(width, height).ok_or(CoreRenderError::InvalidFrameSize)?;
+        if admit_core_frame_bytes(width, height, self.max_frame_bytes).is_none() {
             return Err(CoreRenderError::FrameBudgetExceeded {
                 width,
                 height,

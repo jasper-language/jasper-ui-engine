@@ -70,6 +70,10 @@ fn main() {
             &["GPU READBACK LAYOUT KERNEL"][..],
         ),
         (
+            "../../src/core_renderer.rs",
+            &["CORE FRAME BYTES KERNEL", "CORE FRAME BUDGET KERNEL"][..],
+        ),
+        (
             "../../src/native_adapter/glyph_skew.rs",
             &["GLYPH SKEW KERNEL"][..],
         ),

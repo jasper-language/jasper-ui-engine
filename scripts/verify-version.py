@@ -138,6 +138,53 @@ KERNELS = {
         "mutations": [("wrong-output-span", "Some(end) => Some((row, end))", "Some(end) => Some((row, row))"),
                       ("drop-native-dimension-bound", "if width > i32::MAX as u32 || height > i32::MAX as u32", "if false")],
     },
+    "core-frame-bytes": {
+        "source": "src/core_renderer.rs", "marker": "CORE FRAME BYTES", "property": "UI-CORE-FRAME-BYTES-001",
+        "signature": "pub(crate) fn core_frame_bytes(width: u32, height: u32) -> Option<u64> {",
+        "contract": """pub(crate) fn core_frame_bytes(width: u32, height: u32) -> (result: Option<u64>)
+    ensures match result {
+        Some(bytes) => 0 < width <= 65535 && 0 < height <= 65535
+            && bytes as int == width as int * height as int * 4,
+        None => width == 0 || height == 0 || width > 65535 || height > 65535,
+    },
+{""",
+        "extra_annotations": [(
+            "    Some(width as u64 * height as u64 * 4)\n}",
+            """    assert(width as int * height as int * 4 <= 65535 * 65535 * 4) by (nonlinear_arith)
+        requires 0 < width as int <= 65535, 0 < height as int <= 65535;
+    Some(width as u64 * height as u64 * 4)
+}""",
+        )],
+        "depends": [], "evidence": "core-frame-bytes-kernel", "function_count": 1,
+        "scope": "actual packed RGBA8 extent/byte calculation used by CoreRgbaRenderer; all u32 widths and heights, exact 65535-axis bound and overflow-free byte count. Float rounding, allocation, Canvas and backend submission excluded",
+        "mutations": [
+            ("admit-zero-width", "if width == 0 || height == 0", "if height == 0"),
+            ("wrong-pixel-size", "Some(width as u64 * height as u64 * 4)", "Some(width as u64 * height as u64 * 3)"),
+        ],
+    },
+    "core-frame-budget": {
+        "source": "src/core_renderer.rs", "marker": "CORE FRAME BUDGET", "property": "UI-CORE-FRAME-BUDGET-001",
+        "signature": "pub(crate) fn admit_core_frame_bytes(width: u32, height: u32, max_bytes: usize) -> Option<u64> {",
+        "contract": """pub(crate) fn admit_core_frame_bytes(
+    width: u32,
+    height: u32,
+    max_bytes: usize,
+) -> (result: Option<u64>)
+    ensures match result {
+        Some(bytes) => 0 < width <= 65535 && 0 < height <= 65535
+            && bytes as int == width as int * height as int * 4
+            && bytes <= max_bytes as u64,
+        None => width == 0 || height == 0 || width > 65535 || height > 65535
+            || width as int * height as int * 4 > max_bytes as int,
+    },
+{""",
+        "depends": ["core-frame-bytes"], "evidence": "core-frame-budget-kernel", "function_count": 1,
+        "scope": "actual exact-budget inclusion and rejection over the admitted frame extent; float viewport conversion, allocation, Canvas and present sequencing excluded",
+        "mutations": [
+            ("reject-exact-budget", "if bytes > max_bytes as u64", "if bytes >= max_bytes as u64"),
+            ("ignore-budget", "if bytes > max_bytes as u64", "if false"),
+        ],
+    },
     "version": {
         "source": "src/scene.rs", "marker": "VERSION", "property": "UI-TXN-VERSION-001",
         "signature": "fn next_scene_version(version: u64) -> Option<u64> {",
