@@ -104,6 +104,10 @@ caret 几何与 `UiKey` 一并返回，不暴露 backend 节点身份。
 拒绝使用字段路径、property、support level、issue kind 和 detail。candidate 映射不会被改写成
 `required` 或已宿主验收能力。
 
+Overlay 虽仍为 candidate，其查询和 dismiss-request 已有 Typed 出口：
+`TypedUiOverlayInfo`/`TypedUiOverlayEvent` 只包含 `UiKey`，并校验 owner、document revision、
+Dismiss binding 与 permission；不会因为 identity 已 Typed 而把 overlay 能力提升为 accepted。
+
 ## Fixtures
 
 `tests/fixtures/ui-ir-v0/` 与 appfw `codex/ir-v0@1e55d96` 的三份 fixture 字节一致，并在测试中

@@ -2003,6 +2003,113 @@ fn same_dialog_fixture_executes_with_candidate_overlay_metadata() {
 
 #[cfg(feature = "native-blitz-cpu-pending")]
 #[test]
+fn typed_overlay_info_and_dismiss_request_use_ui_keys_without_promoting_candidate_status() {
+    use jasper_ui_engine::native::host::HostRenderer;
+    use jasper_ui_engine::native::{
+        EventReply, PointerAction, TypedUiOverlayError,
+    };
+
+    const OWNER: u64 = 88;
+    let mut value: serde_json::Value =
+        serde_json::from_slice(&fixture("dialog-overlay.ir.json")).unwrap();
+    value["ops"][0]["node"]["children"][1]["events"] = serde_json::json!([{
+        "event": "dismiss",
+        "action": "dismiss-delete"
+    }]);
+    let frame = UiFrame::from_json_slice(&serde_json::to_vec(&value).unwrap()).unwrap();
+    let document = NativeUiDocument::from_frame(&frame).unwrap();
+    let font = std::fs::read(
+        std::env::var("JASPER_UI_TEST_FONT")
+            .expect("JASPER_UI_TEST_FONT must name an injected font"),
+    )
+    .unwrap();
+    let mut host = HostRenderer::new_ui_document(OWNER, &document, &font, 640, 480).unwrap();
+    let generation = host.surface_status(OWNER).unwrap().generation;
+    let overlays = host.typed_overlays(OWNER, 2, generation, &document).unwrap();
+    assert_eq!(overlays.len(), 1);
+    assert_eq!(overlays[0].target, UiKey::new(32, 1));
+    assert_eq!(
+        document
+            .mapped_properties()
+            .get("overlay.layer")
+            .map(|property| (property.support, property.host_accepted)),
+        Some((SupportLevel::Candidate, false))
+    );
+    let placement = overlays[0].placement.unwrap();
+    let (x, y) = if !placement.rect.contains(jasper_ui_engine::geometry::Point::new(1.0, 1.0)) {
+        (1.0, 1.0)
+    } else {
+        (639.0, 479.0)
+    };
+    let context = UiEventContext {
+        target: UiKey::new(30, 1),
+        identity_domain: "orders-app/window-main".into(),
+        owner: "desktop-host".into(),
+        session: "session-2026-11-17-1".into(),
+        frame_revision: 2,
+        permission_context: UiPermissionContext::new(
+            "overlay-host",
+            [UiPermission::Pointer, UiPermission::Dismiss],
+        ),
+    };
+    assert_eq!(
+        host.typed_pointer(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &context,
+            PointerAction::Down,
+            x,
+            y,
+            true,
+            &mut |_| EventReply::default(),
+            &mut |_| {},
+        )
+        .unwrap(),
+        None
+    );
+    let events = host
+        .typed_take_overlay_events(OWNER, &document, &context)
+        .unwrap();
+    assert_eq!(events.len(), 1);
+    assert_eq!(events[0].target, UiKey::new(32, 1));
+    assert_eq!(
+        events[0]
+            .admitted
+            .as_ref()
+            .map(|event| event.action.as_str()),
+        Some("dismiss-delete")
+    );
+
+    let no_dismiss = UiEventContext {
+        permission_context: UiPermissionContext::new("pointer-only", [UiPermission::Pointer]),
+        ..context
+    };
+    host.typed_pointer(
+        OWNER,
+        2,
+        generation,
+        &document,
+        &no_dismiss,
+        PointerAction::Down,
+        x,
+        y,
+        true,
+        &mut |_| EventReply::default(),
+        &mut |_| {},
+    )
+    .unwrap();
+    assert!(matches!(
+        host.typed_take_overlay_events(OWNER, &document, &no_dismiss),
+        Err(TypedUiOverlayError::Admission(
+            jasper_ui_engine::ui_ir::UiEventAdmissionError::PermissionDenied { .. }
+        ))
+    ));
+}
+
+#[cfg(feature = "native-blitz-cpu-pending")]
+#[test]
 fn v0_flex_wrap_shrink_alignment_and_text_direction_execute_in_native_layout() {
     use jasper_ui_engine::native::host::SceneHostView;
     use jasper_ui_engine::style::{Align, FlexWrap, Justify, TextAlign, TextDirection};

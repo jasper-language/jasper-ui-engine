@@ -281,6 +281,58 @@ pub struct TypedUiEditState {
     pub caret_rect: Option<crate::geometry::Rect>,
 }
 
+/// One Native overlay description projected to public identity. Overlay behavior remains a
+/// candidate capability even though its identities are Typed.
+#[derive(Clone, Debug, PartialEq)]
+pub struct TypedUiOverlayInfo {
+    pub target: UiKey,
+    pub rank: usize,
+    pub spec: crate::native::OverlaySpec,
+    pub placement: Option<crate::native::OverlayPlacement>,
+    pub suppressed: Option<crate::native::OverlaySuppression>,
+    pub return_focus: Option<UiKey>,
+}
+
+/// One overlay dismiss request projected to public identity.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TypedUiOverlayEvent {
+    pub target: UiKey,
+    pub kind: crate::native::OverlayEventKind,
+    pub admitted: Option<AdmittedEvent>,
+}
+
+/// Failure while querying or draining candidate overlay data for Typed UI.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum TypedUiOverlayError {
+    HostRejected,
+    RevisionMismatch { host: u64, document: u64 },
+    FutureRevision { event: u64, document: u64 },
+    UnmappedTarget,
+    Admission(UiEventAdmissionError),
+}
+
+impl std::fmt::Display for TypedUiOverlayError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::HostRejected => write!(formatter, "host rejected Typed overlay operation"),
+            Self::RevisionMismatch { host, document } => write!(
+                formatter,
+                "host revision {host} does not match document revision {document}"
+            ),
+            Self::FutureRevision { event, document } => write!(
+                formatter,
+                "overlay event revision {event} is newer than document revision {document}"
+            ),
+            Self::UnmappedTarget => {
+                write!(formatter, "Native overlay identity has no active Typed UI key")
+            }
+            Self::Admission(error) => error.fmt(formatter),
+        }
+    }
+}
+
+impl std::error::Error for TypedUiOverlayError {}
+
 /// Failure while draining Native edit events into Typed identity.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TypedUiEditError {
@@ -1503,6 +1555,110 @@ impl HostRenderer {
             .node_for_key(key)
             .ok_or(TypedUiGeometryError::UnknownKey(key))?;
         Ok(self.table_metrics(owner, version, node))
+    }
+
+    pub(crate) fn overlays(
+        &self,
+        owner: u64,
+        version: u64,
+        generation: u64,
+    ) -> Option<Vec<crate::native::OverlayInfo>> {
+        if !self.surface.render_allowed(owner, generation) {
+            return None;
+        }
+        self.inner.overlays(owner, version)
+    }
+
+    pub fn typed_overlays(
+        &self,
+        owner: u64,
+        version: u64,
+        generation: u64,
+        document: &NativeUiDocument,
+    ) -> Result<Vec<TypedUiOverlayInfo>, TypedUiOverlayError> {
+        if version != document.revision() {
+            return Err(TypedUiOverlayError::RevisionMismatch {
+                host: version,
+                document: document.revision(),
+            });
+        }
+        let overlays = self
+            .overlays(owner, version, generation)
+            .ok_or(TypedUiOverlayError::HostRejected)?;
+        overlays
+            .into_iter()
+            .map(|overlay| {
+                Ok(TypedUiOverlayInfo {
+                    target: document
+                        .key_for_node(overlay.overlay)
+                        .ok_or(TypedUiOverlayError::UnmappedTarget)?,
+                    rank: overlay.rank,
+                    spec: overlay.spec,
+                    placement: overlay.placement,
+                    suppressed: overlay.suppressed,
+                    return_focus: overlay
+                        .return_focus
+                        .map(|node| {
+                            document
+                                .key_for_node(node)
+                                .ok_or(TypedUiOverlayError::UnmappedTarget)
+                        })
+                        .transpose()?,
+                })
+            })
+            .collect()
+    }
+
+    pub(crate) fn take_overlay_events(
+        &mut self,
+        owner: u64,
+    ) -> Option<Vec<crate::native::OverlayEvent>> {
+        self.inner.take_overlay_events(owner)
+    }
+
+    /// Drain overlay dismiss requests into Typed identity. A queued request may name an earlier
+    /// revision carried by a frame transaction, but never a future document revision.
+    pub fn typed_take_overlay_events(
+        &mut self,
+        owner: u64,
+        document: &NativeUiDocument,
+        context: &UiEventContext,
+    ) -> Result<Vec<TypedUiOverlayEvent>, TypedUiOverlayError> {
+        let events = self
+            .take_overlay_events(owner)
+            .ok_or(TypedUiOverlayError::HostRejected)?;
+        let mut typed = Vec::with_capacity(events.len());
+        for event in events {
+            if event.scene_version > document.revision() {
+                return Err(TypedUiOverlayError::FutureRevision {
+                    event: event.scene_version,
+                    document: document.revision(),
+                });
+            }
+            let target = document
+                .key_for_node(event.overlay)
+                .ok_or(TypedUiOverlayError::UnmappedTarget)?;
+            let admitted = if document
+                .event_binding(target, UiEventKind::Dismiss)
+                .is_some()
+            {
+                let mut event_context = context.clone();
+                event_context.target = target;
+                Some(
+                    document
+                        .admit_native_event(&event_context, event.overlay, UiEventKind::Dismiss)
+                        .map_err(TypedUiOverlayError::Admission)?,
+                )
+            } else {
+                None
+            };
+            typed.push(TypedUiOverlayEvent {
+                target,
+                kind: event.kind,
+                admitted,
+            });
+        }
+        Ok(typed)
     }
 
     fn geometry_target(
