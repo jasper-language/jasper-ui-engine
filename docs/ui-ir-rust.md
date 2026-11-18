@@ -69,6 +69,7 @@ pointer 优先 `click`，其余使用 `activate`，不会把未绑定的键盘�
 | Popover/Tooltip 语义 | implemented / tested | Native 语义角色保留；AccessKit 分别投影为 Group/Tooltip，Popover 的宿主平台细节仍为 candidate |
 | Selected 状态 | implemented / tested | Semantics、AccessibilityNode、ARIA 与 AccessKit selected 状态贯通 |
 | 资源生命周期 | implemented / tested | Prepare/Commit/Release、代数复用拒绝、节点移除后 Release，以及宿主 `insert_image` 实际解码/绘制 |
+| Environment | implemented / tested | 首帧和后继帧的 reduce-motion 均应用到 Native host；appearance/density/text-scale 保留为 Framework 环境语义 |
 | Grid、Position、Image、Overlay | candidate | 可映射到现有候选字段，`host_accepted = false`；Grid columns/rows/gap 与 Position/Overlay/Image 均已有 Native 执行测试 |
 | 部分 flex 组合 | structured reject | wrap、shrink、baseline、space-around/evenly 目前无 Native 等价字段 |
 | 部分文字属性 | structured reject | 非默认水平 align、显式 bidi direction、baseline vertical align |

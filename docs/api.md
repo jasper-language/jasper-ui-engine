@@ -73,6 +73,8 @@ Prepared 中间态，但不表示允许上传或绘制。
 活跃代数与 Native 事务准入；任一侧拒绝都不推进 document 或活动视图。
 成功后同时应用 IR `reduce_motion`；其他 appearance/density/text-scale 字段仍作为已解析环境
 元数据供宿主使用，不在 Engine 内重新执行主题规则。
+首帧使用 `HostRenderer::new_ui_document` / `with_fonts_ui_document` 构造时同样应用
+`reduce_motion`。
 
 `Engine` 仅在 `native-engine`（或兼容实现特性）启用时存在；未启用时不会静默选用旧执行链。此前原生名称 `BlitzEngine` 保留为同一实现的兼容重导出。旧引擎明确名为 `LegacyEngine`，旧统计与错误只描述兼容路径。
 

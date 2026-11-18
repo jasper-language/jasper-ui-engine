@@ -93,6 +93,23 @@ impl HostRenderer {
         })
     }
 
+    /// Construct from an admitted Typed UI IR document and apply its initial reduce-motion state.
+    pub fn new_ui_document(
+        owner: u64,
+        document: &NativeUiDocument,
+        font: &[u8],
+        width: u32,
+        height: u32,
+    ) -> Option<Self> {
+        let mut host = Self::new(owner, document.scene(), font, width, height)?;
+        if let Some(on) = document.environment().reduce_motion {
+            if !host.set_reduce_motion(owner, on) {
+                return None;
+            }
+        }
+        Some(host)
+    }
+
     pub fn with_fonts(
         owner: u64,
         scene: &Scene,
@@ -108,6 +125,23 @@ impl HostRenderer {
             inner: SceneHostView::with_fonts(owner, scene, fonts, width, height)?,
             surface: SurfaceCoordinator::new(owner, width, height),
         })
+    }
+
+    pub fn with_fonts_ui_document(
+        owner: u64,
+        document: &NativeUiDocument,
+        fonts: &[&[u8]],
+        width: u32,
+        height: u32,
+    ) -> Option<Self> {
+        let mut host =
+            Self::with_fonts(owner, document.scene(), fonts, width, height)?;
+        if let Some(on) = document.environment().reduce_motion {
+            if !host.set_reduce_motion(owner, on) {
+                return None;
+            }
+        }
+        Some(host)
     }
 
     pub fn surface_status(&self, caller: u64) -> Option<SurfaceStatus> {

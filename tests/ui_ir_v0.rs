@@ -835,6 +835,36 @@ fn host_renderer_gates_typed_ui_frame_atomically_across_suspend_resume() {
 
 #[cfg(feature = "native-blitz-cpu-pending")]
 #[test]
+fn host_renderer_applies_initial_typed_ir_environment() {
+    use jasper_ui_engine::native::host::HostRenderer;
+
+    const OWNER: u64 = 79;
+    let mut value: serde_json::Value =
+        serde_json::from_slice(&fixture("settings-page.ir.json")).unwrap();
+    value["ops"]
+        .as_array_mut()
+        .unwrap()
+        .push(serde_json::json!({
+            "op": "env",
+            "env": { "reduce_motion": true, "appearance": "dark" }
+        }));
+    let frame = UiFrame::from_json_slice(&serde_json::to_vec(&value).unwrap()).unwrap();
+    let document = NativeUiDocument::from_frame(&frame).unwrap();
+    let font = std::fs::read(
+        std::env::var("JASPER_UI_TEST_FONT")
+            .expect("JASPER_UI_TEST_FONT must name an injected font"),
+    )
+    .unwrap();
+    let host = HostRenderer::new_ui_document(OWNER, &document, &font, 480, 320).unwrap();
+    assert_eq!(host.reduce_motion(OWNER), Some(true));
+    assert_eq!(
+        document.environment().appearance,
+        Some(jasper_ui_engine::ui_ir::Appearance::Dark)
+    );
+}
+
+#[cfg(feature = "native-blitz-cpu-pending")]
+#[test]
 fn same_data_table_fixture_executes_and_exposes_table_semantics() {
     use jasper_ui_engine::native::host::SceneHostView;
 
