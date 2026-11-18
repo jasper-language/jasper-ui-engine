@@ -285,7 +285,7 @@ fn native_style_projection_preserves_grid_and_reports_extended_field_losses() {
     let image_resource = ResourceRef {
         id: "icon".into(),
         generation: 4,
-        kind: ResourceKind::Icon,
+        kind: ResourceKind::Image,
     };
     let image_projection = project_native_style_with_context(
         &extended,
@@ -299,7 +299,7 @@ fn native_style_projection_preserves_grid_and_reports_extended_field_losses() {
     assert_eq!(
         image_projection.style.image,
         Some(jasper_ui_engine::ui_ir::ImageStyle {
-            resource: image_resource,
+            resource: image_resource.clone(),
             fit: Some(jasper_ui_engine::ui_ir::ImageFit::Fill),
             align_x: Some(0.5),
             align_y: Some(0.5),
@@ -307,6 +307,24 @@ fn native_style_projection_preserves_grid_and_reports_extended_field_losses() {
         })
     );
     assert!(!image_projection
+        .losses
+        .iter()
+        .any(|loss| loss.path == "style.image"));
+    let icon_resource = ResourceRef {
+        kind: ResourceKind::Icon,
+        ..image_resource
+    };
+    let icon_projection = project_native_style_with_context(
+        &extended,
+        ElementKind::Container,
+        NativeStyleContext {
+            image_resource: Some(&icon_resource),
+            overlay_anchor: None,
+        },
+    )
+    .unwrap();
+    assert!(icon_projection.style.image.is_none());
+    assert!(icon_projection
         .losses
         .iter()
         .any(|loss| loss.path == "style.image"));
@@ -367,18 +385,19 @@ fn native_node_projection_recovers_public_tree_semantics_events_and_styles() {
 #[test]
 fn native_compatibility_snapshot_includes_environment_and_live_resources() {
     use jasper_ui_engine::ui_ir::{
-        Appearance, ElementKind, ResourceAdmission, ResourceKind, ResourceRef, SemanticRole,
-        NativeNodeLoss, UiElement, UiEnvironment, UiNode, UiOp, UiSemantics,
+        Appearance, ElementKind, ImageFit, ImageStyle, NativeNodeLoss, ResourceAdmission,
+        ResourceKind, ResourceRef, SemanticRole, TypedStyle, UiElement, UiEnvironment, UiNode,
+        UiOp, UiSemantics,
     };
 
     let committed = ResourceRef {
         id: "icon".into(),
         generation: 2,
-        kind: ResourceKind::Icon,
+        kind: ResourceKind::Image,
     };
     let prepared = ResourceRef {
-        id: "pending".into(),
-        generation: 1,
+        id: "icon".into(),
+        generation: 3,
         kind: ResourceKind::Image,
     };
     let environment = UiEnvironment {
@@ -418,7 +437,16 @@ fn native_compatibility_snapshot_includes_environment_and_live_resources() {
                         selected: false,
                         level: None,
                     },
-                    style: None,
+                    style: Some(TypedStyle {
+                        image: Some(ImageStyle {
+                            resource: committed.clone(),
+                            fit: Some(ImageFit::Cover),
+                            align_x: Some(0.25),
+                            align_y: Some(0.75),
+                            tint: None,
+                        }),
+                        ..TypedStyle::default()
+                    }),
                     events: None,
                     children: None,
                 },
@@ -438,9 +466,7 @@ fn native_compatibility_snapshot_includes_environment_and_live_resources() {
     assert_eq!(snapshot.root.key, UiKey::new(1, 1));
     assert_eq!(snapshot.environment, environment);
     assert_eq!(snapshot.resources["icon"].active, Some(committed));
-    assert_eq!(snapshot.resources["icon"].prepared, None);
-    assert_eq!(snapshot.resources["pending"].active, None);
-    assert_eq!(snapshot.resources["pending"].prepared, Some(prepared));
+    assert_eq!(snapshot.resources["icon"].prepared, Some(prepared));
     assert!(snapshot.losses.is_empty(), "{:?}", snapshot.losses);
 
     let replay = snapshot.to_initial_frame().unwrap();
