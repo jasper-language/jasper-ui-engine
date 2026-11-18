@@ -12,7 +12,7 @@ pub use native_events::{NativeFocusEvent as TextFocusEvent,NativePointerEvent as
 pub use jasper_ui_engine::input::Modifiers;
 pub use native_events::NativeEventReply as EventReply;
 pub use scene_events::{role_activates_on_click,role_activates_on_key,ScenePointerInput,SceneKeyEvent,SceneEvent,SceneEventKind,SceneSemanticsNode,SceneSemanticsSnapshot,SceneActivationEvent,SceneFocusEvent};
-pub use crate::render_host::{HostRenderError,HostRenderer,TypedUiAccessibilityError,TypedUiApplyError,TypedUiResourceError,TypedUiTargetError};
+pub use crate::render_host::{HostRenderError,HostRenderer,TypedUiAccessibilityError,TypedUiApplyError,TypedUiGeometryError,TypedUiResourceError,TypedUiTargetError};
 #[cfg(feature="accesskit-pending")]
 pub use crate::render_host::TypedAccessibilityAction;
 #[cfg(feature="accesskit-pending")]

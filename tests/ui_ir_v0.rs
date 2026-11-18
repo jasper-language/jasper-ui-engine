@@ -1048,6 +1048,40 @@ fn typed_focus_text_and_ime_use_the_same_admitted_ui_key() {
 
 #[cfg(feature = "native-blitz-cpu-pending")]
 #[test]
+fn typed_geometry_queries_use_ui_keys_and_live_generation() {
+    use jasper_ui_engine::native::host::HostRenderer;
+    use jasper_ui_engine::native::TypedUiGeometryError;
+
+    const OWNER: u64 = 84;
+    let document = NativeUiDocument::from_json_slice(&fixture("settings-page.ir.json")).unwrap();
+    let font = std::fs::read(
+        std::env::var("JASPER_UI_TEST_FONT")
+            .expect("JASPER_UI_TEST_FONT must name an injected font"),
+    )
+    .unwrap();
+    let host = HostRenderer::new_ui_document(OWNER, &document, &font, 480, 320).unwrap();
+    let generation = host.surface_status(OWNER).unwrap().generation;
+    let root = host
+        .typed_node_bounds(OWNER, 2, generation, &document, UiKey::new(1, 1))
+        .unwrap()
+        .unwrap();
+    assert!((root.width() - 480.0).abs() < 0.5);
+    assert!(matches!(
+        host.typed_node_bounds(OWNER, 2, generation, &document, UiKey::new(99, 1)),
+        Err(TypedUiGeometryError::UnknownKey(_))
+    ));
+    assert!(matches!(
+        host.typed_node_bounds(OWNER, 2, generation + 1, &document, UiKey::new(1, 1)),
+        Err(TypedUiGeometryError::HostRejected)
+    ));
+    assert!(matches!(
+        host.typed_node_bounds(OWNER, 3, generation, &document, UiKey::new(1, 1)),
+        Err(TypedUiGeometryError::RevisionMismatch { .. })
+    ));
+}
+
+#[cfg(feature = "native-blitz-cpu-pending")]
+#[test]
 fn accessibility_tree_projects_losslessly_to_ui_keys() {
     use jasper_ui_engine::native::host::{HostRenderer, TypedUiAccessibilityError};
 

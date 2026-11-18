@@ -160,6 +160,33 @@ impl std::fmt::Display for TypedUiTargetError {
 
 impl std::error::Error for TypedUiTargetError {}
 
+/// Typed geometry-query rejection before exposing a backend NodeId.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TypedUiGeometryError {
+    HostRejected,
+    RevisionMismatch { host: u64, document: u64 },
+    UnknownKey(UiKey),
+}
+
+impl std::fmt::Display for TypedUiGeometryError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::HostRejected => write!(f, "host surface generation rejected geometry query"),
+            Self::RevisionMismatch { host, document } => write!(
+                f,
+                "host revision {host} does not match document revision {document}"
+            ),
+            Self::UnknownKey(key) => write!(
+                f,
+                "Typed UI key {}:{} is not active",
+                key.semantic_id, key.generation
+            ),
+        }
+    }
+}
+
+impl std::error::Error for TypedUiGeometryError {}
+
 /// Typed AccessKit action result after UiKey and permission admission.
 #[cfg(feature = "accesskit-pending")]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -831,6 +858,21 @@ impl HostRenderer {
         self.inner.node_bounds(owner, version, node)
     }
 
+    pub fn typed_node_bounds(
+        &self,
+        owner: u64,
+        version: u64,
+        generation: u64,
+        document: &NativeUiDocument,
+        key: UiKey,
+    ) -> Result<Option<crate::geometry::Rect>, TypedUiGeometryError> {
+        self.geometry_target(owner, version, generation, document, key)?;
+        let node = document
+            .node_for_key(key)
+            .ok_or(TypedUiGeometryError::UnknownKey(key))?;
+        Ok(self.node_bounds(owner, version, generation, node))
+    }
+
     pub fn scroll_geometry(
         &self,
         owner: u64,
@@ -840,6 +882,21 @@ impl HostRenderer {
         self.inner.scroll_geometry(owner, version, node)
     }
 
+    pub fn typed_scroll_geometry(
+        &self,
+        owner: u64,
+        version: u64,
+        generation: u64,
+        document: &NativeUiDocument,
+        key: UiKey,
+    ) -> Result<Option<crate::ScrollGeometry>, TypedUiGeometryError> {
+        self.geometry_target(owner, version, generation, document, key)?;
+        let node = document
+            .node_for_key(key)
+            .ok_or(TypedUiGeometryError::UnknownKey(key))?;
+        Ok(self.scroll_geometry(owner, version, node))
+    }
+
     pub fn table_metrics(
         &self,
         owner: u64,
@@ -847,6 +904,44 @@ impl HostRenderer {
         node: NodeId,
     ) -> Option<crate::TableMetrics> {
         self.inner.table_metrics(owner, version, node)
+    }
+
+    pub fn typed_table_metrics(
+        &self,
+        owner: u64,
+        version: u64,
+        generation: u64,
+        document: &NativeUiDocument,
+        key: UiKey,
+    ) -> Result<Option<crate::TableMetrics>, TypedUiGeometryError> {
+        self.geometry_target(owner, version, generation, document, key)?;
+        let node = document
+            .node_for_key(key)
+            .ok_or(TypedUiGeometryError::UnknownKey(key))?;
+        Ok(self.table_metrics(owner, version, node))
+    }
+
+    fn geometry_target(
+        &self,
+        owner: u64,
+        version: u64,
+        generation: u64,
+        document: &NativeUiDocument,
+        key: UiKey,
+    ) -> Result<(), TypedUiGeometryError> {
+        if version != document.revision() {
+            return Err(TypedUiGeometryError::RevisionMismatch {
+                host: version,
+                document: document.revision(),
+            });
+        }
+        if !self.surface.render_allowed(owner, generation) {
+            return Err(TypedUiGeometryError::HostRejected);
+        }
+        if document.node_for_key(key).is_none() {
+            return Err(TypedUiGeometryError::UnknownKey(key));
+        }
+        Ok(())
     }
 
     /// E7 transition clock through the live surface generation; see `Engine::animate`.
