@@ -230,7 +230,7 @@ fixture 实际映射出的 `mapped_properties` 与 profile 一致。
 | 资源生命周期 | Prepare/Commit/Release、generation、节点引用、上传/删除与 GPU/CPU image 测试 | 已覆盖当前 image/SVG 路径 |
 | 活动宿主同步 | detached mapping、精确 Surface generation、原子 ScenePatch 和 reduce-motion 同提交 | 已覆盖 Rust host |
 | Property Registry | 公共 registry 固定摘要；Native profile 逐项一致；candidate 不冒充 accepted | 已覆盖 consumer profile |
-| 回滚与兼容 | Native Style → Typed Style 受限投影及逐项损失报告已测试；旧 raw Scene/ScenePatch、PSS/xstyle、LegacyEngine 测试继续通过；完整 legacy reverse/JUI 2 仍未完成 | 部分覆盖 / 保留 |
+| 回滚与兼容 | Native Style/Typed Style 双向受限投影、raw Legacy Scene 显式 identity 反向投影、JUI 2 initial/successor/event 桥及逐项损失已测试；三份 canonical 初始帧和 settings 双帧流经旧 Host CPU reader 接受；旧 raw Scene/ScenePatch、PSS/xstyle、LegacyEngine 测试继续通过 | Rust 兼容桥已覆盖；无条件可逆与真实平台未验收 |
 | Web / 真浏览器 | 未执行 | 未验收 |
 | 真实硬件 GPU / 平台宿主 | 未执行 | 未验收 |
 | 形式化证明 | 本批未新增 | 未验收 |
