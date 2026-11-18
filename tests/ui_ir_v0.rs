@@ -584,6 +584,16 @@ fn native_compatibility_snapshot_includes_environment_and_live_resources() {
         NativeUiDocument::from_compatibility_snapshot(&impossible_revision),
         Err(jasper_ui_engine::ui_ir::UiIrError::Invalid { .. })
     ));
+    let mut uncommitted_image = snapshot.clone();
+    uncommitted_image.resources.get_mut("icon").unwrap().active = None;
+    assert!(matches!(
+        uncommitted_image.validate(),
+        Err(jasper_ui_engine::ui_ir::UiIrError::Invalid { .. })
+    ));
+    assert!(matches!(
+        NativeUiDocument::from_compatibility_snapshot(&uncommitted_image),
+        Err(jasper_ui_engine::ui_ir::UiIrError::Invalid { .. })
+    ));
 
     let replay = snapshot.to_initial_frame().unwrap();
     let replay_document = NativeUiDocument::from_frame(&replay).unwrap();

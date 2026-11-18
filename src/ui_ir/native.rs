@@ -297,6 +297,7 @@ impl NativeUiCompatibilitySnapshot {
                 }
             }
         }
+        validate_compatibility_references(&self.root, "$.root", &keys, &self.resources)?;
         Ok(())
     }
 
@@ -2359,6 +2360,57 @@ fn incomplete_projection(detail: impl Into<String>) -> UiIrError {
         path: "$.compatibility".into(),
         detail: detail.into(),
     }
+}
+
+fn validate_compatibility_references(
+    node: &UiNode,
+    path: &str,
+    live_keys: &BTreeSet<UiKey>,
+    resources: &BTreeMap<String, NativeResourceProjection>,
+) -> Result<(), UiIrError> {
+    if let Some(style) = &node.style {
+        if let Some(image) = &style.image {
+            let active = resources
+                .get(&image.resource.id)
+                .and_then(|state| state.active.as_ref());
+            if active != Some(&image.resource) {
+                return Err(incomplete_projection(format!(
+                    "{path}.style.image references a resource that is not the committed active generation"
+                )));
+            }
+            if !matches!(image.resource.kind, ResourceKind::Image | ResourceKind::Svg) {
+                return Err(incomplete_projection(format!(
+                    "{path}.style.image references a non-image resource kind"
+                )));
+            }
+        }
+        if let Some(OverlayAnchor::Node(anchor)) = style
+            .overlay
+            .as_ref()
+            .and_then(|overlay| overlay.anchor.as_ref())
+        {
+            if !live_keys.contains(anchor) {
+                return Err(incomplete_projection(format!(
+                    "{path}.style.overlay anchor is not live in the snapshot identity domain"
+                )));
+            }
+        }
+    }
+    for (index, child) in node
+        .children
+        .as_deref()
+        .unwrap_or_default()
+        .iter()
+        .enumerate()
+    {
+        validate_compatibility_references(
+            child,
+            &format!("{path}.children[{index}]"),
+            live_keys,
+            resources,
+        )?;
+    }
+    Ok(())
 }
 
 fn ensure_initial_generations(node: &UiNode) -> Result<(), UiIrError> {

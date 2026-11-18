@@ -81,7 +81,8 @@ live keys、environment 与 active/prepared resources 的 Native document。两�
 `losses` 为空；lossy snapshot 返回结构化拒绝，不允许静默丢弃 Native-only 字段。恢复前可调用
 `NativeUiCompatibilitySnapshot::validate()` 检查 authority、树、identity、Native Property
 Registry 与资源生命周期一致性；revision 低于活动首帧的 2、不可达的空资源状态或非更新的
-prepared generation 会被拒绝。
+prepared generation 会被拒绝。节点 image 必须是当前 committed Image/SVG；节点锚定 overlay
+必须引用 live `UiKey`。
 Native 回调携带 `NodeId` 时使用 `admit_native_event`/`admit_activation`；内部 NodeId 仅用于
 映射，授权仍以 `UiEventContext.target` 的 `UiKey` 和上下文为准。
 HostRenderer 的 `typed_focus`、`typed_text_input`、`typed_set_preedit` 把目标授权与实际
