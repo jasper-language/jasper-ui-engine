@@ -1,7 +1,7 @@
 use jasper_ui_engine::semantics::Role;
 use jasper_ui_engine::ui_ir::{
-    MappingIssueKind, NativeUiDocument, NativeUiFrameError, SupportLevel, UiEventContext,
-    UiEventKind, UiFrame, UiKey, UiPermission, UiPermissionContext,
+    MappingIssueKind, NativeUiDocument, NativeUiFrameError, ResourceKind, SupportLevel,
+    UiEventContext, UiEventKind, UiFrame, UiKey, UiPermission, UiPermissionContext,
 };
 use std::path::PathBuf;
 
@@ -387,6 +387,119 @@ fn resource_generations_reject_prepare_commit_release_misuse_and_reuse() {
     assert_eq!(document.revision(), revision);
 }
 
+#[test]
+fn image_styles_require_committed_resources_and_retire_with_their_nodes() {
+    let bytes = fixture("settings-page.ir.json");
+    let mut document = NativeUiDocument::from_json_slice(&bytes).unwrap();
+    let image = serde_json::json!({
+        "key": { "semantic_id": 9, "generation": 1 },
+        "element": { "kind": "image" },
+        "semantics": { "role": "image", "label": "Logo" },
+        "style": {
+            "box": {
+                "width": { "unit": "px", "value": 64 },
+                "height": { "unit": "px", "value": 32 }
+            },
+            "image": {
+                "resource": { "id": "logo", "generation": 1, "kind": "image" }
+            }
+        }
+    });
+    let image_frame = |revision: u64, ops: serde_json::Value| {
+        let mut frame: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        frame["expected_revision"] = serde_json::json!(revision);
+        frame["next_revision"] = serde_json::json!(revision + 1);
+        frame["ops"] = ops;
+        UiFrame::from_json_slice(&serde_json::to_vec(&frame).unwrap()).unwrap()
+    };
+
+    let frame = image_frame(
+        2,
+        serde_json::json!([
+            {
+                "op": "resource",
+                "resource": { "id": "logo", "generation": 1, "kind": "image" },
+                "admission": "prepare"
+            },
+            {
+                "op": "resource",
+                "resource": { "id": "logo", "generation": 1, "kind": "image" },
+                "admission": "commit"
+            },
+            {
+                "op": "insert",
+                "parent": { "semantic_id": 1, "generation": 1 },
+                "index": 3,
+                "node": image.clone()
+            }
+        ]),
+    );
+    document.apply_frame(&frame).unwrap();
+    let active = document.active_resource("logo").unwrap();
+    assert_eq!((active.generation, active.kind), (1, ResourceKind::Image));
+    let image_node = document.node_for_key(UiKey::new(9, 1)).unwrap();
+    assert_eq!(
+        document
+            .scene()
+            .find(image_node)
+            .unwrap()
+            .style
+            .image
+            .as_ref()
+            .unwrap()
+            .source,
+        "logo"
+    );
+
+    let revision = document.revision();
+    let release = image_frame(
+        revision,
+        serde_json::json!([{
+            "op": "resource",
+            "resource": { "id": "logo", "generation": 1, "kind": "image" },
+            "admission": "release"
+        }]),
+    );
+    assert!(document.apply_frame(&release).is_err());
+    assert_eq!(document.revision(), revision);
+    assert!(document.active_resource("logo").is_some());
+
+    let remove_and_release = image_frame(
+        revision,
+        serde_json::json!([
+            { "op": "remove", "key": { "semantic_id": 9, "generation": 1 } },
+            {
+                "op": "resource",
+                "resource": { "id": "logo", "generation": 1, "kind": "image" },
+                "admission": "release"
+            }
+        ]),
+    );
+    document.apply_frame(&remove_and_release).unwrap();
+    assert!(document.active_resource("logo").is_none());
+    assert!(document.node_for_key(UiKey::new(9, 1)).is_none());
+
+    let prepared_only = image_frame(
+        2,
+        serde_json::json!([
+            {
+                "op": "resource",
+                "resource": { "id": "logo", "generation": 1, "kind": "image" },
+                "admission": "prepare"
+            },
+            {
+                "op": "insert",
+                "parent": { "semantic_id": 1, "generation": 1 },
+                "index": 3,
+                "node": image
+            }
+        ]),
+    );
+    let mut rejected = NativeUiDocument::from_json_slice(&bytes).unwrap();
+    assert!(rejected.apply_frame(&prepared_only).is_err());
+    assert_eq!(rejected.revision(), 2);
+}
+
 #[cfg(feature = "native-blitz-cpu-pending")]
 #[test]
 fn same_settings_fixture_executes_through_scene_host_view_and_cpu_renderer() {
@@ -644,6 +757,90 @@ fn same_dialog_fixture_executes_with_candidate_overlay_metadata() {
     assert!(pixels
         .chunks_exact(4)
         .any(|pixel| pixel.iter().any(|byte| *byte != 0)));
+}
+
+#[cfg(feature = "native-blitz-cpu-pending")]
+#[test]
+fn committed_ir_resource_reaches_the_live_native_image_store() {
+    use jasper_ui_engine::native::host::SceneHostView;
+
+    const OWNER: u64 = 75;
+    const WIDTH: u32 = 480;
+    const HEIGHT: u32 = 480;
+    let bytes = fixture("settings-page.ir.json");
+    let mut document = NativeUiDocument::from_json_slice(&bytes).unwrap();
+    let font = std::fs::read(
+        std::env::var("JASPER_UI_TEST_FONT")
+            .expect("JASPER_UI_TEST_FONT must name an injected font"),
+    )
+    .unwrap();
+    let mut view = SceneHostView::new(OWNER, document.scene(), &font, WIDTH, HEIGHT).unwrap();
+    let mut frame: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    frame["expected_revision"] = serde_json::json!(2);
+    frame["next_revision"] = serde_json::json!(3);
+    frame["ops"] = serde_json::json!([
+        {
+            "op": "resource",
+            "resource": { "id": "logo", "generation": 1, "kind": "image" },
+            "admission": "prepare"
+        },
+        {
+            "op": "resource",
+            "resource": { "id": "logo", "generation": 1, "kind": "image" },
+            "admission": "commit"
+        },
+        {
+            "op": "insert",
+            "parent": { "semantic_id": 1, "generation": 1 },
+            "index": 3,
+            "node": {
+                "key": { "semantic_id": 9, "generation": 1 },
+                "element": { "kind": "image" },
+                "semantics": { "role": "image", "label": "Logo" },
+                "style": {
+                    "box": {
+                        "width": { "unit": "px", "value": 64 },
+                        "height": { "unit": "px", "value": 32 }
+                    },
+                    "image": {
+                        "resource": { "id": "logo", "generation": 1, "kind": "image" }
+                    }
+                }
+            }
+        }
+    ]);
+    let frame = UiFrame::from_json_slice(&serde_json::to_vec(&frame).unwrap()).unwrap();
+    let update = document.apply_frame_with_patches(&frame).unwrap();
+    view.try_apply(
+        OWNER,
+        update.expected_revision,
+        update.next_revision,
+        &update.patches,
+    )
+    .unwrap();
+
+    let image = image::RgbaImage::from_pixel(2, 2, image::Rgba([20, 140, 220, 255]));
+    let mut encoded = std::io::Cursor::new(Vec::new());
+    image
+        .write_to(&mut encoded, image::ImageFormat::Png)
+        .unwrap();
+    view.insert_image(OWNER, "logo", encoded.get_ref(), 1.0)
+        .unwrap();
+    let image_node = document.node_for_key(UiKey::new(9, 1)).unwrap();
+    assert!(view
+        .node_bounds(OWNER, update.next_revision, image_node)
+        .is_some());
+    let mut pixels = vec![0u8; (WIDTH * HEIGHT * 4) as usize];
+    assert!(view.render_to_surface(
+        OWNER,
+        update.next_revision,
+        &mut pixels,
+        (WIDTH * 4) as usize,
+        64 * 1024 * 1024,
+    ));
+    let report = view.image_report(OWNER).unwrap();
+    assert_eq!(report.resources, 1);
+    assert!(report.failed.is_empty(), "{:?}", report.failed);
 }
 
 #[cfg(feature = "gpu-pending")]

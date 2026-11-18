@@ -271,7 +271,9 @@ impl NativeUiDocument {
     }
 
     pub fn resource_ref(&self, id: &str) -> Option<&ResourceRef> {
-        self.resource_refs.get(id)
+        self.resource_refs
+            .get(id)
+            .or_else(|| self.resources.get(id).map(|state| &state.resource))
     }
 
     /// Resource currently prepared or committed in this document.
@@ -370,6 +372,8 @@ impl DocumentBuilder {
         }
         // Scene starts at version one. Advance exactly once to the admitted frame revision.
         self.advance_scene_version(1, revision, false)?;
+        self.rebuild_style_resources()?;
+        self.validate_style_resources()?;
         Ok(NativeUiDocument {
             authority: self.authority,
             revision,
@@ -394,6 +398,8 @@ impl DocumentBuilder {
         let expected = self.revision;
         self.advance_scene_version(expected, frame.next_revision, true)?;
         self.apply_ops(&frame.ops)?;
+        self.rebuild_style_resources()?;
+        self.validate_style_resources()?;
         let patches = self.patches.clone();
         Ok((
             NativeUiDocument {
@@ -1413,8 +1419,6 @@ impl DocumentBuilder {
                         life: ResourceLife::Prepared,
                     },
                 );
-                self.resource_refs
-                    .insert(resource.id.clone(), resource.clone());
             }
             ResourceAdmission::Commit => {
                 let state = self.resources.get_mut(&resource.id).ok_or_else(|| {
@@ -1457,6 +1461,82 @@ impl DocumentBuilder {
                     ));
                 }
                 self.resources.remove(&resource.id);
+            }
+        }
+        Ok(())
+    }
+
+    fn rebuild_style_resources(&mut self) -> Result<(), NativeUiFrameError> {
+        let mut resources = BTreeMap::new();
+        let mut pending = vec![&self.scene.root];
+        while let Some(node) = pending.pop() {
+            if let Some(image) = &node.style.image {
+                let Some(resource) = self.resources.get(&image.source) else {
+                    return Err(issue(
+                        "$.scene",
+                        Some("image.resource"),
+                        SupportLevel::Candidate,
+                        MappingIssueKind::InvalidState,
+                        format!(
+                            "image style references resource {:?} without a prepared/committed generation",
+                            image.source
+                        ),
+                    ));
+                };
+                let resource_ref = resource.resource.clone();
+                if resource_ref.kind == ResourceKind::Font {
+                    return Err(issue(
+                        "$.scene",
+                        Some("image.resource"),
+                        SupportLevel::Candidate,
+                        MappingIssueKind::InvalidState,
+                        format!(
+                            "image style references non-image resource {:?}",
+                            image.source
+                        ),
+                    ));
+                }
+                if let Some(previous) = resources.insert(image.source.clone(), resource_ref.clone())
+                {
+                    if previous != resource_ref {
+                        return Err(issue(
+                            "$.scene",
+                            Some("image.resource"),
+                            SupportLevel::Candidate,
+                            MappingIssueKind::InvalidState,
+                            format!(
+                                "image resource {:?} was mapped with conflicting identities",
+                                image.source
+                            ),
+                        ));
+                    }
+                }
+            }
+            pending.extend(node.children.iter().rev());
+        }
+        self.resource_refs = resources;
+        Ok(())
+    }
+
+    fn validate_style_resources(&self) -> Result<(), NativeUiFrameError> {
+        for (id, resource_ref) in &self.resource_refs {
+            let state = self.resources.get(id).ok_or_else(|| {
+                issue(
+                    "$.scene",
+                    Some("image.resource"),
+                    SupportLevel::Candidate,
+                    MappingIssueKind::InvalidState,
+                    format!("image resource {id:?} is not active"),
+                )
+            })?;
+            if state.resource != *resource_ref || state.life != ResourceLife::Committed {
+                return Err(issue(
+                    "$.scene",
+                    Some("image.resource"),
+                    SupportLevel::Candidate,
+                    MappingIssueKind::InvalidState,
+                    format!("image resource {id:?} is not committed at its referenced generation"),
+                ));
             }
         }
         Ok(())

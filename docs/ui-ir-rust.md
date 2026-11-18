@@ -49,6 +49,7 @@ Jasper Language/UI 共有层；Rust 不反向定义公共语义。
 - 支持 insert/update/move/remove/resource/environment；
 - `apply_frame_with_patches` 为活动 `SceneHostView` 返回同一终态的 `ScenePatch` 批次；
 - `ScenePatch::Move` 保持节点身份、焦点、指针按下与 TextArea 编辑缓冲/IME 预编辑，不用 remove+insert 近似重排；
+- 每帧从最终 Scene 重建 image 引用；未 Prepare/Commit、generation 不匹配、仍被节点引用时 Release 均整帧拒绝；
 - 维护 `UiKey ↔ NodeId`、事件 action、资源 generation 与 element kind；
 - style 无法无损表达时返回 `NativeUiFrameError::Mapping(MappingIssue)`；
 - revision 与 `Scene::version()` 同步推进。
@@ -64,6 +65,7 @@ Jasper Language/UI 共有层；Rust 不反向定义公共语义。
 | TextArea 语义与编辑 | implemented / tested | 保留 MultilineTextInput、换行输入、行内 Home/End、上下移动与多行编辑缓冲 |
 | Popover/Tooltip 语义 | implemented / tested | Native 语义角色保留；AccessKit 分别投影为 Group/Tooltip，Popover 的宿主平台细节仍为 candidate |
 | Selected 状态 | implemented / tested | Semantics、AccessibilityNode、ARIA 与 AccessKit selected 状态贯通 |
+| 资源生命周期 | implemented / tested | Prepare/Commit/Release、代数复用拒绝、节点移除后 Release，以及宿主 `insert_image` 实际解码/绘制 |
 | Grid、Position、Image、Overlay | candidate | 可映射到现有候选字段，`host_accepted = false` |
 | 部分 flex 组合 | structured reject | wrap、shrink、baseline、space-around/evenly 目前无 Native 等价字段 |
 | 部分文字属性 | structured reject | 非默认水平 align、显式 bidi direction、baseline vertical align |
