@@ -1,0 +1,23 @@
+verification results:: 2 verified, 1 errors
+error: postcondition not satisfied
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/core-frame-budget-kernel/negative_ignore_budget.rs:25:13
+   |
+25 |       ensures match result {
+   |  _____________^
+26 | |         Some(bytes) => 0 < width <= 65535 && 0 < height <= 65535
+27 | |             && bytes as int == width as int * height as int * 4
+28 | |             && bytes <= max_bytes as u64,
+29 | |         None => width == 0 || height == 0 || width > 65535 || height > 65535
+30 | |             || width as int * height as int * 4 > max_bytes as int,
+31 | |     },
+   | |_____^ failed this postcondition
+32 | / {
+33 | |     let bytes = core_frame_bytes(width, height)?;
+34 | |     if false {
+35 | |         None
+...  |
+39 | | }
+   | |_- at the end of the function body
+
+error: aborting due to 1 previous error
+

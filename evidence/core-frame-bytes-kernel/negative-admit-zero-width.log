@@ -1,0 +1,29 @@
+verification results:: 1 verified, 1 errors
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+ --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/core-frame-bytes-kernel/negative_admit_zero_width.rs:4:1
+  |
+4 | pub(crate) fn core_frame_bytes(width: u32, height: u32) -> (result: Option<u64>)
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: requires not satisfied
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/core-frame-bytes-kernel/negative_admit_zero_width.rs:15:18
+   |
+15 |         requires 0 < width as int <= 65535, 0 < height as int <= 65535;
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: postcondition not satisfied
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/core-frame-bytes-kernel/negative_admit_zero_width.rs:5:13
+   |
+ 5 |       ensures match result {
+   |  _____________^
+ 6 | |         Some(bytes) => 0 < width <= 65535 && 0 < height <= 65535
+ 7 | |             && bytes as int == width as int * height as int * 4,
+ 8 | |         None => width == 0 || height == 0 || width > 65535 || height > 65535,
+ 9 | |     },
+   | |_____^ failed this postcondition
+...
+16 |       Some(width as u64 * height as u64 * 4)
+   |       -------------------------------------- at the end of the function body
+
+error: aborting due to 2 previous errors
+

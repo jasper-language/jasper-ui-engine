@@ -1,0 +1,17 @@
+verification results:: 1 verified, 1 errors
+error: postcondition not satisfied
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/core-frame-bytes-kernel/negative_wrong_pixel_size.rs:5:13
+   |
+ 5 |       ensures match result {
+   |  _____________^
+ 6 | |         Some(bytes) => 0 < width <= 65535 && 0 < height <= 65535
+ 7 | |             && bytes as int == width as int * height as int * 4,
+ 8 | |         None => width == 0 || height == 0 || width > 65535 || height > 65535,
+ 9 | |     },
+   | |_____^ failed this postcondition
+...
+16 |       Some(width as u64 * height as u64 * 3)
+   |       -------------------------------------- at the end of the function body
+
+error: aborting due to 1 previous error
+
