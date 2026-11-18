@@ -14,6 +14,7 @@
 | 能力 | 源码证据 | 当前边界 |
 |---|---|---|
 | 场景树、补丁、版本 | `scene.rs` | clone 后应用、成功后替换；版本准入内核已证明，整个事务仍未证明；插入全部后代 ID 检查；无多写合并 |
+| Typed UI IR v0.1 consumer | `ui_ir/`、`tests/ui_ir_v0.rs` | 严格读取/校验、UiKey generation、事件上下文、Native 原子映射；设置页经真实 CPU fixture 执行；Web/GPU/正式宿主/形式化未验收 |
 | 几何、颜色、PSS | `geometry.rs`、`style.rs` | 尺寸/百分比/min-max/边距/间距/对齐/边框等子集，不是完整 CSS |
 | Taffy 布局 | `layout.rs`、`tests/layout_consistency.rs` | 公开 Display 仅 Block/Flex/None；**Grid 未接入公开样式与映射** |
 | 近似文字测量 | `text.rs` | 默认 SimpleTextEngine，不具备真实字体度量 |
@@ -39,7 +40,8 @@
 - GPU 窗口/表面呈现、device-lost 恢复、GPU 损伤与局部重绘、真实硬件 GPU 验收（原生无头 GPU 渲染见 UI10 节）；系统无障碍桥（平台适配器/系统无障碍服务接入、文本无障碍接口；宿主无关的无障碍树快照见 UI11 节、快照间增量更新与回放见 UI12 节、AccessKit TreeUpdate 转换与动作路由见 UI13 节）、多窗口/DPI/触控/笔平台覆盖。
 - 版本化语义更新协议、句柄所有权规则（代际句柄表见 2026-11-03 UI35 节，未导出 FFI）、Native ABI、完整宿主能力协商。
 - 系统内置 UI 服务适配、系统 Surface/输入/字体资源接入、多应用隔离与重连恢复。系统桌面是一等目标，软件路径不能依赖自带窗口栈。
-- Jasper 组件/状态/主题规则/导航、Element/Reconciler/UI IR，以及 Web DOM/SSR 等由对应语义层/后端提供，本仓库不复制第二套实现。
+- Jasper 组件/状态/主题规则/导航、Element/Reconciler、公共 UI IR 语义，以及 Web DOM/SSR
+  等由对应语义层/后端提供；Rust `ui_ir` 只消费 v0.1，不复制第二套公共语义。
 - 数学形式化证明：版本计算和解码读取端点函数已产生机器复核产物（生产函数体、错误实现反例被拒）；整个事务及其他模块仍未完成证明。不得将单项结论或测试扩大为整个 UI 已证明。
 
 ## 宿主能力矩阵

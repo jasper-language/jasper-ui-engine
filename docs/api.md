@@ -46,6 +46,25 @@ GPU 渲染（`gpu-pending`）：`GpuRenderer::new_headless()` 不带呈现表面
 
 `native` 及 Rust 类型名仍为候选，不冻结 Jasper 子命名空间。完整整帧/生命周期/浮点证明尚缺；该入口存在不等于默认后端迁移或六阶段验收完成。
 
+## Typed UI IR v0.1 consumer（Rust 兼容入口）
+
+`ui_ir` 严格读取 Jasper Language/UI 共有层拥有的 v0.1 Schema，不反向定义公共语义。`UiFrame`
+校验后才可构造 `NativeUiDocument`；后者维护公共 `UiKey` 与内部 `scene::NodeId` 的隔离映射，
+并在 detached document 上原子应用后继帧。
+
+```rust
+use jasper_ui_engine::ui_ir::{NativeUiDocument, UiKey};
+
+let document = NativeUiDocument::from_json_slice(&frame_bytes)?;
+let native_node = document.node_for_key(UiKey::new(4, 1)).unwrap();
+let scene = document.scene();
+```
+
+事件授权必须使用 `UiEventContext`，绑定 target、identity domain、owner、session、frame revision
+和 permission context；不能把 `NodeId` 当授权令牌。Native 无法无损表达的语义/style 返回带字段路径
+和 support level 的 `MappingIssue`，不静默降级。详细状态和 fixture 证据见
+[ui-ir-rust.md](ui-ir-rust.md)；该 API 不是正式 ABI，也未完成 Native/Web 一致性或形式化证明。
+
 `Engine` 仅在 `native-engine`（或兼容实现特性）启用时存在；未启用时不会静默选用旧执行链。此前原生名称 `BlitzEngine` 保留为同一实现的兼容重导出。旧引擎明确名为 `LegacyEngine`，旧统计与错误只描述兼容路径。
 
 ## 旧入口快速开始（迁移兼容）

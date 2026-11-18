@@ -1,0 +1,57 @@
+{
+  "ir_version": "0.1.0",
+  "identity_domain": "orders-app/window-main",
+  "owner": "desktop-host",
+  "session": "session-2026-11-17-1",
+  "expected_revision": 1,
+  "next_revision": 2,
+  "ops": [
+    {
+      "op": "insert",
+      "parent": null,
+      "index": 0,
+      "node": {
+        "key": { "semantic_id": 30, "generation": 1 },
+        "element": { "kind": "container" },
+        "semantics": { "role": "container", "label": "Orders" },
+        "style": {
+          "box": { "width": { "unit": "px", "value": 640 } },
+          "position": { "kind": "relative" }
+        },
+        "children": [
+          {
+            "key": { "semantic_id": 31, "generation": 1 },
+            "element": { "kind": "button", "content": "Delete" },
+            "semantics": { "role": "button", "label": "Delete", "focusable": true },
+            "events": [{ "event": "click", "action": "open-delete" }]
+          },
+          {
+            "key": { "semantic_id": 32, "generation": 1 },
+            "element": { "kind": "dialog" },
+            "semantics": {
+              "role": "dialog",
+              "label": "Delete order?",
+              "focusable": true
+            },
+            "style": {
+              "overlay": {
+                "layer": 100,
+                "anchor": "viewport",
+                "modal": true,
+                "scrim": "#00000080"
+              }
+            },
+            "children": [
+              {
+                "key": { "semantic_id": 33, "generation": 1 },
+                "element": { "kind": "button", "content": "Cancel" },
+                "semantics": { "role": "button", "label": "Cancel", "focusable": true },
+                "events": [{ "event": "click", "action": "close-delete" }]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

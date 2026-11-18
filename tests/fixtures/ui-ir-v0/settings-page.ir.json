@@ -1,0 +1,73 @@
+{
+  "ir_version": "0.1.0",
+  "identity_domain": "orders-app/window-main",
+  "owner": "desktop-host",
+  "session": "session-2026-11-17-1",
+  "expected_revision": 1,
+  "next_revision": 2,
+  "ops": [
+    {
+      "op": "insert",
+      "parent": null,
+      "index": 0,
+      "node": {
+        "key": { "semantic_id": 1, "generation": 1 },
+        "element": { "kind": "container" },
+        "semantics": { "role": "form", "label": "Settings" },
+        "style": {
+          "box": { "width": { "unit": "px", "value": 480 } },
+          "flex": { "direction": "column", "gap": 12 }
+        },
+        "children": [
+          {
+            "key": { "semantic_id": 2, "generation": 1 },
+            "element": { "kind": "text", "content": "Settings" },
+            "semantics": { "role": "heading", "label": "Settings", "level": 1 },
+            "style": {
+              "typography": { "size": 24, "weight": 700, "align": "start" }
+            }
+          },
+          {
+            "key": { "semantic_id": 3, "generation": 1 },
+            "element": { "kind": "text-field", "content": "Alice" },
+            "semantics": {
+              "role": "text-field",
+              "label": "Name",
+              "focusable": true
+            },
+            "style": {
+              "box": { "height": { "unit": "px", "value": 36 } },
+              "paint": {
+                "background": "#FFFFFFFF",
+                "border": { "width": 1, "color": "#C8C8CCFF" },
+                "radii": {
+                  "top_left": 8,
+                  "top_right": 8,
+                  "bottom_right": 8,
+                  "bottom_left": 8
+                }
+              },
+              "typography": { "size": 14, "vertical_align": "center" }
+            },
+            "events": [{ "event": "text-commit", "action": "name" }]
+          },
+          {
+            "key": { "semantic_id": 4, "generation": 1 },
+            "element": { "kind": "button", "content": "Save" },
+            "semantics": {
+              "role": "button",
+              "label": "Save",
+              "focusable": true
+            },
+            "style": {
+              "box": { "height": { "unit": "px", "value": 36 } },
+              "paint": { "background": "#0A84FFFF" },
+              "typography": { "size": 14, "vertical_align": "center" }
+            },
+            "events": [{ "event": "click", "action": "save" }]
+          }
+        ]
+      }
+    }
+  ]
+}

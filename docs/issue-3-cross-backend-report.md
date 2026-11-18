@@ -41,3 +41,16 @@
 6. 差异表包含像素/结构/字体/交互/能力降级，不用单一“通过”概括。
 
 未满足以上条件前，issue #3 的跨后端验证报告状态保持 `not_run`。
+
+## 5. Rust Typed IR consumer 更新（2026-11-18）
+
+Rust 引擎已新增 Typed UI IR v0.1 consumer profile，并以 appfw `codex/ir-v0@1e55d96` 的
+`settings-page`、`data-table`、`dialog-overlay` 三份 fixture 做字节固定测试。
+
+- `settings-page` 已通过真实 Native `SceneHostView` 构造、语义/几何查询和 CPU 非空帧输出；
+- `dialog-overlay` 的 overlay/position 映射保留为 candidate；
+- `data-table` 因现有 Native semantics 不能无损表达 table role 而结构化拒绝；
+- 身份 generation、owner/session/revision/permission 事件准入已有定向测试。
+
+这仍不是双后端黄金用例：Web SSR、真实浏览器、Native GPU、真实平台宿主和同 IR 像素差异表
+均未在本轮执行。跨后端状态继续为 `not_run`。

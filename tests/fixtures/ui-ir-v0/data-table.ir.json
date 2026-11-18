@@ -1,0 +1,41 @@
+{
+  "ir_version": "0.1.0",
+  "identity_domain": "orders-app/window-main",
+  "owner": "desktop-host",
+  "session": "session-2026-11-17-1",
+  "expected_revision": 1,
+  "next_revision": 2,
+  "ops": [
+    {
+      "op": "insert",
+      "parent": null,
+      "index": 0,
+      "node": {
+        "key": { "semantic_id": 20, "generation": 1 },
+        "element": { "kind": "table" },
+        "semantics": { "role": "table", "label": "Orders" },
+        "style": { "box": { "width": { "unit": "percent", "value": 100 } } },
+        "children": [
+          {
+            "key": { "semantic_id": 21, "generation": 1 },
+            "element": { "kind": "table-row" },
+            "semantics": { "role": "table-row", "label": "Order 1001" },
+            "children": [
+              {
+                "key": { "semantic_id": 22, "generation": 1 },
+                "element": { "kind": "table-cell", "content": "1001" },
+                "semantics": { "role": "table-cell", "label": "Order number" },
+                "style": { "box": { "width": { "unit": "px", "value": 96 } } }
+              },
+              {
+                "key": { "semantic_id": 23, "generation": 1 },
+                "element": { "kind": "table-cell", "content": "Shipped" },
+                "semantics": { "role": "table-cell", "label": "Status" }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -16,6 +16,8 @@
 | `accesskit_winit` | 0.34.2 | MIT OR Apache-2.0 | 窗口平台无障碍适配器；Linux/AT-SPI、Windows/UIA、macOS、Android、iOS | 已锁定；`desktop-accessibility` 在 Ubuntu Wayland/AT-SPI 实测 |
 | `image` | 0.25.10 | MIT OR Apache-2.0 | P0-A PNG/JPEG/WebP 解码；仅启用 `png`、`jpeg`、`webp` | 已锁定；CPU/GPU 图片像素测试通过 |
 | `resvg` / `usvg` | 0.48.1 | Apache-2.0 OR MIT | P0-A SVG 解析与按目标尺寸光栅化；不启用系统字体/内嵌位图路径 | 已锁定；SVG 渲染测试通过 |
+| `serde` | 1.0.229 | MIT OR Apache-2.0 | Typed UI IR v0.1 严格结构读取/写出与派生 | 已锁定；IR 单元/集成测试通过 |
+| `serde_json` | 1.0.145 | MIT OR Apache-2.0 | v0.1 JSON fixture/交换表示；非公共语义权威 | 已锁定；三份 canonical fixture 测试通过 |
 
 > `tiny-skia` 是纯 Rust 的 Skia 子集，不引入 C++/系统图形库。BSD-3-Clause 与 Apache-2.0 兼容；已有声明见仓库根目录 `THIRD_PARTY_LICENSES.md`。
 > `cosmic-text` 为可选特性；默认构建仍使用 `SimpleTextEngine` 的近似测量，开启 `real-text` 后由系统字体与真实 shaping 接管。

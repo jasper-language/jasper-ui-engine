@@ -1,7 +1,8 @@
 //! jasper-ui-engine: host-agnostic foundation for the Jasper UI native engine.
 //!
 //! 这个 crate 只负责底层执行：场景、布局、绘制、UiBatch、软件光栅、输入模型与后端接口。
-//! Jasper UI Framework、UI IR、Jasper ABI 与 Web 后端不在这里。
+//! Jasper UI Framework、公共 UI IR 语义权威、Jasper ABI 与 Web 后端不在这里；
+//! `ui_ir` 仅为 Typed UI IR v0.1 的 Rust consumer profile。
 //!
 //! ```no_run
 //! // Explicit compatibility example; native callers use engine::Engine with native-blitz-pending.
@@ -70,6 +71,9 @@ pub mod text_cosmic;
 pub mod ui_plugin_gate;
 #[cfg(feature = "ui-plugin-pending")]
 pub mod ui_plugin_host;
+/// Consumer-side Rust profile of the Jasper Typed UI IR v0.1.
+/// 公共语义与 Schema 由 Jasper Language/UI 共有层拥有；本模块只做严格读取、校验与 Native 映射。
+pub mod ui_ir;
 
 pub use backend::{BackendError, RenderBackend};
 pub use batch::{BatchError, UiBatch};

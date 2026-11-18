@@ -35,6 +35,7 @@
 | [issue-3-signal-ui-ir-contract.md](issue-3-signal-ui-ir-contract.md) | State/Derived → typed UI IR → Native/Web 双后端契约建议 |
 | [issue-3-migration-plan.md](issue-3-migration-plan.md) | 渐进迁移、回滚、风险与待裁决项 |
 | [issue-3-cross-backend-report.md](issue-3-cross-backend-report.md) | Native/Web 双后端验证矩阵与尚未运行项 |
+| [ui-ir-rust.md](ui-ir-rust.md) | Typed UI IR v0.1 Rust 消费、身份/事件准入、Native fixture 与证据状态 |
 | [host-rendering.md](host-rendering.md) | Surface 代数、DPI/尺寸、暂停/恢复/退休、GPU TextureView/present 与能力矩阵 |
 | [platform-hosts.md](platform-hosts.md) | 跨平台宿主责任、Linux/Windows/macOS/移动端与 jasper-os 边界 |
 | [android.md](android.md) | Android NativeActivity、GPU Surface、触摸与前后台生命周期 |
@@ -44,7 +45,8 @@
 ## 重要声明
 
 - 这是 **v0.1 原型**，用于宿主/图形界面集成实验；**API 会改，不是稳定 ABI**。
-- Native 引擎只负责底层执行；Jasper UI Framework、UI IR、Jasper ABI、Web 后端不在本仓库。
+- Native 引擎只负责底层执行；Jasper UI Framework、公共 UI IR 语义权威、Jasper ABI、Web
+  后端不在本仓库。`ui_ir` 是 v0.1 Schema 的 Rust consumer profile，不拥有公共语义。
 - 未实现的能力必须显式报错或标注，不用空实现/固定结果冒充完成。
 
 - [UI 宿主资源槽准入](resource-admission.md)：单槽代际生命周期与认证/存储边界。
