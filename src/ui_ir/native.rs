@@ -551,6 +551,10 @@ impl NativeUiDocument {
         self.event_bindings.get(&key)?.get(&event)
     }
 
+    pub fn element_kind(&self, key: UiKey) -> Option<ElementKind> {
+        self.element_kinds.get(&key).copied()
+    }
+
     pub fn resource_ref(&self, id: &str) -> Option<&ResourceRef> {
         self.resource_refs.get(id).or_else(|| {
             self.resources

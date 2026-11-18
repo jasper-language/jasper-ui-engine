@@ -1908,6 +1908,90 @@ fn typed_focus_text_and_ime_use_the_same_admitted_ui_key() {
 
 #[cfg(feature = "native-blitz-cpu-pending")]
 #[test]
+fn typed_text_area_vertical_motion_requires_text_edit_permission() {
+    use jasper_ui_engine::native::host::HostRenderer;
+    use jasper_ui_engine::native::{
+        EventReply, HostKeyInput, KeyLocation, Modifiers, TypedUiTargetError,
+    };
+
+    const OWNER: u64 = 89;
+    let mut value: serde_json::Value =
+        serde_json::from_slice(&fixture("settings-page.ir.json")).unwrap();
+    value["ops"][0]["node"]["children"][1]["element"]["kind"] =
+        serde_json::json!("text-area");
+    value["ops"][0]["node"]["children"][1]["element"]["content"] =
+        serde_json::json!("A\nB");
+    value["ops"][0]["node"]["children"][1]["semantics"]["role"] =
+        serde_json::json!("text-area");
+    let document =
+        NativeUiDocument::from_json_slice(&serde_json::to_vec(&value).unwrap()).unwrap();
+    let font = std::fs::read(
+        std::env::var("JASPER_UI_TEST_FONT")
+            .expect("JASPER_UI_TEST_FONT must name an injected font"),
+    )
+    .unwrap();
+    let mut host = HostRenderer::new_ui_document(OWNER, &document, &font, 480, 320).unwrap();
+    let generation = host.surface_status(OWNER).unwrap().generation;
+    let field = document.node_for_key(UiKey::new(3, 1)).unwrap();
+    let context = UiEventContext {
+        target: UiKey::new(3, 1),
+        identity_domain: document.identity_domain().into(),
+        owner: document.owner().into(),
+        session: document.session().into(),
+        frame_revision: document.revision(),
+        permission_context: UiPermissionContext::new(
+            "keyboard-without-text-edit",
+            [UiPermission::Focus, UiPermission::Keyboard],
+        ),
+    };
+    host.typed_focus(
+        OWNER,
+        document.revision(),
+        generation,
+        &document,
+        &context,
+        field,
+        &mut |_| {},
+    )
+    .unwrap();
+    let before = host
+        .typed_edit_state(OWNER, document.revision(), &document)
+        .unwrap()
+        .unwrap();
+    assert!(matches!(
+        host.typed_key(
+            OWNER,
+            document.revision(),
+            generation,
+            &document,
+            &context,
+            field,
+            &HostKeyInput {
+                key: "ArrowDown",
+                code: "ArrowDown",
+                pressed: true,
+                repeat: false,
+                composing: false,
+                modifiers: Modifiers::default(),
+                location: KeyLocation::Standard,
+            },
+            &mut |_| EventReply::default(),
+            &mut |_| {},
+        ),
+        Err(TypedUiTargetError::Admission(
+            jasper_ui_engine::ui_ir::UiEventAdmissionError::CapabilityDenied { .. }
+        ))
+    ));
+    let after = host
+        .typed_edit_state(OWNER, document.revision(), &document)
+        .unwrap()
+        .unwrap();
+    assert_eq!((after.anchor, after.caret), (before.anchor, before.caret));
+    assert_eq!(after.text, before.text);
+}
+
+#[cfg(feature = "native-blitz-cpu-pending")]
+#[test]
 fn typed_edit_drain_preserves_order_and_admits_commit_binding() {
     use jasper_ui_engine::native::host::HostRenderer;
     use jasper_ui_engine::native::{

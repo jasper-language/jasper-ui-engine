@@ -1197,7 +1197,12 @@ impl HostRenderer {
         node: NodeId,
         input: &crate::native::HostKeyInput<'_>,
     ) -> Result<(), TypedUiTargetError> {
-        if !key_may_edit_text(input) || self.edit_state(owner, version).flatten().is_none() {
+        let edit_state = self.edit_state(owner, version).flatten();
+        let multiline = document
+            .key_for_node(node)
+            .and_then(|key| document.element_kind(key))
+            == Some(crate::ui_ir::ElementKind::TextArea);
+        if edit_state.is_none() || !key_may_edit_text(input, multiline) {
             return Ok(());
         }
         document
@@ -2711,24 +2716,21 @@ fn typed_pointer_event_kind(kind: SceneEventKind) -> Option<UiEventKind> {
     }
 }
 
-fn key_may_edit_text(input: &crate::native::HostKeyInput<'_>) -> bool {
+fn key_may_edit_text(input: &crate::native::HostKeyInput<'_>, multiline: bool) -> bool {
     if !input.pressed || input.composing {
         return false;
     }
-    matches!(
-        input.key,
-        "Backspace"
-            | "Delete"
-            | "ArrowLeft"
-            | "ArrowRight"
-            | "Home"
-            | "End"
-            | "Enter"
-            | "Escape"
-    ) || ((input.modifiers.control || input.modifiers.meta)
-        && ["a", "c", "x", "v"]
-            .iter()
-            .any(|key| input.key.eq_ignore_ascii_case(key)))
+    match input.key {
+        "Backspace" | "Delete" | "ArrowLeft" | "ArrowRight" | "Home" | "End" | "Enter"
+        | "Escape" => true,
+        "ArrowUp" | "ArrowDown" => multiline,
+        _ => {
+            (input.modifiers.control || input.modifiers.meta)
+                && ["a", "c", "x", "v"]
+                    .iter()
+                    .any(|key| input.key.eq_ignore_ascii_case(key))
+        }
+    }
 }
 
 fn admitted_optional_event(

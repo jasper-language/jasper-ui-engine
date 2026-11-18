@@ -60,7 +60,8 @@ Focus 切换、AccessKit Focus 与 Pointer Down 若会触发失焦提交或结�
 `typed_clear_focus` 以同样顺序只清除焦点并保留按下/悬停；`typed_deactivate` 则清除焦点、
 按下和悬停，两者都只向调用方返回旧焦点的 `UiKey`。
 `typed_key`/`typed_key_with_activation` 对会改动编辑缓冲或选区的按键在默认编辑行为前要求
-TextEdit；Enter 产生提交时预准入 `text-commit`，不能只凭 Keyboard 修改文本框。
+TextEdit；TextArea 的 ArrowUp/ArrowDown 也按编辑键处理；Enter 产生提交时预准入
+`text-commit`，不能只凭 Keyboard 修改文本框。
 Focus、Key、Pointer、键盘激活和 AccessKit 动作的 Typed 回调分别使用
 `TypedUiFocusEvent`、`TypedUiKeyEvent`、`TypedUiPointerEvent`、
 `TypedUiActivationEvent`，只携带 `UiKey`；如果 Native 回调目标无法映射回当前文档，
@@ -228,8 +229,8 @@ Web 后端和正式宿主仍需分别验收。
 
 - `native-engine-cpu,accesskit-pending` 完整 `cargo test` 成功退出：库测试
   `272 passed, 1 ignored`（忽略项是显式性能测量），全部集成测试和 doc-test 通过；
-- 同一特性集的 `ui_ir_v0`：`40 passed`；
-- 软件 Vulkan（lvp/llvmpipe）+ `gpu-pending` 的 `ui_ir_v0`：`41 passed`；
+- 同一特性集的 `ui_ir_v0`：`41 passed`；
+- 软件 Vulkan（lvp/llvmpipe）+ `gpu-pending` 的 `ui_ir_v0`：`42 passed`；
 - Clippy 成功退出；仓库仍保留已登记的非阻塞历史 warning。
 
 运行前注入了 Latin/CJK、regular/bold/italic 测试字体；这些计数只对应当前 Linux 测试环境，
