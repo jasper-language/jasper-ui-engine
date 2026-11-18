@@ -3,9 +3,9 @@
   "status": "proved",
   "scope": "actual Scene Move failure precedence over caller-computed booleans: root first, missing moved node, missing target parent, then target inside the moved subtree; only all-false admits mutation. Tree lookup, node cloning, removal, insertion, exact final tree and whole-batch rollback remain outside this kernel",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "86807709e67a693d3dc500f05bf1f93a214af453aa4231a98ea4c023060e79f0",
+  "source_sha256": "ebe0050a317bd2a672c97923fab2fca3e1342ba5f5419599b739547d6e5ad68c",
   "sources": {
-    "src/scene.rs": "86807709e67a693d3dc500f05bf1f93a214af453aa4231a98ea4c023060e79f0"
+    "src/scene.rs": "ebe0050a317bd2a672c97923fab2fca3e1342ba5f5419599b739547d6e5ad68c"
   },
   "kernel_sha256": "6014fb86b470c30ed232dcb9c02193956d12b01d0f56e1b2a8b0a86345ecc7ea",
   "dependencies": {
@@ -13,7 +13,7 @@
     "scene-error-type": "3504db5ec8081421a4f57db5463bef15ba723f7ef7f40fa30b253e107ee11e9b"
   },
   "proof_sha256": "1467d4e08f5af0148ed8c4dd8d67a7f8f1743c9431c15de7c7f58f31da338dbe",
-  "runner_sha256": "547ae2511ecd5576a53b91af49bfa834d970f85392dd1cfd742e95ba97ebfeba",
+  "runner_sha256": "20331d1493ca886bbd4f275edabe2cb6e9a76a6c93712935d6f4a980648ed80e",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "/tmp/jasper-verus-0.2026.10.18/verus-x86-linux/verus",

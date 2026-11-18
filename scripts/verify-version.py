@@ -3168,6 +3168,29 @@ proof fn lemma_holds_below(n:Node,id:NodeId)
 }
 
 
+KERNELS["scene-node-insert"] = {
+    "source":"src/scene.rs", "marker":"SCENE NODE INSERT",
+    "property":"UI-SCENE-NODE-INSERT-001",
+    "signature":"fn insert_node_at(root: &mut Node, parent: NodeId, index: usize, node: Node) -> bool {",
+    "contract":"""fn insert_node_at(root: &mut Node, parent: NodeId, index: usize, node: Node) -> (result:bool)
+        ensures result == node_holds(*old(root),parent),
+            result ==> exists|t:Node,f:Node| #![trigger node_relocated(*old(root),*final(root),parent,t,f)]
+                node_relocated(*old(root),*final(root),parent,t,f)
+                && node_fields_same(t,f)
+                && f.children@==t.children@.insert(
+                    if index<t.children@.len() {index as int} else {t.children@.len() as int},node),
+            !result ==> *final(root)==*old(root),
+    {""",
+    "depends":["scene-node-find","scene-node-remove"], "evidence":"scene-node-insert-kernel", "function_count":1,
+    "scope":"Exact production node insertion on the real Node declaration: a hit inserts exactly the supplied node under the first matching parent and clamps the index to the child count; every other node is structurally unchanged. A miss keeps the tree unchanged. Identity admission, Move extraction, final Move tree and whole-batch transaction are outside this kernel",
+    "mutations":[
+        ("report-hit-on-miss","        return false;","        return true;"),
+        ("drop-insert","    parent_node.children.insert(index, node);","    // insertion omitted"),
+        ("ignore-clamp","    let index = if index < len { index } else { len };","    let index = if index < len { index } else { 0 };"),
+    ],
+}
+
+
 KERNELS["scene-patch-type"] = {
     "source":"src/scene.rs", "marker":"SCENE PATCH", "suffix":"TYPE", "depends":["scene-node-type"], "internal_only":True,
     "signature":"#[derive(Clone, Debug, PartialEq)]\npub enum ScenePatch {", "contract":"pub enum ScenePatch {", "function_count":0,

@@ -98,5 +98,7 @@ CPU RGBA 呈现最小契约复用现有 `RenderBackend`：
   目标父节点、后代冲突顺序固定；实际节点克隆、移除/插入和整批事务仍未证明；
 - Scene 子树取出已有 Verus 实现级证明（22 verified/0 errors）：返回首棵匹配子树，剩余树
   精确移除该子树，未命中保持整树不变；Move 的目标插入和整批事务仍未证明；
+- Scene 子树插入已有 Verus 实现级证明（15 verified/0 errors）：父节点命中时钳制下标并
+  只修改目标父节点的子序列，未命中保持整树不变；取出与插入的组合及整批事务仍未证明；
 - 未在 Jasper-OS 用户态/内核中链接运行，未证明目标端 allocator、panic handler、
   vector/float ABI、CPU 特性、中断时钟或真实 Surface 呈现。

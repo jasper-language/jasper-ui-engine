@@ -1375,6 +1375,26 @@ pub fn assert_scene_move_admission(
     );
 }
 
+/// Real insertion against an independent path-based oracle.
+/// 真实节点插入对照独立的路径规格。
+pub fn assert_scene_node_insert(tree: Node, parent: NodeId, index: usize, node: Node) {
+    let mut actual = tree.clone();
+    let mut expected = tree;
+    let inserted = match find_oracle_path(&expected, parent.0) {
+        Some(path) => {
+            let target = path
+                .iter()
+                .fold(&mut expected, |current, &at| &mut current.children[at]);
+            let at = index.min(target.children.len());
+            target.children.insert(at, node.clone());
+            true
+        }
+        None => false,
+    };
+    assert_eq!(insert_node_at(&mut actual, parent, index, node), inserted);
+    assert_eq!(actual, expected);
+}
+
 fn scene_node_take_oracle(parent: &mut Node, id: NodeId) -> Option<Node> {
     if let Some(index) = parent
         .children
@@ -3568,6 +3588,19 @@ mod kani_checks {
         assert_scene_node_take(tree, NodeId(kani::any()));
     }
 
+    #[kani::proof]
+    #[kani::unwind(4)]
+    fn scene_node_insert_shape() {
+        let (root, child, inserted): (u64, u64, u64) = (kani::any(), kani::any(), kani::any());
+        let tree = removal_leaf(root, vec![removal_leaf(child, Vec::new())]);
+        assert_scene_node_insert(
+            tree,
+            NodeId(kani::any()),
+            kani::any(),
+            removal_leaf(inserted, Vec::new()),
+        );
+    }
+
     // Arbitrary start and patches of every length up to four through the real fold; unwinding is
     // outside Kani's model. 任意起点与至多四个任意补丁穿过真实折叠；展开不在 Kani 模型内。
     #[kani::proof]
@@ -4107,6 +4140,23 @@ mod properties {
             assert_scene_node_take(tree, NodeId(id as u64 % 8));
         }
         #[test]
+        fn scene_node_insert_property(
+            spec in prop::collection::vec(any::<(u8, u8)>(), 0..24),
+            root in any::<u8>(),
+            parent in any::<u8>(),
+            index in any::<usize>(),
+            inserted in any::<u8>(),
+        ) {
+            let mut room = spec.len();
+            let tree = removal_tree(root as u64 % 8, &mut spec.iter(), &mut room);
+            assert_scene_node_insert(
+                tree,
+                NodeId(parent as u64 % 8),
+                index,
+                removal_leaf(inserted as u64 % 8, Vec::new()),
+            );
+        }
+        #[test]
         fn scene_batch_commit_property(spec in prop::collection::vec(any::<(u8, u8)>(), 0..24), root in any::<u8>(), staged in any::<u8>(), version in any::<u64>(), offset in any::<u8>(), flags in any::<u8>()) {
             assert_scene_batch_commit_bytes(&spec, root, staged, version, offset, flags);
         }
@@ -4503,6 +4553,27 @@ mod memory {
         );
         for id in [0, 1, 2, 3, 4, u64::MAX] {
             assert_scene_node_take(tree.clone(), NodeId(id));
+        }
+    }
+
+    #[test]
+    fn scene_node_insert_boundaries() {
+        let tree = removal_leaf(
+            1,
+            vec![removal_leaf(
+                2,
+                vec![removal_leaf(3, Vec::new())],
+            )],
+        );
+        for parent in [0, 1, 2, 3, u64::MAX] {
+            for index in [0, 1, 2, usize::MAX] {
+                assert_scene_node_insert(
+                    tree.clone(),
+                    NodeId(parent),
+                    index,
+                    removal_leaf(9, Vec::new()),
+                );
+            }
         }
     }
 

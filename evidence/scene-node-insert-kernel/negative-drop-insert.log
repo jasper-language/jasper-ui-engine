@@ -1,0 +1,22 @@
+verification results:: 14 verified, 1 errors
+error: postcondition not satisfied
+   --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-node-insert-kernel/negative_drop_insert.rs:213:13
+    |
+213 | /             result ==> exists|t:Node,f:Node| #![trigger node_relocated(*old(root),*final(root),parent,t,f)]
+214 | |                 node_relocated(*old(root),*final(root),parent,t,f)
+215 | |                 && node_fields_same(t,f)
+216 | |                 && f.children@==t.children@.insert(
+217 | |                     if index<t.children@.len() {index as int} else {t.children@.len() as int},node),
+    | |___________________________________________________________________________________________________^ failed this postcondition
+218 |               !result ==> *final(root)==*old(root),
+219 | /     {
+220 | |     let Some(parent_node) = find_node_mut(root, parent) else {
+221 | |         return false;
+222 | |     };
+...   |
+226 | |     true
+227 | | }
+    | |_- at the end of the function body
+
+error: aborting due to 1 previous error
+

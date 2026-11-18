@@ -503,15 +503,13 @@ fn apply_tree_patch(root: &mut Node, patch: ScenePatch) -> Result<(), SceneError
             parent,
             index,
             node,
-        } => match find_node_mut(root, parent) {
-            Some(parent_node) => {
-                let len = parent_node.children.len();
-                let index = if index < len { index } else { len };
-                parent_node.children.insert(index, node);
+        } => {
+            if insert_node_at(root, parent, index, node) {
                 Ok(())
+            } else {
+                Err(SceneError::NodeNotFound(parent))
             }
-            None => Err(SceneError::NodeNotFound(parent)),
-        },
+        }
         ScenePatch::UpdateSemantics { id, semantics } => match find_node_mut(root, id) {
             Some(node) => {
                 node.semantics = semantics;
@@ -554,13 +552,11 @@ fn apply_tree_patch(root: &mut Node, patch: ScenePatch) -> Result<(), SceneError
             let Some(moved) = take_node(root, id) else {
                 return Err(SceneError::NodeNotFound(id));
             };
-            let parent_node = match find_node_mut(root, parent) {
-                Some(node) => node,
-                None => return Err(SceneError::NodeNotFound(parent)),
-            };
-            let len = parent_node.children.len();
-            parent_node.children.insert(index.min(len), moved);
-            Ok(())
+            if insert_node_at(root, parent, index, moved) {
+                Ok(())
+            } else {
+                Err(SceneError::NodeNotFound(parent))
+            }
         }
         ScenePatch::UpdateText { id, text } => match find_node_mut(root, id) {
             Some(node) => match &mut node.kind {
@@ -633,6 +629,19 @@ fn find_node_mut(node: &mut Node, id: NodeId) -> Option<&mut Node> {
     None
 }
 // END VERIFIED SCENE NODE FIND KERNEL
+
+// BEGIN VERIFIED SCENE NODE INSERT KERNEL
+/// Inserts a node under the first matching parent, clamping the index to the child count.
+fn insert_node_at(root: &mut Node, parent: NodeId, index: usize, node: Node) -> bool {
+    let Some(parent_node) = find_node_mut(root, parent) else {
+        return false;
+    };
+    let len = parent_node.children.len();
+    let index = if index < len { index } else { len };
+    parent_node.children.insert(index, node);
+    true
+}
+// END VERIFIED SCENE NODE INSERT KERNEL
 
 // BEGIN VERIFIED SCENE NODE TAKE KERNEL
 /// Takes the first direct child with the identity; failing that, takes it from the first child

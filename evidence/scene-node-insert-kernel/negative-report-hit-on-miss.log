@@ -1,0 +1,31 @@
+verification results:: 14 verified, 1 errors
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+   --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-node-insert-kernel/negative_report_hit_on_miss.rs:211:1
+    |
+211 | fn insert_node_at(root: &mut Node, parent: NodeId, index: usize, node: Node) -> (result:bool)
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: postcondition not satisfied
+   --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-node-insert-kernel/negative_report_hit_on_miss.rs:212:17
+    |
+212 |         ensures result == node_holds(*old(root),parent),
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+221 |         return true;
+    |         ----------- at this exit
+
+error: postcondition not satisfied
+   --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-node-insert-kernel/negative_report_hit_on_miss.rs:213:13
+    |
+213 | /             result ==> exists|t:Node,f:Node| #![trigger node_relocated(*old(root),*final(root),parent,t,f)]
+214 | |                 node_relocated(*old(root),*final(root),parent,t,f)
+215 | |                 && node_fields_same(t,f)
+216 | |                 && f.children@==t.children@.insert(
+217 | |                     if index<t.children@.len() {index as int} else {t.children@.len() as int},node),
+    | |___________________________________________________________________________________________________^ failed this postcondition
+...
+221 |           return true;
+    |           ----------- at this exit
+
+error: aborting due to 2 previous errors
+
