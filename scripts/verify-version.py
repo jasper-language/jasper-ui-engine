@@ -3021,6 +3021,153 @@ pub open spec fn node_relocated(o:Node,f:Node,id:NodeId,t:Node,ft:Node)->bool de
 }
 
 
+KERNELS["scene-node-take"] = {
+    "source":"src/scene.rs", "marker":"SCENE NODE TAKE",
+    "property":"UI-SCENE-NODE-TAKE-001",
+    "spec_prelude":"""pub open spec fn node_holds_value(n:Node,id:NodeId,t:Node)->bool decreases n, {
+    if n.id==id { t==n }
+    else { exists|i:int| #![trigger n.children@[i]] 0<=i<n.children@.len() && node_holds_value(n.children@[i],id,t) }
+}
+proof fn lemma_child_holds(n:Node,p:int,id:NodeId)
+    requires n.id!=id, 0<=p<n.children@.len(), node_holds(n.children@[p],id),
+    ensures node_holds(n,id),
+{
+    assert(node_holds(n,id)) by {
+        assert(node_holds(n.children@[p],id));
+    }
+}
+proof fn lemma_child_holds_value(n:Node,p:int,id:NodeId,t:Node)
+    requires n.id!=id, 0<=p<n.children@.len(), node_holds_value(n.children@[p],id,t),
+    ensures node_holds_value(n,id,t),
+{
+    assert(node_holds_value(n,id,t)) by {
+        assert(node_holds_value(n.children@[p],id,t));
+    }
+}
+proof fn lemma_node_below_holds(n:Node,id:NodeId)
+    requires node_below(n,id),
+    ensures node_holds(n,id),
+    decreases n,
+{
+    if n.id==id {
+        assert(node_holds(n,id));
+    } else {
+        let p=choose|p:int| #![trigger n.children@[p]] 0<=p<n.children@.len()
+            && (n.children@[p].id==id || node_below(n.children@[p],id));
+        if n.children@[p].id==id {
+            assert(node_holds(n.children@[p],id));
+            lemma_child_holds(n,p,id);
+        } else {
+            lemma_node_below_holds(n.children@[p],id);
+            lemma_child_holds(n,p,id);
+        }
+    }
+}
+proof fn lemma_holds_below(n:Node,id:NodeId)
+    requires n.id!=id, node_holds(n,id),
+    ensures node_below(n,id),
+    decreases n,
+{
+    let p=choose|p:int| #![trigger n.children@[p]] 0<=p<n.children@.len()
+        && node_holds(n.children@[p],id);
+    if n.children@[p].id!=id { lemma_holds_below(n.children@[p],id); }
+}
+""",
+    "signature":"fn take_node(parent: &mut Node, id: NodeId) -> Option<Node> {",
+    "contract":"""fn take_node(parent: &mut Node, id: NodeId) -> (result:Option<Node>)
+        requires (*old(parent)).id != id,
+        ensures match result {
+            Some(taken) => node_removed(*old(parent),*final(parent),id) && node_holds_value(*old(parent),id,taken),
+            None => node_same(*old(parent),*final(parent)) && !node_below(*old(parent),id),
+        },
+        decreases *old(parent),
+    {
+    let ghost start=*parent;""",
+    "extra_annotations":[
+        ("    let mut index = 0usize;\n    while index < parent.children.len() {","""    let mut index = 0usize;
+    proof { assert(start.id != id); }
+    while index < parent.children.len()
+        invariant index<=parent.children@.len(), *parent==start, *old(parent)==start, start.id!=id,
+            forall|j:int| #![trigger start.children@[j]] 0<=j<index ==> start.children@[j].id!=id,
+        decreases parent.children.len()-index,
+    {"""),
+        ("            return Some(parent.children.remove(index));","""            let taken=parent.children.remove(index);
+            proof {
+                let p=index as int;
+                assert(start.children@[p].id==id);
+                assert(start.children@[p]==taken);
+                assert(parent.children@=~=start.children@.remove(p));
+                assert(node_holds_value(start.children@[p],id,taken));
+                lemma_child_holds_value(start,p,id,taken);
+            }
+            return Some(taken);"""),
+        ("    index = 0;\n    while index < parent.children.len() {","""    proof { node_same_refl(start); }
+    index = 0;
+    while index < parent.children.len()
+        invariant index<=parent.children@.len(), *old(parent)==start,
+            node_fields_same(start,*parent),
+            parent.children@.len()==start.children@.len(),
+            start.id!=id,
+            forall|j:int| #![trigger start.children@[j]] 0<=j<start.children@.len() ==> start.children@[j].id!=id,
+            forall|j:int| #![trigger start.children@[j]] 0<=j<index ==> !node_below(start.children@[j],id),
+            forall|j:int| #![trigger start.children@[j]] 0<=j<index ==> node_same(start.children@[j],parent.children@[j]),
+            forall|j:int| #![trigger start.children@[j]] index<=j<start.children@.len() ==> parent.children@[j]==start.children@[j],
+        decreases parent.children.len()-index,
+    {
+        let ghost before=parent.children@;
+        proof {
+            assert(before[index as int]==start.children@[index as int]);
+            assert(decreases_to!(start.children => start.children@[index as int]));
+            assert(decreases_to!(start => start.children@[index as int]));
+        }"""),
+        ("        let found = find_node(&parent.children[index], id);\n        if found.is_some() {\n            return take_node(&mut parent.children[index], id);\n        }","""        let found = find_node(&parent.children[index], id);
+        if found.is_some() {
+            let taken=take_node(&mut parent.children[index], id);
+            proof {
+                let p=index as int;
+                assert forall|j:int| #![trigger start.children@[j]] 0<=j<start.children@.len() && j!=p implies node_same(start.children@[j],parent.children@[j]) by {
+                    assert(parent.children@[j]==before[j]);
+                    if j>p { node_same_refl(start.children@[j]); }
+                };
+                assert(start.children@[p]==before[p]);
+                if taken is Some {
+                    let moved=taken->Some_0;
+                    assert(node_removed(start.children@[p],parent.children@[p],id));
+                    assert(node_holds_value(start.children@[p],id,moved));
+                    assert(start.id != id);
+                    lemma_child_holds_value(start,p,id,moved);
+                    assert(node_removed(start,*parent,id));
+                } else {
+                    assert(!node_below(start.children@[p],id));
+                    assert(node_holds(start.children@[p],id));
+                    assert(start.children@[p].id!=id);
+                    lemma_holds_below(start.children@[p],id);
+                    assert(false);
+                }
+            }
+            return taken;
+        }
+        proof {
+            let p=index as int;
+            if node_below(start.children@[p],id) {
+                lemma_node_below_holds(start.children@[p],id);
+                assert(found.is_some());
+                assert(false);
+            }
+            node_same_refl(start.children@[p]);
+            assert forall|j:int| #![trigger start.children@[j]] 0<=j<start.children@.len() && j!=p implies parent.children@[j]==before[j] by {};
+            assert(start.children@[p]==before[p]);
+        }"""),
+    ],
+    "depends":["scene-node-find","scene-node-remove"], "evidence":"scene-node-take-kernel", "function_count":1,
+    "scope":"Exact production subtree extraction on the real Node declaration: a direct matching child wins; otherwise the first child subtree containing the identity supplies it. Some returns that node and the remaining tree is exactly that node removed; None leaves the tree structurally equal and means the identity is not a proper descendant. Insertion destination, preorder lookup with duplicate identities, recursive depth/stack use, allocation failure and whole Move transaction are outside this kernel",
+    "mutations":[
+        ("report-miss-on-direct-take","            return Some(taken);","            return None;"),
+        ("report-miss-on-deep-take","            return taken;","            return None;"),
+    ],
+}
+
+
 KERNELS["scene-patch-type"] = {
     "source":"src/scene.rs", "marker":"SCENE PATCH", "suffix":"TYPE", "depends":["scene-node-type"], "internal_only":True,
     "signature":"#[derive(Clone, Debug, PartialEq)]\npub enum ScenePatch {", "contract":"pub enum ScenePatch {", "function_count":0,

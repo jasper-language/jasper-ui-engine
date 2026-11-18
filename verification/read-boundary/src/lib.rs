@@ -1136,7 +1136,7 @@ fn removal_leaf(id: u64, children: Vec<Node>) -> Node {
 
 /// Builds a tree in preorder: each pair is an identity and how many of the following nodes stay
 /// under it. 按前序建树：每对是身份及其后留在其下的节点数。
-fn removal_tree(id: u64, spec: &mut std::slice::Iter<'_, (u8, u8)>, room: &mut usize) -> Node {
+pub fn removal_tree(id: u64, spec: &mut std::slice::Iter<'_, (u8, u8)>, room: &mut usize) -> Node {
     let mut children = Vec::new();
     while *room > 0 {
         let Some(&(child, stay)) = spec.next() else { break };
@@ -1268,18 +1268,21 @@ fn patch_oracle(tree: &Node, patch: &ScenePatch) -> (Node, Result<(), SceneError
         if tree.id.0 == id.0 {
             return (expected, Err(SceneError::CannotMoveRoot));
         }
-        let moved = match find_node(tree, *id) {
+        let moved_for_check = match find_node(tree, *id) {
             Some(node) => node.clone(),
+            None => return (expected, Err(SceneError::NodeNotFound(*id))),
+        };
+        let mut rebuilt = tree.clone();
+        let moved = match scene_node_take_oracle(&mut rebuilt, *id) {
+            Some(node) => node,
             None => return (expected, Err(SceneError::NodeNotFound(*id))),
         };
         if find_node(tree, *parent).is_none() {
             return (expected, Err(SceneError::NodeNotFound(*parent)));
         }
-        if find_node(&moved, *parent).is_some() {
+        if find_node(&moved_for_check, *parent).is_some() {
             return (expected, Err(SceneError::MoveIntoDescendant(*id)));
         }
-        let mut rebuilt = removal_oracle(tree, id.0)
-            .expect("the moved node exists in the source tree");
         let Some(path) = find_oracle_path(&rebuilt, parent.0) else {
             // The raw patch kernel removes before its second parent lookup. Malformed trees with
             // duplicate identities can therefore return an error after preserving that removal;
@@ -1370,6 +1373,37 @@ pub fn assert_scene_move_admission(
         ),
         expected
     );
+}
+
+fn scene_node_take_oracle(parent: &mut Node, id: NodeId) -> Option<Node> {
+    if let Some(index) = parent
+        .children
+        .iter()
+        .position(|child| child.id == id)
+    {
+        return Some(parent.children.remove(index));
+    }
+    for child in &mut parent.children {
+        if child.id == id || find_node(child, id).is_some() {
+            return scene_node_take_oracle(child, id);
+        }
+    }
+    None
+}
+
+/// Real subtree extraction against an independent clone/remove implementation.
+/// 真实子树取出对照独立的 clone/remove 实现。
+pub fn assert_scene_node_take(tree: Node, id: NodeId) {
+    // Production reaches take_node only after Scene Move rejects a root identity.
+    // 生产路径只有在 Move 已拒绝根身份后才调用 take_node。
+    if tree.id == id {
+        return;
+    }
+    let mut actual = tree.clone();
+    let mut expected_tree = tree;
+    let expected = scene_node_take_oracle(&mut expected_tree, id);
+    assert_eq!(take_node(&mut actual, id), expected, "returned subtree");
+    assert_eq!(actual, expected_tree, "remaining tree");
 }
 
 // Gives each node a kind by identity, so text and canvas refusals are both reachable.
@@ -3526,6 +3560,14 @@ mod kani_checks {
         );
     }
 
+    #[kani::proof]
+    #[kani::unwind(4)]
+    fn scene_node_take_shape() {
+        let (root, child): (u64, u64) = (kani::any(), kani::any());
+        let tree = removal_leaf(root, vec![removal_leaf(child, Vec::new())]);
+        assert_scene_node_take(tree, NodeId(kani::any()));
+    }
+
     // Arbitrary start and patches of every length up to four through the real fold; unwinding is
     // outside Kani's model. 任意起点与至多四个任意补丁穿过真实折叠；展开不在 Kani 模型内。
     #[kani::proof]
@@ -4055,6 +4097,16 @@ mod properties {
             assert_scene_move_admission(root_matches, id_present, parent_present, parent_in_moved, id, parent);
         }
         #[test]
+        fn scene_node_take_property(
+            spec in prop::collection::vec(any::<(u8, u8)>(), 0..24),
+            root in any::<u8>(),
+            id in any::<u8>(),
+        ) {
+            let mut room = spec.len();
+            let tree = removal_tree(root as u64 % 8, &mut spec.iter(), &mut room);
+            assert_scene_node_take(tree, NodeId(id as u64 % 8));
+        }
+        #[test]
         fn scene_batch_commit_property(spec in prop::collection::vec(any::<(u8, u8)>(), 0..24), root in any::<u8>(), staged in any::<u8>(), version in any::<u64>(), offset in any::<u8>(), flags in any::<u8>()) {
             assert_scene_batch_commit_bytes(&spec, root, staged, version, offset, flags);
         }
@@ -4438,6 +4490,45 @@ mod memory {
         assert_scene_move_admission(false, true, false, true, u64::MAX, 0);
         assert_scene_move_admission(false, true, true, true, u64::MAX, 0);
         assert_scene_move_admission(false, true, true, false, u64::MAX, 0);
+    }
+
+    #[test]
+    fn scene_node_take_boundaries() {
+        let tree = removal_leaf(
+            1,
+            vec![
+                removal_leaf(2, vec![removal_leaf(3, Vec::new())]),
+                removal_leaf(4, Vec::new()),
+            ],
+        );
+        for id in [0, 1, 2, 3, 4, u64::MAX] {
+            assert_scene_node_take(tree.clone(), NodeId(id));
+        }
+    }
+
+    #[test]
+    fn scene_node_take_duplicate_identity_regression() {
+        let data = [
+            182, 36, 36, 36, 36, 36, 36, 26, 219, 219, 219, 219, 219, 219, 219, 219, 219,
+            158, 158, 158, 158, 158, 102, 101, 97, 97, 97, 97, 97, 97, 158, 219, 219,
+        ];
+        let pairs: Vec<(u8, u8)> = data.chunks_exact(2).map(|pair| (pair[0], pair[1])).collect();
+        let mut room = pairs.len();
+        let tree = removal_tree(6, &mut pairs.iter(), &mut room);
+        assert_scene_node_take(tree, NodeId(1));
+    }
+
+    #[test]
+    fn scene_node_take_nested_duplicate_identity_regression() {
+        let data = [
+            150, 0, 0, 0, 0, 0, 0, 0, 11, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+            255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 250, 0, 0, 0, 0, 238, 233, 222, 211,
+        ];
+        let pairs: Vec<(u8, u8)> = data.chunks_exact(2).map(|pair| (pair[0], pair[1])).collect();
+        let mut room = pairs.len();
+        let tree = removal_tree(6, &mut pairs.iter(), &mut room);
+        assert_scene_node_take(tree, NodeId(7));
     }
 
     #[test]

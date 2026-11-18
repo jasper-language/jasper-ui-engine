@@ -534,10 +534,9 @@ fn apply_tree_patch(root: &mut Node, patch: ScenePatch) -> Result<(), SceneError
             None => Err(SceneError::NodeNotFound(id)),
         },
         ScenePatch::Move { id, parent, index } => {
-            let moved = find_node(&*root, id).cloned();
+            let moved = find_node(&*root, id);
             let parent_present = find_node(&*root, parent).is_some();
             let parent_in_moved = moved
-                .as_ref()
                 .is_some_and(|moved| find_node(moved, parent).is_some());
             if let Some(failure) = scene_move_failure(
                 root.id.0 == id.0,
@@ -549,12 +548,12 @@ fn apply_tree_patch(root: &mut Node, patch: ScenePatch) -> Result<(), SceneError
             ) {
                 return Err(failure);
             }
-            let Some(moved) = moved else {
-                return Err(SceneError::NodeNotFound(id));
-            };
-            if !remove_node(root, id) {
+            if moved.is_none() {
                 return Err(SceneError::NodeNotFound(id));
             }
+            let Some(moved) = take_node(root, id) else {
+                return Err(SceneError::NodeNotFound(id));
+            };
             let parent_node = match find_node_mut(root, parent) {
                 Some(node) => node,
                 None => return Err(SceneError::NodeNotFound(parent)),
@@ -634,6 +633,29 @@ fn find_node_mut(node: &mut Node, id: NodeId) -> Option<&mut Node> {
     None
 }
 // END VERIFIED SCENE NODE FIND KERNEL
+
+// BEGIN VERIFIED SCENE NODE TAKE KERNEL
+/// Takes the first direct child with the identity; failing that, takes it from the first child
+/// subtree that holds it. A miss changes nothing.
+fn take_node(parent: &mut Node, id: NodeId) -> Option<Node> {
+    let mut index = 0usize;
+    while index < parent.children.len() {
+        if parent.children[index].id.0 == id.0 {
+            return Some(parent.children.remove(index));
+        }
+        index += 1;
+    }
+    index = 0;
+    while index < parent.children.len() {
+        let found = find_node(&parent.children[index], id);
+        if found.is_some() {
+            return take_node(&mut parent.children[index], id);
+        }
+        index += 1;
+    }
+    None
+}
+// END VERIFIED SCENE NODE TAKE KERNEL
 
 // BEGIN VERIFIED SCENE NODE REMOVE KERNEL
 /// Removes the first direct child with the identity; failing that, removes it from the first child

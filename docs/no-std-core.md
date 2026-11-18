@@ -96,5 +96,7 @@ CPU RGBA 呈现最小契约复用现有 `RenderBackend`：
   资源 id 查找、整帧回滚和取消协议不在该证明范围；
 - Scene Move 准入的错误优先级已有 Verus 实现级证明（2 verified/0 errors）：根节点、源节点、
   目标父节点、后代冲突顺序固定；实际节点克隆、移除/插入和整批事务仍未证明；
+- Scene 子树取出已有 Verus 实现级证明（22 verified/0 errors）：返回首棵匹配子树，剩余树
+  精确移除该子树，未命中保持整树不变；Move 的目标插入和整批事务仍未证明；
 - 未在 Jasper-OS 用户态/内核中链接运行，未证明目标端 allocator、panic handler、
   vector/float ABI、CPU 特性、中断时钟或真实 Surface 呈现。

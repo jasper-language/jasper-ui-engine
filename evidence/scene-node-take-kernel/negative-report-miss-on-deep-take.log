@@ -1,0 +1,16 @@
+verification results:: 21 verified, 1 errors
+error: postcondition not satisfied
+   --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-node-take-kernel/negative_report_miss_on_deep_take.rs:262:17
+    |
+262 |           ensures match result {
+    |  _________________^
+263 | |             Some(taken) => node_removed(*old(parent),*final(parent),id) && node_holds_value(*old(parent),id,taken),
+264 | |             None => node_same(*old(parent),*final(parent)) && !node_below(*old(parent),id),
+265 | |         },
+    | |_________^ failed this postcondition
+...
+334 |               return None;
+    |               ----------- at this exit
+
+error: aborting due to 1 previous error
+
