@@ -232,7 +232,7 @@ fixture 实际映射出的 `mapped_properties` 与 profile 一致。
 | Property Registry | 公共 registry 固定摘要；Native profile 逐项一致；candidate 不冒充 accepted | 已覆盖 consumer profile |
 | 回滚与兼容 | Native Style/Typed Style 双向受限投影、raw Legacy Scene 显式 identity 反向投影、JUI 2 initial/successor/event 桥及逐项损失已测试；三份 canonical 初始帧和 settings 双帧流经旧 Host CPU reader 接受；旧 raw Scene/ScenePatch、PSS/xstyle、LegacyEngine 测试继续通过 | Rust 兼容桥已覆盖；无条件可逆与真实平台未验收 |
 | Web / 真浏览器 | 未执行 | 未验收 |
-| 真实硬件 GPU / 平台宿主 | Intel UHD 630 与 NVIDIA RTX 3060 Vulkan 离屏 UI IR 全量测试通过；NVIDIA RTX 3060 硬件窗口 `gpu_window --once` present 成功；Intel 窗口因 Surface/adapter queue family 不兼容失败 | 部分覆盖；OS 输入/IME/AccessKit 未验收；硬件窗口只覆盖 NVIDIA 单帧基础场景 |
+| 真实硬件 GPU / 平台宿主 | Intel UHD 630 与 NVIDIA RTX 3060 Vulkan 离屏 UI IR 全量测试通过；NVIDIA RTX 3060 硬件窗口 `gpu_window --once` present 成功；Intel 窗口因 Surface/adapter queue family 不兼容失败；desktop-accessibility host 在 AT-SPI 总线发布 Settings/Name/Save 树，Save `DoAction` 回环到 JUI 2 click | 部分覆盖；真实 OS 输入/IME 与硬件窗口完整无障碍未验收；硬件窗口只覆盖 NVIDIA 单帧基础场景 |
 | 形式化证明 | 本批未新增 | 未验收 |
 
 本表是 Rust consumer 的审阅清单，不是 issue #3 全链路完成声明；语言侧 Schema/Framework、
@@ -248,7 +248,7 @@ Web 后端和正式宿主仍需分别验收。
 | Native CPU same-fixture execution | all three canonical fixtures passed on Linux x86_64 test environment |
 | Native GPU same-fixture | settings-page passed with llvmpipe/Vulkan, Intel UHD 630/Vulkan and NVIDIA RTX 3060/Vulkan; hardware max channel delta 1 |
 | Web SSR / real browser | not run in this slice |
-| Real platform host acceptance | partial: CPU window smoke passed; hardware Vulkan offscreen passed on Intel UHD 630 and NVIDIA RTX 3060; NVIDIA hardware window single-frame present passed; Intel hardware window blocked by Surface/adapter queue-family mismatch; full OS input/IME/AccessKit not run |
+| Real platform host acceptance | partial: CPU window smoke passed; hardware Vulkan offscreen passed on Intel UHD 630 and NVIDIA RTX 3060; NVIDIA hardware window single-frame present passed; Intel hardware window blocked by Surface/adapter queue-family mismatch; AT-SPI tree publication and Save action round-trip passed; full OS input/IME and hardware-window accessibility not run |
 | Formal verification | not performed for UI IR validation/mapping/event admission |
 | Cross-backend equivalence | not established |
 
@@ -285,12 +285,21 @@ Web 后端和正式宿主仍需分别验收。
 - settings `--interaction` 四帧流在真实窗口中依次接受 focus、` Bob` text input 和
   Enter：`ack 2/3/4/5`、`accepted 4 / rejected 0`，输出 target 3 的
   `focus in → key Enter → text-commit "Alice Bob"`，截图确认最终编辑文本；
-- 启用 desktop-accessibility 的临时 host 构建在同一 JUI 2 双帧窗口流上完成 smoke：
-  `accepted 2 / rejected 0`，AccessKit/AT-SPI 适配器初始化未报错；本次未查询注册树或
-  执行平台无障碍动作，因此不扩大为 AT-SPI 端到端验收；
+- 启用 desktop-accessibility 的临时 host 构建在同一 JUI 2 双帧窗口流上完成
+  `accepted 2 / rejected 0`，并通过会话 AT-SPI 总线发布注册树：root 为
+  `jasper-ui-host`，其下可见 `Settings`、`Name` 和 `Save` 节点；ToolkitName 为
+  `Jasper UI`，Version 为 `0.1.0`；
+- 对该树中的 `Save` 节点调用平台
+  `org.a11y.atspi.Action.DoAction(index=0)` 返回 `true`，host 随后输出
+  `event 4 click` 并保持 `accepted 1 / rejected 0`。这验证了 AT-SPI 注册树发布、
+  Settings/Name/Save 语义投影和 Save 动作到 JUI 2 click 的端到端回环，但不证明真实
+  OS 鼠标/键盘事件、平台 IME 或硬件窗口完整无障碍；
+- 临时验证曾短暂启用 `org.gnome.desktop.interface toolkit-accessibility`，结束后已恢复
+  原值 `false`；
 - 上述临时 host 副本只为新增 SceneError/Role 变体补了 exhaustive match 分支，
   reader 协议逻辑未改；
-  原 host 仓库未修改。该证据只覆盖 CPU headless transport，不包含真实平台窗口；
+  原 host 仓库未修改。其中 headless reader 证据只覆盖 CPU transport；AT-SPI 树与动作来自
+  desktop-accessibility window host，不包含真实 OS 输入或硬件窗口无障碍验收；
 - Clippy 成功退出；仓库仍保留已登记的非阻塞历史 warning。
 
 运行前注入了 Latin/CJK、regular/bold/italic 测试字体；这些计数只对应当前 Linux 测试环境。
