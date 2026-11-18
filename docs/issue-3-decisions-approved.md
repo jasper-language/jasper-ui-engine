@@ -46,7 +46,7 @@
 | 架构方向与六项裁决 | approved |
 | `ir-v0` Schema | Language/UI draft；Rust Native consumer implemented / tested |
 | Typed Property Registry | upstream registry pinned；Rust profile implemented / tested |
-| 兼容 adapter | `UiFrame → ScenePatch` implemented / tested；legacy reverse/JUI 2 adapter not complete |
+| 兼容 adapter | `UiFrame → ScenePatch` 与受限 Native Style → Typed Style 投影 implemented / tested；完整 legacy Scene reverse/JUI 2 adapter not complete |
 | 候选能力映射 | in progress；Grid/Position/Image/Overlay 仍 candidate、`host_accepted=false` |
 | 双后端 golden case | not run |
 | 正式 ABI | not started |

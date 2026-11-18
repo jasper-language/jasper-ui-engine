@@ -14,11 +14,15 @@ use std::fmt;
 mod events;
 mod identity;
 mod native;
+mod compat;
 
 pub use events::{
     AdmittedEvent, UiEventAdmissionError, UiEventContext, UiPermission, UiPermissionContext,
 };
 pub use identity::{IdentityError, UiIdentityLedger};
+pub use compat::{
+    project_native_style, NativeStyleLoss, NativeStyleProjection,
+};
 pub use native::{
     MappedProperty, MappingIssue, MappingIssueKind, NativeSceneUpdate, NativeUiDocument,
     NativeActivationSource, NativePropertyProfile, NativeUiFrameError, SupportLevel,

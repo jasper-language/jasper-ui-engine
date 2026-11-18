@@ -85,6 +85,18 @@ caret 几何与 `UiKey` 一并返回，不暴露 backend 节点身份。
 - style 无法无损表达时返回 `NativeUiFrameError::Mapping(MappingIssue)`；
 - revision 与 `Scene::version()` 同步推进。
 
+`src/ui_ir/compat.rs` 提供受限的 legacy Native 兼容投影：
+
+- `project_native_style(&NativeStyle, ElementKind)` 返回 `NativeStyleProjection`；
+- box/flex/Grid/position/paint/typography 中当前 Typed v0.1 可表达的字段会投影；
+- Native shadow、单侧 border、outline、text decoration、hit-slop、transform、motion、
+  gradient、material、image、overlay 等字段逐项进入 `losses`；
+- image/overlay 不凭裸 Native Style 伪造 resource/UiKey 上下文；
+- 只有 `is_lossless() == true` 才表示本次投影没有遗漏非默认 Native 字段。
+
+这不是完整 legacy reverse/JUI 2 adapter，也不宣布 Native Scene 可恢复 Framework 的组件声明、
+Signal 依赖或事件会话。Grid 投影仍继承 candidate/`host_accepted=false` 状态。
+
 ## Native 映射状态
 
 | 范围 | 状态 | 说明 |
@@ -146,7 +158,7 @@ fixture 实际映射出的 `mapped_properties` 与 profile 一致。
 | 资源生命周期 | Prepare/Commit/Release、generation、节点引用、上传/删除与 GPU/CPU image 测试 | 已覆盖当前 image/SVG 路径 |
 | 活动宿主同步 | detached mapping、精确 Surface generation、原子 ScenePatch 和 reduce-motion 同提交 | 已覆盖 Rust host |
 | Property Registry | 公共 registry 固定摘要；Native profile 逐项一致；candidate 不冒充 accepted | 已覆盖 consumer profile |
-| 回滚与兼容 | 旧 raw Scene/ScenePatch、PSS/xstyle、LegacyEngine 测试继续通过；新字段不新增 xstyle key | 保留 |
+| 回滚与兼容 | Native Style → Typed Style 受限投影及逐项损失报告已测试；旧 raw Scene/ScenePatch、PSS/xstyle、LegacyEngine 测试继续通过；完整 legacy reverse/JUI 2 仍未完成 | 部分覆盖 / 保留 |
 | Web / 真浏览器 | 未执行 | 未验收 |
 | 真实硬件 GPU / 平台宿主 | 未执行 | 未验收 |
 | 形式化证明 | 本批未新增 | 未验收 |
@@ -172,7 +184,7 @@ Web 后端和正式宿主仍需分别验收。
 
 - `native-engine-cpu,accesskit-pending` 完整 `cargo test` 成功退出：库测试
   `271 passed, 1 ignored`（忽略项是显式性能测量），全部集成测试和 doc-test 通过；
-- 同一特性集的 `ui_ir_v0`：`35 passed`；
+- 同一特性集的 `ui_ir_v0`：`37 passed`；
 - 软件 Vulkan（lvp/llvmpipe）+ `gpu-pending` 的 `ui_ir_v0`：`36 passed`；
 - Clippy 成功退出；仓库仍保留已登记的非阻塞历史 warning。
 

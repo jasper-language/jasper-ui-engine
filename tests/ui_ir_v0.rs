@@ -120,6 +120,169 @@ fn typed_property_profile_matches_the_pinned_registry() {
 }
 
 #[test]
+fn native_style_projection_round_trips_representable_fields() {
+    use jasper_ui_engine::style::{
+        Align, Color, Display, FlexDirection, FlexWrap, FontStyle, Justify,
+        Length as NativeLength, LineHeight, Position, TextAlign, TextAlignVertical,
+        TextDirection, Style,
+    };
+    use jasper_ui_engine::ui_ir::{
+        project_native_style, ElementKind, SemanticRole, UiElement, UiNode, UiOp, UiSemantics,
+    };
+
+    let source = Style {
+        display: Display::Flex,
+        direction: FlexDirection::Row,
+        flex_wrap: FlexWrap::Wrap,
+        width: NativeLength::Px(120.0),
+        height: NativeLength::Percent(50.0),
+        min_width: NativeLength::Px(40.0),
+        max_height: NativeLength::Px(240.0),
+        padding: jasper_ui_engine::geometry::Edges::new(1.0, 2.0, 3.0, 4.0),
+        margin: jasper_ui_engine::geometry::Edges::all(5.0),
+        gap: 8.0,
+        align_items: Align::Center,
+        justify_content: Justify::SpaceBetween,
+        flex_grow: 1.5,
+        flex_shrink: 0.5,
+        position: Position::Absolute,
+        inset: jasper_ui_engine::style::Inset::new(
+            NativeLength::Px(1.0),
+            NativeLength::Px(2.0),
+            NativeLength::Px(3.0),
+            NativeLength::Px(4.0),
+        ),
+        z_index: Some(7),
+        order: -2,
+        background: Color::new(10, 20, 30, 255),
+        color: Color::new(240, 230, 220, 255),
+        border_width: 2.0,
+        border_color: Color::new(100, 110, 120, 200),
+        corner_radius: jasper_ui_engine::style::CornerRadii::new(3.0, 4.0, 5.0, 6.0),
+        opacity: 0.75,
+        font_family: Some("Host Sans".into()),
+        font_size: 17.0,
+        font_weight: 650,
+        font_style: FontStyle::Italic,
+        line_height: Some(LineHeight::Px(23.0)),
+        text_align: TextAlign::Center,
+        text_direction: TextDirection::Rtl,
+        text_align_vertical: Some(TextAlignVertical::Center),
+        ..Style::default()
+    };
+
+    let projection = project_native_style(&source, ElementKind::Container).unwrap();
+    assert!(projection.is_lossless(), "{:?}", projection.losses);
+    let frame = UiFrame {
+        ir_version: jasper_ui_engine::ui_ir::IR_VERSION.into(),
+        identity_domain: "compat/window".into(),
+        owner: "host".into(),
+        session: "session".into(),
+        expected_revision: 1,
+        next_revision: 2,
+        ops: vec![UiOp::insert(
+            None,
+            0,
+            UiNode {
+                key: UiKey::new(1, 1),
+                element: UiElement {
+                    kind: ElementKind::Container,
+                    content: None,
+                    attributes: None,
+                },
+                semantics: UiSemantics {
+                    role: SemanticRole::Container,
+                    label: String::new(),
+                    description: String::new(),
+                    value: String::new(),
+                    disabled: false,
+                    focusable: false,
+                    hidden: false,
+                    selected: false,
+                    level: None,
+                },
+                style: Some(projection.style),
+                events: None,
+                children: None,
+            },
+        )],
+    };
+    let document = NativeUiDocument::from_frame(&frame).unwrap();
+    assert_eq!(document.scene().root.style, source);
+}
+
+#[test]
+fn native_style_projection_preserves_grid_and_reports_extended_field_losses() {
+    use jasper_ui_engine::style::{
+        Display, GridLine, GridTrack, ImageStyle, Length as NativeLength, LineHeight, Style,
+        Transform2D,
+    };
+    use jasper_ui_engine::ui_ir::{
+        project_native_style, ElementKind, Track, TrackUnit, NATIVE_PROPERTY_PROFILE,
+    };
+
+    let grid = Style {
+        display: Display::Grid,
+        gap: 12.0,
+        grid_columns: Some(vec![GridTrack::Px(40.0), GridTrack::Fr(1.0)]),
+        grid_rows: Some(vec![GridTrack::Auto, GridTrack::Percent(25.0)]),
+        grid_column: GridLine::Span(2),
+        grid_row: GridLine::Line(3),
+        ..Style::default()
+    };
+    let projection = project_native_style(&grid, ElementKind::Container).unwrap();
+    assert!(projection.is_lossless(), "{:?}", projection.losses);
+    let grid_style = projection.style.grid.unwrap();
+    assert_eq!(grid_style.columns.unwrap()[1], Track::Value(
+        jasper_ui_engine::ui_ir::TrackValue {
+            unit: TrackUnit::Fr,
+            value: 1.0,
+        }
+    ));
+    assert_eq!(
+        grid_style.column.unwrap(),
+        jasper_ui_engine::ui_ir::GridPlacement {
+            start: jasper_ui_engine::ui_ir::GridStart::Auto(
+                jasper_ui_engine::ui_ir::GridAuto::Auto
+            ),
+            span: 2,
+        }
+    );
+    let grid_profile = NATIVE_PROPERTY_PROFILE
+        .iter()
+        .find(|property| property.property == "grid.columns")
+        .unwrap();
+    assert_eq!(grid_profile.support, SupportLevel::Candidate);
+    assert!(!grid_profile.host_accepted);
+
+    let mut extended = Style {
+        hit_slop: jasper_ui_engine::geometry::Edges::all(3.0),
+        transform: Transform2D::translate(2.0, 3.0),
+        line_height: Some(LineHeight::Multiple(1.5)),
+        image: Some(ImageStyle::new("icon")),
+        width: NativeLength::Px(10.0),
+        ..Style::default()
+    };
+    extended.text_decoration.underline = true;
+    let projection = project_native_style(&extended, ElementKind::Container).unwrap();
+    assert!(!projection.is_lossless());
+    let paths: Vec<_> = projection
+        .losses
+        .iter()
+        .map(|loss| loss.path)
+        .collect();
+    for expected in [
+        "style.hit_slop",
+        "style.text_decoration",
+        "style.transform",
+        "style.line_height.multiple",
+        "style.image",
+    ] {
+        assert!(paths.contains(&expected), "missing loss {expected}: {paths:?}");
+    }
+}
+
+#[test]
 fn duplicate_and_zero_generations_are_rejected_before_native_mapping() {
     let bytes = fixture("settings-page.ir.json");
     let mut value: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
