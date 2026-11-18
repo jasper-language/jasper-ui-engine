@@ -3952,6 +3952,10 @@ fn style_properties(
         return None;
     }
     values.push(("flex-grow", style.flex_grow.to_string()));
+    if !style.flex_shrink.is_finite() || style.flex_shrink < 0.0 {
+        return None;
+    }
+    values.push(("flex-shrink", style.flex_shrink.to_string()));
     if !crate::native_fonts::font_weight_admits(style.font_weight) {
         return None;
     }
@@ -4006,11 +4010,20 @@ fn style_properties(
             },
         ),
         (
+            "flex-wrap",
+            match style.flex_wrap {
+                FlexWrap::NoWrap => "nowrap",
+                FlexWrap::Wrap => "wrap",
+                FlexWrap::WrapReverse => "wrap-reverse",
+            },
+        ),
+        (
             "align-items",
             match style.align_items {
                 Align::Start => "flex-start",
                 Align::Center => "center",
                 Align::End => "flex-end",
+                Align::Baseline => "baseline",
                 Align::Stretch => "stretch",
             },
         ),
@@ -4021,6 +4034,8 @@ fn style_properties(
                 Justify::Center => "center",
                 Justify::End => "flex-end",
                 Justify::SpaceBetween => "space-between",
+                Justify::SpaceAround => "space-around",
+                Justify::SpaceEvenly => "space-evenly",
             },
         ),
         (
@@ -4071,6 +4086,27 @@ fn text_style_properties(
         Some(h) if !h.valid() => return None,
         Some(LineHeight::Px(v)) => values.push(("line-height", format!("{v}px"))),
         Some(LineHeight::Multiple(v)) => values.push(("line-height", format!("{v}"))),
+    }
+    values.push((
+        "text-align",
+        match style.text_align {
+            TextAlign::Start => "start",
+            TextAlign::Center => "center",
+            TextAlign::End => "end",
+            TextAlign::Justify => "justify",
+        }
+        .to_owned(),
+    ));
+    if style.text_direction != TextDirection::Auto {
+        values.push((
+            "direction",
+            match style.text_direction {
+                TextDirection::Ltr => "ltr",
+                TextDirection::Rtl => "rtl",
+                TextDirection::Auto => unreachable!(),
+            }
+            .to_owned(),
+        ));
     }
     if let Some(align) = style.text_align_vertical {
         let value = match align {
@@ -4345,6 +4381,51 @@ fn css_gradient(g: &jasper_ui_engine::style::Gradient) -> String {
 mod tests {
     use super::*;
     use jasper_ui_engine::scene::{Node, NodeId};
+
+    #[test]
+    fn typed_v0_flex_and_text_values_project_to_blitz_css() {
+        let style = Style::default()
+            .direction(FlexDirection::Row)
+            .flex_wrap(FlexWrap::WrapReverse)
+            .flex_shrink(0.25)
+            .align_items(Align::Baseline)
+            .justify_content(Justify::SpaceEvenly)
+            .text_align(TextAlign::End)
+            .text_direction(TextDirection::Rtl);
+        let values = style_properties(
+            &style,
+            false,
+            &BTreeSet::new(),
+            NodeId(2),
+            TextShape::Text,
+        )
+        .unwrap();
+        let values: BTreeMap<_, _> = values.into_iter().collect();
+        assert_eq!(values["flex-wrap"], "wrap-reverse");
+        assert_eq!(values["flex-shrink"], "0.25");
+        assert_eq!(values["align-items"], "baseline");
+        assert_eq!(values["justify-content"], "space-evenly");
+        assert_eq!(values["text-align"], "end");
+        assert_eq!(values["direction"], "rtl");
+
+        let defaults = style_properties(
+            &Style::default(),
+            false,
+            &BTreeSet::new(),
+            NodeId(3),
+            TextShape::Text,
+        )
+        .unwrap()
+        .into_iter()
+        .collect::<BTreeMap<_, _>>();
+        assert_eq!(defaults["flex-wrap"], "nowrap");
+        assert_eq!(defaults["flex-shrink"], "1");
+        assert_eq!(defaults["align-items"], "stretch");
+        assert_eq!(defaults["justify-content"], "flex-start");
+        assert_eq!(defaults["text-align"], "start");
+        assert!(!defaults.contains_key("direction"));
+    }
+
     #[test]
     fn visibility_rejects_cyclic_or_incomplete_source_metadata_without_native_focus() {
         let bytes =

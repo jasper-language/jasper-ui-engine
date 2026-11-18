@@ -17,10 +17,12 @@ use crate::scene::{Node, NodeId, NodeKind, Scene, SceneError, ScenePatch};
 use crate::semantics::{HeadingLevel, Role, Semantics};
 use crate::style::{
     Align as NativeAlign, Color as NativeColor, CornerRadii, Display as NativeDisplay,
-    FlexDirection as NativeFlexDirection, FontStyle as NativeFontStyle, GridLine, GridTrack,
-    ImageStyle as NativeImageStyle, Inset as NativeInset, Justify as NativeJustify,
-    Length as NativeLength, LineHeight as NativeLineHeight, ObjectFit as NativeObjectFit,
-    Position as NativePosition, Style as NativeStyle, TextAlignVertical as NativeVerticalAlign,
+    FlexDirection as NativeFlexDirection, FlexWrap as NativeFlexWrap,
+    FontStyle as NativeFontStyle, GridLine, GridTrack, ImageStyle as NativeImageStyle,
+    Inset as NativeInset, Justify as NativeJustify, Length as NativeLength,
+    LineHeight as NativeLineHeight, ObjectFit as NativeObjectFit, Position as NativePosition,
+    Style as NativeStyle, TextAlign as NativeTextAlign,
+    TextAlignVertical as NativeVerticalAlign, TextDirection as NativeTextDirection,
 };
 use std::collections::BTreeMap;
 use std::fmt;
@@ -99,9 +101,9 @@ pub const NATIVE_PROPERTY_PROFILE: &[NativePropertyProfile] = &[
     native_property("box.padding", SupportLevel::Required, true),
     native_property("box.margin", SupportLevel::Required, true),
     native_property("flex.direction", SupportLevel::Required, true),
-    native_property("flex.wrap", SupportLevel::Optional, false),
+    native_property("flex.wrap", SupportLevel::Optional, true),
     native_property("flex.grow", SupportLevel::Required, true),
-    native_property("flex.shrink", SupportLevel::Optional, false),
+    native_property("flex.shrink", SupportLevel::Optional, true),
     native_property("flex.align_items", SupportLevel::Required, true),
     native_property("flex.justify_content", SupportLevel::Required, true),
     native_property("flex.gap", SupportLevel::Required, true),
@@ -936,31 +938,21 @@ impl DocumentBuilder {
                 };
             }
             if let Some(value) = value.wrap {
-                self.mark("flex.wrap", SupportLevel::Optional, false);
-                if value != FlexWrap::Nowrap {
-                    return Err(issue(
-                        &format!("{path}.flex.wrap"),
-                        Some("flex.wrap"),
-                        SupportLevel::Optional,
-                        MappingIssueKind::InformationLoss,
-                        "wrapped flex lines are not represented by the current Native Style",
-                    ));
-                }
+                self.mark("flex.wrap", SupportLevel::Optional, true);
+                style.flex_wrap = match value {
+                    FlexWrap::Nowrap => NativeFlexWrap::NoWrap,
+                    FlexWrap::Wrap => NativeFlexWrap::Wrap,
+                    FlexWrap::WrapReverse => NativeFlexWrap::WrapReverse,
+                };
             }
             if let Some(value) = value.grow {
                 self.mark("flex.grow", SupportLevel::Required, true);
                 style.flex_grow = native_f32(&format!("{path}.flex.grow"), value, true)?;
             }
             if let Some(value) = value.shrink {
-                self.mark("flex.shrink", SupportLevel::Optional, false);
-                native_f32(&format!("{path}.flex.shrink"), value, true)?;
-                return Err(issue(
-                    &format!("{path}.flex.shrink"),
-                    Some("flex.shrink"),
-                    SupportLevel::Optional,
-                    MappingIssueKind::Unsupported,
-                    "the current Native Style has no flex shrink field",
-                ));
+                self.mark("flex.shrink", SupportLevel::Optional, true);
+                style.flex_shrink =
+                    native_f32(&format!("{path}.flex.shrink"), value, true)?;
             }
             if let Some(value) = value.align_items {
                 self.mark("flex.align_items", SupportLevel::Required, true);
@@ -969,15 +961,7 @@ impl DocumentBuilder {
                     AlignItems::Center => NativeAlign::Center,
                     AlignItems::End => NativeAlign::End,
                     AlignItems::Stretch => NativeAlign::Stretch,
-                    AlignItems::Baseline => {
-                        return Err(issue(
-                            &format!("{path}.flex.align_items"),
-                            Some("flex.align_items"),
-                            SupportLevel::Required,
-                            MappingIssueKind::Unsupported,
-                            "Native Style has no baseline alignment",
-                        ))
-                    }
+                    AlignItems::Baseline => NativeAlign::Baseline,
                 };
             }
             if let Some(value) = value.justify_content {
@@ -987,15 +971,8 @@ impl DocumentBuilder {
                     JustifyContent::Center => NativeJustify::Center,
                     JustifyContent::End => NativeJustify::End,
                     JustifyContent::SpaceBetween => NativeJustify::SpaceBetween,
-                    JustifyContent::SpaceAround | JustifyContent::SpaceEvenly => {
-                        return Err(issue(
-                            &format!("{path}.flex.justify_content"),
-                            Some("flex.justify_content"),
-                            SupportLevel::Required,
-                            MappingIssueKind::Unsupported,
-                            "Native Style has no space-around or space-evenly distribution",
-                        ))
-                    }
+                    JustifyContent::SpaceAround => NativeJustify::SpaceAround,
+                    JustifyContent::SpaceEvenly => NativeJustify::SpaceEvenly,
                 };
             }
             if let Some(value) = value.gap {
@@ -1170,15 +1147,12 @@ impl DocumentBuilder {
             }
             if let Some(value) = value.align {
                 self.mark("typography.align", SupportLevel::Required, true);
-                if value != TextAlign::Start {
-                    return Err(issue(
-                        &format!("{path}.typography.align"),
-                        Some("typography.align"),
-                        SupportLevel::Required,
-                        MappingIssueKind::Unsupported,
-                        "the current Native Style has no horizontal text-align field",
-                    ));
-                }
+                style.text_align = match value {
+                    TextAlign::Start => NativeTextAlign::Start,
+                    TextAlign::Center => NativeTextAlign::Center,
+                    TextAlign::End => NativeTextAlign::End,
+                    TextAlign::Justify => NativeTextAlign::Justify,
+                };
             }
             if let Some(value) = value.vertical_align {
                 self.mark("typography.vertical_align", SupportLevel::Required, true);
@@ -1199,15 +1173,11 @@ impl DocumentBuilder {
             }
             if let Some(value) = value.direction {
                 self.mark("typography.direction", SupportLevel::Required, true);
-                if value != TextDirection::Auto {
-                    return Err(issue(
-                        &format!("{path}.typography.direction"),
-                        Some("typography.direction"),
-                        SupportLevel::Required,
-                        MappingIssueKind::Unsupported,
-                        "an explicit bidi direction is not carried by the current Native Style",
-                    ));
-                }
+                style.text_direction = match value {
+                    TextDirection::Auto => NativeTextDirection::Auto,
+                    TextDirection::Ltr => NativeTextDirection::Ltr,
+                    TextDirection::Rtl => NativeTextDirection::Rtl,
+                };
             }
         }
 

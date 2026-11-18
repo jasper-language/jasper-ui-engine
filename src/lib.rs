@@ -121,9 +121,9 @@ pub use scrollbar::{
 pub use semantics::{FocusError, FocusManager, Role, Semantics, SemanticsNode, SemanticsTree};
 pub use style::{
     Align, AnimatedProperties, Backdrop, BorderSide, BoxShadow, Color, CornerRadii, Display,
-    Easing, FlexDirection, Gradient, GradientShape, GradientStop, GridLine, GridTrack, Inset,
-    Justify, Length, Outline, Position, Side, Style, LineHeight, TextAlignVertical, TextDecoration,
-    Transform2D, Transition,
+    Easing, FlexDirection, FlexWrap, Gradient, GradientShape, GradientStop, GridLine, GridTrack,
+    Inset, Justify, Length, LineHeight, Outline, Position, Side, Style, TextAlign,
+    TextAlignVertical, TextDecoration, TextDirection, Transform2D, Transition,
 };
 pub use table::{TableCellMetrics, TableMetrics};
 pub use text::{SimpleTextEngine, TextEngine, TextMetrics};

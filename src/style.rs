@@ -113,12 +113,22 @@ pub enum FlexDirection {
     Column,
 }
 
+/// Cross-line wrapping for flex layout.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum FlexWrap {
+    #[default]
+    NoWrap,
+    Wrap,
+    WrapReverse,
+}
+
 /// Cross-axis alignment.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Align {
     Start,
     Center,
     End,
+    Baseline,
     #[default]
     Stretch,
 }
@@ -140,6 +150,27 @@ pub enum Justify {
     Center,
     End,
     SpaceBetween,
+    SpaceAround,
+    SpaceEvenly,
+}
+
+/// Horizontal text alignment inside a text line.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum TextAlign {
+    #[default]
+    Start,
+    Center,
+    End,
+    Justify,
+}
+
+/// Explicit bidirectional text direction. `Auto` keeps the Blitz default.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum TextDirection {
+    #[default]
+    Auto,
+    Ltr,
+    Rtl,
 }
 
 /// RGBA color; alpha is straight (not premultiplied).
@@ -262,6 +293,7 @@ pub enum FontStyle {
 pub struct Style {
     pub display: Display,
     pub direction: FlexDirection,
+    pub flex_wrap: FlexWrap,
     pub width: Length,
     pub height: Length,
     pub min_width: Length,
@@ -274,6 +306,7 @@ pub struct Style {
     pub align_items: Align,
     pub justify_content: Justify,
     pub flex_grow: f32,
+    pub flex_shrink: f32,
     /// Positioning and stacking. Defaults are neutral and preserve historical flow order.
     /// 定位与层级；默认值中立，保持历史流式顺序。
     pub position: Position,
@@ -345,6 +378,8 @@ pub struct Style {
     /// E15：节点自身文字的行高（CSS `line-height`）。None 为字体的正常行高（默认，布局不变）。只作用于 Text 节点；
     /// 不参与过渡（变化立即生效）。
     pub line_height: Option<LineHeight>,
+    pub text_align: TextAlign,
+    pub text_direction: TextDirection,
     /// E15: vertical placement of a Text node's text inside its content box when the box is
     /// taller than the text (fixed height). None: the node's own flex alignment decides (top by
     /// default, unchanged pixels). Never changes the node's layout size, hit area or
@@ -371,6 +406,7 @@ impl Default for Style {
         Self {
             display: Display::Flex,
             direction: FlexDirection::Column,
+            flex_wrap: FlexWrap::NoWrap,
             width: Length::Auto,
             height: Length::Auto,
             min_width: Length::Auto,
@@ -383,6 +419,7 @@ impl Default for Style {
             align_items: Align::Stretch,
             justify_content: Justify::Start,
             flex_grow: 0.0,
+            flex_shrink: 1.0,
             position: Position::Static,
             inset: Inset::ZERO,
             z_index: None,
@@ -415,6 +452,8 @@ impl Default for Style {
             background_gradient: None,
             backdrop: None,
             line_height: None,
+            text_align: TextAlign::Start,
+            text_direction: TextDirection::Auto,
             text_align_vertical: None,
             image: None,
             overlay: None,
@@ -459,6 +498,16 @@ impl Style {
         self
     }
 
+    pub fn flex_wrap(mut self, wrap: FlexWrap) -> Self {
+        self.flex_wrap = wrap;
+        self
+    }
+
+    pub fn flex_shrink(mut self, shrink: f32) -> Self {
+        self.flex_shrink = shrink.max(0.0);
+        self
+    }
+
     pub fn display(mut self, display: Display) -> Self {
         self.display = display;
         self
@@ -471,6 +520,16 @@ impl Style {
 
     pub fn justify_content(mut self, justify: Justify) -> Self {
         self.justify_content = justify;
+        self
+    }
+
+    pub fn text_align(mut self, align: TextAlign) -> Self {
+        self.text_align = align;
+        self
+    }
+
+    pub fn text_direction(mut self, direction: TextDirection) -> Self {
+        self.text_direction = direction;
         self
     }
 
@@ -710,6 +769,8 @@ impl Style {
             && self.background_gradient.as_ref().is_none_or(Gradient::valid)
             && self.backdrop.as_ref().is_none_or(Backdrop::valid)
             && self.line_height.as_ref().is_none_or(LineHeight::valid)
+            && self.flex_shrink.is_finite()
+            && self.flex_shrink >= 0.0
             && self.image.as_ref().is_none_or(ImageStyle::valid)
             && self.overlay.as_ref().is_none_or(crate::overlay::OverlaySpec::valid)
             && [

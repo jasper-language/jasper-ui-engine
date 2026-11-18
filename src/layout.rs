@@ -6,14 +6,15 @@ use std::collections::HashMap;
 use taffy::geometry::{Rect as TaffyRect, Size as TaffySize};
 use taffy::style::{
     AlignItems, BoxSizing, Dimension, Display as TaffyDisplay, FlexDirection as TaffyFlexDirection,
-    JustifyContent, LengthPercentage, LengthPercentageAuto, Style as TaffyStyle,
+    FlexWrap as TaffyFlexWrap, JustifyContent, LengthPercentage, LengthPercentageAuto,
+    Style as TaffyStyle,
 };
 use taffy::{AvailableSpace, TaffyTree};
 
 use crate::canvas::Canvas;
 use crate::geometry::{Edges, Point, Rect, Size};
 use crate::scene::{Node, NodeId, Scene, SceneError};
-use crate::style::{Align, Display, FlexDirection, Justify, Length, Style};
+use crate::style::{Align, Display, FlexDirection, FlexWrap, Justify, Length, Style};
 use crate::text::TextEngine;
 
 /// One node after layout, in absolute viewport coordinates.
@@ -275,10 +276,16 @@ fn map_style(style: &Style, is_root: bool, viewport: Size) -> TaffyStyle {
             FlexDirection::Row => TaffyFlexDirection::Row,
             FlexDirection::Column => TaffyFlexDirection::Column,
         },
+        flex_wrap: match style.flex_wrap {
+            FlexWrap::NoWrap => TaffyFlexWrap::NoWrap,
+            FlexWrap::Wrap => TaffyFlexWrap::Wrap,
+            FlexWrap::WrapReverse => TaffyFlexWrap::WrapReverse,
+        },
         align_items: match style.align_items {
             Align::Start => AlignItems::START,
             Align::Center => AlignItems::CENTER,
             Align::End => AlignItems::END,
+            Align::Baseline => AlignItems::BASELINE,
             Align::Stretch => AlignItems::STRETCH,
         },
         justify_content: match style.justify_content {
@@ -286,8 +293,11 @@ fn map_style(style: &Style, is_root: bool, viewport: Size) -> TaffyStyle {
             Justify::Center => JustifyContent::CENTER,
             Justify::End => JustifyContent::END,
             Justify::SpaceBetween => JustifyContent::SPACE_BETWEEN,
+            Justify::SpaceAround => JustifyContent::SPACE_AROUND,
+            Justify::SpaceEvenly => JustifyContent::SPACE_EVENLY,
         },
         flex_grow: style.flex_grow.max(0.0),
+        flex_shrink: style.flex_shrink.max(0.0),
         ..Default::default()
     }
 }

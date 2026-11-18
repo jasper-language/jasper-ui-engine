@@ -89,8 +89,9 @@ Focus、Key、Pointer、键盘激活和 AccessKit 动作的 Typed 回调分别�
 | 资源生命周期 | implemented / tested | Prepare 仅是 pending、不替换旧 Committed；Commit 原子提升；Release 只释放 active；上传与删除分别受 `insert_ui_image`/`remove_ui_image` 状态校验；含代数复用拒绝、节点移除后 Release 与实际解码/绘制 |
 | Environment | implemented / tested | 首帧和后继帧的 reduce-motion 均应用到 Native host；appearance/density/text-scale 保留为 Framework 环境语义 |
 | Grid、Position、Image、Overlay | candidate | 可映射到现有候选字段，`host_accepted = false`；Grid columns/rows/gap 与 Position/Overlay/Image 均已有 Native 执行测试 |
-| 部分 flex 组合 | structured reject | wrap、shrink、baseline、space-around/evenly 目前无 Native 等价字段 |
-| 部分文字属性 | structured reject | 非默认水平 align、显式 bidi direction、baseline vertical align |
+| flex wrap/shrink/alignment | implemented / tested | wrap/wrap-reverse、shrink、baseline、space-around/evenly 映射到 Blitz CSS；不新增 PSS/xstyle 键 |
+| 文字 align/direction | implemented / tested | start/center/end/justify 与 ltr/rtl 映射到 Blitz CSS；auto 保持宿主默认方向 |
+| baseline vertical align | structured reject | 当前 Native 文字垂直布局入口没有 baseline 模式 |
 | element attributes | structured reject | v0.1 Native profile 无通用属性袋 |
 
 拒绝使用字段路径、property、support level、issue kind 和 detail。candidate 映射不会被改写成

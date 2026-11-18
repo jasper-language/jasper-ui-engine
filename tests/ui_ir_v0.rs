@@ -1880,6 +1880,115 @@ fn same_dialog_fixture_executes_with_candidate_overlay_metadata() {
 
 #[cfg(feature = "native-blitz-cpu-pending")]
 #[test]
+fn v0_flex_wrap_shrink_alignment_and_text_direction_execute_in_native_layout() {
+    use jasper_ui_engine::native::host::SceneHostView;
+    use jasper_ui_engine::style::{Align, FlexWrap, Justify, TextAlign, TextDirection};
+
+    let value = serde_json::json!({
+        "ir_version": "0.1.0",
+        "identity_domain": "layout-app/window-main",
+        "owner": "desktop-host",
+        "session": "session-layout-1",
+        "expected_revision": 1,
+        "next_revision": 2,
+        "ops": [{
+            "op": "insert",
+            "parent": null,
+            "index": 0,
+            "node": {
+                "key": { "semantic_id": 1, "generation": 1 },
+                "element": { "kind": "container" },
+                "semantics": { "role": "form", "label": "Layout" },
+                "style": {
+                    "box": {
+                        "width": { "unit": "px", "value": 140 },
+                        "height": { "unit": "px", "value": 100 }
+                    },
+                    "flex": {
+                        "direction": "row",
+                        "wrap": "wrap",
+                        "align_items": "baseline",
+                        "justify_content": "space-evenly"
+                    }
+                },
+                "children": [
+                    {
+                        "key": { "semantic_id": 2, "generation": 1 },
+                        "element": { "kind": "container" },
+                        "semantics": { "role": "container", "label": "First" },
+                        "style": {
+                            "box": {
+                                "width": { "unit": "px", "value": 80 },
+                                "height": { "unit": "px", "value": 20 }
+                            },
+                            "flex": { "shrink": 0 }
+                        }
+                    },
+                    {
+                        "key": { "semantic_id": 3, "generation": 1 },
+                        "element": { "kind": "container" },
+                        "semantics": { "role": "container", "label": "Second" },
+                        "style": {
+                            "box": {
+                                "width": { "unit": "px", "value": 80 },
+                                "height": { "unit": "px", "value": 20 }
+                            },
+                            "flex": { "shrink": 0 }
+                        }
+                    },
+                    {
+                        "key": { "semantic_id": 4, "generation": 1 },
+                        "element": { "kind": "text", "content": "Hello" },
+                        "semantics": { "role": "text", "label": "Hello" },
+                        "style": {
+                            "box": {
+                                "width": { "unit": "px", "value": 80 },
+                                "height": { "unit": "px", "value": 20 }
+                            },
+                            "typography": { "align": "end", "direction": "rtl" }
+                        }
+                    }
+                ]
+            }
+        }]
+    });
+    let frame = UiFrame::from_json_slice(&serde_json::to_vec(&value).unwrap()).unwrap();
+    let document = NativeUiDocument::from_frame(&frame).unwrap();
+    let root = document
+        .scene()
+        .find(document.node_for_key(UiKey::new(1, 1)).unwrap())
+        .unwrap();
+    assert_eq!(root.style.flex_wrap, FlexWrap::Wrap);
+    assert_eq!(root.style.align_items, Align::Baseline);
+    assert_eq!(root.style.justify_content, Justify::SpaceEvenly);
+    let text = document
+        .scene()
+        .find(document.node_for_key(UiKey::new(4, 1)).unwrap())
+        .unwrap();
+    assert_eq!(text.style.text_align, TextAlign::End);
+    assert_eq!(text.style.text_direction, TextDirection::Rtl);
+
+    let font = std::fs::read(
+        std::env::var("JASPER_UI_TEST_FONT")
+            .expect("JASPER_UI_TEST_FONT must name an injected font"),
+    )
+    .unwrap();
+    let view = SceneHostView::new(90, document.scene(), &font, 140, 100).unwrap();
+    let first = view
+        .node_bounds(90, 2, document.node_for_key(UiKey::new(2, 1)).unwrap())
+        .unwrap();
+    let second = view
+        .node_bounds(90, 2, document.node_for_key(UiKey::new(3, 1)).unwrap())
+        .unwrap();
+    assert!(first.width() > 79.0 && second.width() > 79.0);
+    assert!(
+        second.y() >= first.y() + 19.0,
+        "wrap and shrink=0 place the second 80px child on the next line: {first:?} {second:?}"
+    );
+}
+
+#[cfg(feature = "native-blitz-cpu-pending")]
+#[test]
 fn grid_candidate_enters_real_native_layout() {
     use jasper_ui_engine::native::host::SceneHostView;
 
