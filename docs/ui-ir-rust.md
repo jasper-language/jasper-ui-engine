@@ -285,7 +285,11 @@ Web 后端和正式宿主仍需分别验收。
 - settings `--interaction` 四帧流在真实窗口中依次接受 focus、` Bob` text input 和
   Enter：`ack 2/3/4/5`、`accepted 4 / rejected 0`，输出 target 3 的
   `focus in → key Enter → text-commit "Alice Bob"`，截图确认最终编辑文本；
-  副本只为新增 SceneError/Role 变体补了 exhaustive match 分支，reader 协议逻辑未改；
+- 启用 desktop-accessibility 的临时 host 构建在同一 JUI 2 双帧窗口流上完成 smoke：
+  `accepted 2 / rejected 0`，AccessKit/AT-SPI 适配器初始化未报错；本次未查询注册树或
+  执行平台无障碍动作，因此不扩大为 AT-SPI 端到端验收；
+- 上述临时 host 副本只为新增 SceneError/Role 变体补了 exhaustive match 分支，
+  reader 协议逻辑未改；
   原 host 仓库未修改。该证据只覆盖 CPU headless transport，不包含真实平台窗口；
 - Clippy 成功退出；仓库仍保留已登记的非阻塞历史 warning。
 
