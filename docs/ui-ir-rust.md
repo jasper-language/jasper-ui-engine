@@ -248,7 +248,7 @@ Web 后端和正式宿主仍需分别验收。
 | Native CPU same-fixture execution | all three canonical fixtures passed on Linux x86_64 test environment |
 | Native GPU same-fixture | settings-page passed with llvmpipe/Vulkan; max channel delta 1 over 170/153600 pixels |
 | Web SSR / real browser | not run in this slice |
-| Real platform host acceptance | not run |
+| Real platform host acceptance | partial: CPU window smoke passed on available X11/Wayland endpoint; full input/IME/AccessKit/hardware GPU acceptance not run |
 | Formal verification | not performed for UI IR validation/mapping/event admission |
 | Cross-backend equivalence | not established |
 
@@ -268,6 +268,9 @@ Web 后端和正式宿主仍需分别验收。
   Move→remove+insert 兼容近似都进入最终 dump，Move 状态损失保持显式；
 - 在临时旧 host 测试中，`project_jui2_event` 对 hover/pointer/click/focus/key/
   text-commit/ime-cancel/dismiss-request 的输出逐字等于 host 公开 `event_line`；
+- 在可用 X11 `:0` / Wayland `wayland-0` 环境中，settings initial+successor 双帧流通过
+  真实 `--window --smoke` CPU softbuffer 呈现：`ack 2/3`、`accepted 2 / rejected 0`，
+  生成 480×320 截图；该验证不覆盖窗口平台输入/IME、AccessKit 或硬件 GPU；
   副本只为新增 SceneError/Role 变体补了 exhaustive match 分支，reader 协议逻辑未改；
   原 host 仓库未修改。该证据只覆盖 CPU headless transport，不包含真实平台窗口；
 - Clippy 成功退出；仓库仍保留已登记的非阻塞历史 warning。
