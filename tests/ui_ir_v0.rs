@@ -1466,7 +1466,8 @@ fn typed_edit_drain_preserves_order_and_admits_commit_binding() {
 fn typed_ime_cancel_is_admitted_after_leaving_the_editing_field() {
     use jasper_ui_engine::native::host::HostRenderer;
     use jasper_ui_engine::native::{
-        SceneEditEventKind, TypedUiEditError, TypedUiTargetError,
+        EventReply, PointerAction, SceneEditEventKind, TypedUiEditError, TypedUiPointerError,
+        TypedUiTargetError,
     };
 
     const OWNER: u64 = 92;
@@ -1608,6 +1609,37 @@ fn typed_ime_cancel_is_admitted_after_leaving_the_editing_field() {
         None,
     )
     .unwrap();
+    let button_bounds = host
+        .typed_node_bounds(OWNER, 2, generation, &document, UiKey::new(4, 1))
+        .unwrap()
+        .unwrap();
+    let pointer_without_ime = UiEventContext {
+        target: UiKey::new(4, 1),
+        permission_context: UiPermissionContext::new("pointer-only", [UiPermission::Pointer]),
+        ..field_context.clone()
+    };
+    assert!(matches!(
+        host.typed_pointer(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &pointer_without_ime,
+            PointerAction::Down,
+            button_bounds.x() + button_bounds.width() / 2.0,
+            button_bounds.y() + button_bounds.height() / 2.0,
+            true,
+            &mut |_| EventReply::default(),
+            &mut |_| {},
+        ),
+        Err(TypedUiPointerError::Admission(
+            jasper_ui_engine::ui_ir::UiEventAdmissionError::PermissionDenied { .. }
+        ))
+    ));
+    assert_eq!(
+        host.typed_focused_node(OWNER, 2, &document).unwrap(),
+        Some(UiKey::new(3, 1))
+    );
     assert!(matches!(
         host.typed_deactivate(
             OWNER,
@@ -2372,7 +2404,9 @@ fn typed_accesskit_actions_require_ui_key_and_permissions() {
         Action, ActionRequest, NodeId as KitId, TreeId,
     };
     use jasper_ui_engine::native::host::HostRenderer;
-    use jasper_ui_engine::native::{TypedAccessibilityAction, TypedUiAccessibilityActionError};
+    use jasper_ui_engine::native::{
+        SceneEditEventKind, TypedAccessibilityAction, TypedUiAccessibilityActionError,
+    };
 
     const OWNER: u64 = 82;
     let mut value: serde_json::Value =
@@ -2384,6 +2418,13 @@ fn typed_accesskit_actions_require_ui_key_and_permissions() {
             "event": "accessibility-action",
             "action": "save-accessible"
         }));
+    value["ops"][0]["node"]["children"][1]["events"]
+        .as_array_mut()
+        .unwrap()
+        .extend([
+            serde_json::json!({ "event": "focus", "action": "focus-name" }),
+            serde_json::json!({ "event": "ime-cancel", "action": "cancel-name" }),
+        ]);
     let frame = UiFrame::from_json_slice(&serde_json::to_vec(&value).unwrap()).unwrap();
     let document = NativeUiDocument::from_frame(&frame).unwrap();
     let font = std::fs::read(
@@ -2436,6 +2477,66 @@ fn typed_accesskit_actions_require_ui_key_and_permissions() {
         }]
     );
 
+    let field = document.node_for_key(UiKey::new(3, 1)).unwrap();
+    let field_context = UiEventContext {
+        target: UiKey::new(3, 1),
+        permission_context: UiPermissionContext::new(
+            "field-ime-host",
+            [UiPermission::Focus, UiPermission::Ime],
+        ),
+        ..context.clone()
+    };
+    host.typed_focus(
+        OWNER,
+        2,
+        generation,
+        &document,
+        &field_context,
+        field,
+        &mut |_| {},
+    )
+    .unwrap();
+    host.typed_set_preedit(
+        OWNER,
+        2,
+        generation,
+        &document,
+        &field_context,
+        field,
+        Some("中"),
+        None,
+    )
+    .unwrap();
+    assert!(matches!(
+        host.typed_accesskit_action(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &context,
+            &request(Action::Focus),
+            &mut |_| {},
+            &mut |_| {},
+        ),
+        Err(TypedUiAccessibilityActionError::Admission(
+            jasper_ui_engine::ui_ir::UiEventAdmissionError::PermissionDenied { .. }
+        ))
+    ));
+    assert_eq!(
+        host.typed_focused_node(OWNER, 2, &document).unwrap(),
+        Some(UiKey::new(3, 1))
+    );
+    let context_with_ime = UiEventContext {
+        permission_context: UiPermissionContext::new(
+            "accessibility-ime-host",
+            [
+                UiPermission::AccessibilityAction,
+                UiPermission::Focus,
+                UiPermission::Ime,
+            ],
+        ),
+        ..context.clone()
+    };
     let mut focused = Vec::new();
     let result = host
         .typed_accesskit_action(
@@ -2443,7 +2544,7 @@ fn typed_accesskit_actions_require_ui_key_and_permissions() {
             2,
             generation,
             &document,
-            &context,
+            &context_with_ime,
             &request(Action::Focus),
             &mut |event| focused.push(event),
             &mut |_| {},
@@ -2452,11 +2553,30 @@ fn typed_accesskit_actions_require_ui_key_and_permissions() {
     assert_eq!(result, TypedAccessibilityAction::Focused(UiKey::new(4, 1)));
     assert_eq!(
         focused,
-        vec![jasper_ui_engine::native::TypedUiFocusEvent {
-            target: UiKey::new(4, 1),
-            focused: true,
-            admitted: None,
-        }]
+        vec![
+            jasper_ui_engine::native::TypedUiFocusEvent {
+                target: UiKey::new(3, 1),
+                focused: false,
+                admitted: Some(jasper_ui_engine::ui_ir::AdmittedEvent {
+                    target: UiKey::new(3, 1),
+                    event: UiEventKind::Focus,
+                    action: "focus-name".into(),
+                }),
+            },
+            jasper_ui_engine::native::TypedUiFocusEvent {
+                target: UiKey::new(4, 1),
+                focused: true,
+                admitted: None,
+            },
+        ]
+    );
+    let events = host
+        .typed_take_edit_events(OWNER, &document, &field_context, false)
+        .unwrap();
+    assert_eq!(events.len(), 1);
+    assert_eq!(
+        events[0].kind,
+        SceneEditEventKind::CompositionCancelled
     );
 
     let focus_only = UiEventContext {
