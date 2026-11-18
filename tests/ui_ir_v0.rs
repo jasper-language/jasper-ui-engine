@@ -451,12 +451,64 @@ fn image_styles_require_committed_resources_and_retire_with_their_nodes() {
         "logo"
     );
 
+    let mismatch = image_frame(
+        document.revision(),
+        serde_json::json!([
+            {
+                "op": "resource",
+                "resource": { "id": "logo", "generation": 2, "kind": "image" },
+                "admission": "prepare"
+            },
+            {
+                "op": "resource",
+                "resource": { "id": "logo", "generation": 2, "kind": "image" },
+                "admission": "commit"
+            }
+        ]),
+    );
+    assert!(document.apply_frame(&mismatch).is_err());
+    assert_eq!(document.active_resource("logo").unwrap().generation, 1);
+
+    let upgrade = image_frame(
+        document.revision(),
+        serde_json::json!([
+            {
+                "op": "resource",
+                "resource": { "id": "logo", "generation": 2, "kind": "image" },
+                "admission": "prepare"
+            },
+            {
+                "op": "resource",
+                "resource": { "id": "logo", "generation": 2, "kind": "image" },
+                "admission": "commit"
+            },
+            {
+                "op": "update",
+                "key": { "semantic_id": 9, "generation": 1 },
+                "fields": {
+                    "style": {
+                        "box": {
+                            "width": { "unit": "px", "value": 64 },
+                            "height": { "unit": "px", "value": 32 }
+                        },
+                        "image": {
+                            "resource": { "id": "logo", "generation": 2, "kind": "image" }
+                        }
+                    }
+                }
+            }
+        ]),
+    );
+    document.apply_frame(&upgrade).unwrap();
+    assert_eq!(document.active_resource("logo").unwrap().generation, 2);
+    assert_eq!(document.resource_ref("logo").unwrap().generation, 2);
+
     let revision = document.revision();
     let release = image_frame(
         revision,
         serde_json::json!([{
             "op": "resource",
-            "resource": { "id": "logo", "generation": 1, "kind": "image" },
+            "resource": { "id": "logo", "generation": 2, "kind": "image" },
             "admission": "release"
         }]),
     );
@@ -470,7 +522,7 @@ fn image_styles_require_committed_resources_and_retire_with_their_nodes() {
             { "op": "remove", "key": { "semantic_id": 9, "generation": 1 } },
             {
                 "op": "resource",
-                "resource": { "id": "logo", "generation": 1, "kind": "image" },
+                "resource": { "id": "logo", "generation": 2, "kind": "image" },
                 "admission": "release"
             }
         ]),

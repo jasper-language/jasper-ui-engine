@@ -155,6 +155,7 @@ pub struct NativeUiDocument {
     element_kinds: BTreeMap<UiKey, ElementKind>,
     event_bindings: BTreeMap<UiKey, BTreeMap<UiEventKind, EventBinding>>,
     resource_refs: BTreeMap<String, ResourceRef>,
+    node_resource_refs: BTreeMap<NodeId, ResourceRef>,
     resource_generations: BTreeMap<String, (ResourceKind, u64)>,
     resources: BTreeMap<String, ResourceState>,
     environment: UiEnvironment,
@@ -223,6 +224,7 @@ impl NativeUiDocument {
             element_kinds: self.element_kinds.clone(),
             event_bindings: self.event_bindings.clone(),
             resource_refs: self.resource_refs.clone(),
+            node_resource_refs: self.node_resource_refs.clone(),
             resource_generations: self.resource_generations.clone(),
             resources: self.resources.clone(),
             environment: self.environment.clone(),
@@ -339,6 +341,7 @@ struct DocumentBuilder {
     element_kinds: BTreeMap<UiKey, ElementKind>,
     event_bindings: BTreeMap<UiKey, BTreeMap<UiEventKind, EventBinding>>,
     resource_refs: BTreeMap<String, ResourceRef>,
+    node_resource_refs: BTreeMap<NodeId, ResourceRef>,
     resource_generations: BTreeMap<String, (ResourceKind, u64)>,
     resources: BTreeMap<String, ResourceState>,
     environment: UiEnvironment,
@@ -358,6 +361,7 @@ impl DocumentBuilder {
             element_kinds: BTreeMap::new(),
             event_bindings: BTreeMap::new(),
             resource_refs: BTreeMap::new(),
+            node_resource_refs: BTreeMap::new(),
             resource_generations: BTreeMap::new(),
             resources: BTreeMap::new(),
             environment: UiEnvironment::default(),
@@ -384,6 +388,7 @@ impl DocumentBuilder {
             element_kinds: self.element_kinds,
             event_bindings: self.event_bindings,
             resource_refs: self.resource_refs,
+            node_resource_refs: self.node_resource_refs,
             resource_generations: self.resource_generations,
             resources: self.resources,
             environment: self.environment,
@@ -412,6 +417,7 @@ impl DocumentBuilder {
                 element_kinds: self.element_kinds,
                 event_bindings: self.event_bindings,
                 resource_refs: self.resource_refs,
+                node_resource_refs: self.node_resource_refs,
                 resource_generations: self.resource_generations,
                 resources: self.resources,
                 environment: self.environment,
@@ -580,6 +586,14 @@ impl DocumentBuilder {
         } else {
             default_style(node.element.kind)
         };
+        if let Some(resource) = node
+            .style
+            .as_ref()
+            .and_then(|style| style.image.as_ref())
+            .map(|image| image.resource.clone())
+        {
+            self.node_resource_refs.insert(id, resource);
+        }
         let mut native = Node::new(id, kind)
             .with_style(style)
             .with_semantics(semantics);
@@ -1019,10 +1033,6 @@ impl DocumentBuilder {
                     "the Native image projection accepts image or SVG resources",
                 ));
             }
-            self.observe_declared_resource(
-                &format!("{path}.image.resource"),
-                value.resource.clone(),
-            )?;
             let mut image = NativeImageStyle::new(value.resource.id.clone());
             if let Some(value) = value.fit {
                 self.mark("image.fit", SupportLevel::Candidate, false);
@@ -1161,27 +1171,6 @@ impl DocumentBuilder {
         );
     }
 
-    fn observe_declared_resource(
-        &mut self,
-        path: &str,
-        resource: ResourceRef,
-    ) -> Result<(), NativeUiFrameError> {
-        if let Some(previous) = self.resource_refs.get(&resource.id) {
-            if previous != &resource {
-                return Err(issue(
-                    path,
-                    Some("image.resource"),
-                    SupportLevel::Candidate,
-                    MappingIssueKind::InvalidState,
-                    "one resource id was declared with different generation or kind",
-                ));
-            }
-        } else {
-            self.resource_refs.insert(resource.id.clone(), resource);
-        }
-        Ok(())
-    }
-
     fn update(&mut self, path: &str, op: &UpdateOp) -> Result<(), NativeUiFrameError> {
         let node_id = self.active_node(path, op.key)?;
         let old_element_kind = self.element_kinds.get(&op.key).copied();
@@ -1253,6 +1242,19 @@ impl DocumentBuilder {
         }
         if let Some(style) = style {
             node.style = style;
+        }
+        if op.fields.style.is_some() {
+            if let Some(resource) = op
+                .fields
+                .style
+                .as_ref()
+                .and_then(|style| style.image.as_ref())
+                .map(|image| image.resource.clone())
+            {
+                self.node_resource_refs.insert(node_id, resource);
+            } else {
+                self.node_resource_refs.remove(&node_id);
+            }
         }
         if let Some(events) = &op.fields.events {
             self.event_bindings.insert(
@@ -1331,6 +1333,7 @@ impl DocumentBuilder {
         for key in retired {
             if let Some(node) = self.key_to_node.remove(&key) {
                 self.node_to_key.remove(&node);
+                self.node_resource_refs.remove(&node);
             }
             self.element_kinds.remove(&key);
             self.event_bindings.remove(&key);
@@ -1340,19 +1343,6 @@ impl DocumentBuilder {
 
     fn resource(&mut self, path: &str, op: &ResourceOp) -> Result<(), NativeUiFrameError> {
         let resource = &op.resource;
-        if self
-            .resource_refs
-            .get(&resource.id)
-            .is_some_and(|declared| declared != resource)
-        {
-            return Err(issue(
-                path,
-                None,
-                SupportLevel::Candidate,
-                MappingIssueKind::InvalidState,
-                "resource operation conflicts with the generation or kind used by a style",
-            ));
-        }
         let highest = self.resource_generations.get(&resource.id).copied();
         if let Some((kind, generation)) = highest {
             if kind != resource.kind {
@@ -1471,6 +1461,18 @@ impl DocumentBuilder {
         let mut pending = vec![&self.scene.root];
         while let Some(node) = pending.pop() {
             if let Some(image) = &node.style.image {
+                let Some(resource_ref) = self.node_resource_refs.get(&node.id).cloned() else {
+                    return Err(issue(
+                        "$.scene",
+                        Some("image.resource"),
+                        SupportLevel::Candidate,
+                        MappingIssueKind::InvalidState,
+                        format!(
+                            "image style {:?} lost its source generation mapping",
+                            image.source
+                        ),
+                    ));
+                };
                 let Some(resource) = self.resources.get(&image.source) else {
                     return Err(issue(
                         "$.scene",
@@ -1483,7 +1485,18 @@ impl DocumentBuilder {
                         ),
                     ));
                 };
-                let resource_ref = resource.resource.clone();
+                if resource.resource != resource_ref {
+                    return Err(issue(
+                        "$.scene",
+                        Some("image.resource"),
+                        SupportLevel::Candidate,
+                        MappingIssueKind::InvalidState,
+                        format!(
+                            "image style {:?} expects generation {}, but the active resource is generation {}",
+                            image.source, resource_ref.generation, resource.resource.generation
+                        ),
+                    ));
+                }
                 if resource_ref.kind == ResourceKind::Font {
                     return Err(issue(
                         "$.scene",
