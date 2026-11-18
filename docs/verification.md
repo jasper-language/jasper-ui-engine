@@ -38,6 +38,7 @@ Loom 当前执行实际生产函数体的调用侧调度场景：两个线程共
 |---|---|---|---|
 | UI-TXN-VERSION-001 | `scene.rs::next_scene_version` | 对所有 u64：小于最大值时返回严格增加 1 的版本；最大值时拒绝；无回绕/溢出 | 以 `evidence/version-kernel/report.json` 的实际结果和源码哈希为准；报告缺失/失配即 not_verified |
 | UI-TXN-ADMISSION-001 | `scene.rs::decide_scene_version` 及版本计算依赖 | 陈旧版本优先拒绝；匹配空批不推进；匹配非空批耗尽拒绝；可推进时精确加 1 | proved，两个生产函数体同时验证，2 verified/0 errors；错误准入反例被拒；需匹配当前源码哈希 |
+| UI-SCENE-MOVE-ADMISSION-001 | `scene.rs::scene_move_failure` | Move 失败优先级严格为根节点 → 源节点不存在 → 目标父节点不存在 → 目标位于被移动子树内；仅全部条件通过时准入替换 | proved，2 verified/0 errors，忽略根节点与忽略后代冲突两个反例被拒；独立四布尔 oracle、Proptest、Miri、Kani harness 与 read-boundary fuzz 覆盖。实际 find/clone/remove/insert、移动后精确树形与整批回滚不在该切片；`UI-TXN-ATOMIC-001` 仍保持 not_verified |
 | UI-IDENTITY-NEXT-001 | `ui_ir::identity::next_ui_identity` | live 身份拒绝再分配；retired 身份只返回 `last_generation + 1`；`u64::MAX` 显式返回 GenerationExhausted，不回绕 | proved，生产函数与 UiKey/IdentityError 类型同场 3 verified/0 errors；准入 live 复用/generation 回退两个反例被拒；独立 u128 Proptest、Miri 和 read-boundary fuzz 同时覆盖。BTreeMap 插入顺序、retire、snapshot restore 与整份文档事务不在该切片 |
 | UI-EVENT-PERMISSION-001 | `ui_ir::events::UiEventKind::required_permission` | Click/Activate → Activate；PointerDown/Up/Hover → Pointer；其余 Focus、Keyboard、TextCommit→TextEdit、IME、Scroll、Dismiss、Accessibility 各入其权限域 | proved，事件/权限类型与生产函数同场 3 verified/0 errors；Click 错入 Focus、Dismiss 错入 Activate 两个反例被拒；独立穷举 oracle、Proptest、Miri 和 read-boundary fuzz 同时覆盖。binding 查找、权限集合成员、会话/revision 与回调派发不在该切片 |
 | UI-EVENT-AUTHORITY-001 | `ui_ir::events::authority_failure_from_matches` | 四项全部匹配才准入；错误优先级严格为 identity domain → owner → session → revision | proved，生产函数与 AuthorityFailure 类型同场 2 verified/0 errors；忽略 domain、把 owner 错排到 domain 前两个反例被拒；字符串实际比较由调用方生成四个 match 布尔量，独立 Proptest、Miri 与 fuzz 覆盖组合。错误 String 构造、frame 校验、target/binding 查找和回调派发不在该切片 |
@@ -107,6 +108,7 @@ python3 scripts/verify-version.py --kernel permission-match --verus "$VERUS"
 python3 scripts/verify-version.py --kernel resource-transition --verus "$VERUS"
 python3 scripts/verify-version.py --kernel utf8-floor-boundary --verus "$VERUS"
 python3 scripts/verify-version.py --kernel preedit-buffer-offset --verus "$VERUS"
+python3 scripts/verify-version.py --kernel scene-move-admission --verus "$VERUS"
 cargo test --locked --manifest-path verification/read-boundary/Cargo.toml \
   properties::core_frame_property -- --exact
 cargo test --locked --manifest-path verification/read-boundary/Cargo.toml \
@@ -123,6 +125,9 @@ cargo +nightly-2026-10-17 miri test --locked \
 cargo +nightly-2026-10-17 miri test --locked \
   --manifest-path verification/read-boundary/Cargo.toml \
   memory::preedit_buffer_offset_boundaries -- --exact
+cargo +nightly-2026-10-17 miri test --locked \
+  --manifest-path verification/read-boundary/Cargo.toml \
+  memory::scene_move_admission_boundaries -- --exact
 cargo +nightly-2026-10-17 fuzz run read_boundary fuzz/seeds/read_boundary -- \
   -max_total_time=10 -max_len=4096 -rss_limit_mb=1024 -timeout=5 -seed=12345
 ```

@@ -1,0 +1,25 @@
+verification results:: 1 verified, 1 errors
+error: postcondition not satisfied
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-move-admission-kernel/negative_ignore_descendant.rs:34:13
+   |
+34 |       ensures match result {
+   |  _____________^
+35 | |         Some(SceneError::CannotMoveRoot) => root_matches,
+36 | |         Some(SceneError::NodeNotFound(missing)) => !root_matches && (
+37 | |             (!id_present && missing == id)
+...  |
+42 | |         Some(_) => false,
+43 | |     },
+   | |_____^ failed this postcondition
+44 |   {
+45 | /     if root_matches {
+46 | |         Some(SceneError::CannotMoveRoot)
+47 | |     } else if !id_present {
+48 | |         Some(SceneError::NodeNotFound(id))
+...  |
+54 | |         None
+55 | |     }
+   | |_____- at the end of the function body
+
+error: aborting due to 1 previous error
+

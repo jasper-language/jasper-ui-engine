@@ -3033,6 +3033,46 @@ KERNELS["scene-error-type"] = {
 }
 
 
+KERNELS["scene-move-admission"] = {
+    "source": "src/scene.rs", "marker": "SCENE MOVE ADMISSION",
+    "property": "UI-SCENE-MOVE-ADMISSION-001",
+    "signature": """fn scene_move_failure(
+    root_matches: bool,
+    id_present: bool,
+    parent_present: bool,
+    parent_in_moved: bool,
+    id: NodeId,
+    parent: NodeId,
+) -> Option<SceneError> {""",
+    "contract": """fn scene_move_failure(
+    root_matches: bool,
+    id_present: bool,
+    parent_present: bool,
+    parent_in_moved: bool,
+    id: NodeId,
+    parent: NodeId,
+) -> (result: Option<SceneError>)
+    ensures match result {
+        Some(SceneError::CannotMoveRoot) => root_matches,
+        Some(SceneError::NodeNotFound(missing)) => !root_matches && (
+            (!id_present && missing == id)
+            || (id_present && !parent_present && missing == parent)),
+        Some(SceneError::MoveIntoDescendant(moved)) =>
+            !root_matches && id_present && parent_present && parent_in_moved && moved == id,
+        None => !root_matches && id_present && parent_present && !parent_in_moved,
+        Some(_) => false,
+    },
+{""",
+    "depends": ["node-id-type", "scene-error-type"],
+    "evidence": "scene-move-admission-kernel", "function_count": 1,
+    "scope": "actual Scene Move failure precedence over caller-computed booleans: root first, missing moved node, missing target parent, then target inside the moved subtree; only all-false admits mutation. Tree lookup, node cloning, removal, insertion, exact final tree and whole-batch rollback remain outside this kernel",
+    "mutations": [
+        ("ignore-root", "    if root_matches {", "    if false {"),
+        ("ignore-descendant", "    } else if parent_in_moved {", "    } else if false {"),
+    ],
+}
+
+
 KERNELS["scene-patch"] = {
     "source":"src/scene.rs", "marker":"SCENE PATCH",
     "property":"UI-SCENE-PATCH-001",

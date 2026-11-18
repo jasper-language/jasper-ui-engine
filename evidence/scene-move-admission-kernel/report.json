@@ -1,0 +1,50 @@
+{
+  "property": "UI-SCENE-MOVE-ADMISSION-001",
+  "status": "proved",
+  "scope": "actual Scene Move failure precedence over caller-computed booleans: root first, missing moved node, missing target parent, then target inside the moved subtree; only all-false admits mutation. Tree lookup, node cloning, removal, insertion, exact final tree and whole-batch rollback remain outside this kernel",
+  "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
+  "source_sha256": "6082e633ea0abe2469a28e5704d022e31d00c4b8b15163fcbd2b79f4b67af9df",
+  "sources": {
+    "src/scene.rs": "6082e633ea0abe2469a28e5704d022e31d00c4b8b15163fcbd2b79f4b67af9df"
+  },
+  "kernel_sha256": "6014fb86b470c30ed232dcb9c02193956d12b01d0f56e1b2a8b0a86345ecc7ea",
+  "dependencies": {
+    "node-id-type": "39ff7bd8c3c5c51e025059e0f104105a839165e2cb4a455f094a2d2bb9cfffad",
+    "scene-error-type": "3504db5ec8081421a4f57db5463bef15ba723f7ef7f40fa30b253e107ee11e9b"
+  },
+  "proof_sha256": "1467d4e08f5af0148ed8c4dd8d67a7f8f1743c9431c15de7c7f58f31da338dbe",
+  "runner_sha256": "6d5abbcd8b44b81b2d4aea691d3811c3136a4774fcd8cab5e179788542b5e98f",
+  "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
+  "command": [
+    "/tmp/jasper-verus-0.2026.10.18/verus-x86-linux/verus",
+    "--crate-type",
+    "lib",
+    "/home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-move-admission-kernel/kernel.rs"
+  ],
+  "exit_code": 0,
+  "solver": {
+    "path": "/tmp/jasper-verus-0.2026.10.18/verus-x86-linux/z3",
+    "version": "Z3 version 4.16.0 - 64 bit\n",
+    "explicit_override": null
+  },
+  "verified_obligations": 2,
+  "negative_controls": [
+    {
+      "name": "ignore-root",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "ignore-descendant",
+      "rejected": true,
+      "exit_code": 1
+    }
+  ],
+  "negative_control_rejected": true,
+  "trust_boundary": [
+    "Verus/vstd and SMT solver",
+    "Rust/Verus integer, references and slice semantics",
+    "signature annotation/extraction script",
+    "Rust compiler and target execution"
+  ]
+}

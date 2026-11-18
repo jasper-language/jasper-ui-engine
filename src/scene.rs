@@ -470,6 +470,29 @@ fn apply_unique_batch<T: EmptyIdentitySet>(
 }
 // END VERIFIED SCENE BATCH UNIQUE KERNEL
 
+// BEGIN VERIFIED SCENE MOVE ADMISSION KERNEL
+fn scene_move_failure(
+    root_matches: bool,
+    id_present: bool,
+    parent_present: bool,
+    parent_in_moved: bool,
+    id: NodeId,
+    parent: NodeId,
+) -> Option<SceneError> {
+    if root_matches {
+        Some(SceneError::CannotMoveRoot)
+    } else if !id_present {
+        Some(SceneError::NodeNotFound(id))
+    } else if !parent_present {
+        Some(SceneError::NodeNotFound(parent))
+    } else if parent_in_moved {
+        Some(SceneError::MoveIntoDescendant(id))
+    } else {
+        None
+    }
+}
+// END VERIFIED SCENE MOVE ADMISSION KERNEL
+
 // BEGIN VERIFIED SCENE PATCH KERNEL
 /// Applies one patch to the tree. The tree is the only state reached; a failed patch may be left
 /// half-way by nothing: each branch writes only after its checks pass.
@@ -511,19 +534,24 @@ fn apply_tree_patch(root: &mut Node, patch: ScenePatch) -> Result<(), SceneError
             None => Err(SceneError::NodeNotFound(id)),
         },
         ScenePatch::Move { id, parent, index } => {
-            if root.id.0 == id.0 {
-                return Err(SceneError::CannotMoveRoot);
+            let moved = find_node(&*root, id).cloned();
+            let parent_present = find_node(&*root, parent).is_some();
+            let parent_in_moved = moved
+                .as_ref()
+                .is_some_and(|moved| find_node(moved, parent).is_some());
+            if let Some(failure) = scene_move_failure(
+                root.id.0 == id.0,
+                moved.is_some(),
+                parent_present,
+                parent_in_moved,
+                id,
+                parent,
+            ) {
+                return Err(failure);
             }
-            let moved = match find_node(&*root, id).cloned() {
-                Some(node) => node,
-                None => return Err(SceneError::NodeNotFound(id)),
+            let Some(moved) = moved else {
+                return Err(SceneError::NodeNotFound(id));
             };
-            if find_node(&*root, parent).is_none() {
-                return Err(SceneError::NodeNotFound(parent));
-            }
-            if find_node(&moved, parent).is_some() {
-                return Err(SceneError::MoveIntoDescendant(id));
-            }
             if !remove_node(root, id) {
                 return Err(SceneError::NodeNotFound(id));
             }

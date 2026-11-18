@@ -1338,6 +1338,40 @@ pub fn assert_scene_patch(tree: Node, patch: ScenePatch) {
     assert_eq!(actual, expected);
 }
 
+/// Independent Scene Move error-precedence oracle.
+/// 独立的 Scene Move 错误优先级 oracle。
+pub fn assert_scene_move_admission(
+    root_matches: bool,
+    id_present: bool,
+    parent_present: bool,
+    parent_in_moved: bool,
+    id: u64,
+    parent: u64,
+) {
+    let expected = if root_matches {
+        Some(SceneError::CannotMoveRoot)
+    } else if !id_present {
+        Some(SceneError::NodeNotFound(NodeId(id)))
+    } else if !parent_present {
+        Some(SceneError::NodeNotFound(NodeId(parent)))
+    } else if parent_in_moved {
+        Some(SceneError::MoveIntoDescendant(NodeId(id)))
+    } else {
+        None
+    };
+    assert_eq!(
+        scene_move_failure(
+            root_matches,
+            id_present,
+            parent_present,
+            parent_in_moved,
+            NodeId(id),
+            NodeId(parent),
+        ),
+        expected
+    );
+}
+
 // Gives each node a kind by identity, so text and canvas refusals are both reachable.
 // 按身份给节点定种类，使文本与画布两种拒绝都可达。
 fn vary_kinds(node: &mut Node) {
@@ -3480,6 +3514,18 @@ mod kani_checks {
         assert!(tree.id.0 == root);
     }
 
+    #[kani::proof]
+    fn scene_move_admission_order() {
+        assert_scene_move_admission(
+            kani::any(),
+            kani::any(),
+            kani::any(),
+            kani::any(),
+            kani::any(),
+            kani::any(),
+        );
+    }
+
     // Arbitrary start and patches of every length up to four through the real fold; unwinding is
     // outside Kani's model. 任意起点与至多四个任意补丁穿过真实折叠；展开不在 Kani 模型内。
     #[kani::proof]
@@ -3998,6 +4044,17 @@ mod properties {
             assert_scene_patch_bytes(&spec, root, id, op, index);
         }
         #[test]
+        fn scene_move_admission_property(
+            root_matches in any::<bool>(),
+            id_present in any::<bool>(),
+            parent_present in any::<bool>(),
+            parent_in_moved in any::<bool>(),
+            id in any::<u64>(),
+            parent in any::<u64>(),
+        ) {
+            assert_scene_move_admission(root_matches, id_present, parent_present, parent_in_moved, id, parent);
+        }
+        #[test]
         fn scene_batch_commit_property(spec in prop::collection::vec(any::<(u8, u8)>(), 0..24), root in any::<u8>(), staged in any::<u8>(), version in any::<u64>(), offset in any::<u8>(), flags in any::<u8>()) {
             assert_scene_batch_commit_bytes(&spec, root, staged, version, offset, flags);
         }
@@ -4362,6 +4419,25 @@ mod memory {
         assert_resource_transition(true, 0, 1, true, 0, 1, false, 0, 0, 0, 1, 2);
         assert_resource_transition(true, 0, 1, true, 0, 1, false, 0, 0, 0, 1, 2);
         assert_resource_transition(true, 0, 1, false, 0, 0, false, 0, 0, 0, 1, 0);
+    }
+
+    #[test]
+    fn scene_move_admission_boundaries() {
+        for bits in 0u8..16 {
+            assert_scene_move_admission(
+                bits & 1 == 1,
+                bits & 2 == 2,
+                bits & 4 == 4,
+                bits & 8 == 8,
+                7,
+                9,
+            );
+        }
+        assert_scene_move_admission(true, false, false, true, u64::MAX, 0);
+        assert_scene_move_admission(false, false, true, true, u64::MAX, 0);
+        assert_scene_move_admission(false, true, false, true, u64::MAX, 0);
+        assert_scene_move_admission(false, true, true, true, u64::MAX, 0);
+        assert_scene_move_admission(false, true, true, false, u64::MAX, 0);
     }
 
     #[test]
