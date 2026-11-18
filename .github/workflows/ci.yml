@@ -60,9 +60,7 @@ jobs:
         with:
           targets: x86_64-unknown-none
       - name: Check bare-metal core
-        run: >-
-          cargo check --locked --target x86_64-unknown-none
-          --no-default-features --features no-std-core --lib
+        run: scripts/check-no-std-core.sh
 
   test:
     runs-on: ubuntu-latest

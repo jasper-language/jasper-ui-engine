@@ -15,10 +15,13 @@ jasper-ui-engine = { git = "...", rev = "<commit>", default-features = false, fe
 验证目标：
 
 ```bash
-RUSTUP_TOOLCHAIN=nightly-2026-10-17 cargo check --locked \
-  --target x86_64-unknown-none \
-  --no-default-features --features no-std-core --lib
+scripts/check-no-std-core.sh
 ```
+
+脚本默认锁定 `nightly-2026-10-17` 与 `x86_64-unknown-none`，也可用
+`JASPER_NO_STD_TOOLCHAIN` / `JASPER_NO_STD_TARGET` 显式覆盖；运行前要求目标已安装，
+不会联网修改用户工具链。输出包含实际 rustc 版本及 `Cargo.toml` / `Cargo.lock`
+的 SHA-256。
 
 `no-std-core` 是模式特性。它与 `desktop`、`gpu*`、`native-*`、`accesskit-pending`、
 `real-text`、`canvas-tiny-skia`、`ui-plugin-*`、Parley/Vello text/render 等 std 宿主特性
