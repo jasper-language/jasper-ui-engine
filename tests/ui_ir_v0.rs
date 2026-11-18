@@ -2182,12 +2182,24 @@ fn typed_focus_text_and_ime_use_the_same_admitted_ui_key() {
             .as_deref(),
         Some("中")
     );
-    assert_eq!(
-        host.typed_edit_state(OWNER, 2, &document)
-            .unwrap()
-            .unwrap()
-            .preedit_cursor,
-        Some((3, 3))
+    let preedit_end = host.typed_edit_state(OWNER, 2, &document).unwrap().unwrap();
+    assert_eq!(preedit_end.preedit_cursor, Some((3, 3)));
+    host.typed_set_preedit(
+        OWNER,
+        2,
+        generation,
+        &document,
+        &context,
+        field,
+        Some("中"),
+        Some((0, 0)),
+    )
+    .unwrap();
+    let preedit_start = host.typed_edit_state(OWNER, 2, &document).unwrap().unwrap();
+    assert_eq!(preedit_start.preedit_cursor, Some((0, 0)));
+    assert!(
+        preedit_start.caret_rect.unwrap().x() < preedit_end.caret_rect.unwrap().x(),
+        "candidate geometry must follow the cursor inside the preedit"
     );
     assert_eq!(
         host.typed_edit_state(OWNER, 2, &document)

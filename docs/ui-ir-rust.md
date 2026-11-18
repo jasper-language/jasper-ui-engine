@@ -74,7 +74,8 @@ E14 编辑事件通过 `typed_take_edit_events` 取出：事件 revision 可来�
 整批事件先完成 UiKey 投影和授权，全部成功后才从 Native 出站队列移除；授权失败时批次保留，
 修正 permission context 后可重试。`typed_take_overlay_events` 对 `Dismiss` 使用同一事务性顺序。
 当前编辑会话由 `typed_edit_state` 查询，返回 `TypedUiEditState`；文本、选区、预编辑、
-预编辑内部光标/选区和 caret 几何与 `UiKey` 一并返回，不暴露 backend 节点身份。
+预编辑内部光标/选区和 caret 几何与 `UiKey` 一并返回，不暴露 backend 节点身份；
+caret 几何跟随预编辑内部 focus 偏移，供宿主候选窗定位。
 
 `src/ui_ir/native.rs` 提供 `NativeUiDocument`：
 
