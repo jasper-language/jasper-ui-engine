@@ -23,11 +23,11 @@
 | 图片/SVG/DPI | 候选能力测试 | 候选一致性测试 | 未映射 | 未执行 | 未完成 |
 | 滚动/虚拟化 | 候选范围查询测试 | 未覆盖 | 未映射 | 未执行 | 未完成 |
 
-## 3. 本轮未运行项
+## 3. 审计基线时未运行项
 
 - 未启动 QEMU/真实窗口；
 - 未运行 appfw 全量 JVM、SSR、desktop、visual；
-- 未建立 typed UI IR，因此没有“同一 IR 输入”可执行；
+- 审计基线时尚未建立 typed UI IR；当前 Rust Native consumer 已在该基线后实现；
 - 未执行 Windows/macOS 宿主；
 - 未新增或重跑形式化证明。
 
@@ -51,8 +51,9 @@ Rust 引擎已新增 Typed UI IR v0.1 consumer profile，并以 appfw `codex/ir-
 - `dialog-overlay` 已通过真实 Native CPU overlay 查询和帧输出，overlay/position 仍保留为 candidate；
 - `data-table` 的 Table/Row/Cell 语义已保留，并通过真实 Native CPU fixture 执行；
 - `settings-page` 已通过 llvmpipe/Vulkan 的 Native GPU 执行与 CPU 对照：170/153600 像素不同，最大通道差 1；
-- 身份 generation、owner/session/revision/permission 事件准入已有定向测试；活动帧 `Move` 保持焦点、指针按下和 TextArea/IME 编辑状态；Committed image resource 已接入真实 `SceneHostView.insert_image`。
-- `HostRenderer::try_apply_ui_frame` 已验证暂停状态下 IR mapping 与 Native host 均保持原 revision，恢复后才共同提交。
+- Native document 已接入精确 generation claim/retire；删除后的旧 `UiKey` 不可重插，下一 generation 才可创建；
+- Focus/Key/Pointer/Scroll/编辑/IME/Overlay/AccessKit 的 Typed 出口、绑定 action 和权限准入已有测试；活动帧 `Move` 保持焦点、指针按下和 TextArea/IME 编辑状态；Committed image resource 已接入真实 `SceneHostView.insert_image`；
+- `HostRenderer::try_apply_ui_frame_at` 已被精确 Surface generation 门控；旧 generation 或暂停状态下 IR mapping、document 与 Native host 均不推进。
 
 这仍不是双后端黄金用例：Web SSR、真实浏览器、真实硬件 GPU、真实平台宿主和完整差异表
 均未执行。跨后端状态继续为 `not_run`。

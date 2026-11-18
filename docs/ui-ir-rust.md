@@ -126,6 +126,25 @@ Dismiss binding 与 permission；不会因为 identity 已 Typed 而把 overlay 
 逐项覆盖 registry 名称与 support，显式 `host_acceptance=false` 不得被镜像成已接纳，并检查三份
 fixture 实际映射出的 `mapped_properties` 与 profile 一致。
 
+## 验收前审计（2026-11-18）
+
+| 要求 | 当前证据 | 结论 |
+|---|---|---|
+| 严格消费 v0.1 Schema | 未知字段、版本、revision、重复身份、数值边界与 canonical round-trip 测试 | Rust consumer 已覆盖 |
+| `UiKey` 防复用 | Native insert claim / remove retire；旧组合拒绝、下一 generation 接受、失败不推进 revision | 已覆盖当前文档生命周期 |
+| 事件身份与权限 | owner/identity domain/session/revision、Pointer/Focus/Key/Activate/Scroll/编辑/IME/Overlay/AccessKit Typed 准入 | 已覆盖现有 v0.1 事件 |
+| 焦点与编辑一致性 | 当前 focus/编辑目标必须等于授权 UiKey；Move 保持焦点、按下、编辑缓冲与 IME | 已覆盖 Native |
+| 资源生命周期 | Prepare/Commit/Release、generation、节点引用、上传/删除与 GPU/CPU image 测试 | 已覆盖当前 image/SVG 路径 |
+| 活动宿主同步 | detached mapping、精确 Surface generation、原子 ScenePatch 和 reduce-motion 同提交 | 已覆盖 Rust host |
+| Property Registry | 公共 registry 固定摘要；Native profile 逐项一致；candidate 不冒充 accepted | 已覆盖 consumer profile |
+| 回滚与兼容 | 旧 raw Scene/ScenePatch、PSS/xstyle、LegacyEngine 测试继续通过；新字段不新增 xstyle key | 保留 |
+| Web / 真浏览器 | 未执行 | 未验收 |
+| 真实硬件 GPU / 平台宿主 | 未执行 | 未验收 |
+| 形式化证明 | 本批未新增 | 未验收 |
+
+本表是 Rust consumer 的审阅清单，不是 issue #3 全链路完成声明；语言侧 Schema/Framework、
+Web 后端和正式宿主仍需分别验收。
+
 ## 证据状态
 
 | 维度 | 状态 |
