@@ -219,6 +219,15 @@ mod tests {
                 max_bytes: 15,
             })
         );
+
+        let mut renderer = CoreRgbaRenderer::new(Size::new(2.0, 2.0), Box::new(SimpleTextEngine))
+            .with_max_frame_bytes(16);
+        assert!(renderer.render(&scene).is_ok());
+        renderer.resize(Size::new(f32::INFINITY, 2.0));
+        assert_eq!(
+            renderer.render(&scene),
+            Err(CoreRenderError::InvalidFrameSize)
+        );
     }
 
     #[test]
