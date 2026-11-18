@@ -114,6 +114,7 @@ pub mod canvas;
 #[cfg(all(feature = "canvas-tiny-skia", not(jasper_no_std_core)))]
 pub mod canvas_tiny_skia;
 pub mod composition_identity;
+pub mod core_host;
 #[cfg(all(feature = "desktop", not(jasper_no_std_core)))]
 pub mod desktop;
 pub mod engine;

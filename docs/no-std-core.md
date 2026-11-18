@@ -38,6 +38,28 @@ scripts/check-no-std-core.sh
 - `alloc` 字符串、容器和 serde JSON；浮点 `floor/ceil/round/sqrt/pow/fract/trig`
   通过 `libm`，不依赖 libc/libm 系统库。
 
+## 显式宿主端口
+
+`core_host` 只定义调用边界，不执行 I/O：
+
+- `CoreClock::now_millis`：宿主单调时钟，单位毫秒；
+- `CoreFontSource::font_bytes(id)`：宿主认证、持有并借用字体字节；
+- `CoreImageSource::image_bytes(id)`：宿主认证并借用编码图片字节；
+- `CoreFileSource::file_bytes(id)`：宿主认证并借用只读文件或内嵌资源字节。
+
+返回 `None` 表示宿主不可用或拒绝，不产生路径、系统字体、IPC 或文件系统调用。
+图片解码仍在 std image/SVG 特性中；bare-metal 宿主若需要图片，必须先自行解码，
+再通过 `RenderBackend::submit_rgba8` 提交 RGBA8 帧。
+
+CPU RGBA 呈现最小契约复用现有 `RenderBackend`：
+
+- `submit_rgba8(width, height, Vec<u8>)`：接管恰好 `width * height * 4` 字节；
+- `present()`：只在成功接管后由宿主呈现；
+- `HostInbox<UiBatch>`：对宿主消息执行会话/epoch/顺序/容量准入；
+- `Scene` / `ScenePatch`：语义场景和原子补丁输入。
+
+这些是 Rust 调用边界，不是正式 ABI 或 Jasper-OS syscall 定义。
+
 ## 不在 Core
 
 - `HostRenderer`、Blitz/Parley、AccessKit 平台适配、JUI 2 宿主传输、winit/softbuffer；
