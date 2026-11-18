@@ -119,6 +119,27 @@ caret 几何与 `UiKey` 一并返回，不暴露 backend 节点身份。
 tombstones/history、Framework 组件声明、Signal 依赖、事件会话或正式 ABI。Grid 投影仍继承
 candidate/`host_accepted=false` 状态。
 
+### E2–E15 / P0-A 映射矩阵
+
+| 既有能力 | Rust Native consumer 状态 |
+|---|---|
+| E2 corner radius | Native ↔ Typed `paint.radii`，双向可表达 |
+| E3 box shadow | Typed v0.1 无 shadow group；旧 Native/xstyle 路径保留，反向投影逐项报告 `style.box_shadows` |
+| E4 opacity | Native ↔ Typed `paint.opacity`，双向可表达 |
+| E5 backdrop/material | Typed v0.1 无 material group；旧路径保留，反向投影报告 `style.backdrop` |
+| E6 gradient | Typed v0.1 无 gradient group；旧路径保留，反向投影报告 `style.background_gradient` |
+| E7 transition/motion | Typed v0.1 无 motion group；旧路径保留，反向投影报告 `style.transitions` |
+| E8 transform | Typed v0.1 无 transform group；旧路径保留，反向投影报告 `style.transform` |
+| E9 border/outline/decoration | uniform border 与 Typed `paint.border` 互映；单侧 border、outline、decoration 保留旧路径并逐项报告损失 |
+| E10 hit-slop | Typed v0.1 无 hit-slop group；反向投影报告 `style.hit_slop`，不改变布局或绘制 |
+| E14 text edit | UIKey、focus、TextEdit/IME permission、commit/cancel binding 和编辑事件已接入 |
+| E15 line-height / vertical align | px line-height 与 top/center/bottom vertical align 可映射；Multiple line-height 报告语义变化，baseline vertical align 结构化拒绝 |
+| P0-A Grid / Position | Typed candidate 字段进入真实 Native layout，仍为 `host_accepted=false` |
+| P0-A Image / Overlay | Typed candidate 字段进入 Native image/overlay；反向投影必须提供 exact resource/UiKey 上下文，否则报告损失，仍为 `host_accepted=false` |
+
+该矩阵只描述 Rust consumer 对既有能力的当前映射，不把 Native-only loss 当成 Typed acceptance，
+也不删除 PSS/xstyle、LegacyEngine 或 ScenePatch 回滚路径。
+
 ## Native 映射状态
 
 | 范围 | 状态 | 说明 |

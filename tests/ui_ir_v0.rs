@@ -279,6 +279,22 @@ fn native_style_projection_preserves_grid_and_reports_extended_field_losses() {
         ..Style::default()
     };
     extended.text_decoration.underline = true;
+    for (key, value) in [
+        ("shadow", "0,1,2,0,#00000080"),
+        ("border-top", "1,#11223344"),
+        ("border-right", "2,#22334455"),
+        ("border-bottom", "3,#33445566"),
+        ("border-left", "4,#44556677"),
+        ("outline", "1,2,#0a84ff"),
+        ("transition", "opacity:100ms"),
+        (
+            "background-gradient",
+            "linear(90,#ff0000 0%,#0000ffff 100%)",
+        ),
+        ("backdrop", "blur(12);saturate(1.5);tint(#11223344)"),
+    ] {
+        extended.apply_xstyle(key, value).unwrap();
+    }
     let projection = project_native_style(&extended, ElementKind::Container).unwrap();
     assert!(!projection.is_lossless());
     let paths: Vec<_> = projection
@@ -292,6 +308,15 @@ fn native_style_projection_preserves_grid_and_reports_extended_field_losses() {
         "style.transform",
         "style.line_height.multiple",
         "style.image",
+        "style.box_shadows",
+        "style.border_top",
+        "style.border_right",
+        "style.border_bottom",
+        "style.border_left",
+        "style.outline",
+        "style.transitions",
+        "style.background_gradient",
+        "style.backdrop",
     ] {
         assert!(paths.contains(&expected), "missing loss {expected}: {paths:?}");
     }
