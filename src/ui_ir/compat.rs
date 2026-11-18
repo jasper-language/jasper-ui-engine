@@ -37,6 +37,16 @@ pub struct NativeStyleProjection {
     pub losses: Vec<NativeStyleLoss>,
 }
 
+/// Loss-aware projection of one Native style into JUI 2 `style`/`xstyle` pairs.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Jui2StyleProjection {
+    /// Base fields carried by a JUI 2 `style` line.
+    pub base: Vec<(String, String)>,
+    /// Extension fields carried by a JUI 2 `xstyle` line; host capability negotiation is external.
+    pub xstyle: Vec<(String, String)>,
+    pub losses: Vec<NativeStyleLoss>,
+}
+
 /// Optional node-local context needed to reverse image and overlay candidate values.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct NativeStyleContext<'a> {
@@ -244,6 +254,203 @@ pub fn project_native_style_with_context(
     project_overlay(source, context.overlay_anchor, &mut style, &mut losses);
     style.validate("$")?;
     Ok(NativeStyleProjection { style, losses })
+}
+
+/// Project a Native style into the unchanged legacy JUI 2 transport vocabulary.
+///
+/// This is not a reverse Typed IR mapping. JUI 2 does not carry `UiKey`, events, resource
+/// generations or environments, and extension keys still require the host's `hello` capability
+/// declaration.
+pub fn project_native_style_to_jui2(source: &NativeStyle) -> Jui2StyleProjection {
+    let mut base = Vec::new();
+    let mut losses = Vec::new();
+    let defaults = NativeStyle::default();
+
+    for (key, value) in [
+        ("width", source.width),
+        ("height", source.height),
+        ("min-width", source.min_width),
+        ("max-width", source.max_width),
+        ("min-height", source.min_height),
+        ("max-height", source.max_height),
+    ] {
+        if value != NativeLength::Auto {
+            base.push((key.into(), jui2_length(value)));
+        }
+    }
+    if source.padding != NativeEdges::ZERO {
+        base.push(("padding".into(), jui2_edges(source.padding)));
+    }
+    if source.margin != NativeEdges::ZERO {
+        base.push(("margin".into(), jui2_edges(source.margin)));
+    }
+    if source.gap != defaults.gap {
+        base.push(("gap".into(), jui2_number(source.gap)));
+    }
+    if source.flex_grow != defaults.flex_grow {
+        base.push(("flex-grow".into(), jui2_number(source.flex_grow)));
+    }
+    if source.flex_wrap != defaults.flex_wrap {
+        losses.push(NativeStyleLoss {
+            path: "style.flex_wrap",
+            detail: "JUI 2 base style vocabulary has no flex-wrap field",
+        });
+    }
+    if source.flex_shrink != defaults.flex_shrink {
+        losses.push(NativeStyleLoss {
+            path: "style.flex_shrink",
+            detail: "JUI 2 base style vocabulary has no flex-shrink field",
+        });
+    }
+    if source.font_size != defaults.font_size {
+        base.push(("font-size".into(), jui2_number(source.font_size)));
+    }
+    if source.direction != defaults.direction {
+        base.push((
+            "direction".into(),
+            match source.direction {
+                NativeFlexDirection::Row => "row".into(),
+                NativeFlexDirection::Column => "column".into(),
+            },
+        ));
+    }
+    match source.display {
+        NativeDisplay::Flex => {}
+        NativeDisplay::Block => base.push(("display".into(), "block".into())),
+        NativeDisplay::None => base.push(("display".into(), "none".into())),
+        NativeDisplay::Grid
+        | NativeDisplay::Table
+        | NativeDisplay::TableRow
+        | NativeDisplay::TableCell => losses.push(NativeStyleLoss {
+            path: "style.display",
+            detail: "JUI 2 base style vocabulary has no Grid/Table display mode",
+        }),
+    }
+    if source.align_items != defaults.align_items {
+        base.push((
+            "align-items".into(),
+            match source.align_items {
+                NativeAlign::Start => "start",
+                NativeAlign::Center => "center",
+                NativeAlign::End => "end",
+                NativeAlign::Stretch => "stretch",
+                NativeAlign::Baseline => {
+                    losses.push(NativeStyleLoss {
+                        path: "style.align_items",
+                        detail: "JUI 2 base style vocabulary has no baseline alignment",
+                    });
+                    "start"
+                }
+            }
+            .into(),
+        ));
+    }
+    if source.justify_content != defaults.justify_content {
+        base.push((
+            "justify-content".into(),
+            match source.justify_content {
+                NativeJustify::Start => "start",
+                NativeJustify::Center => "center",
+                NativeJustify::End => "end",
+                NativeJustify::SpaceBetween => "space-between",
+                NativeJustify::SpaceAround | NativeJustify::SpaceEvenly => {
+                    losses.push(NativeStyleLoss {
+                        path: "style.justify_content",
+                        detail: "JUI 2 base style vocabulary has no space-around/space-evenly",
+                    });
+                    "start"
+                }
+            }
+            .into(),
+        ));
+    }
+    if source.background != defaults.background {
+        base.push(("background".into(), jui2_color(source.background)));
+    }
+    if source.color != defaults.color {
+        base.push(("color".into(), jui2_color(source.color)));
+    }
+    if source.border_width != defaults.border_width
+        || source.border_color != defaults.border_color
+    {
+        base.push((
+            "border".into(),
+            format!(
+                "{} {}",
+                jui2_number(source.border_width),
+                jui2_color(source.border_color)
+            ),
+        ));
+    }
+    if source.font_weight != defaults.font_weight {
+        base.push(("weight".into(), source.font_weight.to_string()));
+    }
+    if source.font_style != defaults.font_style {
+        base.push((
+            "font-style".into(),
+            match source.font_style {
+                NativeFontStyle::Normal => "normal".into(),
+                NativeFontStyle::Italic => "italic".into(),
+            },
+        ));
+    }
+    if let Some(family) = &source.font_family {
+        base.push(("family".into(), family.clone()));
+    }
+    if source.overflow != defaults.overflow {
+        base.push((
+            "overflow".into(),
+            match source.overflow {
+                NativeOverflow::Visible => "visible",
+                NativeOverflow::Hidden => "hidden",
+                NativeOverflow::Scroll => "scroll",
+            }
+            .into(),
+        ));
+    }
+    if source.text_align != defaults.text_align {
+        losses.push(NativeStyleLoss {
+            path: "style.text_align",
+            detail: "JUI 2 base style vocabulary has no text alignment field",
+        });
+    }
+    if source.text_direction != defaults.text_direction {
+        losses.push(NativeStyleLoss {
+            path: "style.text_direction",
+            detail: "JUI 2 base style vocabulary has no text direction field",
+        });
+    }
+    Jui2StyleProjection {
+        base,
+        xstyle: source
+            .xstyle_pairs()
+            .into_iter()
+            .map(|(key, value)| (key.into(), value))
+            .collect(),
+        losses,
+    }
+}
+
+fn jui2_number(value: f32) -> String {
+    value.to_string()
+}
+
+fn jui2_length(value: NativeLength) -> String {
+    match value {
+        NativeLength::Auto => "auto".into(),
+        NativeLength::Px(value) => jui2_number(value),
+        NativeLength::Percent(value) => format!("{}%", jui2_number(value)),
+    }
+}
+
+fn jui2_edges(value: NativeEdges) -> String {
+    [value.top, value.right, value.bottom, value.left]
+        .map(jui2_number)
+        .join(" ")
+}
+
+fn jui2_color(value: NativeColor) -> String {
+    format!("#{:02x}{:02x}{:02x}{:02x}", value.r, value.g, value.b, value.a)
 }
 
 fn push_extension_losses(source: &NativeStyle, losses: &mut Vec<NativeStyleLoss>) {

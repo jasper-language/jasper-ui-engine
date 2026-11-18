@@ -381,6 +381,72 @@ fn native_style_projection_preserves_grid_and_reports_extended_field_losses() {
 }
 
 #[test]
+fn native_style_projects_to_jui2_with_explicit_wire_losses() {
+    use jasper_ui_engine::geometry::Edges;
+    use jasper_ui_engine::style::{
+        Align, Display, FlexWrap, Justify, Style, TextAlign, TextAlignVertical, TextDirection,
+    };
+    use jasper_ui_engine::ui_ir::project_native_style_to_jui2;
+
+    let mut supported = Style {
+        padding: Edges::new(1.0, 2.0, 3.0, 4.0),
+        font_size: 20.0,
+        ..Style::default()
+    };
+    supported.apply_xstyle("opacity", "0.5").unwrap();
+    supported
+        .apply_xstyle("text-valign", "center")
+        .unwrap();
+    let projection = project_native_style_to_jui2(&supported);
+    assert!(projection.losses.is_empty(), "{:?}", projection.losses);
+    assert!(projection
+        .base
+        .iter()
+        .any(|(key, value)| key == "padding" && value == "1 2 3 4"));
+    assert!(projection
+        .base
+        .iter()
+        .any(|(key, value)| key == "font-size" && value == "20"));
+    assert!(projection
+        .xstyle
+        .iter()
+        .any(|(key, value)| key == "opacity" && value == "0.5"));
+    assert!(projection
+        .xstyle
+        .iter()
+        .any(|(key, value)| key == "text-valign" && value == "center"));
+
+    let unsupported = Style {
+        display: Display::Grid,
+        flex_wrap: FlexWrap::Wrap,
+        flex_shrink: 0.5,
+        align_items: Align::Baseline,
+        justify_content: Justify::SpaceEvenly,
+        text_align: TextAlign::Center,
+        text_direction: TextDirection::Rtl,
+        text_align_vertical: Some(TextAlignVertical::Center),
+        ..Style::default()
+    };
+    let projection = project_native_style_to_jui2(&unsupported);
+    let paths: Vec<_> = projection.losses.iter().map(|loss| loss.path).collect();
+    for expected in [
+        "style.flex_wrap",
+        "style.flex_shrink",
+        "style.display",
+        "style.align_items",
+        "style.justify_content",
+        "style.text_align",
+        "style.text_direction",
+    ] {
+        assert!(paths.contains(&expected), "missing loss {expected}: {paths:?}");
+    }
+    assert!(projection
+        .xstyle
+        .iter()
+        .any(|(key, value)| key == "text-valign" && value == "center"));
+}
+
+#[test]
 fn native_node_projection_recovers_public_tree_semantics_events_and_styles() {
     use jasper_ui_engine::ui_ir::{SemanticRole, UiOp};
 
