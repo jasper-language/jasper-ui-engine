@@ -1,0 +1,25 @@
+verification results:: 2 verified, 1 errors
+error: postcondition not satisfied
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/ui-event-permission-kernel/negative_click_needs_focus.rs:38:13
+   |
+38 |       ensures match self {
+   |  _____________^
+39 | |         UiEventKind::Click | UiEventKind::Activate => result == UiPermission::Activate,
+40 | |         UiEventKind::PointerDown | UiEventKind::PointerUp | UiEventKind::Hover => result == UiPermission::Pointer,
+41 | |         UiEventKind::Focus => result == UiPermission::Focus,
+...  |
+47 | |         UiEventKind::AccessibilityAction => result == UiPermission::AccessibilityAction,
+48 | |     },
+   | |_____^ failed this postcondition
+49 |   {
+50 | /         match self {
+51 | |             Self::Click | Self::Activate => UiPermission::Focus,
+52 | |             Self::PointerDown | Self::PointerUp | Self::Hover => UiPermission::Pointer,
+53 | |             Self::Focus => UiPermission::Focus,
+...  |
+59 | |             Self::AccessibilityAction => UiPermission::AccessibilityAction,
+60 | |         }
+   | |_________- at the end of the function body
+
+error: aborting due to 1 previous error
+

@@ -8,11 +8,15 @@ fn main() {
     for (file, markers) in [
         (
             "../../src/ui_ir/mod.rs",
-            &["UI KEY TYPE"][..],
+            &["UI KEY TYPE", "UI EVENT KIND TYPE"][..],
         ),
         (
             "../../src/ui_ir/identity.rs",
             &["IDENTITY ERROR TYPE", "UI IDENTITY NEXT KERNEL"][..],
+        ),
+        (
+            "../../src/ui_ir/events.rs",
+            &["UI PERMISSION TYPE", "UI EVENT PERMISSION KERNEL"][..],
         ),
         (
             "../../src/batch.rs",

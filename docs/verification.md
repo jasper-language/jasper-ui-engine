@@ -39,6 +39,7 @@ Loom 当前执行实际生产函数体的调用侧调度场景：两个线程共
 | UI-TXN-VERSION-001 | `scene.rs::next_scene_version` | 对所有 u64：小于最大值时返回严格增加 1 的版本；最大值时拒绝；无回绕/溢出 | 以 `evidence/version-kernel/report.json` 的实际结果和源码哈希为准；报告缺失/失配即 not_verified |
 | UI-TXN-ADMISSION-001 | `scene.rs::decide_scene_version` 及版本计算依赖 | 陈旧版本优先拒绝；匹配空批不推进；匹配非空批耗尽拒绝；可推进时精确加 1 | proved，两个生产函数体同时验证，2 verified/0 errors；错误准入反例被拒；需匹配当前源码哈希 |
 | UI-IDENTITY-NEXT-001 | `ui_ir::identity::next_ui_identity` | live 身份拒绝再分配；retired 身份只返回 `last_generation + 1`；`u64::MAX` 显式返回 GenerationExhausted，不回绕 | proved，生产函数与 UiKey/IdentityError 类型同场 3 verified/0 errors；准入 live 复用/generation 回退两个反例被拒；独立 u128 Proptest、Miri 和 read-boundary fuzz 同时覆盖。BTreeMap 插入顺序、retire、snapshot restore 与整份文档事务不在该切片 |
+| UI-EVENT-PERMISSION-001 | `ui_ir::events::UiEventKind::required_permission` | Click/Activate → Activate；PointerDown/Up/Hover → Pointer；其余 Focus、Keyboard、TextCommit→TextEdit、IME、Scroll、Dismiss、Accessibility 各入其权限域 | proved，事件/权限类型与生产函数同场 3 verified/0 errors；Click 错入 Focus、Dismiss 错入 Activate 两个反例被拒；独立穷举 oracle、Proptest、Miri 和 read-boundary fuzz 同时覆盖。binding 查找、权限集合成员、会话/revision 与回调派发不在该切片 |
 | UI-TXN-ATOMIC-001 | `Scene::apply_batch_at` | 非法/陈旧/耗尽失败保持旧场景；非空成功推进一次；空批不变 | not_verified；折叠部分已证（UI-SCENE-BATCH-STAGE-001），整个事务只有独立模型对照测试与单元测试，尚无证明 |
 | UI-SCENE-ID-001 | `Scene::try_new` / `validate` / 插入/布局入口 | 全树 ID 唯一、父子关系与根约束保持 | not_verified；子树内部/跨树重复 ID 已检查，回滚与布局拒绝已有测试；遍历、BTreeSet、clone 与整个更新链尚未证明 |
 | UI-DECODE-RANGE-001-END | `batch.rs::checked_read_end` | 对所有 usize 输入：成功终点等于起点+长度且在边界内；失败当且仅当读取非法；运算不溢出 | proved，生产函数体 Verus 1 verified/0 errors，错误终点反例被拒；证据需匹配源码哈希 |
@@ -97,6 +98,7 @@ Core frame 尺寸/预算切片当前可复现的补充证据：
 python3 scripts/verify-version.py --kernel core-frame-bytes --verus "$VERUS"
 python3 scripts/verify-version.py --kernel core-frame-budget --verus "$VERUS"
 python3 scripts/verify-version.py --kernel ui-identity-next --verus "$VERUS"
+python3 scripts/verify-version.py --kernel ui-event-permission --verus "$VERUS"
 cargo test --locked --manifest-path verification/read-boundary/Cargo.toml \
   properties::core_frame_property -- --exact
 cargo +nightly-2026-10-17 miri test --locked \
@@ -107,7 +109,7 @@ cargo +nightly-2026-10-17 fuzz run read_boundary fuzz/seeds/read_boundary -- \
 ```
 
 这些通过共同覆盖实现级证明、独立 u128 oracle 下的 256 例属性测试、Miri 边界执行和 10 秒 fuzz
-（22,483 次执行）一致。执行中还修正了 raw Move oracle 在重复身份异常树上未模拟
+（22,900 次执行）一致。执行中还修正了 raw Move oracle 在重复身份异常树上未模拟
 “先删除、后父节点查找失败”的差异。证据保存在 `evidence/core-frame-bytes-kernel/` 与
 `evidence/core-frame-budget-kernel/`；Kani 仍按仓库策略留到发版时间，Loom 对该纯同步函数不适用。
 

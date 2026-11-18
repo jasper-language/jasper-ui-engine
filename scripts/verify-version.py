@@ -227,6 +227,42 @@ KERNELS = {
             ("reuse-last", "let Some(generation) = last_generation.checked_add(1) else {", "let Some(generation) = Some(last_generation) else {"),
         ],
     },
+    "ui-event-kind-type": {
+        "source": "src/ui_ir/mod.rs", "marker": "UI EVENT KIND", "suffix": "TYPE",
+        "signature": "pub enum UiEventKind {",
+        "contract": "#[derive(Clone, Copy, Debug, PartialEq, Eq)]\npub enum UiEventKind {",
+        "depends": [], "function_count": 0, "internal_only": True,
+    },
+    "ui-permission-type": {
+        "source": "src/ui_ir/events.rs", "marker": "UI PERMISSION", "suffix": "TYPE",
+        "signature": "pub enum UiPermission {",
+        "contract": "#[derive(Clone, Copy, Debug, PartialEq, Eq)]\npub enum UiPermission {",
+        "depends": [], "function_count": 0, "internal_only": True,
+    },
+    "ui-event-permission": {
+        "source": "src/ui_ir/events.rs", "marker": "UI EVENT PERMISSION", "property": "UI-EVENT-PERMISSION-001",
+        "signature": "pub const fn required_permission(self) -> UiPermission {",
+        "contract": """pub const fn required_permission(self) -> (result: UiPermission)
+    ensures match self {
+        UiEventKind::Click | UiEventKind::Activate => result == UiPermission::Activate,
+        UiEventKind::PointerDown | UiEventKind::PointerUp | UiEventKind::Hover => result == UiPermission::Pointer,
+        UiEventKind::Focus => result == UiPermission::Focus,
+        UiEventKind::Key => result == UiPermission::Keyboard,
+        UiEventKind::TextCommit => result == UiPermission::TextEdit,
+        UiEventKind::ImeCommit | UiEventKind::ImeCancel => result == UiPermission::Ime,
+        UiEventKind::Scroll => result == UiPermission::Scroll,
+        UiEventKind::Dismiss => result == UiPermission::Dismiss,
+        UiEventKind::AccessibilityAction => result == UiPermission::AccessibilityAction,
+    },
+{""",
+        "depends": ["ui-event-kind-type", "ui-permission-type"],
+        "evidence": "ui-event-permission-kernel", "function_count": 1,
+        "scope": "actual event-kind to permission-domain classification used before binding/permission admission. Binding lookup, permission-set membership, authority/session/revision checks and callback dispatch are outside this kernel",
+        "mutations": [
+            ("click-needs-focus", "Self::Click | Self::Activate => UiPermission::Activate", "Self::Click | Self::Activate => UiPermission::Focus"),
+            ("dismiss-needs-activate", "Self::Dismiss => UiPermission::Dismiss", "Self::Dismiss => UiPermission::Activate"),
+        ],
+    },
     "version": {
         "source": "src/scene.rs", "marker": "VERSION", "property": "UI-TXN-VERSION-001",
         "signature": "fn next_scene_version(version: u64) -> Option<u64> {",

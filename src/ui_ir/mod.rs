@@ -561,6 +561,7 @@ pub struct EventBinding {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+// BEGIN VERIFIED UI EVENT KIND TYPE
 pub enum UiEventKind {
     Click,
     Activate,
@@ -576,6 +577,7 @@ pub enum UiEventKind {
     Dismiss,
     AccessibilityAction,
 }
+// END VERIFIED UI EVENT KIND TYPE
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]

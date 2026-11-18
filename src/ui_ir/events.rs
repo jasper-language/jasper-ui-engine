@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 /// The permission needed to route a bound event. Backend `NodeId` is never accepted here.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+// BEGIN VERIFIED UI PERMISSION TYPE
 pub enum UiPermission {
     Pointer,
     Activate,
@@ -20,7 +21,9 @@ pub enum UiPermission {
     Dismiss,
     AccessibilityAction,
 }
+// END VERIFIED UI PERMISSION TYPE
 
+// BEGIN VERIFIED UI EVENT PERMISSION KERNEL
 impl UiEventKind {
     pub const fn required_permission(self) -> UiPermission {
         match self {
@@ -36,6 +39,7 @@ impl UiEventKind {
         }
     }
 }
+// END VERIFIED UI EVENT PERMISSION KERNEL
 
 /// Auditable host-side permission grant. The context name identifies the policy source.
 #[derive(Clone, Debug, PartialEq, Eq)]

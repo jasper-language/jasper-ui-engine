@@ -1,0 +1,51 @@
+{
+  "property": "UI-EVENT-PERMISSION-001",
+  "status": "proved",
+  "scope": "actual event-kind to permission-domain classification used before binding/permission admission. Binding lookup, permission-set membership, authority/session/revision checks and callback dispatch are outside this kernel",
+  "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
+  "source_sha256": "036a3081e910c2bc5586cd0cfe3e6de650d400bd8130d617c435e58a9bbbed6a",
+  "sources": {
+    "src/ui_ir/events.rs": "036a3081e910c2bc5586cd0cfe3e6de650d400bd8130d617c435e58a9bbbed6a",
+    "src/ui_ir/mod.rs": "e9ad22292da23ff4624c8fbba21b8485c6dccd12ca8c0e833c35ad6770a5df3b"
+  },
+  "kernel_sha256": "998b2ac1a2ddc591bf540e952b8ffbed4cf6a13e5a35c0f7c3a7ca8045823a7c",
+  "dependencies": {
+    "ui-event-kind-type": "3be449699e0edb6b88f8f46dc7fb482381aa96f29cfd27cf03aa1fcec068b133",
+    "ui-permission-type": "32277711a31cf906c1607a7e453a05a459f7087cad2087de2562dcf590422850"
+  },
+  "proof_sha256": "5e05c520d47acc097b4da0c0e6df0875da875b6fa73dac680f283fee6e4414c1",
+  "runner_sha256": "5fe4bf73245744728273aa3db3a43cbc5c673955de6ac76fa63274213097541a",
+  "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
+  "command": [
+    "/tmp/jasper-verus.ks8WhO/verus/verus-x86-linux/verus",
+    "--crate-type",
+    "lib",
+    "/home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/ui-event-permission-kernel/kernel.rs"
+  ],
+  "exit_code": 0,
+  "solver": {
+    "path": "/tmp/jasper-verus.ks8WhO/verus/verus-x86-linux/z3",
+    "version": "Z3 version 4.16.0 - 64 bit\n",
+    "explicit_override": null
+  },
+  "verified_obligations": 3,
+  "negative_controls": [
+    {
+      "name": "click-needs-focus",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "dismiss-needs-activate",
+      "rejected": true,
+      "exit_code": 1
+    }
+  ],
+  "negative_control_rejected": true,
+  "trust_boundary": [
+    "Verus/vstd and SMT solver",
+    "Rust/Verus integer, references and slice semantics",
+    "signature annotation/extraction script",
+    "Rust compiler and target execution"
+  ]
+}

@@ -78,8 +78,9 @@ for file, markers in [
     ("src/native_adapter/access_kit.rs", ["ACCESS REQUEST TYPE", "ACCESS REQUEST KERNEL"]),
     ("src/native_adapter/gpu_render.rs", ["GPU READBACK LAYOUT KERNEL"]),
     ("src/core_renderer.rs", ["CORE FRAME BYTES KERNEL", "CORE FRAME BUDGET KERNEL"]),
-    ("src/ui_ir/mod.rs", ["UI KEY TYPE"]),
+    ("src/ui_ir/mod.rs", ["UI KEY TYPE", "UI EVENT KIND TYPE"]),
     ("src/ui_ir/identity.rs", ["IDENTITY ERROR TYPE", "UI IDENTITY NEXT KERNEL"]),
+    ("src/ui_ir/events.rs", ["UI PERMISSION TYPE", "UI EVENT PERMISSION KERNEL"]),
     ("src/native_adapter/glyph_skew.rs", ["GLYPH SKEW KERNEL"]),
     ("src/native_adapter/native_scene.rs", ["SCENE UPDATE ERROR TYPE KERNEL", "SCENE FRAME COMPLETION KERNEL", "SCENE FRAME ORDER KERNEL", "SCENE INTERACTION RESTORE KERNEL"]),
     ("src/resource.rs", ["RESOURCE GATE KERNEL", "BYTES SLOT KERNEL"]),
@@ -111,7 +112,7 @@ for target in FUZZ_TARGETS:
     for seed in (ROOT / "fuzz/seeds" / target).iterdir():
         shutil.copyfile(seed, corpora / target / seed.name)
 kernels = ["version", "decode-range", "transaction-gate", "byte-read", "cursor-read",
-           "scalar-read", "header-read", "bounded-payload", "surface-row", "surface-span", "surface-borrow", "surface-write", "surface-segment", "surface-view", "pixel-pack", "pixel-convert", "canvas-import", "canvas-pixel", "color-construct", "desktop-pointer", "desktop-pointer-state", "handle", "font-order", "font-weight", "font-family", "bold-alias", "glyph-skew", "frame-reuse", "damage-span", "damage-rect", "frame-tick", "frame-pace", "text-offset", "text-range", "access-actions", "access-change", "access-request", "gpu-readback", "resource-gate", "role-activation", "bytes-slot", "command-modifier", "text-class", "focus-cleanup", "keyboard-focus", "focus-select", "input-retire", "hover-update", "hover-retire", "pointer-order", "capture-query", "scene-update-admission", "scene-frame-completion", "scene-frame-order", "scene-batch-stage", "scene-node-remove", "scene-node-find", "scene-patch", "scene-unique-ids", "scene-checked-patch", "scene-batch-unique", "scene-batch-commit", "scene-interaction-restore", "component-update-admission", "ui-plugin-rect", "ui-plugin-count", "ui-plugin-reloc", "surface-render-gate", "surface-transition", "surface-coordination", "surface-render-outcome", "core-frame-bytes", "core-frame-budget", "ui-identity-next", "capability-matrix"]
+           "scalar-read", "header-read", "bounded-payload", "surface-row", "surface-span", "surface-borrow", "surface-write", "surface-segment", "surface-view", "pixel-pack", "pixel-convert", "canvas-import", "canvas-pixel", "color-construct", "desktop-pointer", "desktop-pointer-state", "handle", "font-order", "font-weight", "font-family", "bold-alias", "glyph-skew", "frame-reuse", "damage-span", "damage-rect", "frame-tick", "frame-pace", "text-offset", "text-range", "access-actions", "access-change", "access-request", "gpu-readback", "resource-gate", "role-activation", "bytes-slot", "command-modifier", "text-class", "focus-cleanup", "keyboard-focus", "focus-select", "input-retire", "hover-update", "hover-retire", "pointer-order", "capture-query", "scene-update-admission", "scene-frame-completion", "scene-frame-order", "scene-batch-stage", "scene-node-remove", "scene-node-find", "scene-patch", "scene-unique-ids", "scene-checked-patch", "scene-batch-unique", "scene-batch-commit", "scene-interaction-restore", "component-update-admission", "ui-plugin-rect", "ui-plugin-count", "ui-plugin-reloc", "surface-render-gate", "surface-transition", "surface-coordination", "surface-render-outcome", "core-frame-bytes", "core-frame-budget", "ui-identity-next", "ui-event-permission", "capability-matrix"]
 if a.kani_full:
     # Sequential whole-library run keeps the shared lock and memory ceiling; the per-harness clock does not apply.
     # 整库顺序运行保留共享锁与内存上限；单 harness 时钟不适用。

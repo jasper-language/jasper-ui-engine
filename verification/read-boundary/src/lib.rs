@@ -104,6 +104,59 @@ pub fn assert_next_ui_identity(semantic_id: u64, last_generation: u64, live: boo
     }
 }
 
+/// Independent exhaustive oracle for Typed UI event permission classification.
+/// Typed UI 事件权限分类的独立穷举规格。
+pub fn assert_event_permissions() {
+    for event in [
+        UiEventKind::Click,
+        UiEventKind::Activate,
+        UiEventKind::PointerDown,
+        UiEventKind::PointerUp,
+        UiEventKind::Hover,
+        UiEventKind::Focus,
+        UiEventKind::Key,
+        UiEventKind::TextCommit,
+        UiEventKind::ImeCommit,
+        UiEventKind::ImeCancel,
+        UiEventKind::Scroll,
+        UiEventKind::Dismiss,
+        UiEventKind::AccessibilityAction,
+    ] {
+        let expected = match event {
+            UiEventKind::Click | UiEventKind::Activate => UiPermission::Activate,
+            UiEventKind::PointerDown | UiEventKind::PointerUp | UiEventKind::Hover => {
+                UiPermission::Pointer
+            }
+            UiEventKind::Focus => UiPermission::Focus,
+            UiEventKind::Key => UiPermission::Keyboard,
+            UiEventKind::TextCommit => UiPermission::TextEdit,
+            UiEventKind::ImeCommit | UiEventKind::ImeCancel => UiPermission::Ime,
+            UiEventKind::Scroll => UiPermission::Scroll,
+            UiEventKind::Dismiss => UiPermission::Dismiss,
+            UiEventKind::AccessibilityAction => UiPermission::AccessibilityAction,
+        };
+        assert!(same_permission(event.required_permission(), expected));
+    }
+}
+
+fn same_permission(left: UiPermission, right: UiPermission) -> bool {
+    match (left, right) {
+        (UiPermission::Pointer, UiPermission::Pointer)
+        | (UiPermission::Activate, UiPermission::Activate)
+        | (UiPermission::Focus, UiPermission::Focus)
+        | (UiPermission::Keyboard, UiPermission::Keyboard)
+        | (UiPermission::TextEdit, UiPermission::TextEdit)
+        | (UiPermission::Ime, UiPermission::Ime)
+        | (UiPermission::Scroll, UiPermission::Scroll)
+        | (UiPermission::Dismiss, UiPermission::Dismiss)
+        | (
+            UiPermission::AccessibilityAction,
+            UiPermission::AccessibilityAction,
+        ) => true,
+        _ => false,
+    }
+}
+
 /// Full-width oracle uses u128 so multiplication and addition do not wrap.
 /// 使用 u128 独立计算规格，避免将 usize 运算回绕误认为正确结果。
 pub fn assert_surface_span(row: usize, height: usize, stride: usize, capacity: usize) {
@@ -2877,6 +2930,11 @@ mod kani_checks {
     }
 
     #[kani::proof]
+    fn event_permission_admission() {
+        assert_event_permissions();
+    }
+
+    #[kani::proof]
     fn access_actions_rules() {
         assert_access_actions(kani::any(), kani::any(), kani::any());
     }
@@ -3841,6 +3899,10 @@ mod properties {
             assert_next_ui_identity(semantic_id, u64::MAX, true);
         }
         #[test]
+        fn event_permission_property(_selector in any::<u8>()) {
+            assert_event_permissions();
+        }
+        #[test]
         fn endpoint_property(total in any::<usize>(), pos in any::<usize>(), len in any::<usize>()) {
             assert_endpoint(total, pos, len);
         }
@@ -3888,6 +3950,11 @@ mod memory {
         ] {
             assert_next_ui_identity(7, last_generation, live);
         }
+    }
+
+    #[test]
+    fn event_permission_variants() {
+        assert_event_permissions();
     }
 
     #[test]
