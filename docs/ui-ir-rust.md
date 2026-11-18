@@ -107,8 +107,8 @@ caret 几何与 `UiKey` 一并返回，不暴露 backend 节点身份。
 - `project_jui2_event(&NativeUiDocument, &Jui2Event)` 将 active `UiKey` 映射到 transport
   NodeId，编码 hover/pointer/click/focus/key/text-commit/ime-cancel/dismiss-request
   事件，并复用 JUI 2 payload 转义；
-- `examples/project_jui2_settings.rs` 是只读诊断入口，将 settings fixture 输出为 JUI 2
-  初始 frame，供旧 host reader 回环；
+- `examples/project_jui2.rs` 是只读诊断入口，默认输出 settings，也可指定任一 IR fixture
+  作为 JUI 2 初始 frame 供旧 host reader 回环；
 - `project_native_style_with_context` 接受节点精确的 image `ResourceRef` 与 overlay 锚点
   `UiKey`，可无损投影相应 candidate 字段；
 - `NativeUiDocument::project_compatibility_style(UiKey)` 自动从当前节点映射这两项上下文；
@@ -256,8 +256,9 @@ Web 后端和正式宿主仍需分别验收。
 - 软件 Vulkan（lvp/llvmpipe）+ `gpu-pending` 的 `ui_ir_v0`：`48 passed`；
 - 无 Native 特性的 Legacy 库测试：`180 passed`；`cargo check --no-default-features
   --all-targets` 成功；
-- 旧 `jasper-ui-host --headless` reader 在 `/tmp` 副本中指向本分支后接受 settings 初始
-  frame：`ack 2`，`accepted 1 / rejected 0`，生成 480×320 PNG，并输出完整 dump/bounds；
+- 旧 `jasper-ui-host --headless` reader 在 `/tmp` 副本中指向本分支后分别接受
+  settings/data-table/dialog 三份初始 frame：均为 `ack 2`、`accepted 1 / rejected 0`，
+  各生成 480×320 PNG 与 dump；data-table 的 Table role 仍按 wire loss 降级，不宣称语义等价；
   副本只为新增 SceneError/Role 变体补了 exhaustive match 分支，reader 协议逻辑未改；
   原 host 仓库未修改。该证据只覆盖 CPU headless transport，不包含真实平台窗口；
 - Clippy 成功退出；仓库仍保留已登记的非阻塞历史 warning。
@@ -301,7 +302,7 @@ JUI 2 reader 诊断：
 
 ```bash
 /home/auth/.cargo/bin/cargo run --locked --no-default-features \
-  --example project_jui2_settings
+  --example project_jui2 -- [fixture-path]
 ```
 
 将 stdout 直接作为旧 host 的 `--frames -` 输入即可；host 的锁定依赖和 engine path 属于
