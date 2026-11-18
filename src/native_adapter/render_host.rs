@@ -55,6 +55,7 @@ impl std::error::Error for HostRenderError {}
 pub enum TypedUiApplyError {
     Frame(NativeUiFrameError),
     Host(SceneUpdateError),
+    SurfaceRejected,
 }
 
 impl std::fmt::Display for TypedUiApplyError {
@@ -63,6 +64,9 @@ impl std::fmt::Display for TypedUiApplyError {
             Self::Frame(error) => write!(formatter, "Typed UI IR frame rejected: {error}"),
             Self::Host(error) => {
                 write!(formatter, "Native host rejected Typed UI IR frame: {error}")
+            }
+            Self::SurfaceRejected => {
+                write!(formatter, "host Surface generation rejected Typed UI IR frame")
             }
         }
     }
@@ -689,6 +693,27 @@ impl HostRenderer {
         )
     }
 
+    pub fn try_apply_ui_ir_at(
+        &mut self,
+        owner: u64,
+        generation: u64,
+        update: &NativeSceneUpdate,
+    ) -> Result<(), TypedUiApplyError> {
+        if !self.surface.render_allowed(owner, generation) {
+            return Err(TypedUiApplyError::SurfaceRejected);
+        }
+        let result = self.inner.try_apply(
+            owner,
+            update.expected_revision,
+            update.next_revision,
+            &update.patches,
+        );
+        if result.is_ok() {
+            self.surface.frame_superseded();
+        }
+        result.map_err(TypedUiApplyError::Host)
+    }
+
     /// Atomically map and apply a Framework frame. The document is advanced only after the
     /// current Surface generation accepts the projected Native transaction.
     pub fn try_apply_ui_frame(
@@ -697,6 +722,24 @@ impl HostRenderer {
         document: &mut NativeUiDocument,
         frame: &UiFrame,
     ) -> Result<NativeSceneUpdate, TypedUiApplyError> {
+        let generation = self
+            .surface
+            .status(owner)
+            .ok_or(TypedUiApplyError::SurfaceRejected)?
+            .generation;
+        self.try_apply_ui_frame_at(owner, generation, document, frame)
+    }
+
+    pub fn try_apply_ui_frame_at(
+        &mut self,
+        owner: u64,
+        generation: u64,
+        document: &mut NativeUiDocument,
+        frame: &UiFrame,
+    ) -> Result<NativeSceneUpdate, TypedUiApplyError> {
+        if !self.surface.render_allowed(owner, generation) {
+            return Err(TypedUiApplyError::SurfaceRejected);
+        }
         let mut candidate = document.clone();
         let update = candidate
             .apply_frame_with_patches(frame)
@@ -705,8 +748,7 @@ impl HostRenderer {
         if reduce_motion.is_some() && self.reduce_motion(owner).is_none() {
             return Err(TypedUiApplyError::Host(SceneUpdateError::OwnerMismatch));
         }
-        self.try_apply_ui_ir(owner, &update)
-            .map_err(TypedUiApplyError::Host)?;
+        self.try_apply_ui_ir_at(owner, generation, &update)?;
         if let Some(on) = reduce_motion {
             if !self.set_reduce_motion(owner, on) {
                 return Err(TypedUiApplyError::Host(SceneUpdateError::Closed));

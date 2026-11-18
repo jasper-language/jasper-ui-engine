@@ -967,7 +967,6 @@ fn projected_successor_patches_update_an_active_scene_host_view() {
 #[test]
 fn host_renderer_gates_typed_ui_frame_atomically_across_suspend_resume() {
     use jasper_ui_engine::native::host::{HostRenderer, TypedUiApplyError};
-    use jasper_ui_engine::native::SceneUpdateError;
 
     const OWNER: u64 = 76;
     const WIDTH: u32 = 480;
@@ -982,6 +981,7 @@ fn host_renderer_gates_typed_ui_frame_atomically_across_suspend_resume() {
     let mut host = HostRenderer::new(OWNER, document.scene(), &font, WIDTH, HEIGHT).unwrap();
     let active = host.surface_status(OWNER).unwrap();
     let initial_scene = document.scene().clone();
+    let initial_host_identity = host.snapshot_identity(OWNER);
 
     let mut frame: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     frame["expected_revision"] = serde_json::json!(2);
@@ -1004,19 +1004,31 @@ fn host_renderer_gates_typed_ui_frame_atomically_across_suspend_resume() {
         }
     ]);
     let frame = UiFrame::from_json_slice(&serde_json::to_vec(&frame).unwrap()).unwrap();
+    assert!(matches!(
+        host.try_apply_ui_frame_at(
+            OWNER,
+            active.generation + 1,
+            &mut document,
+            &frame,
+        ),
+        Err(TypedUiApplyError::SurfaceRejected)
+    ));
+    assert_eq!(document.revision(), 2);
+    assert_eq!(document.scene(), &initial_scene);
+    assert_eq!(host.snapshot_identity(OWNER), initial_host_identity);
     let suspended = host
         .suspend(OWNER, 2, active.generation, &mut |_| {})
         .unwrap();
     assert!(matches!(
         host.try_apply_ui_frame(OWNER, &mut document, &frame),
-        Err(TypedUiApplyError::Host(SceneUpdateError::Closed))
+        Err(TypedUiApplyError::SurfaceRejected)
     ));
     assert_eq!(document.revision(), 2);
     assert_eq!(document.scene(), &initial_scene);
 
     let resumed = host.resume(OWNER, suspended, WIDTH, HEIGHT, 1.0).unwrap();
     let update = host
-        .try_apply_ui_frame(OWNER, &mut document, &frame)
+        .try_apply_ui_frame_at(OWNER, resumed, &mut document, &frame)
         .unwrap();
     assert_eq!(update.next_revision, 3);
     assert_eq!(document.revision(), 3);
