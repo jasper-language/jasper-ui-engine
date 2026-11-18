@@ -1066,6 +1066,9 @@ impl HostRenderer {
                 document: document.revision(),
             });
         }
+        if !self.surface.render_allowed(owner, generation) {
+            return Err(TypedUiTargetError::HostRejected);
+        }
         let target = document
             .admit_native_target(context, node, UiPermission::Focus)
             .map_err(TypedUiTargetError::Admission)?;
@@ -1433,6 +1436,9 @@ impl HostRenderer {
                 document: document.revision(),
             });
         }
+        if !self.surface.render_allowed(owner, generation) {
+            return Err(TypedUiTargetError::HostRejected);
+        }
         let target = document
             .admit_native_target(context, node, UiPermission::Keyboard)
             .map_err(TypedUiTargetError::Admission)?;
@@ -1520,6 +1526,9 @@ impl HostRenderer {
                 host: version,
                 document: document.revision(),
             });
+        }
+        if !self.surface.render_allowed(owner, generation) {
+            return Err(TypedUiTargetError::HostRejected);
         }
         let target = document
             .admit_native_target(context, node, UiPermission::Keyboard)
@@ -1652,6 +1661,9 @@ impl HostRenderer {
                 document: document.revision(),
             });
         }
+        if !self.surface.render_allowed(owner, generation) {
+            return Err(TypedUiTargetError::HostRejected);
+        }
         let target = document
             .admit_native_target(context, node, UiPermission::TextEdit)
             .map_err(TypedUiTargetError::Admission)?;
@@ -1699,6 +1711,9 @@ impl HostRenderer {
                 document: document.revision(),
             });
         }
+        if !self.surface.render_allowed(owner, generation) {
+            return Err(TypedUiTargetError::HostRejected);
+        }
         let target = document
             .admit_native_target(context, node, UiPermission::Ime)
             .map_err(TypedUiTargetError::Admission)?;
@@ -1732,6 +1747,9 @@ impl HostRenderer {
                 host: version,
                 document: document.revision(),
             });
+        }
+        if !self.surface.render_allowed(owner, generation) {
+            return Err(TypedUiTargetError::HostRejected);
         }
         let target = document
             .admit_native_target(context, node, UiPermission::Ime)
@@ -2318,6 +2336,9 @@ impl HostRenderer {
                 document: document.revision(),
             });
         }
+        if !self.surface.render_allowed(owner, generation) {
+            return Err(TypedUiTargetError::HostRejected);
+        }
         let admitted = document
             .admit_activation(context, node, crate::ui_ir::NativeActivationSource::Accessibility)
             .map_err(TypedUiTargetError::Admission)?;
@@ -2430,6 +2451,9 @@ impl HostRenderer {
                 host: version,
                 document: document.revision(),
             });
+        }
+        if !self.surface.render_allowed(owner, generation) {
+            return Err(TypedUiTargetError::HostRejected);
         }
         let current = self.focused_node(owner, version);
         let target = current

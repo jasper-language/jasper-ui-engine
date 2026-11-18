@@ -79,6 +79,8 @@ Focus/TextEdit/IME 操作合并到一次调用，避免授权后误传另一个 
 时，还须在默认行为发生前持有 TextEdit；Enter 将产生提交时同时预准入 `text-commit` binding。
 `typed_key_with_activation` 在键盘激活时要求 `activate` binding 和 Activate permission；
 只有 `click` 绑定时不会把 Enter/Space 的回调交给 Framework。
+所有带 Surface generation 的 Typed 焦点、键盘、文本、IME 与激活变更入口都在授权和映射前
+拒绝过期 generation；后续 permission 检查不会掩盖宿主生命周期拒绝。
 几何查询使用 `typed_node_bounds` / `typed_scroll_geometry` / `typed_table_metrics`：
 输入 UiKey，返回前校验 document revision 与 Surface generation，未知 key 结构化拒绝。
 宿主只能通过 `committed_resource` 取得可消费的 Prepared+Commit 资源；`active_resource` 仍可查询

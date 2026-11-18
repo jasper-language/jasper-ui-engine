@@ -1147,6 +1147,23 @@ fn typed_focus_text_and_ime_use_the_same_admitted_ui_key() {
         host.typed_focused_node(OWNER, 2, &document).unwrap(),
         Some(UiKey::new(3, 1))
     );
+    let no_permissions = UiEventContext {
+        permission_context: UiPermissionContext::new("none", []),
+        ..context.clone()
+    };
+    assert!(matches!(
+        host.typed_text_input(
+            OWNER,
+            2,
+            generation + 1,
+            &document,
+            &no_permissions,
+            field,
+            "x",
+        ),
+        Err(TypedUiTargetError::HostRejected)
+    ));
+    assert_eq!(host.edit_state(OWNER, 2).unwrap().unwrap().text, "Alice");
     assert_eq!(
         host.typed_text_input(OWNER, 2, generation, &document, &context, field, "!")
             .unwrap(),
