@@ -52,6 +52,7 @@ Rust 引擎已新增 Typed UI IR v0.1 consumer profile，并以 appfw `codex/ir-
 - `data-table` 的 Table/Row/Cell 语义已保留，并通过真实 Native CPU fixture 执行；
 - `settings-page` 已通过 llvmpipe/Vulkan 的 Native GPU 执行与 CPU 对照：170/153600 像素不同，最大通道差 1；
 - 身份 generation、owner/session/revision/permission 事件准入已有定向测试；活动帧 `Move` 保持焦点、指针按下和 TextArea/IME 编辑状态；Committed image resource 已接入真实 `SceneHostView.insert_image`。
+- `HostRenderer::try_apply_ui_frame` 已验证暂停状态下 IR mapping 与 Native host 均保持原 revision，恢复后才共同提交。
 
 这仍不是双后端黄金用例：Web SSR、真实浏览器、真实硬件 GPU、真实平台宿主和完整差异表
 均未执行。跨后端状态继续为 `not_run`。

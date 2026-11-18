@@ -67,6 +67,8 @@ let scene = document.scene();
 [ui-ir-rust.md](ui-ir-rust.md)；该 API 不是正式 ABI，也未完成 Native/Web 一致性或形式化证明。
 宿主只能通过 `committed_resource` 取得可消费的 Prepared+Commit 资源；`active_resource` 仍可查询
 Prepared 中间态，但不表示允许上传或绘制。
+`HostRenderer::try_apply_ui_frame` 会在 detached document 上完成 IR 映射，再经 Surface
+活跃代数与 Native 事务准入；任一侧拒绝都不推进 document 或活动视图。
 
 `Engine` 仅在 `native-engine`（或兼容实现特性）启用时存在；未启用时不会静默选用旧执行链。此前原生名称 `BlitzEngine` 保留为同一实现的兼容重导出。旧引擎明确名为 `LegacyEngine`，旧统计与错误只描述兼容路径。
 

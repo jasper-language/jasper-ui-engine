@@ -5,10 +5,10 @@
 //! authenticated owner, version and presentation generations, and coordinates pause/resume/retire.
 //! 它不持有窗口、原生 Surface、GPU 设备或交换链；只把宿主持有资源绑定到已认证归属、版本与
 //! 呈现代数，并协调暂停、恢复和退休。
+use crate::image_resource::{ImageError, ImageInfo, ImageLimits, ImageReport};
 use crate::native::host::SceneHostView;
 #[cfg(feature = "gpu-pending")]
 use crate::native::host::{GpuFrameError, GpuRenderer};
-use crate::image_resource::{ImageError, ImageInfo, ImageLimits, ImageReport};
 use crate::native::{SceneFocusEvent, SceneQuota, SceneUpdate, SceneUpdateError};
 use crate::scene::{NodeId, Scene, ScenePatch};
 #[cfg(feature = "cpu-pending")]
@@ -16,6 +16,7 @@ use crate::surface_lifecycle::RenderedPixels;
 use crate::surface_lifecycle::{
     SurfaceCoordinator, SurfaceLifecycleError, SurfaceStatus, SurfaceStepError,
 };
+use crate::ui_ir::{NativeSceneUpdate, NativeUiDocument, NativeUiFrameError, UiFrame};
 
 /// Host coordinator failure. A lifecycle rejection precedes all native engine work.
 /// 宿主协调失败；生命周期拒绝先于任何原生引擎工作。
@@ -37,6 +38,27 @@ impl std::fmt::Display for HostRenderError {
 }
 
 impl std::error::Error for HostRenderError {}
+
+/// Cross-layer Typed UI IR rejection: mapping happens before the host gate and neither side
+/// commits unless both accept the frame.
+#[derive(Clone, Debug, PartialEq)]
+pub enum TypedUiApplyError {
+    Frame(NativeUiFrameError),
+    Host(SceneUpdateError),
+}
+
+impl std::fmt::Display for TypedUiApplyError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Frame(error) => write!(formatter, "Typed UI IR frame rejected: {error}"),
+            Self::Host(error) => {
+                write!(formatter, "Native host rejected Typed UI IR frame: {error}")
+            }
+        }
+    }
+}
+
+impl std::error::Error for TypedUiApplyError {}
 
 impl From<SurfaceLifecycleError> for HostRenderError {
     fn from(error: SurfaceLifecycleError) -> Self {
@@ -223,6 +245,39 @@ impl HostRenderer {
             self.surface.frame_superseded();
         }
         result
+    }
+
+    /// Apply a Typed UI IR successor through the same surface-activity gate and native
+    /// transaction as a raw ScenePatch frame.
+    pub fn try_apply_ui_ir(
+        &mut self,
+        owner: u64,
+        update: &NativeSceneUpdate,
+    ) -> Result<(), SceneUpdateError> {
+        self.try_apply(
+            owner,
+            update.expected_revision,
+            update.next_revision,
+            &update.patches,
+        )
+    }
+
+    /// Atomically map and apply a Framework frame. The document is advanced only after the
+    /// current Surface generation accepts the projected Native transaction.
+    pub fn try_apply_ui_frame(
+        &mut self,
+        owner: u64,
+        document: &mut NativeUiDocument,
+        frame: &UiFrame,
+    ) -> Result<NativeSceneUpdate, TypedUiApplyError> {
+        let mut candidate = document.clone();
+        let update = candidate
+            .apply_frame_with_patches(frame)
+            .map_err(TypedUiApplyError::Frame)?;
+        self.try_apply_ui_ir(owner, &update)
+            .map_err(TypedUiApplyError::Host)?;
+        *document = candidate;
+        Ok(update)
     }
 
     /// `try_apply` under a host-configured quota; see `Engine::try_apply_within`.

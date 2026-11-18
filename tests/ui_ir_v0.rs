@@ -741,6 +741,68 @@ fn projected_successor_patches_update_an_active_scene_host_view() {
 
 #[cfg(feature = "native-blitz-cpu-pending")]
 #[test]
+fn host_renderer_gates_typed_ui_frame_atomically_across_suspend_resume() {
+    use jasper_ui_engine::native::host::{HostRenderer, TypedUiApplyError};
+    use jasper_ui_engine::native::SceneUpdateError;
+
+    const OWNER: u64 = 76;
+    const WIDTH: u32 = 480;
+    const HEIGHT: u32 = 320;
+    let bytes = fixture("settings-page.ir.json");
+    let mut document = NativeUiDocument::from_json_slice(&bytes).unwrap();
+    let font = std::fs::read(
+        std::env::var("JASPER_UI_TEST_FONT")
+            .expect("JASPER_UI_TEST_FONT must name an injected font"),
+    )
+    .unwrap();
+    let mut host = HostRenderer::new(OWNER, document.scene(), &font, WIDTH, HEIGHT).unwrap();
+    let active = host.surface_status(OWNER).unwrap();
+    let initial_scene = document.scene().clone();
+
+    let mut frame: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    frame["expected_revision"] = serde_json::json!(2);
+    frame["next_revision"] = serde_json::json!(3);
+    frame["ops"] = serde_json::json!([{
+        "op": "update",
+        "key": { "semantic_id": 3, "generation": 1 },
+        "fields": {
+            "semantics": {
+                "role": "text-field",
+                "label": "Display name",
+                "focusable": true
+            }
+        }
+    }]);
+    let frame = UiFrame::from_json_slice(&serde_json::to_vec(&frame).unwrap()).unwrap();
+    let suspended = host
+        .suspend(OWNER, 2, active.generation, &mut |_| {})
+        .unwrap();
+    assert!(matches!(
+        host.try_apply_ui_frame(OWNER, &mut document, &frame),
+        Err(TypedUiApplyError::Host(SceneUpdateError::Closed))
+    ));
+    assert_eq!(document.revision(), 2);
+    assert_eq!(document.scene(), &initial_scene);
+
+    let resumed = host.resume(OWNER, suspended, WIDTH, HEIGHT, 1.0).unwrap();
+    let update = host
+        .try_apply_ui_frame(OWNER, &mut document, &frame)
+        .unwrap();
+    assert_eq!(update.next_revision, 3);
+    assert_eq!(document.revision(), 3);
+    let mut pixels = vec![0u8; (WIDTH * HEIGHT * 4) as usize];
+    assert!(host.render_to_surface(
+        OWNER,
+        document.revision(),
+        resumed,
+        &mut pixels,
+        (WIDTH * 4) as usize,
+        64 * 1024 * 1024,
+    ));
+}
+
+#[cfg(feature = "native-blitz-cpu-pending")]
+#[test]
 fn same_data_table_fixture_executes_and_exposes_table_semantics() {
     use jasper_ui_engine::native::host::SceneHostView;
 
