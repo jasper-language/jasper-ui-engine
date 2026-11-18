@@ -881,6 +881,48 @@ fn host_renderer_applies_initial_typed_ir_environment() {
 
 #[cfg(feature = "native-blitz-cpu-pending")]
 #[test]
+fn accessibility_tree_projects_losslessly_to_ui_keys() {
+    use jasper_ui_engine::native::host::SceneHostView;
+    use jasper_ui_engine::native::{typed_accessibility_tree, TypedAccessibilityError};
+
+    const OWNER: u64 = 80;
+    let document = NativeUiDocument::from_json_slice(&fixture("settings-page.ir.json")).unwrap();
+    let font = std::fs::read(
+        std::env::var("JASPER_UI_TEST_FONT")
+            .expect("JASPER_UI_TEST_FONT must name an injected font"),
+    )
+    .unwrap();
+    let mut view = SceneHostView::new(OWNER, document.scene(), &font, 480, 320).unwrap();
+    let field = document.node_for_key(UiKey::new(3, 1)).unwrap();
+    assert!(view.focus(OWNER, document.revision(), field, &mut |_| {}));
+    let native = view.accessibility_tree(OWNER, document.revision()).unwrap();
+    let typed = typed_accessibility_tree(&native, &document).unwrap();
+    assert_eq!(typed.root, Some(UiKey::new(1, 1)));
+    assert_eq!(typed.focused, Some(UiKey::new(3, 1)));
+    assert_eq!(
+        typed.nodes.iter().map(|node| node.key).collect::<Vec<_>>(),
+        vec![
+            UiKey::new(1, 1),
+            UiKey::new(2, 1),
+            UiKey::new(3, 1),
+            UiKey::new(4, 1),
+        ]
+    );
+    assert_eq!(
+        typed.nodes[0].children,
+        vec![UiKey::new(2, 1), UiKey::new(3, 1), UiKey::new(4, 1),]
+    );
+
+    let mut wrong = native;
+    wrong.scene_version += 1;
+    assert!(matches!(
+        typed_accessibility_tree(&wrong, &document),
+        Err(TypedAccessibilityError::VersionMismatch { .. })
+    ));
+}
+
+#[cfg(feature = "native-blitz-cpu-pending")]
+#[test]
 fn same_data_table_fixture_executes_and_exposes_table_semantics() {
     use jasper_ui_engine::native::host::SceneHostView;
 

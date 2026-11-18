@@ -205,6 +205,9 @@ mod text_edit;
 #[path = "native_adapter/text_geometry.rs"]
 mod text_geometry;
 #[cfg(feature = "native-blitz-pending")]
+#[path = "native_adapter/typed_accessibility.rs"]
+mod typed_accessibility;
+#[cfg(feature = "native-blitz-pending")]
 #[path = "native_adapter/update_contract.rs"]
 mod update_contract;
 #[cfg(feature = "native-blitz-pending")]

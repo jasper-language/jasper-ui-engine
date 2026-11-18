@@ -19,6 +19,7 @@ pub use crate::image_resource::{ImageError,ImageFormat,ImageInfo,ImageLimits,Ima
 pub use crate::overlay::{DismissReason,OutsidePress,OverlayAlign,OverlayAnchor,OverlayAvoid,OverlayDismiss,OverlayEvent,OverlayEventKind,OverlayFocus,OverlayInfo,OverlayPlacement,OverlaySide,OverlaySpec,OverlaySuppression};
 pub use crate::scroll::ScrollGeometry;
 pub use crate::table::{TableCellMetrics,TableMetrics};
+pub use crate::typed_accessibility::{typed_accessibility_tree,TypedAccessibilityError,TypedAccessibilityNode,TypedAccessibilityTree};
 
 /// Embedding-host adapter; application declarations use Scene/ScenePatch values above.
 /// This module does not acquire windows, surfaces, devices or OS services.
