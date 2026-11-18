@@ -37,7 +37,7 @@ Jasper UI 的 **宿主无关 Native 引擎底座**（Rust）。它只负责底�
 
 - 几何、颜色、PSS 子集（Flex/Block 语义、尺寸、间距、对齐、边框）
 - 场景树（稳定 `NodeId`）与增量 `ScenePatch`
-- **Taffy 布局适配**（Flexbox / Block（Grid 尚未映射到公开样式）；百分比、min/max、padding/margin/gap）
+- **Taffy / Blitz 布局适配**（Flexbox、Block 与候选 Grid/Position 映射；百分比、min/max、padding/margin/gap）
 - 文字测量 trait + 参考实现（近似度量，真实排版后续接 Parley）
 - 可选真实文本测量：`--features real-text` 使用 cosmic-text 的系统字体、shaping 与断行
 - 绘制显示列表（Fill/Stroke/Text/Clip）
@@ -58,19 +58,25 @@ Jasper UI 的 **宿主无关 Native 引擎底座**（Rust）。它只负责底�
 - **桌面窗口**：`--features desktop,native-engine-cpu --example window -- FONT [--once]` 使用根原生 CPU 候选，经宿主持有的 winit/softbuffer 呈现；Xvfb 下已实测一帧、缩放和点击，硬件/平台生命周期仍待验收
 - **宿主渲染生命周期**：`native::host::HostRenderer` 绑定尺寸/DPI/Surface 代数，协调暂停、恢复、退休和 GPU present 确认；见 [host-rendering.md](docs/host-rendering.md)
 - **GPU 选择**：`--features gpu` 用 wgpu 枚举真实适配器，套用自动/集成/独立/指定/纯软件策略
+- **Typed UI IR v0.1 Rust consumer**：严格读取 Schema、`UiKey` 身份、事件/焦点/编辑/资源准入、
+  Native Scene 映射、candidate 能力、兼容 snapshots 与 JUI 2 loss-aware adapter；公共 Schema
+  仍由 Language/UI 共有层拥有，见 [ui-ir-rust.md](docs/ui-ir-rust.md)
+- **原生图片与文字**：宿主注入 PNG/JPEG/WebP/SVG、资源额度、CPU/GPU 文字布局与绘制，以及
+  Native text-edit/IME 事件会话已有执行测试；真实平台候选窗和完整跨平台验收仍未宣称完成
 - 正式原生流水线：场景更新 → Blitz 树/样式/布局/事件 → Parley/Vello → 宿主后端或 Surface
 - 旧兼容流水线：场景 → Taffy 布局 → PaintOp → UiBatch → 后端，仅由 `LegacyEngine` 显式调用
 - 测试与可运行示例
 
 ## v0.1 明确未实现
 
-- 真实文字光栅化（`DrawText` 在 Headless 后端返回 `Unsupported`；需要 Parley/字体后端）
-- macOS/移动端无障碍运行验收、Windows 物理 GPU/vsync、图片/SVG 解码；Ubuntu 已完成
+- 旧 Headless `DrawText` 仍明确为 `Unsupported`；正式 Native 文字路径由 Parley/Vello 和宿主字体承担
+- macOS/移动端无障碍运行验收、Windows 物理 GPU/vsync；Ubuntu 已完成
   硬件 GPU、device-loss 恢复演练与 AT-SPI 桥实测，Windows 10 VM 已完成 UIA 与 wgpu
   生命周期演练
-- Jasper ABI、Jasper UI Framework、UI IR、状态/事件/动画/路由
+- Jasper 正式 ABI、公共 UI Framework 的组件/状态/主题/路由语义；UI IR v0.1 只有 Rust consumer，
+  Schema 与公共语义不由本仓库拥有
 - Web HTML/CSS/JS/WASM 输出
-- 完整文本编辑与 IME 往返、过冲回弹、系统无障碍桥（文本/组合事件映射与焦点路由已有实现）
+- 真实物理桌面、真实 Wayland 合成器、跨平台 IME 候选窗和无障碍文本接口的完整验收
 - 这些缺口在 [docs/status.md](docs/status.md) 里逐项标注，不写成“已完成”。
 
 ## 快速开始
