@@ -451,6 +451,7 @@ fn same_settings_fixture_executes_through_scene_host_view_and_cpu_renderer() {
 #[test]
 fn projected_successor_patches_update_an_active_scene_host_view() {
     use jasper_ui_engine::native::host::SceneHostView;
+    use jasper_ui_engine::native::{EventReply, PointerAction, SceneEventKind};
 
     const OWNER: u64 = 72;
     let bytes = fixture("settings-page.ir.json");
@@ -463,6 +464,21 @@ fn projected_successor_patches_update_an_active_scene_host_view() {
     let mut view = SceneHostView::new(OWNER, document.scene(), &font, 480, 320).unwrap();
     let button = document.node_for_key(UiKey::new(4, 1)).unwrap();
     assert!(view.focus(OWNER, 2, button, &mut |_| {}));
+    let before = view.node_bounds(OWNER, 2, button).unwrap();
+    let mut activated = 0usize;
+    assert!(view.pointer(
+        OWNER,
+        2,
+        PointerAction::Down,
+        before.x() + before.width() / 2.0,
+        before.y() + before.height() / 2.0,
+        true,
+        &mut |event| {
+            activated += usize::from(event.kind == SceneEventKind::Activate);
+            EventReply::default()
+        },
+        &mut |_| {},
+    ));
 
     let mut frame: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     frame["expected_revision"] = serde_json::json!(2);
@@ -504,6 +520,26 @@ fn projected_successor_patches_update_an_active_scene_host_view() {
         view.focused_node(OWNER, update.next_revision),
         Some(button),
         "moving a focused node preserves its UiKey-backed Native identity"
+    );
+    let after = view
+        .node_bounds(OWNER, update.next_revision, button)
+        .unwrap();
+    assert!(view.pointer(
+        OWNER,
+        update.next_revision,
+        PointerAction::Up,
+        after.x() + after.width() / 2.0,
+        after.y() + after.height() / 2.0,
+        false,
+        &mut |event| {
+            activated += usize::from(event.kind == SceneEventKind::Activate);
+            EventReply::default()
+        },
+        &mut |_| {},
+    ));
+    assert_eq!(
+        activated, 1,
+        "pointer capture survives the identity-preserving move"
     );
 
     let semantics = view.semantics(OWNER, update.next_revision).unwrap();

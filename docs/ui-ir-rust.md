@@ -48,7 +48,7 @@ Jasper Language/UI 共有层；Rust 不反向定义公共语义。
 - 先在 detached clone 上完成整帧映射，成功后替换；
 - 支持 insert/update/move/remove/resource/environment；
 - `apply_frame_with_patches` 为活动 `SceneHostView` 返回同一终态的 `ScenePatch` 批次；
-- `ScenePatch::Move` 保持节点身份与焦点，不用 remove+insert 近似重排；
+- `ScenePatch::Move` 保持节点身份、焦点、指针按下与 TextArea 编辑缓冲/IME 预编辑，不用 remove+insert 近似重排；
 - 维护 `UiKey ↔ NodeId`、事件 action、资源 generation 与 element kind；
 - style 无法无损表达时返回 `NativeUiFrameError::Mapping(MappingIssue)`；
 - revision 与 `Scene::version()` 同步推进。
@@ -59,7 +59,7 @@ Jasper Language/UI 共有层；Rust 不反向定义公共语义。
 |---|---|---|
 | box/flex/paint/typography 基础子集 | implemented / tested | 设置页 fixture 经真实 Native CPU 执行 |
 | 事件绑定与准入 | implemented / tested | click/text-commit、owner/session/revision/permission/generation 拒绝 |
-| 活动宿主后继帧 | implemented / tested | `apply_frame_with_patches` 生成 patch，真实 SceneHostView 应用并与 detached 文档终态一致 |
+| 活动宿主后继帧 | implemented / tested | `apply_frame_with_patches` 生成 patch，真实 SceneHostView 应用并与 detached 文档终态一致；Move 保持焦点、指针捕获和 IME/编辑状态 |
 | Table/Row/Cell 语义 | implemented / tested | 公共角色、ARIA 和 AccessKit Table/Row/Cell 保留，data-table fixture Native CPU 可执行 |
 | TextArea 语义与编辑 | implemented / tested | 保留 MultilineTextInput、换行输入、行内 Home/End、上下移动与多行编辑缓冲 |
 | Popover/Tooltip 语义 | implemented / tested | Native 语义角色保留；AccessKit 分别投影为 Group/Tooltip，Popover 的宿主平台细节仍为 candidate |

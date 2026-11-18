@@ -230,6 +230,50 @@ fn text_area_uses_the_same_in_scene_edit_session_without_role_loss() {
 }
 
 #[test]
+fn move_patch_preserves_text_area_focus_buffer_and_ime_preedit() {
+    let mut source = scene("ab");
+    source.root.children[0].semantics.role = Role::TextArea;
+    let version = source.version();
+    let mut engine =
+        Engine::with_fonts(OWNER, &source, &[&font()], W, H).expect("native text-area import");
+    assert!(engine.focus(OWNER, version, FIELD, &mut |_| {}));
+    assert!(engine.text_input(OWNER, version, "c\nd"));
+    assert!(engine.set_preedit(OWNER, version, Some("中"), None));
+    let identity = engine.snapshot_identity(OWNER).unwrap();
+
+    engine
+        .try_apply(
+            OWNER,
+            version,
+            version + 1,
+            &[ScenePatch::Move {
+                id: FIELD,
+                parent: NodeId(1),
+                index: 1,
+            }],
+        )
+        .expect("move-focused-text-area");
+    assert_eq!(engine.focused_node(OWNER, version + 1), Some(FIELD));
+    let state = engine.edit_state(OWNER, version + 1).unwrap().unwrap();
+    assert_eq!(state.text, "abc\nd");
+    assert_eq!(state.preedit.as_deref(), Some("中"));
+    let semantics = engine.semantics(OWNER, version + 1).unwrap();
+    assert_eq!(
+        semantics
+            .nodes
+            .iter()
+            .find(|node| node.node == NodeId(1))
+            .unwrap()
+            .children,
+        vec![BUTTON, FIELD]
+    );
+    assert_eq!(
+        engine.snapshot_identity(OWNER).unwrap(),
+        (version + 1, identity.1)
+    );
+}
+
+#[test]
 fn caret_blinks_on_the_host_clock_and_stays_under_reduce_motion() {
     let mut f = Fixture::new("ab");
     assert_eq!(f.e.caret_blink(OWNER, 0.0).unwrap().visible, false);
