@@ -262,6 +262,8 @@ Web 后端和正式宿主仍需分别验收。
 - 硬件 Vulkan 离屏的 `ui_ir_v0`：Intel UHD 630 `49 passed`（141/153600 pixels differ,
   max channel delta 1）；NVIDIA RTX 3060 `49 passed`（157/153600 pixels differ,
   max channel delta 1）；不代表硬件窗口 Surface/swapchain 呈现；
+- 在预编辑 cursor 与候选几何改动后重跑同一硬件对照：NVIDIA RTX 3060 仍为
+  `157/153600`、Intel UHD 630 仍为 `141/153600`，最大通道差均为 1；
 - `gpu_window --once` 在 NVIDIA RTX 3060/Vulkan 上成功：
   `Bgra8UnormSrgb`、present `Fifo`、frame 1、device generation 1；Intel UHD 630
   能创建 adapter，但其 X11 Surface 报 adapter queue family 不兼容，因此 Intel 硬件窗口不计通过；
