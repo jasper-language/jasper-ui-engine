@@ -18,7 +18,7 @@ use crate::surface_lifecycle::{
 };
 use crate::typed_accessibility::{
     typed_accessibility_tree as project_typed_accessibility, TypedAccessibilityError,
-    TypedAccessibilityTree,
+    TypedAccessibilityTree, TypedAccessibilityUpdate,
 };
 use crate::ui_ir::{
     NativeSceneUpdate, NativeUiDocument, NativeUiFrameError, ResourceKind, ResourceRef, UiFrame,
@@ -111,6 +111,7 @@ impl std::error::Error for TypedUiResourceError {}
 pub enum TypedUiAccessibilityError {
     HostRejected,
     RevisionMismatch { host: u64, document: u64 },
+    InvalidUpdateSequence,
     Projection(TypedAccessibilityError),
 }
 
@@ -122,6 +123,12 @@ impl std::fmt::Display for TypedUiAccessibilityError {
                 f,
                 "host accessibility revision {host} does not match document revision {document}"
             ),
+            Self::InvalidUpdateSequence => {
+                write!(
+                    f,
+                    "accessibility snapshots do not form one valid ordered update"
+                )
+            }
             Self::Projection(error) => error.fmt(f),
         }
     }
@@ -476,6 +483,40 @@ impl HostRenderer {
             .accessibility_tree(owner, version, generation)
             .ok_or(TypedUiAccessibilityError::HostRejected)?;
         project_typed_accessibility(&tree, document).map_err(TypedUiAccessibilityError::Projection)
+    }
+
+    /// Surface-gated incremental accessibility projection using previous/next Typed IR documents.
+    pub fn typed_accessibility_update(
+        &self,
+        owner: u64,
+        next_version: u64,
+        generation: u64,
+        previous: &crate::native::host::AccessibilityTree,
+        next: &crate::native::host::AccessibilityTree,
+        previous_document: &NativeUiDocument,
+        next_document: &NativeUiDocument,
+    ) -> Result<TypedAccessibilityUpdate, TypedUiAccessibilityError> {
+        if !self.surface.render_allowed(owner, generation) {
+            return Err(TypedUiAccessibilityError::HostRejected);
+        }
+        if previous.scene_version != previous_document.revision()
+            || next_version != next_document.revision()
+            || next.scene_version != next_version
+        {
+            return Err(TypedUiAccessibilityError::RevisionMismatch {
+                host: next_version,
+                document: next_document.revision(),
+            });
+        }
+        let update = next
+            .update_since(previous)
+            .ok_or(TypedUiAccessibilityError::InvalidUpdateSequence)?;
+        crate::typed_accessibility::typed_accessibility_update(
+            &update,
+            previous_document,
+            next_document,
+        )
+        .map_err(TypedUiAccessibilityError::Projection)
     }
 
     /// Route one native accessibility action through the current live surface generation.
