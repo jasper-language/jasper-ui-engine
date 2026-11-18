@@ -137,6 +137,29 @@ impl std::fmt::Display for TypedUiAccessibilityError {
 
 impl std::error::Error for TypedUiAccessibilityError {}
 
+/// Typed target rejection for focus, text input and IME operations.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum TypedUiTargetError {
+    HostRejected,
+    RevisionMismatch { host: u64, document: u64 },
+    Admission(UiEventAdmissionError),
+}
+
+impl std::fmt::Display for TypedUiTargetError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::HostRejected => write!(f, "Native host rejected Typed UI target operation"),
+            Self::RevisionMismatch { host, document } => write!(
+                f,
+                "host revision {host} does not match document revision {document}"
+            ),
+            Self::Admission(error) => error.fmt(f),
+        }
+    }
+}
+
+impl std::error::Error for TypedUiTargetError {}
+
 /// Typed AccessKit action result after UiKey and permission admission.
 #[cfg(feature = "accesskit-pending")]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -616,6 +639,31 @@ impl HostRenderer {
             && self.inner.focus(owner, version, node, sink)
     }
 
+    pub fn typed_focus(
+        &mut self,
+        owner: u64,
+        version: u64,
+        generation: u64,
+        document: &NativeUiDocument,
+        context: &UiEventContext,
+        node: NodeId,
+        sink: &mut impl FnMut(SceneFocusEvent),
+    ) -> Result<UiKey, TypedUiTargetError> {
+        if version != document.revision() {
+            return Err(TypedUiTargetError::RevisionMismatch {
+                host: version,
+                document: document.revision(),
+            });
+        }
+        let target = document
+            .admit_native_target(context, node, UiPermission::Focus)
+            .map_err(TypedUiTargetError::Admission)?;
+        if !self.focus(owner, version, generation, node, sink) {
+            return Err(TypedUiTargetError::HostRejected);
+        }
+        Ok(target)
+    }
+
     pub fn pointer(
         &mut self,
         owner: u64,
@@ -672,6 +720,31 @@ impl HostRenderer {
             && self.inner.text_input(owner, version, text)
     }
 
+    pub fn typed_text_input(
+        &mut self,
+        owner: u64,
+        version: u64,
+        generation: u64,
+        document: &NativeUiDocument,
+        context: &UiEventContext,
+        node: NodeId,
+        text: &str,
+    ) -> Result<UiKey, TypedUiTargetError> {
+        if version != document.revision() {
+            return Err(TypedUiTargetError::RevisionMismatch {
+                host: version,
+                document: document.revision(),
+            });
+        }
+        let target = document
+            .admit_native_target(context, node, UiPermission::TextEdit)
+            .map_err(TypedUiTargetError::Admission)?;
+        if !self.text_input(owner, version, generation, text) {
+            return Err(TypedUiTargetError::HostRejected);
+        }
+        Ok(target)
+    }
+
     /// E14 IME preedit through the live surface generation; see `Engine::set_preedit`.
     /// 经当前活动 Surface 代数的 E14 输入法预编辑；见 `Engine::set_preedit`。
     pub fn set_preedit(
@@ -684,6 +757,32 @@ impl HostRenderer {
     ) -> bool {
         self.surface.render_allowed(owner, generation)
             && self.inner.set_preedit(owner, version, text, cursor)
+    }
+
+    pub fn typed_set_preedit(
+        &mut self,
+        owner: u64,
+        version: u64,
+        generation: u64,
+        document: &NativeUiDocument,
+        context: &UiEventContext,
+        node: NodeId,
+        text: Option<&str>,
+        cursor: Option<(usize, usize)>,
+    ) -> Result<UiKey, TypedUiTargetError> {
+        if version != document.revision() {
+            return Err(TypedUiTargetError::RevisionMismatch {
+                host: version,
+                document: document.revision(),
+            });
+        }
+        let target = document
+            .admit_native_target(context, node, UiPermission::Ime)
+            .map_err(TypedUiTargetError::Admission)?;
+        if !self.set_preedit(owner, version, generation, text, cursor) {
+            return Err(TypedUiTargetError::HostRejected);
+        }
+        Ok(target)
     }
 
     /// E14 edit events; see `Engine::take_edit_events` (independent of the surface lifecycle).

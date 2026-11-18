@@ -935,6 +935,119 @@ fn host_renderer_applies_initial_typed_ir_environment() {
 
 #[cfg(feature = "native-blitz-cpu-pending")]
 #[test]
+fn typed_focus_text_and_ime_use_the_same_admitted_ui_key() {
+    use jasper_ui_engine::native::host::HostRenderer;
+    use jasper_ui_engine::native::TypedUiTargetError;
+
+    const OWNER: u64 = 83;
+    let document = NativeUiDocument::from_json_slice(&fixture("settings-page.ir.json")).unwrap();
+    let font = std::fs::read(
+        std::env::var("JASPER_UI_TEST_FONT")
+            .expect("JASPER_UI_TEST_FONT must name an injected font"),
+    )
+    .unwrap();
+    let mut host = HostRenderer::new_ui_document(OWNER, &document, &font, 480, 320).unwrap();
+    let generation = host.surface_status(OWNER).unwrap().generation;
+    let field = document.node_for_key(UiKey::new(3, 1)).unwrap();
+    let context = UiEventContext {
+        target: UiKey::new(3, 1),
+        identity_domain: "orders-app/window-main".into(),
+        owner: "desktop-host".into(),
+        session: "session-2026-11-17-1".into(),
+        frame_revision: 2,
+        permission_context: UiPermissionContext::new(
+            "text-host",
+            [
+                UiPermission::Focus,
+                UiPermission::TextEdit,
+                UiPermission::Ime,
+            ],
+        ),
+    };
+    let mut focus_events = 0usize;
+    assert_eq!(
+        host.typed_focus(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &context,
+            field,
+            &mut |_| focus_events += 1,
+        )
+        .unwrap(),
+        UiKey::new(3, 1)
+    );
+    assert_eq!(focus_events, 1);
+    assert_eq!(
+        host.typed_text_input(OWNER, 2, generation, &document, &context, field, "!")
+            .unwrap(),
+        UiKey::new(3, 1)
+    );
+    assert_eq!(host.edit_state(OWNER, 2).unwrap().unwrap().text, "Alice!");
+    assert_eq!(
+        host.typed_set_preedit(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &context,
+            field,
+            Some("中"),
+            None,
+        )
+        .unwrap(),
+        UiKey::new(3, 1)
+    );
+    assert_eq!(
+        host.edit_state(OWNER, 2)
+            .unwrap()
+            .unwrap()
+            .preedit
+            .as_deref(),
+        Some("中")
+    );
+
+    let wrong_target = UiEventContext {
+        target: UiKey::new(2, 1),
+        ..context.clone()
+    };
+    assert!(matches!(
+        host.typed_focus(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &wrong_target,
+            field,
+            &mut |_| {},
+        ),
+        Err(TypedUiTargetError::Admission(_))
+    ));
+    let no_text = UiEventContext {
+        permission_context: UiPermissionContext::new("focus-only", [UiPermission::Focus]),
+        ..context.clone()
+    };
+    assert!(matches!(
+        host.typed_text_input(OWNER, 2, generation, &document, &no_text, field, "x"),
+        Err(TypedUiTargetError::Admission(_))
+    ));
+    assert!(matches!(
+        host.typed_focus(
+            OWNER,
+            3,
+            generation,
+            &document,
+            &context,
+            field,
+            &mut |_| {},
+        ),
+        Err(TypedUiTargetError::RevisionMismatch { .. })
+    ));
+}
+
+#[cfg(feature = "native-blitz-cpu-pending")]
+#[test]
 fn accessibility_tree_projects_losslessly_to_ui_keys() {
     use jasper_ui_engine::native::host::{HostRenderer, TypedUiAccessibilityError};
 

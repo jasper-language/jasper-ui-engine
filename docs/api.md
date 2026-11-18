@@ -67,6 +67,8 @@ let scene = document.scene();
 [ui-ir-rust.md](ui-ir-rust.md)；该 API 不是正式 ABI，也未完成 Native/Web 一致性或形式化证明。
 Native 回调携带 `NodeId` 时使用 `admit_native_event`/`admit_activation`；内部 NodeId 仅用于
 映射，授权仍以 `UiEventContext.target` 的 `UiKey` 和上下文为准。
+HostRenderer 的 `typed_focus`、`typed_text_input`、`typed_set_preedit` 把目标授权与实际
+Focus/TextEdit/IME 操作合并到一次调用，避免授权后误传另一个 NodeId。
 宿主只能通过 `committed_resource` 取得可消费的 Prepared+Commit 资源；`active_resource` 仍可查询
 Prepared 中间态，但不表示允许上传或绘制。
 `HostRenderer::insert_ui_image` 只接受当前 document revision 对应的精确 Committed
