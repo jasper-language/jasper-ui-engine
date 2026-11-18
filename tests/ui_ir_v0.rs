@@ -618,6 +618,47 @@ fn native_scene_update_projects_to_loss_aware_jui2_successor_frame() {
 }
 
 #[test]
+fn typed_ui_key_events_project_to_jui2_event_lines() {
+    use jasper_ui_engine::ui_ir::{
+        project_jui2_event, Jui2Event, Jui2EventKind,
+    };
+
+    let document = NativeUiDocument::from_json_slice(&fixture("settings-page.ir.json")).unwrap();
+    let click = Jui2Event {
+        target: UiKey::new(4, 1),
+        kind: Jui2EventKind::Click,
+    };
+    assert_eq!(
+        project_jui2_event(&document, &click).unwrap(),
+        "event\t4\tclick\t"
+    );
+    let commit = Jui2Event {
+        target: UiKey::new(3, 1),
+        kind: Jui2EventKind::TextCommit("A\tB\nC\\D".into()),
+    };
+    assert_eq!(
+        project_jui2_event(&document, &commit).unwrap(),
+        "event\t3\ttext-commit\tA\\tB\\nC\\\\D"
+    );
+    let focus = Jui2Event {
+        target: UiKey::new(3, 1),
+        kind: Jui2EventKind::FocusIn,
+    };
+    assert_eq!(
+        project_jui2_event(&document, &focus).unwrap(),
+        "event\t3\tfocus\tin"
+    );
+    let stale = Jui2Event {
+        target: UiKey::new(3, 2),
+        kind: Jui2EventKind::Click,
+    };
+    assert!(matches!(
+        project_jui2_event(&document, &stale),
+        Err(jasper_ui_engine::ui_ir::UiIrError::Invalid { .. })
+    ));
+}
+
+#[test]
 fn native_node_projection_recovers_public_tree_semantics_events_and_styles() {
     use jasper_ui_engine::ui_ir::{SemanticRole, UiOp};
 

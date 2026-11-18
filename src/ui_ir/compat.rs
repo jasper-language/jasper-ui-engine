@@ -64,6 +64,28 @@ pub struct Jui2CompatibilityFrame {
     pub losses: Vec<NativeNodeLoss>,
 }
 
+/// One host-visible JUI 2 event projected from public identity.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Jui2Event {
+    pub target: UiKey,
+    pub kind: Jui2EventKind,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Jui2EventKind {
+    HoverIn,
+    HoverOut,
+    PointerDown,
+    PointerUp,
+    Click,
+    FocusIn,
+    FocusOut,
+    Key(String),
+    TextCommit(String),
+    ImeCancel,
+    DismissRequest(String),
+}
+
 /// Optional node-local context needed to reverse image and overlay candidate values.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct NativeStyleContext<'a> {
@@ -769,6 +791,32 @@ pub fn project_jui2_scene_update(
     }
     text.push_str("end\n");
     Ok(Jui2CompatibilityFrame { text, losses })
+}
+
+/// Encode one Typed target event as an existing JUI 2 event line.
+pub fn project_jui2_event(
+    document: &NativeUiDocument,
+    event: &Jui2Event,
+) -> Result<String, UiIrError> {
+    let node = document.node_for_key(event.target).ok_or_else(|| UiIrError::Invalid {
+        path: "$.jui2.event.target".into(),
+        detail: "event target is not active in the document".into(),
+    })?;
+    let id = jui2_numeric(node.0, "$.jui2.event.target")?;
+    let (kind, payload) = match &event.kind {
+        Jui2EventKind::HoverIn => ("hover", "in"),
+        Jui2EventKind::HoverOut => ("hover", "out"),
+        Jui2EventKind::PointerDown => ("pointer-down", ""),
+        Jui2EventKind::PointerUp => ("pointer-up", ""),
+        Jui2EventKind::Click => ("click", ""),
+        Jui2EventKind::FocusIn => ("focus", "in"),
+        Jui2EventKind::FocusOut => ("focus", "out"),
+        Jui2EventKind::Key(value) => ("key", value.as_str()),
+        Jui2EventKind::TextCommit(value) => ("text-commit", value.as_str()),
+        Jui2EventKind::ImeCancel => ("ime-cancel", ""),
+        Jui2EventKind::DismissRequest(value) => ("dismiss-request", value.as_str()),
+    };
+    Ok(format!("event\t{id}\t{kind}\t{}", jui2_escape(payload)))
 }
 
 fn compatibility_node_has_events(node: &UiNode) -> bool {
