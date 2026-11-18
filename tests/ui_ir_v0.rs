@@ -977,6 +977,55 @@ fn accessibility_tree_projects_losslessly_to_ui_keys() {
 
 #[cfg(feature = "native-blitz-cpu-pending")]
 #[test]
+fn accessibility_update_maps_changed_and_removed_nodes_to_ui_keys() {
+    use jasper_ui_engine::native::host::SceneHostView;
+    use jasper_ui_engine::native::typed_accessibility_update;
+
+    const OWNER: u64 = 81;
+    let bytes = fixture("settings-page.ir.json");
+    let mut document = NativeUiDocument::from_json_slice(&bytes).unwrap();
+    let font = std::fs::read(
+        std::env::var("JASPER_UI_TEST_FONT")
+            .expect("JASPER_UI_TEST_FONT must name an injected font"),
+    )
+    .unwrap();
+    let mut view = SceneHostView::new(OWNER, document.scene(), &font, 480, 320).unwrap();
+    let previous_native = view.accessibility_tree(OWNER, document.revision()).unwrap();
+    let previous_document = document.clone();
+
+    let mut frame: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    frame["expected_revision"] = serde_json::json!(2);
+    frame["next_revision"] = serde_json::json!(3);
+    frame["ops"] = serde_json::json!([{
+        "op": "remove",
+        "key": { "semantic_id": 2, "generation": 1 }
+    }]);
+    let frame = UiFrame::from_json_slice(&serde_json::to_vec(&frame).unwrap()).unwrap();
+    let update = document.apply_frame_with_patches(&frame).unwrap();
+    view.try_apply(
+        OWNER,
+        update.expected_revision,
+        update.next_revision,
+        &update.patches,
+    )
+    .unwrap();
+    let next_native = view.accessibility_tree(OWNER, document.revision()).unwrap();
+    let native_update = next_native.update_since(&previous_native).unwrap();
+    let typed = typed_accessibility_update(&native_update, &previous_document, &document).unwrap();
+    assert_eq!(typed.from_version, 2);
+    assert_eq!(typed.scene_version, 3);
+    assert_eq!(typed.root, Some(UiKey::new(1, 1)));
+    assert_eq!(typed.removed, vec![UiKey::new(2, 1)]);
+    assert!(typed.nodes.iter().all(|node| node.key != UiKey::new(2, 1)));
+    assert!(typed
+        .nodes
+        .iter()
+        .find(|node| node.key == UiKey::new(1, 1))
+        .is_some_and(|node| { node.children == vec![UiKey::new(3, 1), UiKey::new(4, 1),] }));
+}
+
+#[cfg(feature = "native-blitz-cpu-pending")]
+#[test]
 fn same_data_table_fixture_executes_and_exposes_table_semantics() {
     use jasper_ui_engine::native::host::SceneHostView;
 
