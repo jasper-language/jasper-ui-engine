@@ -65,6 +65,8 @@ let scene = document.scene();
 和 permission context；不能把 `NodeId` 当授权令牌。Native 无法无损表达的语义/style 返回带字段路径
 和 support level 的 `MappingIssue`，不静默降级。详细状态和 fixture 证据见
 [ui-ir-rust.md](ui-ir-rust.md)；该 API 不是正式 ABI，也未完成 Native/Web 一致性或形式化证明。
+Native 回调携带 `NodeId` 时使用 `admit_native_event`/`admit_activation`；内部 NodeId 仅用于
+映射，授权仍以 `UiEventContext.target` 的 `UiKey` 和上下文为准。
 宿主只能通过 `committed_resource` 取得可消费的 Prepared+Commit 资源；`active_resource` 仍可查询
 Prepared 中间态，但不表示允许上传或绘制。
 `HostRenderer::try_apply_ui_frame` 会在 detached document 上完成 IR 映射，再经 Surface

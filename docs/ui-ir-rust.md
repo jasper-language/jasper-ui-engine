@@ -42,6 +42,9 @@ Jasper Language/UI 共有层；Rust 不反向定义公共语义。
 - named permission context 与事件所需 permission。
 
 裸 `NodeId` 不进入事件授权入口。
+`admit_native_event` 可将 Native 回调的 `NodeId` 仅作为内部查找提示；授权仍要求匹配
+`UiEventContext.target`。`admit_activation` 明确区分 pointer click、keyboard 与 accessibility，
+pointer 优先 `click`，其余使用 `activate`，不会把未绑定的键盘动作静默映射过去。
 
 `src/ui_ir/native.rs` 提供 `NativeUiDocument`：
 
@@ -59,7 +62,7 @@ Jasper Language/UI 共有层；Rust 不反向定义公共语义。
 | 范围 | 状态 | 说明 |
 |---|---|---|
 | box/flex/paint/typography 基础子集 | implemented / tested | 设置页 fixture 经真实 Native CPU 执行 |
-| 事件绑定与准入 | implemented / tested | click/text-commit、owner/session/revision/permission/generation 拒绝 |
+| 事件绑定与准入 | implemented / tested | click/text-commit、owner/session/revision/permission/generation 拒绝；Native NodeId 只能经 UiKey 上下文映射，activation 来源显式区分 |
 | 活动宿主后继帧 | implemented / tested | `apply_frame_with_patches` 生成 patch；`HostRenderer::try_apply_ui_frame` 将 IR mapping、Surface generation 与 Native 事务合成原子准入；暂停时 document/view 均不推进 |
 | Table/Row/Cell 语义 | implemented / tested | 公共角色、ARIA 和 AccessKit Table/Row/Cell 保留，data-table fixture Native CPU 可执行 |
 | TextArea 语义与编辑 | implemented / tested | 保留 MultilineTextInput、换行输入、行内 Home/End、上下移动与多行编辑缓冲 |

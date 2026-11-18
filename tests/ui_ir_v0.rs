@@ -1,7 +1,7 @@
 use jasper_ui_engine::semantics::Role;
 use jasper_ui_engine::ui_ir::{
-    MappingIssueKind, NativeUiDocument, NativeUiFrameError, ResourceKind, SupportLevel,
-    UiEventContext, UiEventKind, UiFrame, UiKey, UiPermission, UiPermissionContext,
+    MappingIssueKind, NativeActivationSource, NativeUiDocument, NativeUiFrameError, ResourceKind,
+    SupportLevel, UiEventContext, UiEventKind, UiFrame, UiKey, UiPermission, UiPermissionContext,
 };
 use std::path::PathBuf;
 
@@ -212,6 +212,24 @@ fn settings_page_event_identity_requires_current_owner_session_revision_and_gene
         document.node_for_key(button),
         Some(document.scene().root.children[2].id)
     );
+    let button_node = document.node_for_key(button).unwrap();
+    assert_eq!(
+        document
+            .admit_activation(&context, button_node, NativeActivationSource::PointerClick)
+            .unwrap()
+            .action,
+        "save"
+    );
+    assert!(
+        document
+            .admit_activation(&context, button_node, NativeActivationSource::Keyboard)
+            .is_err(),
+        "a click binding does not silently accept keyboard activate"
+    );
+    let heading = document.node_for_key(UiKey::new(2, 1)).unwrap();
+    assert!(document
+        .admit_native_event(&context, heading, UiEventKind::Click)
+        .is_err());
 
     let mut stale = context.clone();
     stale.target = UiKey::new(4, 2);

@@ -43,6 +43,14 @@ pub enum MappingIssueKind {
     InvalidState,
 }
 
+/// How a Native activation was produced, used only to select the Framework binding kind.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NativeActivationSource {
+    PointerClick,
+    Keyboard,
+    Accessibility,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MappingIssue {
     pub path: String,
@@ -335,6 +343,44 @@ impl NativeUiDocument {
             event,
             action: binding.action.clone(),
         })
+    }
+
+    /// Admit an event reported with an internal backend NodeId. The NodeId is only a lookup
+    /// hint; authority remains the `UiKey` and context carried by `UiEventContext`.
+    pub fn admit_native_event(
+        &self,
+        context: &UiEventContext,
+        node: NodeId,
+        event: UiEventKind,
+    ) -> Result<AdmittedEvent, UiEventAdmissionError> {
+        if self.key_for_node(node) != Some(context.target) {
+            return Err(UiEventAdmissionError::StaleGeneration(context.target));
+        }
+        self.admit_event(context, event)
+    }
+
+    /// Map a role activation callback to the exact Framework binding. Pointer clicks prefer
+    /// `click` and fall back to `activate`; keyboard/accessibility use `activate`.
+    pub fn admit_activation(
+        &self,
+        context: &UiEventContext,
+        node: NodeId,
+        source: NativeActivationSource,
+    ) -> Result<AdmittedEvent, UiEventAdmissionError> {
+        let event = match source {
+            NativeActivationSource::PointerClick
+                if self
+                    .event_binding(context.target, UiEventKind::Click)
+                    .is_some() =>
+            {
+                UiEventKind::Click
+            }
+            NativeActivationSource::PointerClick => UiEventKind::Activate,
+            NativeActivationSource::Keyboard | NativeActivationSource::Accessibility => {
+                UiEventKind::Activate
+            }
+        };
+        self.admit_native_event(context, node, event)
     }
 }
 
