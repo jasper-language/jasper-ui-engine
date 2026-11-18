@@ -98,7 +98,9 @@ Focus/TextEdit/IME 操作合并到一次调用，避免授权后误传另一个 
 所有带 Surface generation 的 Typed 焦点、键盘、文本、IME 与激活变更入口都在授权和映射前
 拒绝过期 generation；后续 permission 检查不会掩盖宿主生命周期拒绝。
 几何查询使用 `typed_node_bounds` / `typed_scroll_geometry` / `typed_table_metrics`：
-输入 UiKey，返回前校验 document revision 与 Surface generation，未知 key 结构化拒绝。
+输入 UiKey，返回前校验 document revision、Native view revision 与 Surface generation，
+未知 key 结构化拒绝。焦点、指针命中、scroll 准入和编辑/overlay 事件 drain 同样拒绝
+document 已前进但 Native view 尚未应用该 revision 的分叉状态，不会返回误导性的空目标。
 宿主只能通过 `committed_resource` 取得可消费的 Prepared+Commit 资源；`active_resource` 仍可查询
 Prepared 中间态，但不表示允许上传或绘制。
 `HostRenderer::insert_ui_image` 只接受当前 document revision 对应的精确 Committed

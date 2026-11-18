@@ -812,6 +812,12 @@ impl HostRenderer {
         self.inner.snapshot_identity(owner)
     }
 
+    fn host_view_is_at_revision(&self, owner: u64, version: u64) -> bool {
+        self.inner
+            .snapshot_identity(owner)
+            .is_some_and(|(current, _)| current == version)
+    }
+
     pub fn focused_node(&self, owner: u64, version: u64) -> Option<NodeId> {
         if !self.surface.active_for_owner(owner) {
             return None;
@@ -830,6 +836,9 @@ impl HostRenderer {
                 host: version,
                 document: document.revision(),
             });
+        }
+        if !self.surface.active_for_owner(owner) || !self.host_view_is_at_revision(owner, version) {
+            return Err(TypedUiTargetError::HostRejected);
         }
         self.focused_node(owner, version)
             .map(|node| {
@@ -884,6 +893,9 @@ impl HostRenderer {
         next_document: &NativeUiDocument,
     ) -> Result<TypedAccessibilityUpdate, TypedUiAccessibilityError> {
         if !self.surface.render_allowed(owner, generation) {
+            return Err(TypedUiAccessibilityError::HostRejected);
+        }
+        if !self.host_view_is_at_revision(owner, next_version) {
             return Err(TypedUiAccessibilityError::HostRejected);
         }
         if previous.scene_version != previous_document.revision()
@@ -1372,6 +1384,9 @@ impl HostRenderer {
         if !self.surface.render_allowed(owner, generation) {
             return Err(TypedUiPointerError::HostRejected);
         }
+        if !self.host_view_is_at_revision(owner, version) {
+            return Err(TypedUiPointerError::HostRejected);
+        }
         if !x.is_finite() || !y.is_finite() {
             return Err(TypedUiPointerError::InvalidPoint);
         }
@@ -1795,6 +1810,9 @@ impl HostRenderer {
         context: &UiEventContext,
         changed_as_commit: bool,
     ) -> Result<Vec<TypedUiEditEvent>, TypedUiEditError> {
+        if !self.host_view_is_at_revision(owner, document.revision()) {
+            return Err(TypedUiEditError::HostRejected);
+        }
         let events = self
             .inner
             .pending_edit_events(owner)
@@ -2026,6 +2044,9 @@ impl HostRenderer {
         if !self.surface.render_allowed(owner, generation) {
             return Err(TypedUiScrollError::HostRejected);
         }
+        if !self.host_view_is_at_revision(owner, version) {
+            return Err(TypedUiScrollError::HostRejected);
+        }
         if !delta.x.is_finite()
             || !delta.y.is_finite()
             || (delta.x == 0.0 && delta.y == 0.0)
@@ -2110,6 +2131,9 @@ impl HostRenderer {
         document: &NativeUiDocument,
         context: &UiEventContext,
     ) -> Result<Vec<TypedUiOverlayEvent>, TypedUiOverlayError> {
+        if !self.host_view_is_at_revision(owner, document.revision()) {
+            return Err(TypedUiOverlayError::HostRejected);
+        }
         let events = self
             .inner
             .pending_overlay_events(owner)
@@ -2165,6 +2189,9 @@ impl HostRenderer {
             });
         }
         if !self.surface.render_allowed(owner, generation) {
+            return Err(TypedUiGeometryError::HostRejected);
+        }
+        if !self.host_view_is_at_revision(owner, version) {
             return Err(TypedUiGeometryError::HostRejected);
         }
         if document.node_for_key(key).is_none() {

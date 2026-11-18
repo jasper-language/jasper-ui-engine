@@ -2860,6 +2860,88 @@ fn typed_geometry_queries_use_ui_keys_and_live_generation() {
     ));
 }
 
+#[test]
+fn typed_host_queries_reject_a_document_ahead_of_the_native_view() {
+    use jasper_ui_engine::native::host::HostRenderer;
+    use jasper_ui_engine::native::{
+        TypedUiEditError, TypedUiGeometryError, TypedUiPointerError, TypedUiScrollError,
+        TypedUiTargetError, TypedUiOverlayError,
+    };
+
+    const OWNER: u64 = 86;
+    let mut document =
+        NativeUiDocument::from_json_slice(&fixture("settings-page.ir.json")).unwrap();
+    let font = std::fs::read(
+        std::env::var("JASPER_UI_TEST_FONT")
+            .expect("JASPER_UI_TEST_FONT must name an injected font"),
+    )
+    .unwrap();
+    let mut host = HostRenderer::new_ui_document(OWNER, &document, &font, 480, 320).unwrap();
+    let generation = host.surface_status(OWNER).unwrap().generation;
+    let root = UiKey::new(1, 1);
+
+    let mut environment = document.environment().clone();
+    environment.reduce_motion = Some(!environment.reduce_motion.unwrap_or(false));
+    let successor = UiFrame {
+        ir_version: jasper_ui_engine::ui_ir::IR_VERSION.into(),
+        identity_domain: document.identity_domain().into(),
+        owner: document.owner().into(),
+        session: document.session().into(),
+        expected_revision: 2,
+        next_revision: 3,
+        ops: vec![jasper_ui_engine::ui_ir::UiOp::environment(environment)],
+    };
+    document.apply_frame(&successor).unwrap();
+    assert_eq!(document.revision(), 3);
+    assert_eq!(host.snapshot_identity(OWNER).unwrap().0, 2);
+
+    assert!(matches!(
+        host.typed_focused_node(OWNER, 3, &document),
+        Err(TypedUiTargetError::HostRejected)
+    ));
+    assert!(matches!(
+        host.typed_pointer_target(OWNER, 3, generation, &document, 10.0, 10.0),
+        Err(TypedUiPointerError::HostRejected)
+    ));
+    assert!(matches!(
+        host.typed_node_bounds(OWNER, 3, generation, &document, root),
+        Err(TypedUiGeometryError::HostRejected)
+    ));
+    assert!(matches!(
+        host.typed_scroll_geometry(OWNER, 3, generation, &document, root),
+        Err(TypedUiGeometryError::HostRejected)
+    ));
+
+    let context = UiEventContext {
+        target: root,
+        identity_domain: document.identity_domain().into(),
+        owner: document.owner().into(),
+        session: document.session().into(),
+        frame_revision: document.revision(),
+        permission_context: UiPermissionContext::new("empty", []),
+    };
+    assert!(matches!(
+        host.typed_scroll_event(
+            OWNER,
+            3,
+            generation,
+            &document,
+            &context,
+            document.node_for_key(root).unwrap(),
+            jasper_ui_engine::geometry::Point::new(1.0, 0.0),
+        ),
+        Err(TypedUiScrollError::HostRejected)
+    ));
+    assert!(matches!(
+        host.typed_take_edit_events(OWNER, &document, &context, false),
+        Err(TypedUiEditError::HostRejected)
+    ));
+    assert!(matches!(
+        host.typed_take_overlay_events(OWNER, &document, &context),
+        Err(TypedUiOverlayError::HostRejected)
+    ));
+}
+
 #[cfg(feature = "native-blitz-cpu-pending")]
 #[test]
 fn accessibility_tree_projects_losslessly_to_ui_keys() {

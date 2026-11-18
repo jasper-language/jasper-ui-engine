@@ -137,6 +137,7 @@ candidate/`host_accepted=false` 状态。
 | Typed pointer routing | implemented / tested | hit query 与 Pointer 路由使用同一 overlay/圆角/hit-slop 目标；owner/revision/Surface generation/Pointer permission 先准入；只有可能聚焦的 Pointer Down 会预准入命中链 Focus bindings，Move 不要求多余 Focus 权限；Move 的 Hover binding 已覆盖；回调只暴露 UiKey；Down→Move 后继帧后 Up 仍保持身份并准入 click binding |
 | Typed geometry queries | implemented / tested | bounds/scroll/table metrics 直接消费 UiKey，并校验 document revision、Surface generation 和 active key；table/cell 测量结果也只含 UiKey |
 | Typed scroll event | implemented / tested | `typed_scroll_event` 校验 Surface、revision、UiKey、有限非零 delta 与 Scroll binding/permission；不改 Native offset，视觉更新仍由 Framework 的版本化场景帧提交 |
+| host/document revision sync | implemented / tested | focus/pointer/geometry/scroll/edit/overlay 查询与准入均要求 Native view 当前 revision 等于 document；分叉时返回结构化 HostRejected，不把已知失配伪装成空焦点或无命中 |
 | 资源生命周期 | implemented / tested | Prepare 仅是 pending、不替换旧 Committed；Commit 原子提升；Release 只释放 active；上传与删除分别受 `insert_ui_image`/`remove_ui_image` 状态校验；含代数复用拒绝、节点移除后 Release 与实际解码/绘制 |
 | Environment | implemented / tested | 首帧和后继帧的 reduce-motion 均应用到 Native host；appearance/density/text-scale 保留为 Framework 环境语义 |
 | Grid、Position、Image、Overlay | candidate | 可映射到现有候选字段，`host_accepted = false`；Grid columns/rows/gap 与 Position/Overlay/Image 均已有 Native 执行测试 |
@@ -204,7 +205,7 @@ Web 后端和正式宿主仍需分别验收。
 
 - `native-engine-cpu,accesskit-pending` 完整 `cargo test` 成功退出：库测试
   `272 passed, 1 ignored`（忽略项是显式性能测量），全部集成测试和 doc-test 通过；
-- 同一特性集的 `ui_ir_v0`：`39 passed`；
+- 同一特性集的 `ui_ir_v0`：`40 passed`；
 - 软件 Vulkan（lvp/llvmpipe）+ `gpu-pending` 的 `ui_ir_v0`：`40 passed`；
 - Clippy 成功退出；仓库仍保留已登记的非阻塞历史 warning。
 
