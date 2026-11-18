@@ -1879,6 +1879,84 @@ fn accessibility_update_maps_changed_and_removed_nodes_to_ui_keys() {
     ));
 }
 
+#[cfg(feature = "native-blitz-cpu-pending")]
+#[test]
+fn typed_scroll_event_requires_current_surface_key_delta_and_binding_permission() {
+    use jasper_ui_engine::geometry::Point;
+    use jasper_ui_engine::native::host::HostRenderer;
+    use jasper_ui_engine::native::TypedUiScrollError;
+
+    const OWNER: u64 = 87;
+    let mut value: serde_json::Value =
+        serde_json::from_slice(&fixture("settings-page.ir.json")).unwrap();
+    value["ops"][0]["node"]["events"] = serde_json::json!([{
+        "event": "scroll",
+        "action": "scroll-settings"
+    }]);
+    let frame = UiFrame::from_json_slice(&serde_json::to_vec(&value).unwrap()).unwrap();
+    let document = NativeUiDocument::from_frame(&frame).unwrap();
+    let font = std::fs::read(
+        std::env::var("JASPER_UI_TEST_FONT")
+            .expect("JASPER_UI_TEST_FONT must name an injected font"),
+    )
+    .unwrap();
+    let host = HostRenderer::new_ui_document(OWNER, &document, &font, 480, 320).unwrap();
+    let generation = host.surface_status(OWNER).unwrap().generation;
+    let root = document.node_for_key(UiKey::new(1, 1)).unwrap();
+    let context = UiEventContext {
+        target: UiKey::new(1, 1),
+        identity_domain: "orders-app/window-main".into(),
+        owner: "desktop-host".into(),
+        session: "session-2026-11-17-1".into(),
+        frame_revision: 2,
+        permission_context: UiPermissionContext::new("scroll-host", [UiPermission::Scroll]),
+    };
+    let event = host
+        .typed_scroll_event(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &context,
+            root,
+            Point::new(4.0, 12.0),
+        )
+        .unwrap();
+    assert_eq!(event.target, UiKey::new(1, 1));
+    assert_eq!(event.delta, Point::new(4.0, 12.0));
+    assert_eq!(event.admitted.action, "scroll-settings");
+    assert_eq!(
+        host.typed_scroll_event(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &context,
+            root,
+            Point::ZERO,
+        ),
+        Err(TypedUiScrollError::InvalidDelta)
+    );
+    let no_scroll = UiEventContext {
+        permission_context: UiPermissionContext::new("pointer-only", [UiPermission::Pointer]),
+        ..context
+    };
+    assert!(matches!(
+        host.typed_scroll_event(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &no_scroll,
+            root,
+            Point::new(0.0, 1.0),
+        ),
+        Err(TypedUiScrollError::Admission(
+            jasper_ui_engine::ui_ir::UiEventAdmissionError::PermissionDenied { .. }
+        ))
+    ));
+}
+
 #[cfg(all(feature = "native-blitz-cpu-pending", feature = "accesskit-pending"))]
 #[test]
 fn typed_accesskit_actions_require_ui_key_and_permissions() {

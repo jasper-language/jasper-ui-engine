@@ -326,6 +326,39 @@ pub struct TypedUiOverlayEvent {
     pub admitted: Option<AdmittedEvent>,
 }
 
+/// A host-detected scroll delta projected to public identity and an admitted binding.
+#[derive(Clone, Debug, PartialEq)]
+pub struct TypedUiScrollEvent {
+    pub target: UiKey,
+    pub delta: crate::geometry::Point,
+    pub admitted: AdmittedEvent,
+}
+
+/// Failure while admitting a scroll event before Framework code.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum TypedUiScrollError {
+    HostRejected,
+    RevisionMismatch { host: u64, document: u64 },
+    InvalidDelta,
+    Admission(UiEventAdmissionError),
+}
+
+impl std::fmt::Display for TypedUiScrollError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::HostRejected => write!(formatter, "host rejected Typed scroll event"),
+            Self::RevisionMismatch { host, document } => write!(
+                formatter,
+                "host revision {host} does not match document revision {document}"
+            ),
+            Self::InvalidDelta => write!(formatter, "scroll delta is zero or non-finite"),
+            Self::Admission(error) => error.fmt(formatter),
+        }
+    }
+}
+
+impl std::error::Error for TypedUiScrollError {}
+
 /// Failure while querying or draining candidate overlay data for Typed UI.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TypedUiOverlayError {
@@ -1778,6 +1811,43 @@ impl HostRenderer {
                 })
             })
             .transpose()
+    }
+
+    /// Admit a host-detected wheel/trackpad delta against one Typed target. This does not mutate
+    /// the Native scroll offset; Framework returns the resulting versioned scene update.
+    pub fn typed_scroll_event(
+        &self,
+        owner: u64,
+        version: u64,
+        generation: u64,
+        document: &NativeUiDocument,
+        context: &UiEventContext,
+        node: NodeId,
+        delta: crate::geometry::Point,
+    ) -> Result<TypedUiScrollEvent, TypedUiScrollError> {
+        if version != document.revision() {
+            return Err(TypedUiScrollError::RevisionMismatch {
+                host: version,
+                document: document.revision(),
+            });
+        }
+        if !self.surface.render_allowed(owner, generation) {
+            return Err(TypedUiScrollError::HostRejected);
+        }
+        if !delta.x.is_finite()
+            || !delta.y.is_finite()
+            || (delta.x == 0.0 && delta.y == 0.0)
+        {
+            return Err(TypedUiScrollError::InvalidDelta);
+        }
+        let admitted = document
+            .admit_native_event(context, node, UiEventKind::Scroll)
+            .map_err(TypedUiScrollError::Admission)?;
+        Ok(TypedUiScrollEvent {
+            target: admitted.target,
+            delta,
+            admitted,
+        })
     }
 
     pub(crate) fn overlays(
