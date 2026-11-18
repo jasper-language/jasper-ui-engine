@@ -198,7 +198,7 @@ Web 后端和正式宿主仍需分别验收。
 ### 2026-11-18 执行记录
 
 - `native-engine-cpu,accesskit-pending` 完整 `cargo test` 成功退出：库测试
-  `271 passed, 1 ignored`（忽略项是显式性能测量），全部集成测试和 doc-test 通过；
+  `272 passed, 1 ignored`（忽略项是显式性能测量），全部集成测试和 doc-test 通过；
 - 同一特性集的 `ui_ir_v0`：`39 passed`；
 - 软件 Vulkan（lvp/llvmpipe）+ `gpu-pending` 的 `ui_ir_v0`：`36 passed`；
 - Clippy 成功退出；仓库仍保留已登记的非阻塞历史 warning。
