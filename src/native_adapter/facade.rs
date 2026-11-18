@@ -13,6 +13,10 @@ pub use jasper_ui_engine::input::Modifiers;
 pub use native_events::NativeEventReply as EventReply;
 pub use scene_events::{role_activates_on_click,role_activates_on_key,ScenePointerInput,SceneKeyEvent,SceneEvent,SceneEventKind,SceneSemanticsNode,SceneSemanticsSnapshot,SceneActivationEvent,SceneFocusEvent};
 pub use crate::render_host::{HostRenderError,HostRenderer,TypedUiAccessibilityError,TypedUiApplyError,TypedUiResourceError};
+#[cfg(feature="accesskit-pending")]
+pub use crate::render_host::TypedAccessibilityAction;
+#[cfg(feature="accesskit-pending")]
+pub use crate::render_host::TypedUiAccessibilityActionError;
 pub use crate::surface_lifecycle::{SurfaceLifecycleError,SurfaceState,SurfaceStatus};
 pub use crate::text_edit::{CaretBlink,SceneEditEvent,SceneEditEventKind,SceneEditState};
 pub use crate::image_resource::{ImageError,ImageFormat,ImageInfo,ImageLimits,ImageNodeError,ImageNodeReport,ImageReport};

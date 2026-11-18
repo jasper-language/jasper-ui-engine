@@ -87,6 +87,9 @@ previous document，避免节点删除后丢失其公共身份。
 generation，再映射到 UiKey，错误 generation 与 document revision 都结构化拒绝。
 增量更新使用 `HostRenderer::typed_accessibility_update`，额外校验前后 tree/document
 revision 与 update 顺序。
+`HostRenderer::typed_accesskit_action` 要求 ActionRequest 的 backend target 先映射到
+`UiEventContext.target`；Focus 需要 Focus permission，Click 需要 accessibility-action binding，
+再进入底层 AccessKit 动作路由。
 
 `Engine` 仅在 `native-engine`（或兼容实现特性）启用时存在；未启用时不会静默选用旧执行链。此前原生名称 `BlitzEngine` 保留为同一实现的兼容重导出。旧引擎明确名为 `LegacyEngine`，旧统计与错误只描述兼容路径。
 

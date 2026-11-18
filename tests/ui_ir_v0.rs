@@ -1046,6 +1046,121 @@ fn accessibility_update_maps_changed_and_removed_nodes_to_ui_keys() {
     ));
 }
 
+#[cfg(all(feature = "native-blitz-cpu-pending", feature = "accesskit-pending"))]
+#[test]
+fn typed_accesskit_actions_require_ui_key_and_permissions() {
+    use jasper_ui_engine::native::host::accesskit::{
+        Action, ActionRequest, NodeId as KitId, TreeId,
+    };
+    use jasper_ui_engine::native::host::HostRenderer;
+    use jasper_ui_engine::native::{TypedAccessibilityAction, TypedUiAccessibilityActionError};
+
+    const OWNER: u64 = 82;
+    let mut value: serde_json::Value =
+        serde_json::from_slice(&fixture("settings-page.ir.json")).unwrap();
+    value["ops"][0]["node"]["children"][2]["events"]
+        .as_array_mut()
+        .unwrap()
+        .push(serde_json::json!({
+            "event": "accessibility-action",
+            "action": "save-accessible"
+        }));
+    let frame = UiFrame::from_json_slice(&serde_json::to_vec(&value).unwrap()).unwrap();
+    let document = NativeUiDocument::from_frame(&frame).unwrap();
+    let font = std::fs::read(
+        std::env::var("JASPER_UI_TEST_FONT")
+            .expect("JASPER_UI_TEST_FONT must name an injected font"),
+    )
+    .unwrap();
+    let mut host = HostRenderer::new_ui_document(OWNER, &document, &font, 480, 320).unwrap();
+    let generation = host.surface_status(OWNER).unwrap().generation;
+    let button = document.node_for_key(UiKey::new(4, 1)).unwrap();
+    let request = |action| ActionRequest {
+        action,
+        target_node: KitId(button.0),
+        target_tree: TreeId::ROOT,
+        data: None,
+    };
+    let context = UiEventContext {
+        target: UiKey::new(4, 1),
+        identity_domain: "orders-app/window-main".into(),
+        owner: "desktop-host".into(),
+        session: "session-2026-11-17-1".into(),
+        frame_revision: 2,
+        permission_context: UiPermissionContext::new(
+            "accessibility-host",
+            [UiPermission::AccessibilityAction, UiPermission::Focus],
+        ),
+    };
+
+    let mut activated = 0usize;
+    let result = host
+        .typed_accesskit_action(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &context,
+            &request(Action::Click),
+            &mut |_| {},
+            &mut |_| activated += 1,
+        )
+        .unwrap();
+    assert!(matches!(
+        result,
+        TypedAccessibilityAction::Activated(ref event) if event.action == "save-accessible"
+    ));
+    assert_eq!(activated, 1);
+
+    let mut focused = 0usize;
+    let result = host
+        .typed_accesskit_action(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &context,
+            &request(Action::Focus),
+            &mut |_| focused += 1,
+            &mut |_| {},
+        )
+        .unwrap();
+    assert_eq!(result, TypedAccessibilityAction::Focused(UiKey::new(4, 1)));
+    assert_eq!(focused, 1);
+
+    let focus_only = UiEventContext {
+        permission_context: UiPermissionContext::new("focus-only", [UiPermission::Focus]),
+        ..context.clone()
+    };
+    assert!(matches!(
+        host.typed_accesskit_action(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &focus_only,
+            &request(Action::Click),
+            &mut |_| {},
+            &mut |_| {},
+        ),
+        Err(TypedUiAccessibilityActionError::Admission(_))
+    ));
+    assert!(matches!(
+        host.typed_accesskit_action(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &context,
+            &request(Action::Blur),
+            &mut |_| {},
+            &mut |_| {},
+        ),
+        Err(TypedUiAccessibilityActionError::ActionNotSupported)
+    ));
+    assert_eq!(host.focused_node(OWNER, 2), Some(button));
+}
+
 #[cfg(feature = "native-blitz-cpu-pending")]
 #[test]
 fn same_data_table_fixture_executes_and_exposes_table_semantics() {

@@ -21,7 +21,8 @@ use crate::typed_accessibility::{
     TypedAccessibilityTree, TypedAccessibilityUpdate,
 };
 use crate::ui_ir::{
-    NativeSceneUpdate, NativeUiDocument, NativeUiFrameError, ResourceKind, ResourceRef, UiFrame,
+    AdmittedEvent, NativeSceneUpdate, NativeUiDocument, NativeUiFrameError, ResourceKind,
+    ResourceRef, UiEventAdmissionError, UiEventContext, UiEventKind, UiFrame, UiKey, UiPermission,
 };
 
 /// Host coordinator failure. A lifecycle rejection precedes all native engine work.
@@ -135,6 +136,38 @@ impl std::fmt::Display for TypedUiAccessibilityError {
 }
 
 impl std::error::Error for TypedUiAccessibilityError {}
+
+/// Typed AccessKit action result after UiKey and permission admission.
+#[cfg(feature = "accesskit-pending")]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum TypedAccessibilityAction {
+    Focused(UiKey),
+    Activated(AdmittedEvent),
+}
+
+#[cfg(feature = "accesskit-pending")]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum TypedUiAccessibilityActionError {
+    HostRejected,
+    ActionNotSupported,
+    Admission(UiEventAdmissionError),
+}
+
+#[cfg(feature = "accesskit-pending")]
+impl std::fmt::Display for TypedUiAccessibilityActionError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::HostRejected => write!(f, "host rejected accessibility action"),
+            Self::ActionNotSupported => {
+                write!(f, "accessibility action is not supported by Typed UI")
+            }
+            Self::Admission(error) => error.fmt(f),
+        }
+    }
+}
+
+#[cfg(feature = "accesskit-pending")]
+impl std::error::Error for TypedUiAccessibilityActionError {}
 
 impl From<SurfaceLifecycleError> for HostRenderError {
     fn from(error: SurfaceLifecycleError) -> Self {
@@ -535,6 +568,40 @@ impl HostRenderer {
             && self
                 .inner
                 .accesskit_action(owner, version, request, focus, activation)
+    }
+
+    #[cfg(feature = "accesskit-pending")]
+    pub fn typed_accesskit_action(
+        &mut self,
+        owner: u64,
+        version: u64,
+        generation: u64,
+        document: &NativeUiDocument,
+        context: &UiEventContext,
+        request: &crate::native::host::accesskit::ActionRequest,
+        focus: &mut impl FnMut(SceneFocusEvent),
+        activation: &mut impl FnMut(crate::native::SceneActivationEvent),
+    ) -> Result<TypedAccessibilityAction, TypedUiAccessibilityActionError> {
+        let node = NodeId(request.target_node.0);
+        let result = match request.action {
+            crate::native::host::accesskit::Action::Focus => {
+                let key = document
+                    .admit_native_target(context, node, UiPermission::Focus)
+                    .map_err(TypedUiAccessibilityActionError::Admission)?;
+                TypedAccessibilityAction::Focused(key)
+            }
+            crate::native::host::accesskit::Action::Click => {
+                let event = document
+                    .admit_native_event(context, node, UiEventKind::AccessibilityAction)
+                    .map_err(TypedUiAccessibilityActionError::Admission)?;
+                TypedAccessibilityAction::Activated(event)
+            }
+            _ => return Err(TypedUiAccessibilityActionError::ActionNotSupported),
+        };
+        if !self.accesskit_action(owner, version, generation, request, focus, activation) {
+            return Err(TypedUiAccessibilityActionError::HostRejected);
+        }
+        Ok(result)
     }
 
     pub fn focus(
