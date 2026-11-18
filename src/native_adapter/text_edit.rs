@@ -379,11 +379,11 @@ impl EditBuffer {
                 |(index, _)| line_start + index,
             )
     }
-    /// Caret to the start of the current visual line.
+    /// Caret to the start of the current logical line.
     pub fn home(&mut self, extend: bool) -> bool {
         self.place(self.line_start(self.caret), extend)
     }
-    /// Caret to the end of the current visual line.
+    /// Caret to the end of the current logical line.
     pub fn end(&mut self, extend: bool) -> bool {
         self.place(self.line_end(self.caret), extend)
     }
@@ -394,7 +394,7 @@ impl EditBuffer {
     pub fn document_end(&mut self, extend: bool) -> bool {
         self.place(self.text.len(), extend)
     }
-    /// Move one visual line while preserving the grapheme column where possible.
+    /// Move one logical line while preserving the grapheme column where possible.
     pub fn move_vertical(&mut self, down: bool, extend: bool) -> bool {
         if !self.multiline {
             return false;
@@ -479,7 +479,7 @@ mod tests {
     }
 
     #[test]
-    fn multiline_mode_preserves_lf_and_navigates_visual_lines() {
+    fn multiline_mode_preserves_lf_and_navigates_logical_lines() {
         let mut b = EditBuffer::new_multiline("ab\r\ncde\rf\tg");
         assert!(b.is_multiline());
         assert_eq!(b.text(), "ab\ncde\nfg");

@@ -65,6 +65,8 @@ let scene = document.scene();
 和 permission context；不能把 `NodeId` 当授权令牌。Native 无法无损表达的语义/style 返回带字段路径
 和 support level 的 `MappingIssue`，不静默降级。详细状态和 fixture 证据见
 [ui-ir-rust.md](ui-ir-rust.md)；该 API 不是正式 ABI，也未完成 Native/Web 一致性或形式化证明。
+宿主只能通过 `committed_resource` 取得可消费的 Prepared+Commit 资源；`active_resource` 仍可查询
+Prepared 中间态，但不表示允许上传或绘制。
 
 `Engine` 仅在 `native-engine`（或兼容实现特性）启用时存在；未启用时不会静默选用旧执行链。此前原生名称 `BlitzEngine` 保留为同一实现的兼容重导出。旧引擎明确名为 `LegacyEngine`，旧统计与错误只描述兼容路径。
 

@@ -353,6 +353,7 @@ fn resource_generations_reject_prepare_commit_release_misuse_and_reuse() {
             }]),
         ))
         .unwrap();
+    assert!(document.committed_resource("logo").is_none());
     document
         .apply_frame(&operate(
             document.revision(),
@@ -363,6 +364,12 @@ fn resource_generations_reject_prepare_commit_release_misuse_and_reuse() {
             }]),
         ))
         .unwrap();
+    assert_eq!(
+        document
+            .committed_resource("logo")
+            .map(|resource| resource.generation),
+        Some(1)
+    );
     document
         .apply_frame(&operate(
             document.revision(),
@@ -373,6 +380,7 @@ fn resource_generations_reject_prepare_commit_release_misuse_and_reuse() {
             }]),
         ))
         .unwrap();
+    assert!(document.committed_resource("logo").is_none());
     let revision = document.revision();
     assert!(document
         .apply_frame(&operate(
@@ -870,6 +878,12 @@ fn committed_ir_resource_reaches_the_live_native_image_store() {
         &update.patches,
     )
     .unwrap();
+    assert_eq!(
+        document
+            .committed_resource("logo")
+            .map(|resource| resource.generation),
+        Some(1)
+    );
 
     let image = image::RgbaImage::from_pixel(2, 2, image::Rgba([20, 140, 220, 255]));
     let mut encoded = std::io::Cursor::new(Vec::new());

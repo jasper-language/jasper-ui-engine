@@ -283,6 +283,14 @@ impl NativeUiDocument {
         self.resources.get(id).map(|state| &state.resource)
     }
 
+    /// Resource that has completed both Prepare and Commit and may be consumed by a host.
+    pub fn committed_resource(&self, id: &str) -> Option<&ResourceRef> {
+        self.resources
+            .get(id)
+            .filter(|state| state.life == ResourceLife::Committed)
+            .map(|state| &state.resource)
+    }
+
     pub fn environment(&self) -> &UiEnvironment {
         &self.environment
     }
