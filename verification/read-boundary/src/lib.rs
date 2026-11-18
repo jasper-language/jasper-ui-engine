@@ -177,6 +177,37 @@ fn same_authority_failure(
     }
 }
 
+fn same_permission_failure(
+    left: Option<PermissionFailure>,
+    right: Option<PermissionFailure>,
+) -> bool {
+    match (left, right) {
+        (None, None)
+        | (
+            Some(PermissionFailure::UnknownContext),
+            Some(PermissionFailure::UnknownContext),
+        )
+        | (Some(PermissionFailure::Denied), Some(PermissionFailure::Denied)) => true,
+        _ => false,
+    }
+}
+
+/// Independent admission oracle for named permission-context grants.
+/// 命名权限上下文授予的独立准入规格。
+pub fn assert_permission_match(context_named: bool, permission_granted: bool) {
+    let expected = if !context_named {
+        Some(PermissionFailure::UnknownContext)
+    } else if !permission_granted {
+        Some(PermissionFailure::Denied)
+    } else {
+        None
+    };
+    assert!(same_permission_failure(
+        permission_failure(context_named, permission_granted),
+        expected,
+    ));
+}
+
 /// Independent precedence oracle for event authority dimensions.
 /// 事件 authority 各维度的独立优先级规格。
 #[allow(clippy::too_many_arguments)]
@@ -2990,6 +3021,11 @@ mod kani_checks {
     }
 
     #[kani::proof]
+    fn permission_match_admission() {
+        assert_permission_match(kani::any(), kani::any());
+    }
+
+    #[kani::proof]
     fn access_actions_rules() {
         assert_access_actions(kani::any(), kani::any(), kani::any());
     }
@@ -3976,6 +4012,10 @@ mod properties {
             assert_authority_match(&domain, &owner, &session, revision.wrapping_add(1), &domain, &owner, &session, revision);
         }
         #[test]
+        fn permission_match_property(context_named in any::<bool>(), permission_granted in any::<bool>()) {
+            assert_permission_match(context_named, permission_granted);
+        }
+        #[test]
         fn endpoint_property(total in any::<usize>(), pos in any::<usize>(), len in any::<usize>()) {
             assert_endpoint(total, pos, len);
         }
@@ -4037,6 +4077,15 @@ mod memory {
         assert_authority_match("d", "x", "s", 1, "d", "o", "s", 1);
         assert_authority_match("d", "o", "x", 1, "d", "o", "s", 1);
         assert_authority_match("d", "o", "s", 2, "d", "o", "s", 1);
+    }
+
+    #[test]
+    fn permission_match_boundaries() {
+        for context_named in [false, true] {
+            for permission_granted in [false, true] {
+                assert_permission_match(context_named, permission_granted);
+            }
+        }
     }
 
     #[test]

@@ -1,0 +1,37 @@
+verification results:: 1 verified, 1 errors
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/ui-event-permission-match-kernel/negative_ignore_context_name.rs:11:1
+   |
+11 | pub(crate) fn permission_failure(context_named: bool, permission_granted: bool) -> (result: Option<PermissionFailure>)
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: postcondition not satisfied
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/ui-event-permission-match-kernel/negative_ignore_context_name.rs:12:13
+   |
+12 |       ensures match result {
+   |  _____________^
+13 | |         Some(PermissionFailure::UnknownContext) => !context_named,
+14 | |         Some(PermissionFailure::Denied) => context_named && !permission_granted,
+15 | |         None => context_named && permission_granted,
+16 | |     },
+   | |_____^ failed this postcondition
+...
+24 |       None
+   |       ---- at the end of the function body
+
+error: postcondition not satisfied
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/ui-event-permission-match-kernel/negative_ignore_context_name.rs:12:13
+   |
+12 |       ensures match result {
+   |  _____________^
+13 | |         Some(PermissionFailure::UnknownContext) => !context_named,
+14 | |         Some(PermissionFailure::Denied) => context_named && !permission_granted,
+15 | |         None => context_named && permission_granted,
+16 | |     },
+   | |_____^ failed this postcondition
+...
+22 |           return Some(PermissionFailure::Denied);
+   |           -------------------------------------- at this exit
+
+error: aborting due to 2 previous errors
+

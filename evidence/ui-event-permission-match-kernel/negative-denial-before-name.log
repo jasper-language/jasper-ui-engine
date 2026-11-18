@@ -1,0 +1,17 @@
+verification results:: 1 verified, 1 errors
+error: postcondition not satisfied
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/ui-event-permission-match-kernel/negative_denial_before_name.rs:12:13
+   |
+12 |       ensures match result {
+   |  _____________^
+13 | |         Some(PermissionFailure::UnknownContext) => !context_named,
+14 | |         Some(PermissionFailure::Denied) => context_named && !permission_granted,
+15 | |         None => context_named && permission_granted,
+16 | |     },
+   | |_____^ failed this postcondition
+...
+24 |       None
+   |       ---- at the end of the function body
+
+error: aborting due to 1 previous error
+

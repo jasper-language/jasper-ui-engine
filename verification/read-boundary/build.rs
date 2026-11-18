@@ -21,6 +21,8 @@ fn main() {
                 "UI EVENT PERMISSION KERNEL",
                 "AUTHORITY FAILURE TYPE",
                 "AUTHORITY MATCH KERNEL",
+                "PERMISSION FAILURE TYPE",
+                "PERMISSION MATCH KERNEL",
             ][..],
         ),
         (

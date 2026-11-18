@@ -207,18 +207,41 @@ pub(super) fn check_permission(
     event: UiEventKind,
     binding: &EventBinding,
 ) -> Result<(), UiEventAdmissionError> {
-    if context.name.is_empty() {
-        return Err(UiEventAdmissionError::UnknownPermissionContext);
-    }
     let permission = event.required_permission();
-    if !context.permits(permission) {
-        return Err(UiEventAdmissionError::PermissionDenied {
+    match permission_failure(!context.name.is_empty(), context.permits(permission)) {
+        None => Ok(()),
+        Some(PermissionFailure::UnknownContext) => {
+            Err(UiEventAdmissionError::UnknownPermissionContext)
+        }
+        Some(PermissionFailure::Denied) => Err(UiEventAdmissionError::PermissionDenied {
             permission,
             action: binding.action.clone(),
-        });
+        }),
     }
-    Ok(())
 }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+// BEGIN VERIFIED PERMISSION FAILURE TYPE
+pub(crate) enum PermissionFailure {
+    UnknownContext,
+    Denied,
+}
+// END VERIFIED PERMISSION FAILURE TYPE
+
+// BEGIN VERIFIED PERMISSION MATCH KERNEL
+pub(crate) fn permission_failure(
+    context_named: bool,
+    permission_granted: bool,
+) -> Option<PermissionFailure> {
+    if !context_named {
+        return Some(PermissionFailure::UnknownContext);
+    }
+    if !permission_granted {
+        return Some(PermissionFailure::Denied);
+    }
+    None
+}
+// END VERIFIED PERMISSION MATCH KERNEL
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum UiEventAdmissionError {

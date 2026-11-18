@@ -303,6 +303,30 @@ KERNELS = {
             ("owner-before-domain", "if !owner_matches {", "if !identity_domain_matches {"),
         ],
     },
+    "permission-failure-type": {
+        "source": "src/ui_ir/events.rs", "marker": "PERMISSION FAILURE", "suffix": "TYPE",
+        "signature": "pub(crate) enum PermissionFailure {",
+        "contract": "#[derive(Clone, Copy, Debug, PartialEq, Eq)]\npub(crate) enum PermissionFailure {",
+        "depends": [], "function_count": 0, "internal_only": True,
+    },
+    "permission-match": {
+        "source": "src/ui_ir/events.rs", "marker": "PERMISSION MATCH", "property": "UI-EVENT-PERMISSION-MATCH-001",
+        "signature": "pub(crate) fn permission_failure(context_named: bool, permission_granted: bool) -> Option<PermissionFailure> {",
+        "contract": """pub(crate) fn permission_failure(context_named: bool, permission_granted: bool) -> (result: Option<PermissionFailure>)
+    ensures match result {
+        Some(PermissionFailure::UnknownContext) => !context_named,
+        Some(PermissionFailure::Denied) => context_named && !permission_granted,
+        None => context_named && permission_granted,
+    },
+{""",
+        "depends": ["permission-failure-type"],
+        "evidence": "ui-event-permission-match-kernel", "function_count": 1,
+        "scope": "actual permission-context admission and error precedence: an unnamed policy is rejected before grant denial, and admission requires a name plus the required permission grant. BTreeSet membership implementation, event-kind classification, error String construction, authority checks and callback dispatch are outside this kernel",
+        "mutations": [
+            ("ignore-context-name", "if !context_named {", "if false {"),
+            ("denial-before-name", "if !permission_granted {", "if !context_named {"),
+        ],
+    },
     "version": {
         "source": "src/scene.rs", "marker": "VERSION", "property": "UI-TXN-VERSION-001",
         "signature": "fn next_scene_version(version: u64) -> Option<u64> {",

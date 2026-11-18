@@ -6,6 +6,7 @@ use jasper_ui_read_verification::{
     assert_keyboard_focus, assert_payload, assert_pixel_conversion, assert_pointer_order,
     assert_read, assert_resource, assert_rgb_word, assert_role, assert_scalars, assert_surface_row,
     assert_authority_match, assert_core_frame, assert_event_permissions, assert_next_ui_identity,
+    assert_permission_match,
     assert_surface_span, assert_text_classes, assert_versions, assert_view, assert_view_copy,
     assert_segment, assert_write, FrameDamage, ResourceKey,
 };
@@ -205,6 +206,8 @@ fuzz_target!(|data: &[u8]| {
         "session",
         pos as u64,
     );
+    assert_permission_match(data[0] & 1 != 0, data[1] & 1 != 0);
+    assert_permission_match(true, data[2] & 1 != 0);
     assert_frame_tick(total as u64, pos as u64, len as u64);
     assert_frame_tick(pos as u64 % 1000, len as u64 % 17, total as u64 % 5000);
     assert_frame_pace(data[0] & 1 == 1, if data[1] & 1 == 0 { None } else { Some(len as u64) }, total as u64, pos as u64, len as u64);
