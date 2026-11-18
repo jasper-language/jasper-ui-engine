@@ -5,6 +5,9 @@ use crate::geometry::{Point, Size};
 
 /// Stable pointer identity within one input session.
 // BEGIN VERIFIED POINTER ID TYPE
+// The manual equality below is intentionally part of the verified kernel and is exactly
+// equivalent to the derived `u64` equality; keep the proof-bound representation unchanged.
+#[allow(clippy::derived_hash_with_manual_eq)]
 #[derive(Clone, Copy, Debug, Default, Eq, Hash)]
 pub struct PointerId(pub u64);
 use core::cmp::Ordering;
@@ -18,6 +21,7 @@ impl PartialEq for PointerId {
         self.0 == other.0
     }
 }
+#[allow(clippy::non_canonical_partial_ord_impl)]
 impl PartialOrd for PointerId {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         if self.0 < other.0 {
