@@ -1019,7 +1019,16 @@ fn typed_focus_text_and_ime_use_the_same_admitted_ui_key() {
     };
 
     const OWNER: u64 = 83;
-    let document = NativeUiDocument::from_json_slice(&fixture("settings-page.ir.json")).unwrap();
+    let mut value: serde_json::Value =
+        serde_json::from_slice(&fixture("settings-page.ir.json")).unwrap();
+    value["ops"][0]["node"]["children"][1]["events"] = serde_json::json!([
+        { "event": "text-commit", "action": "name" },
+        { "event": "focus", "action": "focus-name" },
+        { "event": "key", "action": "key-name" },
+        { "event": "ime-commit", "action": "ime-name" }
+    ]);
+    let document =
+        NativeUiDocument::from_json_slice(&serde_json::to_vec(&value).unwrap()).unwrap();
     let font = std::fs::read(
         std::env::var("JASPER_UI_TEST_FONT")
             .expect("JASPER_UI_TEST_FONT must name an injected font"),
@@ -1063,6 +1072,11 @@ fn typed_focus_text_and_ime_use_the_same_admitted_ui_key() {
         vec![jasper_ui_engine::native::TypedUiFocusEvent {
             target: UiKey::new(3, 1),
             focused: true,
+            admitted: Some(jasper_ui_engine::ui_ir::AdmittedEvent {
+                target: UiKey::new(3, 1),
+                event: UiEventKind::Focus,
+                action: "focus-name".into(),
+            }),
         }]
     );
     assert_eq!(
@@ -1108,6 +1122,13 @@ fn typed_focus_text_and_ime_use_the_same_admitted_ui_key() {
     assert_eq!(typed_keys.len(), 1);
     assert_eq!(typed_keys[0].target, UiKey::new(3, 1));
     assert_eq!(typed_keys[0].key, "Backspace");
+    assert_eq!(
+        typed_keys[0]
+            .admitted
+            .as_ref()
+            .map(|event| (event.event, event.action.as_str())),
+        Some((UiEventKind::Key, "key-name"))
+    );
     assert_eq!(host.edit_state(OWNER, 2).unwrap().unwrap().text, "Alice");
     assert_eq!(
         host.typed_set_preedit(
@@ -1138,6 +1159,12 @@ fn typed_focus_text_and_ime_use_the_same_admitted_ui_key() {
             .preedit
             .as_deref(),
         Some("中")
+    );
+    assert_eq!(
+        host.typed_ime_commit(OWNER, 2, generation, &document, &context, field, "中")
+            .unwrap()
+            .map(|event| (event.event, event.action)),
+        Some((UiEventKind::ImeCommit, "ime-name".into()))
     );
 
     let wrong_target = UiEventContext {
@@ -1440,6 +1467,7 @@ fn typed_pointer_routes_and_activates_by_ui_key_across_an_identity_preserving_mo
         vec![jasper_ui_engine::native::TypedUiFocusEvent {
             target: button,
             focused: true,
+            admitted: None,
         }]
     );
 
@@ -1649,6 +1677,25 @@ fn typed_keyboard_activation_requires_activate_binding() {
     assert_eq!(admitted.action, "keyboard-save");
     assert_eq!(
         activations,
+        vec![jasper_ui_engine::native::TypedUiActivationEvent {
+            target: UiKey::new(4, 1),
+        }]
+    );
+    let mut host_activation = Vec::new();
+    let admitted = host
+        .typed_activate(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &context,
+            button,
+            &mut |event| host_activation.push(event),
+        )
+        .unwrap();
+    assert_eq!(admitted.action, "keyboard-save");
+    assert_eq!(
+        host_activation,
         vec![jasper_ui_engine::native::TypedUiActivationEvent {
             target: UiKey::new(4, 1),
         }]
@@ -1922,6 +1969,7 @@ fn typed_accesskit_actions_require_ui_key_and_permissions() {
         vec![jasper_ui_engine::native::TypedUiFocusEvent {
             target: UiKey::new(4, 1),
             focused: true,
+            admitted: None,
         }]
     );
 
