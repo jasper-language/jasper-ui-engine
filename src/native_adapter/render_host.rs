@@ -946,7 +946,35 @@ impl HostRenderer {
             }
             _ => return Err(TypedUiAccessibilityActionError::ActionNotSupported),
         };
-        let mut focus_error = None;
+        let mut focus_admissions = Vec::new();
+        if request.action == crate::native::host::accesskit::Action::Focus {
+            for focus_node in [self.focused_node(owner, version), Some(node)]
+                .into_iter()
+                .flatten()
+            {
+                let key = document
+                    .key_for_node(focus_node)
+                    .ok_or(TypedUiAccessibilityActionError::UnmappedTarget)?;
+                if focus_admissions
+                    .iter()
+                    .any(|(existing, _)| *existing == key)
+                {
+                    continue;
+                }
+                if let Some(admitted) = admitted_optional_event(
+                    document,
+                    context,
+                    key,
+                    focus_node,
+                    UiEventKind::Focus,
+                )
+                .map_err(TypedUiAccessibilityActionError::Admission)?
+                {
+                    focus_admissions.push((key, admitted));
+                }
+            }
+        }
+        let mut focus_mapping_error = false;
         let mut activation_mapping_error = false;
         let accepted = self.accesskit_action(
             owner,
@@ -955,25 +983,17 @@ impl HostRenderer {
             request,
             &mut |event| {
                 let Some(target) = document.key_for_node(event.node) else {
-                    focus_error = Some(TypedUiAccessibilityActionError::UnmappedTarget);
+                    focus_mapping_error = true;
                     return;
                 };
-                match admitted_optional_event(
-                    document,
-                    context,
+                focus(TypedUiFocusEvent {
                     target,
-                    event.node,
-                    UiEventKind::Focus,
-                ) {
-                    Ok(admitted) => focus(TypedUiFocusEvent {
-                        target,
-                        focused: event.focused,
-                        admitted,
-                    }),
-                    Err(error) => {
-                        focus_error = Some(TypedUiAccessibilityActionError::Admission(error))
-                    }
-                }
+                    focused: event.focused,
+                    admitted: focus_admissions
+                        .iter()
+                        .find(|(key, _)| *key == target)
+                        .map(|(_, admitted)| admitted.clone()),
+                });
             },
             &mut |event| {
                 if let Some(target) = document.key_for_node(event.node) {
@@ -983,8 +1003,8 @@ impl HostRenderer {
                 }
             },
         );
-        if let Some(error) = focus_error {
-            return Err(error);
+        if focus_mapping_error {
+            return Err(TypedUiAccessibilityActionError::UnmappedTarget);
         }
         if activation_mapping_error {
             return Err(TypedUiAccessibilityActionError::UnmappedTarget);
