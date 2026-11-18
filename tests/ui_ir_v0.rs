@@ -1104,6 +1104,118 @@ fn typed_focus_text_and_ime_use_the_same_admitted_ui_key() {
 
 #[cfg(feature = "native-blitz-cpu-pending")]
 #[test]
+fn typed_keyboard_activation_requires_activate_binding() {
+    use jasper_ui_engine::native::host::HostRenderer;
+    use jasper_ui_engine::native::{
+        EventReply, HostKeyInput, KeyLocation, Modifiers, TypedUiTargetError,
+    };
+
+    const OWNER: u64 = 85;
+    let mut value: serde_json::Value =
+        serde_json::from_slice(&fixture("settings-page.ir.json")).unwrap();
+    value["ops"][0]["node"]["children"][2]["events"]
+        .as_array_mut()
+        .unwrap()
+        .push(serde_json::json!({
+            "event": "activate",
+            "action": "keyboard-save"
+        }));
+    let frame = UiFrame::from_json_slice(&serde_json::to_vec(&value).unwrap()).unwrap();
+    let document = NativeUiDocument::from_frame(&frame).unwrap();
+    let font = std::fs::read(
+        std::env::var("JASPER_UI_TEST_FONT")
+            .expect("JASPER_UI_TEST_FONT must name an injected font"),
+    )
+    .unwrap();
+    let mut host = HostRenderer::new_ui_document(OWNER, &document, &font, 480, 320).unwrap();
+    let generation = host.surface_status(OWNER).unwrap().generation;
+    let button = document.node_for_key(UiKey::new(4, 1)).unwrap();
+    let context = UiEventContext {
+        target: UiKey::new(4, 1),
+        identity_domain: "orders-app/window-main".into(),
+        owner: "desktop-host".into(),
+        session: "session-2026-11-17-1".into(),
+        frame_revision: 2,
+        permission_context: UiPermissionContext::new(
+            "keyboard-host",
+            [
+                UiPermission::Focus,
+                UiPermission::Keyboard,
+                UiPermission::Activate,
+            ],
+        ),
+    };
+    host.typed_focus(
+        OWNER,
+        2,
+        generation,
+        &document,
+        &context,
+        button,
+        &mut |_| {},
+    )
+    .unwrap();
+    let enter = HostKeyInput {
+        key: "Enter",
+        code: "Enter",
+        pressed: true,
+        repeat: false,
+        composing: false,
+        modifiers: Modifiers::default(),
+        location: KeyLocation::Standard,
+    };
+    let mut activations = 0usize;
+    let admitted = host
+        .typed_key_with_activation(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &context,
+            button,
+            &enter,
+            &mut |_| EventReply::default(),
+            &mut |_| {},
+            &mut |_| activations += 1,
+        )
+        .unwrap()
+        .unwrap();
+    assert_eq!(admitted.action, "keyboard-save");
+    assert_eq!(activations, 1);
+
+    let click_only = NativeUiDocument::from_json_slice(&fixture("settings-page.ir.json")).unwrap();
+    let mut host = HostRenderer::new_ui_document(OWNER + 1, &click_only, &font, 480, 320).unwrap();
+    let generation = host.surface_status(OWNER + 1).unwrap().generation;
+    let button = click_only.node_for_key(UiKey::new(4, 1)).unwrap();
+    host.typed_focus(
+        OWNER + 1,
+        2,
+        generation,
+        &click_only,
+        &context,
+        button,
+        &mut |_| {},
+    )
+    .unwrap();
+    assert!(matches!(
+        host.typed_key_with_activation(
+            OWNER + 1,
+            2,
+            generation,
+            &click_only,
+            &context,
+            button,
+            &enter,
+            &mut |_| EventReply::default(),
+            &mut |_| {},
+            &mut |_| unreachable!("unbound keyboard activation must not reach Framework"),
+        ),
+        Err(TypedUiTargetError::Admission(_))
+    ));
+}
+
+#[cfg(feature = "native-blitz-cpu-pending")]
+#[test]
 fn typed_geometry_queries_use_ui_keys_and_live_generation() {
     use jasper_ui_engine::native::host::HostRenderer;
     use jasper_ui_engine::native::TypedUiGeometryError;

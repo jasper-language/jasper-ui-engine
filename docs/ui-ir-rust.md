@@ -72,7 +72,7 @@ Focus、pointer capture、IME、scroll 等非 binding 操作使用 `admit_native
 | Selected 状态 | implemented / tested | Semantics、AccessibilityNode、ARIA 与 AccessKit selected 状态贯通 |
 | Typed Accessibility | implemented / tested | 完整树与增量 update 均经 HostRenderer Surface generation 门控；前后 document revision、update 顺序、removed/changed UiKey 映射均校验 |
 | Typed AccessKit actions | implemented / tested | backend target 必须匹配 UiKey；Focus/Click 分别要求 Focus permission 与 accessibility-action binding |
-| Typed input targets | implemented / tested | HostRenderer Focus/Key/TextInput/IME 使用同一 UiKey 上下文授权；键输入还须匹配当前 Native focus；错误 target、permission 和 revision 均拒绝 |
+| Typed input targets | implemented / tested | HostRenderer Focus/Key/KeyActivation/TextInput/IME 使用同一 UiKey 上下文授权；键输入匹配当前 Native focus，键盘激活另需 activate binding；错误 target、permission 和 revision 均拒绝 |
 | Typed geometry queries | implemented / tested | bounds/scroll/table metrics 直接消费 UiKey，并校验 document revision、Surface generation 和 active key |
 | 资源生命周期 | implemented / tested | Prepare 仅是 pending、不替换旧 Committed；Commit 原子提升；Release 只释放 active；上传与删除分别受 `insert_ui_image`/`remove_ui_image` 状态校验；含代数复用拒绝、节点移除后 Release 与实际解码/绘制 |
 | Environment | implemented / tested | 首帧和后继帧的 reduce-motion 均应用到 Native host；appearance/density/text-scale 保留为 Framework 环境语义 |

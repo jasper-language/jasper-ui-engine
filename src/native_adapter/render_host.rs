@@ -752,6 +752,61 @@ impl HostRenderer {
         Ok(target)
     }
 
+    pub fn typed_key_with_activation(
+        &mut self,
+        owner: u64,
+        version: u64,
+        generation: u64,
+        document: &NativeUiDocument,
+        context: &UiEventContext,
+        node: NodeId,
+        input: &crate::native::HostKeyInput<'_>,
+        key: &mut impl FnMut(crate::native::SceneKeyEvent) -> crate::native::EventReply,
+        focus: &mut impl FnMut(SceneFocusEvent),
+        activation: &mut impl FnMut(crate::native::SceneActivationEvent),
+    ) -> Result<Option<AdmittedEvent>, TypedUiTargetError> {
+        if version != document.revision() {
+            return Err(TypedUiTargetError::RevisionMismatch {
+                host: version,
+                document: document.revision(),
+            });
+        }
+        document
+            .admit_native_target(context, node, UiPermission::Keyboard)
+            .map_err(TypedUiTargetError::Admission)?;
+        if self.focused_node(owner, version) != Some(node) {
+            return Err(TypedUiTargetError::HostRejected);
+        }
+        let mut admitted = None;
+        let mut admission_error = None;
+        let accepted = self.key_with_activation(
+            owner,
+            version,
+            generation,
+            input,
+            key,
+            focus,
+            &mut |event| match document.admit_activation(
+                context,
+                event.node,
+                crate::ui_ir::NativeActivationSource::Keyboard,
+            ) {
+                Ok(result) => {
+                    admitted = Some(result);
+                    activation(event);
+                }
+                Err(error) => admission_error = Some(error),
+            },
+        );
+        if let Some(error) = admission_error {
+            return Err(TypedUiTargetError::Admission(error));
+        }
+        if !accepted {
+            return Err(TypedUiTargetError::HostRejected);
+        }
+        Ok(admitted)
+    }
+
     /// `key` plus engine keyboard activation; see `Engine::key_with_activation`.
     /// `key` 加引擎键盘激活；见 `Engine::key_with_activation`。
     pub fn key_with_activation(

@@ -70,6 +70,8 @@ Native 回调携带 `NodeId` 时使用 `admit_native_event`/`admit_activation`�
 HostRenderer 的 `typed_focus`、`typed_text_input`、`typed_set_preedit` 把目标授权与实际
 Focus/TextEdit/IME 操作合并到一次调用，避免授权后误传另一个 NodeId。
 `typed_key` 还要求目标等于当前 Native focus，并持有 Keyboard permission。
+`typed_key_with_activation` 在键盘激活时要求 `activate` binding 和 Activate permission；
+只有 `click` 绑定时不会把 Enter/Space 的回调交给 Framework。
 几何查询使用 `typed_node_bounds` / `typed_scroll_geometry` / `typed_table_metrics`：
 输入 UiKey，返回前校验 document revision 与 Surface generation，未知 key 结构化拒绝。
 宿主只能通过 `committed_resource` 取得可消费的 Prepared+Commit 资源；`active_resource` 仍可查询
