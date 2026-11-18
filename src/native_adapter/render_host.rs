@@ -435,6 +435,7 @@ pub enum TypedAccessibilityAction {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TypedUiAccessibilityActionError {
     HostRejected,
+    RevisionMismatch { host: u64, document: u64 },
     ActionNotSupported,
     UnmappedTarget,
     Admission(UiEventAdmissionError),
@@ -445,6 +446,10 @@ impl std::fmt::Display for TypedUiAccessibilityActionError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::HostRejected => write!(f, "host rejected accessibility action"),
+            Self::RevisionMismatch { host, document } => write!(
+                f,
+                "host revision {host} does not match document revision {document}"
+            ),
             Self::ActionNotSupported => {
                 write!(f, "accessibility action is not supported by Typed UI")
             }
@@ -931,6 +936,15 @@ impl HostRenderer {
         focus: &mut impl FnMut(TypedUiFocusEvent),
         activation: &mut impl FnMut(TypedUiActivationEvent),
     ) -> Result<TypedAccessibilityAction, TypedUiAccessibilityActionError> {
+        if version != document.revision() {
+            return Err(TypedUiAccessibilityActionError::RevisionMismatch {
+                host: version,
+                document: document.revision(),
+            });
+        }
+        if !self.surface.render_allowed(owner, generation) {
+            return Err(TypedUiAccessibilityActionError::HostRejected);
+        }
         let node = NodeId(request.target_node.0);
         let result = match request.action {
             crate::native::host::accesskit::Action::Focus => {

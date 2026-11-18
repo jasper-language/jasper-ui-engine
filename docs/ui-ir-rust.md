@@ -96,7 +96,7 @@ caret 几何与 `UiKey` 一并返回，不暴露 backend 节点身份。
 | Popover/Tooltip 语义 | implemented / tested | Native 语义角色保留；AccessKit 分别投影为 Group/Tooltip，Popover 的宿主平台细节仍为 candidate |
 | Selected 状态 | implemented / tested | Semantics、AccessibilityNode、ARIA 与 AccessKit selected 状态贯通 |
 | Typed Accessibility | implemented / tested | 完整树与增量 update 均经 HostRenderer Surface generation 门控；前后 document revision、update 顺序、removed/changed UiKey 映射均校验 |
-| Typed AccessKit actions | implemented / tested | backend target 必须匹配 UiKey；Focus/Click 分别要求 Focus permission 与 accessibility-action binding；Focus 切换所需 binding 在平台动作前预准入，回调只暴露 UiKey |
+| Typed AccessKit actions | implemented / tested | 入口先校验 document revision 与 Surface generation；backend target 必须匹配 UiKey；Focus/Click 分别要求 Focus permission 与 accessibility-action binding；Focus 切换所需 binding 在平台动作前预准入，回调只暴露 UiKey |
 | Typed semantic activation | implemented / tested | `typed_activate` 要求当前 UiKey、owner/session/revision、Surface generation 与 Activate binding/permission，回调只暴露 UiKey |
 | Typed input targets | implemented / tested | HostRenderer Focus/Key/KeyActivation/TextInput/IME/Deactivate 使用同一 UiKey 上下文授权；编辑按键和失焦将发生的 text-commit/ime-cancel binding 在 Native 状态变化前预准入，Activation 回调只暴露 UiKey；`typed_focused_node` 返回 UiKey；键输入匹配当前 Native focus，TextInput/IME 必须匹配当前编辑节点，键盘激活另需 activate binding；错误 target、permission 和 revision 均拒绝 |
 | Typed IME commit | implemented / tested | `typed_ime_commit` 要求 Ime + TextEdit permission 与当前编辑节点，合法 `ime-commit` binding 在文字插入前准入并返回 action |

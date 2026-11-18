@@ -2710,6 +2710,32 @@ fn typed_accesskit_actions_require_ui_key_and_permissions() {
         ),
         Err(TypedUiAccessibilityActionError::ActionNotSupported)
     ));
+    assert!(matches!(
+        host.typed_accesskit_action(
+            OWNER,
+            3,
+            generation,
+            &document,
+            &context_with_ime,
+            &request(Action::Click),
+            &mut |_| {},
+            &mut |_| {},
+        ),
+        Err(TypedUiAccessibilityActionError::RevisionMismatch { .. })
+    ));
+    assert!(matches!(
+        host.typed_accesskit_action(
+            OWNER,
+            2,
+            generation + 1,
+            &document,
+            &context_with_ime,
+            &request(Action::Click),
+            &mut |_| {},
+            &mut |_| {},
+        ),
+        Err(TypedUiAccessibilityActionError::HostRejected)
+    ));
     assert_eq!(host.focused_node(OWNER, 2), Some(button));
 }
 
