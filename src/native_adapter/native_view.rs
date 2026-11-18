@@ -345,18 +345,11 @@ impl NativeTextView {
         let Some(input) = binding.admit(caller, ticket, &text) else {
             return false;
         };
-        if !self.set_preedit_display(*input.payload()) {
+        let (text, cursor) = normalized_preedit(*input.payload(), cursor);
+        if !self.set_preedit_display(text.as_deref()) {
             return false;
         }
-        self.preedit_cursor = text.and_then(|text| {
-            cursor.filter(|&(start, end)| {
-                !text.is_empty()
-                    && start <= end
-                    && end <= text.len()
-                    && text.is_char_boundary(start)
-                    && text.is_char_boundary(end)
-            })
-        });
+        self.preedit_cursor = cursor;
         true
     }
 
@@ -1516,6 +1509,52 @@ impl NativeTextView {
             .as_ref()
             .map(|document| document.viewport().window_size)
     }
+}
+
+fn normalized_preedit(
+    text: Option<&str>,
+    cursor: Option<(usize, usize)>,
+) -> (Option<String>, Option<(usize, usize)>) {
+    let Some(text) = text else {
+        return (None, None);
+    };
+    let cursor_is_local = cursor.is_some_and(|(start, end)| {
+        start <= end
+            && end <= text.len()
+            && text.is_char_boundary(start)
+            && text.is_char_boundary(end)
+    });
+    let mut clean = String::with_capacity(text.len());
+    for character in text.chars() {
+        if !character.is_control() {
+            clean.push(character);
+        }
+    }
+    if clean.is_empty() {
+        return (None, None);
+    }
+    let cursor = cursor.filter(|_| cursor_is_local).and_then(|(start, end)| {
+        Some((
+            sanitized_boundary(text, &clean, start)?,
+            sanitized_boundary(text, &clean, end)?,
+        ))
+    });
+    (Some(clean), cursor)
+}
+
+fn sanitized_boundary(source: &str, clean: &str, target: usize) -> Option<usize> {
+    let mut source_at = 0usize;
+    let mut clean_at = 0usize;
+    for character in source.chars() {
+        if source_at == target {
+            return Some(clean_at);
+        }
+        source_at += character.len_utf8();
+        if !character.is_control() {
+            clean_at += character.len_utf8();
+        }
+    }
+    (source_at == target && clean_at == clean.len()).then_some(clean_at)
 }
 
 // BEGIN VERIFIED COMPONENT UPDATE ADMISSION KERNEL

@@ -222,10 +222,33 @@ fn preedit_preserves_only_local_utf8_cursor_ranges() {
         &binding,
         OWNER,
         token,
+        Some("a\n中"),
+        Some((2, 5))
+    ));
+    assert_eq!(
+        view.preedit_cursor(&binding, OWNER, token),
+        Some(Some((1, 4)))
+    );
+    assert!(view
+        .preedit_caret(&binding, OWNER, token, 1.0)
+        .is_some());
+    assert!(view.preedit_with_cursor(
+        &binding,
+        OWNER,
+        token,
         Some("a中"),
         Some((2, 4))
     ));
     assert_eq!(view.preedit_cursor(&binding, OWNER, token), Some(None));
+    assert!(view.preedit_with_cursor(
+        &binding,
+        OWNER,
+        token,
+        Some("\n\t"),
+        Some((0, 2))
+    ));
+    assert_eq!(view.preedit_cursor(&binding, OWNER, token), Some(None));
+    assert!(view.preedit_caret(&binding, OWNER, token, 1.0).is_none());
     assert!(view.cancel_preedit(OWNER, token));
     assert_eq!(view.preedit_cursor(&binding, OWNER, token), None);
 }
