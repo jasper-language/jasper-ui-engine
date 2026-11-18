@@ -336,6 +336,7 @@ mod tests {
                 ..Default::default()
             },
             repeat: false,
+            composing: false,
         };
         assert!(focus.handle_key(&event(false)));
         assert_eq!(focus.focused(), Some(NodeId(2)));

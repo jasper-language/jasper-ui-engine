@@ -135,6 +135,9 @@ pub struct KeyEvent {
     pub phase: KeyPhase,
     pub modifiers: Modifiers,
     pub repeat: bool,
+    /// The host input method owns this key while a preedit is active.
+    /// 输入法组合态期间由宿主输入法拥有该键。
+    pub composing: bool,
 }
 // END VERIFIED KEY EVENT TYPE
 

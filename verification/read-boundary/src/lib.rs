@@ -912,6 +912,7 @@ fn patch_oracle(tree: &Node, patch: &ScenePatch) -> (Node, Result<(), SceneError
         | ScenePatch::UpdateText { id, .. }
         | ScenePatch::SetCanvas { id, .. }
         | ScenePatch::SetScroll { id, .. }
+        | ScenePatch::Move { id, .. }
         | ScenePatch::Remove { id } => *id,
     };
     if let ScenePatch::Remove { .. } = patch {
@@ -922,6 +923,31 @@ fn patch_oracle(tree: &Node, patch: &ScenePatch) -> (Node, Result<(), SceneError
             Some(rebuilt) => (rebuilt, Ok(())),
             None => (expected, Err(SceneError::NodeNotFound(id))),
         };
+    }
+    if let ScenePatch::Move { id, parent, index } = patch {
+        if tree.id.0 == id.0 {
+            return (expected, Err(SceneError::CannotMoveRoot));
+        }
+        let moved = match find_node(tree, *id) {
+            Some(node) => node.clone(),
+            None => return (expected, Err(SceneError::NodeNotFound(*id))),
+        };
+        if find_node(tree, *parent).is_none() {
+            return (expected, Err(SceneError::NodeNotFound(*parent)));
+        }
+        if find_node(&moved, *parent).is_some() {
+            return (expected, Err(SceneError::MoveIntoDescendant(*id)));
+        }
+        let mut rebuilt = removal_oracle(tree, id.0)
+            .expect("the moved node exists in the source tree");
+        let path = find_oracle_path(&rebuilt, parent.0)
+            .expect("the destination parent exists outside the moved subtree");
+        let target = path
+            .iter()
+            .fold(&mut rebuilt, |node, &at| &mut node.children[at]);
+        let at = (*index).min(target.children.len());
+        target.children.insert(at, moved);
+        return (rebuilt, Ok(()));
     }
     let Some(path) = find_oracle_path(tree, id.0) else {
         return (expected, Err(SceneError::NodeNotFound(id)));
@@ -952,7 +978,9 @@ fn patch_oracle(tree: &Node, patch: &ScenePatch) -> (Node, Result<(), SceneError
                 result = Err(SceneError::NotCanvas(id));
             }
         }
-        ScenePatch::Remove { .. } => unreachable!("handled above"),
+        ScenePatch::Move { .. } | ScenePatch::Remove { .. } => {
+            unreachable!("handled above")
+        }
     }
     (expected, result)
 }
@@ -982,7 +1010,7 @@ pub fn assert_scene_patch_bytes(spec: &[(u8, u8)], root: u8, id: u8, op: u8, ind
     let mut tree = removal_tree(root as u64 % 8, &mut spec.iter(), &mut room);
     vary_kinds(&mut tree);
     let id = NodeId(id as u64 % 8);
-    let patch = match op % 7 {
+    let patch = match op % 8 {
         0 => ScenePatch::Insert {
             parent: id,
             index: index as usize % 6,
@@ -993,6 +1021,11 @@ pub fn assert_scene_patch_bytes(spec: &[(u8, u8)], root: u8, id: u8, op: u8, ind
         3 => ScenePatch::SetScroll { id, offset: Point { x: -1.5, y: -2.5 } },
         4 => ScenePatch::UpdateText { id, text: "new".into() },
         5 => ScenePatch::SetCanvas { id, canvas: tagged_canvas(252) },
+        6 => ScenePatch::Move {
+            id,
+            parent: NodeId(((id.0 + index as u64) % 8).max(1)),
+            index: (index as usize) % 6,
+        },
         _ => ScenePatch::Remove { id },
     };
     assert_scene_patch(tree, patch);
@@ -2162,6 +2195,7 @@ pub fn assert_command_modifier(flags: u8) {
             KeyPhase::Up
         },
         repeat: flags & 64 != 0,
+        composing: false,
         modifiers: Modifiers {
             shift: flags & 1 != 0,
             control: flags & 2 != 0,

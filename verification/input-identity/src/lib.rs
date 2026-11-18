@@ -314,13 +314,14 @@ pub fn check_preedit(text: &str, cursor: Option<(usize,usize)>) {
 }
 // Exercise the exact desktop mapper on the exact pinned dependency enum declaration.
 pub fn check_desktop_ime(text:&str,cursor:Option<(usize,usize)>) {
-    let mut desktop=DesktopInput{pointer:DesktopPointerState::new(),touch:DesktopTouchState::default(),start:std::time::Instant::now()};
+    let mut desktop=DesktopInput{pointer:DesktopPointerState::new(),touch:DesktopTouchState::default(),ime_composing:false,start:std::time::Instant::now()};
     match desktop.ime(&Ime::Preedit(text.to_owned(),cursor)) {
         Some(InputEvent::Preedit{text:copy,cursor:position})=>{assert_eq!(copy,text);assert_eq!(position,cursor);},
         _=>panic!("delegate mapped preedit to document coordinates"),
     }
     assert_eq!(desktop.pointer.pointer_id.0,0);assert_eq!(desktop.pointer.position.x,0.0);assert!(desktop.pointer.pressed.is_empty());
     assert_eq!(desktop.pointer.modifiers,Modifiers::default());assert!(desktop.touch.active.is_empty());assert!(desktop.touch.primary.is_none());
+    assert_eq!(desktop.ime_composing,!text.is_empty());
     match normalize_ime(&Ime::Preedit(text.to_owned(),cursor)) {
         Some(InputEvent::Preedit{text:copy,cursor:position})=>{assert_eq!(copy,text);assert_eq!(position,cursor);},
         _=>panic!("preedit mapped to wrong coordinate domain"),

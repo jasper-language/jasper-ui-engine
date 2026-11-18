@@ -231,6 +231,7 @@ mod tests {
             phase: KeyPhase::Down,
             modifiers: Modifiers::default(),
             repeat: false,
+            composing: false,
         }
     }
 

@@ -25,6 +25,7 @@ fn normalized_entrances_reject_closed_or_stale_binding() {
             phase: KeyPhase::Down,
             modifiers: Modifiers::default(),
             repeat: false,
+            composing: false,
         }),
         InputEvent::Text("你好".into()),
         InputEvent::Preedit {

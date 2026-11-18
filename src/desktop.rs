@@ -283,6 +283,7 @@ impl DesktopTouchState {
 pub struct DesktopInput {
     pointer: DesktopPointerState,
     touch: DesktopTouchState,
+    ime_composing: bool,
     start: Instant,
 }
 // END VERIFIED DESKTOP INPUT TYPE
@@ -298,6 +299,7 @@ impl DesktopInput {
         Self {
             pointer: DesktopPointerState::new(),
             touch: DesktopTouchState::new(),
+            ime_composing: false,
             start: Instant::now(),
         }
     }
@@ -310,6 +312,9 @@ impl DesktopInput {
     pub fn translate(&mut self, event: &WindowEvent) -> Vec<InputEvent> {
         match event {
             WindowEvent::Focused(focused) => {
+                if !focused {
+                    self.ime_composing = false;
+                }
                 vec![InputEvent::Focus(FocusEvent { focused: *focused })]
             }
             WindowEvent::ModifiersChanged(modifiers) => {
@@ -420,30 +425,51 @@ impl DesktopInput {
             ElementState::Pressed => KeyPhase::Down,
             ElementState::Released => KeyPhase::Up,
         };
-        let name = key_name(&event.logical_key);
+        self.keyboard_sample(
+            phase,
+            &event.logical_key,
+            event.text.as_deref(),
+            event.repeat,
+        )
+    }
+
+    fn keyboard_sample(
+        &self,
+        phase: KeyPhase,
+        logical_key: &Key,
+        text: Option<&str>,
+        repeat: bool,
+    ) -> Vec<InputEvent> {
+        let name = key_name(logical_key);
         let modifiers = self.pointer.modifiers();
         let mut out = vec![InputEvent::Key(KeyEvent {
-            key: name.clone(),
+            key: name,
             phase,
             modifiers,
-            repeat: event.repeat,
+            repeat,
+            composing: self.ime_composing,
         })];
 
-        // Text commits come from IME on modern platforms. For plain character
-        // keys without command modifiers, also emit the text sample so simple
-        // editors work before a full IME pipeline is attached.
-        if phase == KeyPhase::Down && !modifiers.control && !modifiers.alt && !modifiers.meta {
-            if let Key::Character(text) = &event.logical_key {
-                out.push(InputEvent::Text(text.to_string()));
-            } else if event.logical_key == Key::Named(NamedKey::Space) {
-                out.push(InputEvent::Text(" ".into()));
-            }
+        if let Some(text) = direct_key_text(self.ime_composing, phase, modifiers, text) {
+            out.push(InputEvent::Text(text));
         }
         out
     }
 
     // BEGIN VERIFIED DESKTOP IME DELEGATE KERNEL
     pub fn ime(&mut self, event: &Ime) -> Option<InputEvent> {
+        match event {
+            Ime::Enabled => {}
+            Ime::Disabled => {
+                self.ime_composing = false;
+            }
+            Ime::Commit(_) => {
+                self.ime_composing = false;
+            }
+            Ime::Preedit(text, _) => {
+                self.ime_composing = !text.is_empty();
+            }
+        }
         normalize_ime(event)
     }
     // END VERIFIED DESKTOP IME DELEGATE KERNEL
@@ -458,6 +484,26 @@ fn map_button(button: WinitMouseButton) -> MouseButton {
         WinitMouseButton::Forward => MouseButton::Forward,
         WinitMouseButton::Other(code) => MouseButton::Other(code),
     }
+}
+
+/// Emit text reported by an ordinary key while no IME composition owns input.
+/// Composition commits arrive through `Ime::Commit` instead.
+fn direct_key_text(
+    ime_composing: bool,
+    phase: KeyPhase,
+    modifiers: Modifiers,
+    text: Option<&str>,
+) -> Option<String> {
+    if ime_composing
+        || phase != KeyPhase::Down
+        || modifiers.control
+        || modifiers.alt
+        || modifiers.meta
+    {
+        return None;
+    }
+    text.filter(|text| !text.is_empty() && !text.chars().any(char::is_control))
+        .map(str::to_owned)
 }
 
 fn key_name(key: &Key) -> String {
@@ -585,6 +631,69 @@ mod tests {
                 cursor: Some((0, 2))
             })
         );
+        assert!(input.ime_composing);
+        input.ime(&Ime::Preedit("".into(), None));
+        assert!(!input.ime_composing);
+        input.ime(&Ime::Disabled);
+        assert!(!input.ime_composing);
+    }
+
+    #[test]
+    fn composition_suppresses_key_text_but_ordinary_keys_survive() {
+        let modifiers = Modifiers::default();
+        assert_eq!(
+            direct_key_text(false, KeyPhase::Down, modifiers, Some("a")),
+            Some("a".into())
+        );
+        assert_eq!(
+            direct_key_text(true, KeyPhase::Down, modifiers, Some("a")),
+            None
+        );
+        assert_eq!(
+            direct_key_text(false, KeyPhase::Up, modifiers, Some("a")),
+            None
+        );
+        assert_eq!(
+            direct_key_text(false, KeyPhase::Down, modifiers, Some("\r")),
+            None
+        );
+    }
+
+    #[test]
+    fn preedit_marks_keys_as_composing_and_commit_restores_direct_text() {
+        let mut input = DesktopInput::new();
+        input.ime(&Ime::Preedit("ni".into(), None));
+        let composing = input.keyboard_sample(
+            KeyPhase::Down,
+            &Key::Character("a".into()),
+            Some("a"),
+            false,
+        );
+        assert!(matches!(
+            composing.as_slice(),
+            [InputEvent::Key(KeyEvent {
+                composing: true,
+                ..
+            })]
+        ));
+
+        input.ime(&Ime::Commit("你".into()));
+        let committed = input.keyboard_sample(
+            KeyPhase::Down,
+            &Key::Character("a".into()),
+            Some("a"),
+            false,
+        );
+        assert!(matches!(
+            committed.as_slice(),
+            [
+                InputEvent::Key(KeyEvent {
+                    composing: false,
+                    ..
+                }),
+                InputEvent::Text(text)
+            ] if text == "a"
+        ));
     }
 
     #[test]

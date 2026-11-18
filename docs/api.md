@@ -550,12 +550,12 @@ and document; safe Rust cannot mutate those through the same owners while it liv
 This does not edit the document, validate preedit cursor/selection, or implement
 native IME cancellation. `valid_composition_range` exposes the same range predicate.
 
-**2026-10-24 15:42 UTC integration limitation:** current `DesktopInput::ime`
-forwards preedit-local cursor offsets into legacy CompositionEvent, conflicting
-with its declared document-offset semantics. Do not wire that raw event directly
-to document-range admission. The mathematical range proof does not establish
-producer/consumer coordinate agreement. Separate types/coordinates and preserve
-absent cursor before completing native IME integration; see input-method-boundary.
+**Resolved 2026-11-18:** `DesktopInput::ime` now emits the preedit-local
+`InputEvent::Preedit` variant and preserves an absent cursor; it no longer forwards
+those offsets as legacy document-replacement `CompositionEvent`. Document-range
+admission still applies only to `CompositionEvent`, never to preedit-local offsets.
+See input-method-boundary for the X11/IBus integration evidence and remaining
+physical-platform limits.
 
 ### Explicit UI preedit-local payload
 
@@ -564,8 +564,8 @@ inside its own UTF-8 preedit string. `None` stays absent. It is a separate type 
 legacy document-replacement `CompositionEvent`. `UiCompositionSlot::admit_preedit`
 checks current owner/serial plus local scalar boundaries and returns the same
 borrowed payload; it never applies an editor transaction. A nonempty preedit can
-be valid when the editor document is empty. DesktopInput's legacy conversion still
-needs migration; the new payload alone does not resolve that producer defect.
+be valid when the editor document is empty. `DesktopInput` now produces this
+normalized variant directly.
 
 ### Normalized host preedit admission
 
@@ -580,7 +580,10 @@ The pure host conversion/admission path has independent scoped evidence. Pointer
 state now lives in the clock-free `DesktopPointerState`, whose transitions take an
 explicit timestamp and pass Verus and Kani; `DesktopInput` only adds the `Instant`
 read. Kani still does not run `DesktopInput::ime` itself because that type holds an
-`Instant`.
+`Instant`. `DesktopInput` also tracks active composition: nonempty preedits mark
+subsequent `KeyEvent`s with `composing=true`, while empty preedit, commit and disable
+clear it. Ordinary unmodified `event.text` becomes `Text` only outside composition,
+so direct-key fallback and host IME commits do not duplicate one another.
 
 ### Owned UI preedit presentation state
 

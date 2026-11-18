@@ -9,6 +9,7 @@
 //! Run:
 //! `cargo run --locked --features desktop,native-engine-cpu --example window -- FONT [FONT...] [--once|--once-after-activation]`
 
+use std::collections::BTreeSet;
 use std::num::NonZeroU32;
 use std::sync::Arc;
 
@@ -63,6 +64,7 @@ struct App {
     text_snapshot: String,
     external_dirty: bool,
     scroll_y: f64,
+    pressed_commands: BTreeSet<String>,
     activated: usize,
     once: bool,
     exit_after_activation: bool,
@@ -187,6 +189,7 @@ impl App {
             text_snapshot: "External display 中文".into(),
             external_dirty: true,
             scroll_y: 0.0,
+            pressed_commands: BTreeSet::new(),
             activated: 0,
             once,
             exit_after_activation,
@@ -229,7 +232,12 @@ impl App {
                 .text
                 .resize(TEXT_OWNER, self.text_context, size.width, size.height)
         {
-            return Err("external text viewport rejected".into());
+            return Err(format!(
+                "external text viewport rejected: expected {:?}, actual {:?}",
+                self.text_context,
+                self.text.context_for_owner(TEXT_OWNER)
+            )
+            .into());
         }
         if self.external_dirty {
             if self
@@ -469,16 +477,24 @@ impl App {
                     return Err("scene viewport scroll rejected".into());
                 }
             }
+            InputEvent::Key(key) if key.composing => {
+                // The platform IME owns keys for the active preedit.
+            }
             InputEvent::Key(key) => {
                 let Some(code) = command_code(&key.key) else {
                     return Ok(());
                 };
+                let pressed = key.phase == KeyPhase::Down;
+                if !pressed && !self.pressed_commands.contains(&key.key) {
+                    // The input method may consume a press but still forward its key-up.
+                    return Ok(());
+                }
                 let native = HostKeyInput {
                     key: &key.key,
                     code,
-                    pressed: key.phase == KeyPhase::Down,
+                    pressed,
                     repeat: key.repeat,
-                    composing: false,
+                    composing: key.composing,
                     modifiers: key.modifiers,
                     location: KeyLocation::Standard,
                 };
@@ -491,6 +507,11 @@ impl App {
                     &mut |_| {},
                 ) {
                     return Err("scene command key rejected".into());
+                }
+                if pressed {
+                    self.pressed_commands.insert(key.key);
+                } else {
+                    self.pressed_commands.remove(&key.key);
                 }
             }
             InputEvent::Preedit { text, .. } => self.update_preedit(Some(&text))?,
@@ -507,6 +528,9 @@ impl App {
             }
             InputEvent::Focus(focus) => {
                 if focus.focused {
+                    if let Some(window) = &self.window {
+                        window.set_ime_allowed(true);
+                    }
                     if !self.engine.focus(
                         SCENE_OWNER,
                         self.scene.version(),
@@ -518,6 +542,9 @@ impl App {
                     }
                     self.restore_text_focus()?;
                 } else {
+                    if let Some(window) = &self.window {
+                        window.set_ime_allowed(false);
+                    }
                     if !self.engine.deactivate(
                         SCENE_OWNER,
                         self.scene.version(),
@@ -567,6 +594,9 @@ impl App {
     fn shutdown(&mut self) {
         if self.closed {
             return;
+        }
+        if let Some(window) = &self.window {
+            window.set_ime_allowed(false);
         }
         let version = self.scene.version();
         if let Some(token) = self.text_preedit.take() {
@@ -640,6 +670,7 @@ impl ApplicationHandler<AppEvent> for App {
             self.restore_text_focus()?;
             self.window = Some(window.clone());
             self.surface = Some(surface);
+            window.set_ime_allowed(true);
             #[cfg(feature = "desktop-accessibility")]
             self.update_accessibility();
             window.request_redraw();
@@ -652,6 +683,9 @@ impl ApplicationHandler<AppEvent> for App {
     }
 
     fn suspended(&mut self, event_loop: &ActiveEventLoop) {
+        if let Some(window) = &self.window {
+            window.set_ime_allowed(false);
+        }
         match self.engine.suspend(
             SCENE_OWNER,
             self.scene.version(),
@@ -681,6 +715,9 @@ impl ApplicationHandler<AppEvent> for App {
         window_id: WindowId,
         event: WindowEvent,
     ) {
+        if self.closed {
+            return;
+        }
         if self.window.as_ref().map(|window| window.id()) != Some(window_id) {
             return;
         }
@@ -820,8 +857,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err(error.into());
     }
     println!(
-        "item5_window=pass activated={} scene={}x{} external_snapshot_revision={} retired={}",
-        app.activated, 640, 360, app.text_context.revision, app.closed
+        "item5_window=pass activated={} scene={}x{} external_snapshot_revision={} external_snapshot={:?} retired={}",
+        app.activated,
+        640,
+        360,
+        app.text_context.revision,
+        app.text_snapshot,
+        app.closed
     );
     Ok(())
 }

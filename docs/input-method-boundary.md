@@ -106,3 +106,26 @@ Scintilla/Lexilla、Keyman/Rime 均为暂用后端，必须可以逐个关闭和
 以上目前是必须遵守的契约，**不是 Rust 适配已完成或验证通过**。
 输入归属/原子性/生命周期的自有代码仍须完整六阶段；第三方专项异常登记后延期，
 不再纠缠 Skia 私有编码。主线仍为真实文档提交与 UI 编辑/输入装配。
+
+## 2026-11-18 Rust 桌面宿主 XIM/IBus 纵向验证
+
+`examples/window` 现在在 winit 窗口焦点获得/恢复和 `resumed` 时请求
+`set_ime_allowed(true)`，在失焦、`suspended` 与关闭时撤销请求。`DesktopInput` 保存当前
+组合态：非空 `Ime::Preedit` 将后续 key 标记为 `composing=true`，空预编辑、`Ime::Commit`
+和 `Ime::Disabled` 清除该状态。组合态不生成 key-derived text，普通无组合输入使用 winit
+实际提供的 `event.text`；因此无 IME 环境不会因单纯启用 XIM 而丢字符，组合态也不会把
+组成字符同时写进文档。
+
+隔离 Xvfb X11 显示服务器中的验证结果：
+
+- XTest 系统窗口级 pointer down/up 经 winit 与公共 HostRenderer 激活 Save 一次；
+- XTest 普通字符产生外部快照 revision `1 → 2`；
+- 独立 session bus 中的 IBus `libpinyin` 经 XIM 产生
+  `年 → 你 → 你和 → 你哈 → 你好` 预编辑，Space 提交 `Text("你好")`，最终外部快照为
+  `External display 中文你好`，revision 2；
+- 宿主忽略组合态场景命令键，并只为存在 key-down 归属的命令 key-up 转发，避免输入法
+  消费按下后到达的 key-up 被当成致命拒绝。
+
+该结果验证了 Rust 桌面宿主的事件转译、组合态所有权与提交装配。它仍使用虚拟 X11 显示和
+合成输入，不证明物理键盘、Mutter/Wayland 合成器级输入、候选窗定位、完整 IME 服务或
+跨平台输入法已经验收。

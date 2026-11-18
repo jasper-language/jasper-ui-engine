@@ -232,7 +232,7 @@ fixture 实际映射出的 `mapped_properties` 与 profile 一致。
 | Property Registry | 公共 registry 固定摘要；Native profile 逐项一致；candidate 不冒充 accepted | 已覆盖 consumer profile |
 | 回滚与兼容 | Native Style/Typed Style 双向受限投影、raw Legacy Scene 显式 identity 反向投影、JUI 2 initial/successor/event 桥及逐项损失已测试；三份 canonical 初始帧和 settings 双帧流经旧 Host CPU reader 接受；旧 raw Scene/ScenePatch、PSS/xstyle、LegacyEngine 测试继续通过 | Rust 兼容桥已覆盖；无条件可逆与真实平台未验收 |
 | Web / 真浏览器 | 未执行 | 未验收 |
-| 真实硬件 GPU / 平台宿主 | Intel UHD 630 与 NVIDIA RTX 3060 Vulkan 离屏 UI IR 全量测试通过；NVIDIA RTX 3060 硬件窗口 `gpu_window --once` present 成功；Intel 窗口因 Surface/adapter queue family 不兼容失败；desktop-accessibility host 在 AT-SPI 总线发布 Settings/Name/Save 树，Save `DoAction` 回环到 JUI 2 click | 部分覆盖；真实 OS 输入/IME 与硬件窗口完整无障碍未验收；硬件窗口只覆盖 NVIDIA 单帧基础场景 |
+| 真实硬件 GPU / 平台宿主 | Intel UHD 630 与 NVIDIA RTX 3060 Vulkan 离屏 UI IR 全量测试通过；NVIDIA RTX 3060 硬件窗口 `gpu_window --once` present 成功；Intel 窗口因 Surface/adapter queue family 不兼容失败；Xvfb X11 系统窗口级 XTest 指针/键盘与 IBus/libpinyin 预编辑/提交通过；desktop-accessibility host 在 AT-SPI 总线发布 Settings/Name/Save 树，Save `DoAction` 回环到 JUI 2 click | 部分覆盖；物理桌面/真实 Wayland 合成器输入与硬件窗口完整无障碍未验收；硬件窗口只覆盖 NVIDIA 单帧基础场景 |
 | 形式化证明 | 本批未新增 | 未验收 |
 
 本表是 Rust consumer 的审阅清单，不是 issue #3 全链路完成声明；语言侧 Schema/Framework、
@@ -248,14 +248,14 @@ Web 后端和正式宿主仍需分别验收。
 | Native CPU same-fixture execution | all three canonical fixtures passed on Linux x86_64 test environment |
 | Native GPU same-fixture | settings-page passed with llvmpipe/Vulkan, Intel UHD 630/Vulkan and NVIDIA RTX 3060/Vulkan; hardware max channel delta 1 |
 | Web SSR / real browser | not run in this slice |
-| Real platform host acceptance | partial: CPU window smoke passed; hardware Vulkan offscreen passed on Intel UHD 630 and NVIDIA RTX 3060; NVIDIA hardware window single-frame present passed; Intel hardware window blocked by Surface/adapter queue-family mismatch; AT-SPI tree publication and Save action round-trip passed; full OS input/IME and hardware-window accessibility not run |
+| Real platform host acceptance | partial: CPU window smoke passed; hardware Vulkan offscreen passed on Intel UHD 630 and NVIDIA RTX 3060; NVIDIA hardware window single-frame present passed; Intel hardware window blocked by Surface/adapter queue-family mismatch; Xvfb X11/XTest pointer, keyboard and IBus/libpinyin preedit/commit passed through winit and the public host; AT-SPI tree publication and Save action round-trip passed; physical desktop input, real Wayland compositor input and hardware-window accessibility not run |
 | Formal verification | not performed for UI IR validation/mapping/event admission |
 | Cross-backend equivalence | not established |
 
 ### 2026-11-18 执行记录
 
-- `native-engine-cpu,accesskit-pending` 完整 `cargo test` 成功退出：库测试
-  `272 passed, 1 ignored`（忽略项是显式性能测量），全部集成测试和 doc-test 通过；
+- `native-engine-cpu` + `desktop` 完整 `cargo test` 成功退出：库测试
+  `282 passed, 1 ignored`（忽略项是显式性能测量），全部集成测试和 doc-test 通过；
 - 同一特性集的 `ui_ir_v0`：`48 passed`；
 - 软件 Vulkan（lvp/llvmpipe）+ `gpu-pending` 的 `ui_ir_v0`：`49 passed`；
 - 硬件 Vulkan 离屏的 `ui_ir_v0`：Intel UHD 630 `49 passed`（141/153600 pixels differ,
@@ -300,6 +300,22 @@ Web 后端和正式宿主仍需分别验收。
   reader 协议逻辑未改；
   原 host 仓库未修改。其中 headless reader 证据只覆盖 CPU transport；AT-SPI 树与动作来自
   desktop-accessibility window host，不包含真实 OS 输入或硬件窗口无障碍验收；
+- 在隔离 Xvfb X11 显示服务器中，`XTest` 先聚焦真实 winit 窗口并发送系统窗口级鼠标
+  down/up；Save 控件产生一次场景激活，进程输出 `activated=1`、`retired=true`；
+- 同一路径发送普通键盘字符 `a`，winit 将系统 key/text 事件交给 `DesktopInput`，
+  外部文本快照从 revision 1 推进到 2，窗口正常关闭并原子退休；
+- 在独立 session bus 中启动 IBus + `libpinyin`，X11 XIM 依次产生预编辑
+  `年 → 你 → 你和 → 你哈 → 你好`，Space 提交产生 `Text("你好")`；最终快照为
+  `External display 中文你好`、revision 2、`retired=true`。该验证经过真实
+  winit/IBus/XIM 事件接口，但使用虚拟显示和合成输入，不证明物理键盘、真实 Wayland
+  合成器或完整候选窗/光标定位已验收；
+- `DesktopInput` 现在在组合态给 `KeyEvent.composing` 置位并抑制 key-derived text，
+  `Ime::Commit` 是提交来源；普通无 IME 输入仍使用 winit `event.text`。宿主忽略组合态
+  命令键，并只为确有场景 key-down 归属的命令 key-up 转发，避免 IME 消费按下后仍转发的
+  key-up 被误判为致命拒绝；
+- 独立 `verification/input-identity`：`5 passed`；独立 `verification/read-boundary`：
+  `64 passed`。后者补齐了 `ScenePatch::Move` 的独立 oracle，并把随机 patch 属性测试扩展到
+  Move 而不删除既有 host 测试；
 - Clippy 成功退出；仓库仍保留已登记的非阻塞历史 warning。
 
 运行前注入了 Latin/CJK、regular/bold/italic 测试字体；这些计数只对应当前 Linux 测试环境。

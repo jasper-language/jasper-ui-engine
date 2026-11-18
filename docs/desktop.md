@@ -9,8 +9,10 @@
   - `CursorMoved` → `PointerEvent`（无按键为 Hover，有按键为 Move）
   - `MouseInput` → Down/Up，保留 Left/Right/Middle/Back/Forward/Other
   - `MouseWheel` → `ScrollEvent`（行/像素 delta 统一为逻辑像素，符号按引擎滚动约定反转）
-  - `KeyboardInput` → `KeyEvent`；无 Ctrl/Alt/Meta 的字符键额外产出 `Text`
-  - `Ime::Commit` / `Preedit` → `Text` / `Composition`
+  - `KeyboardInput` → `KeyEvent`（含组合态标记）；非组合、无 Ctrl/Alt/Meta 的普通
+    `event.text` 额外产出 `Text`
+  - `Ime::Commit` → `Text`；`Preedit` → `InputEvent::Preedit`；
+    `Ime::Enabled` / `Disabled` → `ImeEnabled`
   - `Focused` → `FocusEvent`
   - `ModifiersChanged` → `Modifiers`
   - `Touch` → 带稳定触控身份的 Down/Move/Up/Cancel；首个触点保持 primary，直到它结束
@@ -38,6 +40,8 @@ Windows Ink、Apple Pencil、Android MotionEvent 和 Linux libinput 的专用适
 - `softbuffer` 把 `HeadlessBackend` 的 RGBA 帧转换为 `0x00RRGGBB` 并呈现。
 - 新命令：`cargo run --locked --features desktop,native-engine-cpu --example window -- FONT [--once|--once-after-activation]`，仅经受限 VM 编译/运行。
 - 指针、滚轮、命令键、IME 预编辑/提交与焦点变化现在送入根 `Engine` 和公共 `TextDisplayView` 客户端；原始物理指针坐标在宿主边界换算为逻辑坐标。
+- 窗口在获焦/恢复时请求 `set_ime_allowed(true)`，失焦、暂停和关闭时撤销；组合态 key
+  不进入场景命令路由，IME 消费按下后仍到达的 key-up 只在其有场景 key-down 归属时转发。
 - 点击激活产生版本化、纯视觉 `ScenePatch`。更新后调用方检查场景焦点与无障碍树中的焦点/动作仍然存在。
 - 窗口失焦关闭命令键和外部文本焦点租约；重新聚焦时恢复两者。暂停释放 Surface 但保留场景及外部快照，关闭请求让两端退休。
 - 外部文本内容只接受宿主注入的服务快照；同步预编辑窗口只显示 transient preedit，不是编辑器或 IME 引擎。
