@@ -11,6 +11,9 @@ use crate::scene::Scene;
 use crate::style::Color;
 use crate::text::TextEngine;
 
+/// Default packed-RGBA8 budget for the minimal CPU renderer.
+pub const DEFAULT_CORE_FRAME_BYTE_BUDGET: usize = 64 * 1024 * 1024;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CoreRgbaFrame {
     pub width: u32,
@@ -24,6 +27,13 @@ pub struct CoreRgbaFrame {
 pub enum CoreRenderError {
     Layout(LayoutError),
     Backend(crate::backend::BackendError),
+    InvalidFrameSize,
+    FrameBudgetExceeded {
+        width: u32,
+        height: u32,
+        required_bytes: u64,
+        max_bytes: usize,
+    },
 }
 
 impl From<LayoutError> for CoreRenderError {
@@ -43,14 +53,27 @@ impl From<crate::backend::BackendError> for CoreRenderError {
 pub struct CoreRgbaRenderer {
     size: Size,
     clear: Color,
+    max_frame_bytes: usize,
     text: Box<dyn TextEngine>,
+}
+
+fn normalize_finite_dimension(value: f32) -> f32 {
+    if value.is_finite() {
+        value.max(1.0)
+    } else {
+        value
+    }
 }
 
 impl CoreRgbaRenderer {
     pub fn new(size: Size, text: Box<dyn TextEngine>) -> Self {
         Self {
-            size: Size::new(size.width.max(1.0), size.height.max(1.0)),
+            size: Size::new(
+                normalize_finite_dimension(size.width),
+                normalize_finite_dimension(size.height),
+            ),
             clear: Color::TRANSPARENT,
+            max_frame_bytes: DEFAULT_CORE_FRAME_BYTE_BUDGET,
             text,
         }
     }
@@ -60,21 +83,27 @@ impl CoreRgbaRenderer {
         self
     }
 
+    pub fn with_max_frame_bytes(mut self, max_frame_bytes: usize) -> Self {
+        self.max_frame_bytes = max_frame_bytes;
+        self
+    }
+
     pub fn size(&self) -> Size {
         self.size
     }
 
     pub fn resize(&mut self, size: Size) {
-        self.size = Size::new(size.width.max(1.0), size.height.max(1.0));
+        self.size = Size::new(
+            normalize_finite_dimension(size.width),
+            normalize_finite_dimension(size.height),
+        );
     }
 
     pub fn render(&self, scene: &Scene) -> Result<CoreRgbaFrame, CoreRenderError> {
+        let (width, height) = self.packed_frame_extent()?;
         let layout = TaffyLayoutEngine.layout(scene, self.size, self.text.as_ref())?;
         let batch = UiBatch::new(paint(&layout, self.clear).ops);
-        let mut backend = HeadlessBackend::new(
-            (self.size.width + 0.5) as u32,
-            (self.size.height + 0.5) as u32,
-        );
+        let mut backend = HeadlessBackend::new(width, height);
         backend.resize(self.size);
         backend.submit(&batch)?;
         let canvas = backend.canvas();
@@ -97,6 +126,30 @@ impl CoreRgbaRenderer {
         let scene_version = frame.scene_version;
         submit_native_frame(backend, frame.width, frame.height, frame.pixels)?;
         Ok(scene_version)
+    }
+
+    fn packed_frame_extent(&self) -> Result<(u32, u32), CoreRenderError> {
+        if !self.size.width.is_finite()
+            || !self.size.height.is_finite()
+            || self.size.width <= 0.0
+            || self.size.height <= 0.0
+            || self.size.width > 65535.0
+            || self.size.height > 65535.0
+        {
+            return Err(CoreRenderError::InvalidFrameSize);
+        }
+        let width = (self.size.width + 0.5) as u32;
+        let height = (self.size.height + 0.5) as u32;
+        let required_bytes = u64::from(width) * u64::from(height) * 4;
+        if required_bytes > self.max_frame_bytes as u64 {
+            return Err(CoreRenderError::FrameBudgetExceeded {
+                width,
+                height,
+                required_bytes,
+                max_bytes: self.max_frame_bytes,
+            });
+        }
+        Ok((width, height))
     }
 }
 
@@ -137,6 +190,35 @@ mod tests {
             .step_by(4)
             .any(|alpha| *alpha != 0));
         assert_eq!(frame.scene_version, 1);
+    }
+
+    #[test]
+    fn rejects_non_finite_and_oversized_frames_before_allocation() {
+        let scene = scene();
+        for size in [
+            Size::new(f32::INFINITY, 2.0),
+            Size::new(2.0, f32::NEG_INFINITY),
+            Size::new(f32::NAN, 2.0),
+            Size::new(65536.0, 2.0),
+        ] {
+            let renderer = CoreRgbaRenderer::new(size, Box::new(SimpleTextEngine));
+            assert_eq!(
+                renderer.render(&scene),
+                Err(CoreRenderError::InvalidFrameSize)
+            );
+        }
+
+        let renderer = CoreRgbaRenderer::new(Size::new(2.0, 2.0), Box::new(SimpleTextEngine))
+            .with_max_frame_bytes(15);
+        assert_eq!(
+            renderer.render(&scene),
+            Err(CoreRenderError::FrameBudgetExceeded {
+                width: 2,
+                height: 2,
+                required_bytes: 16,
+                max_bytes: 15,
+            })
+        );
     }
 
     #[test]

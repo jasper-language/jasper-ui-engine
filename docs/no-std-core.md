@@ -63,6 +63,10 @@ CPU RGBA 呈现最小契约复用现有 `RenderBackend`：
 它只使用布局、绘制和内存 Canvas，不创建窗口、Surface、GPU 设备或系统资源。宿主仍负责
 把该帧复制/提交到自己的显示缓冲并调用 `present` 语义。
 
+渲染前会拒绝非有限、非正、超过 65535 像素的单轴尺寸，以及超过默认 64 MiB 的紧凑 RGBA8
+帧；宿主可通过 `CoreRgbaRenderer::with_max_frame_bytes` 设置自己的更严格额度。超限返回
+`InvalidFrameSize` 或 `FrameBudgetExceeded`，不会进入 Canvas 分配。
+
 `CoreRgbaRenderer::render_to_backend(&Scene, &mut RenderBackend)` 直接把帧交给宿主后端：
 `submit_rgba8` 成功后才会调用 `present`；准入/接管失败保持无呈现。
 
@@ -81,7 +85,7 @@ CPU RGBA 呈现最小契约复用现有 `RenderBackend`：
 ## 验证状态
 
 - bare-metal compile：通过；
-- std 默认库测试：`180 passed`；
+- std 默认库测试：`186 passed`；
 - std `--all-features` 编译、运行时测试与既有宿主证据继续保留；
 - 未在 Jasper-OS 用户态/内核中链接运行，未证明目标端 allocator、panic handler、
   vector/float ABI、CPU 特性、中断时钟或真实 Surface 呈现。
