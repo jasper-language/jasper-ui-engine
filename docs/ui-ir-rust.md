@@ -56,6 +56,12 @@ Focus、Key、Pointer、键盘激活和 AccessKit 动作的 Typed 回调分别�
 `TypedUiFocusEvent`、`TypedUiKeyEvent`、`TypedUiPointerEvent`、
 `TypedUiActivationEvent`，只携带 `UiKey`；如果 Native 回调目标无法映射回当前文档，
 操作返回 `UnmappedTarget`，不会把 backend id 透传给调用方。
+E14 编辑事件通过 `typed_take_edit_events` 取出：事件 revision 可来自已提交帧事务中的前一 revision，
+但不得新于当前文档；
+`Changed`（live-text 模式）、`Commit` 和 `CompositionCancelled` 分别准入
+`text-commit`/`ime-cancel`；返回值只含 `TypedUiEditEvent`，不暴露 NodeId。
+当前编辑会话由 `typed_edit_state` 查询，返回 `TypedUiEditState`；文本、选区、预编辑和
+caret 几何与 `UiKey` 一并返回，不暴露 backend 节点身份。
 
 `src/ui_ir/native.rs` 提供 `NativeUiDocument`：
 
@@ -84,6 +90,7 @@ Focus、Key、Pointer、键盘激活和 AccessKit 动作的 Typed 回调分别�
 | Typed Accessibility | implemented / tested | 完整树与增量 update 均经 HostRenderer Surface generation 门控；前后 document revision、update 顺序、removed/changed UiKey 映射均校验 |
 | Typed AccessKit actions | implemented / tested | backend target 必须匹配 UiKey；Focus/Click 分别要求 Focus permission 与 accessibility-action binding；Focus/Activation 回调只暴露 UiKey |
 | Typed input targets | implemented / tested | HostRenderer Focus/Key/KeyActivation/TextInput/IME 使用同一 UiKey 上下文授权；Focus/Key/Activation 回调只暴露 UiKey；键输入匹配当前 Native focus，键盘激活另需 activate binding；错误 target、permission 和 revision 均拒绝 |
+| Typed edit events | implemented / tested | 有序 drain E14 Changed/Commit/CompositionCancelled；owner、event revision、UiKey 与 text-commit/ime-cancel permission/binding 均校验 |
 | Typed pointer routing | implemented / tested | hit query 与 Pointer 路由使用同一 overlay/圆角/hit-slop 目标；owner/revision/Surface generation/Pointer permission 先准入，回调只暴露 UiKey；Down→Move 后继帧后 Up 仍保持身份并准入 click binding |
 | Typed geometry queries | implemented / tested | bounds/scroll/table metrics 直接消费 UiKey，并校验 document revision、Surface generation 和 active key |
 | 资源生命周期 | implemented / tested | Prepare 仅是 pending、不替换旧 Committed；Commit 原子提升；Release 只释放 active；上传与删除分别受 `insert_ui_image`/`remove_ui_image` 状态校验；含代数复用拒绝、节点移除后 Release 与实际解码/绘制 |

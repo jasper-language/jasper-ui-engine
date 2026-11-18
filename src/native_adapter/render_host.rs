@@ -261,6 +261,53 @@ pub struct TypedUiActivationEvent {
     pub target: UiKey,
 }
 
+/// An E14 edit event projected to public identity. `admitted` is present only when the event
+/// maps to a bound `text-commit` or `ime-cancel` and the host context authorizes it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TypedUiEditEvent {
+    pub target: UiKey,
+    pub kind: crate::native::SceneEditEventKind,
+    pub admitted: Option<AdmittedEvent>,
+}
+
+/// Current E14 edit state projected to public identity.
+#[derive(Clone, Debug, PartialEq)]
+pub struct TypedUiEditState {
+    pub target: UiKey,
+    pub text: String,
+    pub anchor: usize,
+    pub caret: usize,
+    pub preedit: Option<String>,
+    pub caret_rect: Option<crate::geometry::Rect>,
+}
+
+/// Failure while draining Native edit events into Typed identity.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum TypedUiEditError {
+    HostRejected,
+    FutureRevision { event: u64, document: u64 },
+    UnmappedTarget,
+    Admission(UiEventAdmissionError),
+}
+
+impl std::fmt::Display for TypedUiEditError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::HostRejected => write!(formatter, "Native host rejected Typed edit event drain"),
+            Self::FutureRevision { event, document } => write!(
+                formatter,
+                "edit event revision {event} is newer than document revision {document}"
+            ),
+            Self::UnmappedTarget => {
+                write!(formatter, "Native edit target has no active Typed UI key")
+            }
+            Self::Admission(error) => error.fmt(formatter),
+        }
+    }
+}
+
+impl std::error::Error for TypedUiEditError {}
+
 /// Typed AccessKit action result after UiKey and permission admission.
 #[cfg(feature = "accesskit-pending")]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -1265,6 +1312,64 @@ impl HostRenderer {
         self.inner.take_edit_events(owner)
     }
 
+    /// Drain E14 edit events and project their targets to `UiKey`. `changed_as_commit` forwards
+    /// live-text `Changed` events to a bound `text-commit`, matching the documented host mode.
+    /// The whole drained batch is validated before it is returned; no backend NodeId is exposed.
+    pub fn typed_take_edit_events(
+        &mut self,
+        owner: u64,
+        document: &NativeUiDocument,
+        context: &UiEventContext,
+        changed_as_commit: bool,
+    ) -> Result<Vec<TypedUiEditEvent>, TypedUiEditError> {
+        let events = self
+            .take_edit_events(owner)
+            .ok_or(TypedUiEditError::HostRejected)?;
+        let mut typed = Vec::with_capacity(events.len());
+        for event in events {
+            // A Native frame transaction carries already-queued edit events into its
+            // successor, so an event may legitimately name an earlier revision. The current
+            // UiKey mapping and authority context still gate delivery.
+            if event.scene_version > document.revision() {
+                return Err(TypedUiEditError::FutureRevision {
+                    event: event.scene_version,
+                    document: document.revision(),
+                });
+            }
+            let target = document
+                .key_for_node(event.node)
+                .ok_or(TypedUiEditError::UnmappedTarget)?;
+            let binding_kind = match event.kind {
+                crate::native::SceneEditEventKind::Changed(_) if changed_as_commit => {
+                    Some(UiEventKind::TextCommit)
+                }
+                crate::native::SceneEditEventKind::Commit(_) => Some(UiEventKind::TextCommit),
+                crate::native::SceneEditEventKind::CompositionCancelled => {
+                    Some(UiEventKind::ImeCancel)
+                }
+                _ => None,
+            };
+            let admitted = match binding_kind {
+                Some(kind) if document.event_binding(target, kind).is_some() => {
+                    let mut event_context = context.clone();
+                    event_context.target = target;
+                    Some(
+                        document
+                            .admit_native_event(&event_context, event.node, kind)
+                            .map_err(TypedUiEditError::Admission)?,
+                    )
+                }
+                _ => None,
+            };
+            typed.push(TypedUiEditEvent {
+                target,
+                kind: event.kind,
+                admitted,
+            });
+        }
+        Ok(typed)
+    }
+
     /// E14 active edit session; see `Engine::edit_state`.
     /// E14 当前编辑会话；见 `Engine::edit_state`。
     pub fn edit_state(
@@ -1273,6 +1378,38 @@ impl HostRenderer {
         version: u64,
     ) -> Option<Option<crate::native::SceneEditState>> {
         self.inner.edit_state(owner, version)
+    }
+
+    pub fn typed_edit_state(
+        &self,
+        owner: u64,
+        version: u64,
+        document: &NativeUiDocument,
+    ) -> Result<Option<TypedUiEditState>, TypedUiTargetError> {
+        if version != document.revision() {
+            return Err(TypedUiTargetError::RevisionMismatch {
+                host: version,
+                document: document.revision(),
+            });
+        }
+        let state = self
+            .edit_state(owner, version)
+            .ok_or(TypedUiTargetError::HostRejected)?;
+        state
+            .map(|state| {
+                let target = document
+                    .key_for_node(state.node)
+                    .ok_or(TypedUiTargetError::UnmappedTarget)?;
+                Ok(TypedUiEditState {
+                    target,
+                    text: state.text,
+                    anchor: state.anchor,
+                    caret: state.caret,
+                    preedit: state.preedit,
+                    caret_rect: state.caret_rect,
+                })
+            })
+            .transpose()
     }
 
     /// E14 caret blink through the live surface generation; see `Engine::caret_blink`.

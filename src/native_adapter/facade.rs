@@ -12,7 +12,7 @@ pub use native_events::{NativeFocusEvent as TextFocusEvent,NativePointerEvent as
 pub use jasper_ui_engine::input::Modifiers;
 pub use native_events::NativeEventReply as EventReply;
 pub use scene_events::{role_activates_on_click,role_activates_on_key,ScenePointerInput,SceneKeyEvent,SceneEvent,SceneEventKind,SceneSemanticsNode,SceneSemanticsSnapshot,SceneActivationEvent,SceneFocusEvent};
-pub use crate::render_host::{HostRenderError,HostRenderer,TypedUiAccessibilityError,TypedUiActivationEvent,TypedUiApplyError,TypedUiFocusEvent,TypedUiGeometryError,TypedUiKeyEvent,TypedUiPointerError,TypedUiPointerEvent,TypedUiResourceError,TypedUiTargetError};
+pub use crate::render_host::{HostRenderError,HostRenderer,TypedUiAccessibilityError,TypedUiActivationEvent,TypedUiApplyError,TypedUiEditError,TypedUiEditEvent,TypedUiEditState,TypedUiFocusEvent,TypedUiGeometryError,TypedUiKeyEvent,TypedUiPointerError,TypedUiPointerEvent,TypedUiResourceError,TypedUiTargetError};
 #[cfg(feature="accesskit-pending")]
 pub use crate::render_host::TypedAccessibilityAction;
 #[cfg(feature="accesskit-pending")]
@@ -29,7 +29,7 @@ pub use crate::typed_accessibility::{typed_accessibility_tree,typed_accessibilit
 /// This module does not acquire windows, surfaces, devices or OS services.
 pub mod host {
 use super::*;
-pub use crate::render_host::{HostRenderError,HostRenderer,TypedUiAccessibilityError,TypedUiActivationEvent,TypedUiApplyError,TypedUiFocusEvent,TypedUiGeometryError,TypedUiKeyEvent,TypedUiPointerError,TypedUiPointerEvent,TypedUiResourceError,TypedUiTargetError};
+pub use crate::render_host::{HostRenderError,HostRenderer,TypedUiAccessibilityError,TypedUiActivationEvent,TypedUiApplyError,TypedUiEditError,TypedUiEditEvent,TypedUiEditState,TypedUiFocusEvent,TypedUiGeometryError,TypedUiKeyEvent,TypedUiPointerError,TypedUiPointerEvent,TypedUiResourceError,TypedUiTargetError};
 pub use crate::surface_lifecycle::{SurfaceLifecycleError,SurfaceState,SurfaceStatus};
 pub use jasper_ui_engine::input_identity::{UiInputBinding,UiInputContext,UiInputTicket};
 pub use jasper_ui_engine::composition_identity::UiCompositionToken;

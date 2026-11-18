@@ -1071,6 +1071,9 @@ fn typed_focus_text_and_ime_use_the_same_admitted_ui_key() {
         UiKey::new(3, 1)
     );
     assert_eq!(host.edit_state(OWNER, 2).unwrap().unwrap().text, "Alice!");
+    let edit = host.typed_edit_state(OWNER, 2, &document).unwrap().unwrap();
+    assert_eq!(edit.target, UiKey::new(3, 1));
+    assert_eq!(edit.text, "Alice!");
     let mut typed_keys = Vec::new();
     assert_eq!(
         host.typed_key(
@@ -1118,6 +1121,14 @@ fn typed_focus_text_and_ime_use_the_same_admitted_ui_key() {
     );
     assert_eq!(
         host.edit_state(OWNER, 2)
+            .unwrap()
+            .unwrap()
+            .preedit
+            .as_deref(),
+        Some("中")
+    );
+    assert_eq!(
+        host.typed_edit_state(OWNER, 2, &document)
             .unwrap()
             .unwrap()
             .preedit
@@ -1189,6 +1200,118 @@ fn typed_focus_text_and_ime_use_the_same_admitted_ui_key() {
             &mut |_| {},
         ),
         Err(TypedUiTargetError::RevisionMismatch { .. })
+    ));
+}
+
+#[cfg(feature = "native-blitz-cpu-pending")]
+#[test]
+fn typed_edit_drain_preserves_order_and_admits_commit_binding() {
+    use jasper_ui_engine::native::host::HostRenderer;
+    use jasper_ui_engine::native::{
+        EventReply, HostKeyInput, KeyLocation, Modifiers, SceneEditEventKind, TypedUiEditError,
+    };
+
+    const OWNER: u64 = 84;
+    let mut document =
+        NativeUiDocument::from_json_slice(&fixture("settings-page.ir.json")).unwrap();
+    let font = std::fs::read(
+        std::env::var("JASPER_UI_TEST_FONT")
+            .expect("JASPER_UI_TEST_FONT must name an injected font"),
+    )
+    .unwrap();
+    let mut host = HostRenderer::new_ui_document(OWNER, &document, &font, 480, 320).unwrap();
+    let generation = host.surface_status(OWNER).unwrap().generation;
+    let field = document.node_for_key(UiKey::new(3, 1)).unwrap();
+    let context = UiEventContext {
+        target: UiKey::new(3, 1),
+        identity_domain: "orders-app/window-main".into(),
+        owner: "desktop-host".into(),
+        session: "session-2026-11-17-1".into(),
+        frame_revision: 2,
+        permission_context: UiPermissionContext::new(
+            "edit-host",
+            [
+                UiPermission::Focus,
+                UiPermission::Keyboard,
+                UiPermission::TextEdit,
+                UiPermission::Ime,
+            ],
+        ),
+    };
+    host.typed_focus(
+        OWNER,
+        2,
+        generation,
+        &document,
+        &context,
+        field,
+        &mut |_| {},
+    )
+    .unwrap();
+    host.typed_text_input(OWNER, 2, generation, &document, &context, field, "!")
+        .unwrap();
+    let mut successor: serde_json::Value =
+        serde_json::from_slice(&fixture("settings-page.ir.json")).unwrap();
+    successor["expected_revision"] = serde_json::json!(2);
+    successor["next_revision"] = serde_json::json!(3);
+    successor["ops"] = serde_json::json!([{
+        "op": "env",
+        "env": { "reduce_motion": true }
+    }]);
+    let successor =
+        UiFrame::from_json_slice(&serde_json::to_vec(&successor).unwrap()).unwrap();
+    host.try_apply_ui_frame(OWNER, &mut document, &successor)
+        .unwrap();
+    let context = UiEventContext {
+        frame_revision: 3,
+        ..context
+    };
+    host.typed_key(
+        OWNER,
+        3,
+        generation,
+        &document,
+        &context,
+        field,
+        &HostKeyInput {
+            key: "Enter",
+            code: "Enter",
+            pressed: true,
+            repeat: false,
+            composing: false,
+            modifiers: Modifiers::default(),
+            location: KeyLocation::Standard,
+        },
+        &mut |_| EventReply::default(),
+        &mut |_| {},
+    )
+    .unwrap();
+
+    let events = host
+        .typed_take_edit_events(OWNER, &document, &context, false)
+        .unwrap();
+    assert_eq!(events.len(), 2);
+    assert_eq!(events[0].target, UiKey::new(3, 1));
+    assert_eq!(
+        events[0].kind,
+        SceneEditEventKind::Changed("Alice!".into())
+    );
+    assert!(events[0].admitted.is_none());
+    assert_eq!(events[1].target, UiKey::new(3, 1));
+    assert_eq!(
+        events[1].kind,
+        SceneEditEventKind::Commit("Alice!".into())
+    );
+    assert_eq!(
+        events[1]
+            .admitted
+            .as_ref()
+            .map(|event| event.action.as_str()),
+        Some("name")
+    );
+    assert!(matches!(
+        host.typed_take_edit_events(OWNER + 1, &document, &context, false),
+        Err(TypedUiEditError::HostRejected)
     ));
 }
 
