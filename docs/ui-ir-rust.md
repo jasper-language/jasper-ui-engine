@@ -231,6 +231,8 @@ Web 后端和正式宿主仍需分别验收。
   `272 passed, 1 ignored`（忽略项是显式性能测量），全部集成测试和 doc-test 通过；
 - 同一特性集的 `ui_ir_v0`：`41 passed`；
 - 软件 Vulkan（lvp/llvmpipe）+ `gpu-pending` 的 `ui_ir_v0`：`42 passed`；
+- 无 Native 特性的 Legacy 库测试：`180 passed`；`cargo check --no-default-features
+  --all-targets` 成功；
 - Clippy 成功退出；仓库仍保留已登记的非阻塞历史 warning。
 
 运行前注入了 Latin/CJK、regular/bold/italic 测试字体；这些计数只对应当前 Linux 测试环境，
