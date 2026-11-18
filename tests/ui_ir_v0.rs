@@ -218,7 +218,8 @@ fn native_style_projection_preserves_grid_and_reports_extended_field_losses() {
         Transform2D,
     };
     use jasper_ui_engine::ui_ir::{
-        project_native_style, ElementKind, Track, TrackUnit, NATIVE_PROPERTY_PROFILE,
+        project_native_style, project_native_style_with_context, ElementKind, NativeStyleContext,
+        ResourceKind, ResourceRef, Track, TrackUnit, NATIVE_PROPERTY_PROFILE,
     };
 
     let grid = Style {
@@ -280,6 +281,46 @@ fn native_style_projection_preserves_grid_and_reports_extended_field_losses() {
     ] {
         assert!(paths.contains(&expected), "missing loss {expected}: {paths:?}");
     }
+
+    let image_resource = ResourceRef {
+        id: "icon".into(),
+        generation: 4,
+        kind: ResourceKind::Icon,
+    };
+    let image_projection = project_native_style_with_context(
+        &extended,
+        ElementKind::Container,
+        NativeStyleContext {
+            image_resource: Some(&image_resource),
+            overlay_anchor: None,
+        },
+    )
+    .unwrap();
+    assert_eq!(
+        image_projection.style.image,
+        Some(jasper_ui_engine::ui_ir::ImageStyle {
+            resource: image_resource,
+            fit: Some(jasper_ui_engine::ui_ir::ImageFit::Fill),
+            align_x: Some(0.5),
+            align_y: Some(0.5),
+            tint: None,
+        })
+    );
+    assert!(!image_projection
+        .losses
+        .iter()
+        .any(|loss| loss.path == "style.image"));
+
+    let dialog = NativeUiDocument::from_json_slice(&fixture("dialog-overlay.ir.json")).unwrap();
+    let overlay = dialog
+        .project_compatibility_style(UiKey::new(32, 1))
+        .unwrap()
+        .unwrap();
+    assert!(overlay.style.overlay.is_some());
+    assert!(!overlay
+        .losses
+        .iter()
+        .any(|loss| loss.path == "style.overlay"));
 }
 
 #[test]

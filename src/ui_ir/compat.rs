@@ -9,6 +9,10 @@
 
 use super::*;
 use crate::geometry::Edges as NativeEdges;
+use crate::overlay::{
+    OverlayAlign as NativeOverlayAlign, OverlayAnchor as NativeOverlayAnchor,
+    OverlaySide as NativeOverlaySide,
+};
 use crate::style::{
     Align as NativeAlign, Color as NativeColor, Display as NativeDisplay,
     FlexDirection as NativeFlexDirection, FlexWrap as NativeFlexWrap,
@@ -33,6 +37,15 @@ pub struct NativeStyleProjection {
     pub losses: Vec<NativeStyleLoss>,
 }
 
+/// Optional node-local context needed to reverse image and overlay candidate values.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct NativeStyleContext<'a> {
+    /// Exact committed resource carried by the node's image declaration.
+    pub image_resource: Option<&'a ResourceRef>,
+    /// Already-translated public identity for a `NativeOverlayAnchor::Node`.
+    pub overlay_anchor: Option<UiKey>,
+}
+
 impl NativeStyleProjection {
     /// True only when no non-default Native-only field was omitted.
     pub fn is_lossless(&self) -> bool {
@@ -45,6 +58,16 @@ impl NativeStyleProjection {
 pub fn project_native_style(
     source: &NativeStyle,
     element: ElementKind,
+) -> Result<NativeStyleProjection, UiIrError> {
+    project_native_style_with_context(source, element, NativeStyleContext::default())
+}
+
+/// Project with exact node-local image and overlay context. Missing context keeps those fields
+/// as explicit losses instead of creating guessed public identities.
+pub fn project_native_style_with_context(
+    source: &NativeStyle,
+    element: ElementKind,
+    context: NativeStyleContext<'_>,
 ) -> Result<NativeStyleProjection, UiIrError> {
     let mut losses = Vec::new();
     let expected_display = match element {
@@ -166,7 +189,7 @@ pub fn project_native_style(
             NativeTextDirection::Rtl => TextDirection::Rtl,
         }),
     };
-    let style = TypedStyle {
+    let mut style = TypedStyle {
         box_: Some(BoxStyle {
             width: Some(native_length(source.width)),
             height: Some(native_length(source.height)),
@@ -215,6 +238,8 @@ pub fn project_native_style(
         image: None,
         overlay: None,
     };
+    project_image(source, context.image_resource, &mut style, &mut losses);
+    project_overlay(source, context.overlay_anchor, &mut style, &mut losses);
     style.validate("$")?;
     Ok(NativeStyleProjection { style, losses })
 }
@@ -263,16 +288,125 @@ fn push_extension_losses(source: &NativeStyle, losses: &mut Vec<NativeStyleLoss>
             "Typed length percentage is projected back by Native as an absolute pixel line height",
         );
     }
-    if source.image.is_some() {
+}
+
+fn project_image(
+    source: &NativeStyle,
+    image_resource: Option<&ResourceRef>,
+    style: &mut TypedStyle,
+    losses: &mut Vec<NativeStyleLoss>,
+) {
+    let Some(image) = &source.image else {
+        return;
+    };
+    let Some(resource) = image_resource.filter(|resource| {
+        resource.id == image.source && resource.kind != ResourceKind::Font
+    }) else {
+        losses.push(NativeStyleLoss {
+            path: "style.image",
+            detail: "Typed image requires the node's exact committed non-font ResourceRef",
+        });
+        return;
+    };
+    style.image = Some(ImageStyle {
+        resource: resource.clone(),
+        fit: Some(match image.fit {
+            crate::style::ObjectFit::Fill => ImageFit::Fill,
+            crate::style::ObjectFit::Contain => ImageFit::Contain,
+            crate::style::ObjectFit::Cover => ImageFit::Cover,
+            crate::style::ObjectFit::None => ImageFit::None,
+            crate::style::ObjectFit::ScaleDown => ImageFit::ScaleDown,
+        }),
+        align_x: Some(f64::from(image.align_x)),
+        align_y: Some(f64::from(image.align_y)),
+        tint: image.tint.map(native_color),
+    });
+}
+
+fn project_overlay(
+    source: &NativeStyle,
+    overlay_anchor: Option<UiKey>,
+    style: &mut TypedStyle,
+    losses: &mut Vec<NativeStyleLoss>,
+) {
+    let Some(overlay) = source.overlay else {
+        return;
+    };
+    let anchor = match overlay.anchor {
+        NativeOverlayAnchor::Viewport => OverlayAnchor::Viewport(ViewportAnchor::Viewport),
+        NativeOverlayAnchor::Point { x, y } => OverlayAnchor::Point(PointAnchor {
+            x: f64::from(x),
+            y: f64::from(y),
+        }),
+        NativeOverlayAnchor::Node(_) => {
+            let Some(anchor) = overlay_anchor else {
+                losses.push(NativeStyleLoss {
+                    path: "style.overlay",
+                    detail: "node-anchored overlay requires the anchor's current UiKey",
+                });
+                return;
+            };
+            OverlayAnchor::Node(anchor)
+        }
+    };
+    style.overlay = Some(OverlayStyle {
+        layer: Some(overlay.layer),
+        anchor: Some(anchor),
+        side: Some(match overlay.side {
+            NativeOverlaySide::Top => OverlaySide::Top,
+            NativeOverlaySide::Bottom => OverlaySide::Bottom,
+            NativeOverlaySide::Left => OverlaySide::Left,
+            NativeOverlaySide::Right => OverlaySide::Right,
+        }),
+        align: Some(match overlay.align {
+            NativeOverlayAlign::Start => OverlayAlign::Start,
+            NativeOverlayAlign::Center => OverlayAlign::Center,
+            NativeOverlayAlign::End => OverlayAlign::End,
+        }),
+        offset: Some(f64::from(overlay.offset)),
+        cross_offset: Some(f64::from(overlay.cross_offset)),
+        margin: Some(f64::from(overlay.margin)),
+        modal: Some(overlay.modal),
+        scrim: overlay.scrim.map(native_color),
+    });
+    let mut push = |path, detail| losses.push(NativeStyleLoss { path, detail });
+    if overlay.avoid != crate::overlay::OverlayAvoid::default() {
         push(
-            "style.image",
-            "Typed image requires a ResourceRef that a bare Native Style does not carry",
+            "style.overlay.avoid",
+            "Typed v0.1 has no overlay collision policy",
         );
     }
-    if source.overlay.is_some() {
+    if overlay.match_anchor_width {
         push(
-            "style.overlay",
-            "Typed overlay requires UiKey anchors that a bare Native Style does not carry",
+            "style.overlay.match_anchor_width",
+            "Typed v0.1 has no match-anchor-width field",
+        );
+    }
+    if overlay.dismiss != crate::overlay::OverlayDismiss::default() {
+        push(
+            "style.overlay.dismiss",
+            "Typed v0.1 dismiss bindings do not encode gesture policy",
+        );
+    }
+    if overlay.outside_press != crate::overlay::OutsidePress::default() {
+        push(
+            "style.overlay.outside_press",
+            "Typed v0.1 has no outside-press policy",
+        );
+    }
+    let expected_focus = if overlay.modal {
+        crate::overlay::OverlayFocus {
+            trap: true,
+            restore: true,
+            auto: true,
+        }
+    } else {
+        crate::overlay::OverlayFocus::default()
+    };
+    if overlay.focus != expected_focus {
+        push(
+            "style.overlay.focus",
+            "Typed v0.1 encodes only the modal-implied focus policy",
         );
     }
 }

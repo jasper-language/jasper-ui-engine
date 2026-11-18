@@ -413,6 +413,33 @@ impl NativeUiDocument {
         &self.mapped_properties
     }
 
+    /// Loss-aware legacy projection for one active node. Node-local image resources and overlay
+    /// anchors are supplied in their original `UiKey` form; this still does not reverse into a
+    /// complete typed `UiNode` or component declaration.
+    pub fn project_compatibility_style(
+        &self,
+        key: UiKey,
+    ) -> Option<Result<NativeStyleProjection, UiIrError>> {
+        let node_id = self.node_for_key(key)?;
+        let node = self.scene.find(node_id)?;
+        let element = *self.element_kinds.get(&key)?;
+        let overlay_anchor = node.style.overlay.and_then(|overlay| {
+            if let NativeOverlayAnchor::Node(anchor) = overlay.anchor {
+                self.key_for_node(anchor)
+            } else {
+                None
+            }
+        });
+        Some(super::compat::project_native_style_with_context(
+            &node.style,
+            element,
+            NativeStyleContext {
+                image_resource: self.node_resource_refs.get(&node_id),
+                overlay_anchor,
+            },
+        ))
+    }
+
     /// Admit an event against this document's current owner/session/revision and internal map.
     /// A stale `UiKey` does not fall back to a newly allocated backend node.
     pub fn admit_event(

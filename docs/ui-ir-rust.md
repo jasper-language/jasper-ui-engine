@@ -88,10 +88,13 @@ caret 几何与 `UiKey` 一并返回，不暴露 backend 节点身份。
 `src/ui_ir/compat.rs` 提供受限的 legacy Native 兼容投影：
 
 - `project_native_style(&NativeStyle, ElementKind)` 返回 `NativeStyleProjection`；
+- `project_native_style_with_context` 接受节点精确的 image `ResourceRef` 与 overlay 锚点
+  `UiKey`，可无损投影相应 candidate 字段；
+- `NativeUiDocument::project_compatibility_style(UiKey)` 自动从当前节点映射这两项上下文；
 - box/flex/Grid/position/paint/typography 中当前 Typed v0.1 可表达的字段会投影；
 - Native shadow、单侧 border、outline、text decoration、hit-slop、transform、motion、
   gradient、material、image、overlay 等字段逐项进入 `losses`；
-- image/overlay 不凭裸 Native Style 伪造 resource/UiKey 上下文；
+- image/overlay 在没有 exact resource/UiKey 上下文时不会伪造身份，而是保留为损失；
 - 只有 `is_lossless() == true` 才表示本次投影没有遗漏非默认 Native 字段。
 
 这不是完整 legacy reverse/JUI 2 adapter，也不宣布 Native Scene 可恢复 Framework 的组件声明、

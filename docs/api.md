@@ -67,7 +67,9 @@ let scene = document.scene();
 [ui-ir-rust.md](ui-ir-rust.md)；该 API 不是正式 ABI，也未完成 Native/Web 一致性或形式化证明。
 `ui_ir::project_native_style` 提供 legacy Native `Style` 的受限反向投影，并通过
 `NativeStyleProjection::losses` 报告无法表达的扩展字段；只有空 `losses` 才表示该投影无损，
-它不构成完整 Scene/JUI 2 反向 adapter。
+它不构成完整 Scene/JUI 2 反向 adapter。节点级调用使用
+`NativeUiDocument::project_compatibility_style(UiKey)`；显式调用
+`project_native_style_with_context` 时可提供精确 image `ResourceRef` 与 overlay `UiKey` 锚点。
 Native 回调携带 `NodeId` 时使用 `admit_native_event`/`admit_activation`；内部 NodeId 仅用于
 映射，授权仍以 `UiEventContext.target` 的 `UiKey` 和上下文为准。
 HostRenderer 的 `typed_focus`、`typed_text_input`、`typed_set_preedit` 把目标授权与实际

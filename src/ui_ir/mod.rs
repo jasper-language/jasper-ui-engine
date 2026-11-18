@@ -21,7 +21,8 @@ pub use events::{
 };
 pub use identity::{IdentityError, UiIdentityLedger};
 pub use compat::{
-    project_native_style, NativeStyleLoss, NativeStyleProjection,
+    project_native_style, project_native_style_with_context, NativeStyleContext, NativeStyleLoss,
+    NativeStyleProjection,
 };
 pub use native::{
     MappedProperty, MappingIssue, MappingIssueKind, NativeSceneUpdate, NativeUiDocument,
