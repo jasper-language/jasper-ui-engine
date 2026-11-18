@@ -63,6 +63,9 @@ CPU RGBA 呈现最小契约复用现有 `RenderBackend`：
 它只使用布局、绘制和内存 Canvas，不创建窗口、Surface、GPU 设备或系统资源。宿主仍负责
 把该帧复制/提交到自己的显示缓冲并调用 `present` 语义。
 
+`CoreRgbaRenderer::render_to_backend(&Scene, &mut RenderBackend)` 直接把帧交给宿主后端：
+`submit_rgba8` 成功后才会调用 `present`；准入/接管失败保持无呈现。
+
 这些是 Rust 调用边界，不是正式 ABI 或 Jasper-OS syscall 定义。
 
 ## 不在 Core
