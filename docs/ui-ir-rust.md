@@ -107,6 +107,8 @@ caret 几何与 `UiKey` 一并返回，不暴露 backend 节点身份。
 - `project_jui2_event(&NativeUiDocument, &Jui2Event)` 将 active `UiKey` 映射到 transport
   NodeId，编码 hover/pointer/click/focus/key/text-commit/ime-cancel/dismiss-request
   事件，并复用 JUI 2 payload 转义；
+- `examples/project_jui2_settings.rs` 是只读诊断入口，将 settings fixture 输出为 JUI 2
+  初始 frame，供旧 host reader 回环；
 - `project_native_style_with_context` 接受节点精确的 image `ResourceRef` 与 overlay 锚点
   `UiKey`，可无损投影相应 candidate 字段；
 - `NativeUiDocument::project_compatibility_style(UiKey)` 自动从当前节点映射这两项上下文；
@@ -254,6 +256,9 @@ Web 后端和正式宿主仍需分别验收。
 - 软件 Vulkan（lvp/llvmpipe）+ `gpu-pending` 的 `ui_ir_v0`：`48 passed`；
 - 无 Native 特性的 Legacy 库测试：`180 passed`；`cargo check --no-default-features
   --all-targets` 成功；
+- 旧 `jasper-ui-host --headless` reader 在 `/tmp` 副本中指向本分支后接受 settings 初始
+  frame：`ack 2`，`accepted 1 / rejected 0`，生成 480×320 PNG，并输出完整 dump/bounds；
+  原 host 仓库未修改。该证据只覆盖 CPU headless transport，不包含真实平台窗口；
 - Clippy 成功退出；仓库仍保留已登记的非阻塞历史 warning。
 
 运行前注入了 Latin/CJK、regular/bold/italic 测试字体；这些计数只对应当前 Linux 测试环境，
@@ -290,3 +295,13 @@ WGPU_BACKEND=vulkan \
 CPU 测试只证明当前 Linux 环境下该 fixture 可构造并产出非空帧；不证明正式平台验收、GPU 或
 Web 等价。Native GPU 对照需启用 `gpu-pending` 并通过 lvp/llvmpipe；该运行只证明软件 Vulkan
 上的同 IR CPU/GPU 像素差上限为 1，不证明真实硬件、窗口呈现或跨平台验收。
+
+JUI 2 reader 诊断：
+
+```bash
+/home/auth/.cargo/bin/cargo run --locked --no-default-features \
+  --example project_jui2_settings
+```
+
+将 stdout 直接作为旧 host 的 `--frames -` 输入即可；host 的锁定依赖和 engine path 属于
+另一个兼容 checkout，本次回环在临时源码副本中完成，不修改原 host 工作树。
