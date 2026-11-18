@@ -120,6 +120,10 @@ caret_blink(owner, now_ms) -> Option<CaretBlink>               // visible、next
 5. **闪烁**：帧循环每拍（或在 `next_toggle_ms` 定时唤醒）调 `caret_blink`，`needs_frame` 为真再绘制；`env reduce-motion` 已经 `set_reduce_motion`，光标随之常亮。
 6. `hello` 增加能力令牌 `text-valign`，透传 `text-valign`、`line-height` 两个 xstyle 键。
 
+2026-11-18：`examples/window` 已使用 `TextDisplayView::caret` 的真实 Parley 布局调用
+`set_ime_cursor_area`。验证覆盖 X11/IBus 的预编辑和提交文本，不证明平台候选窗的实际
+像素位置、候选列表或物理桌面输入。
+
 ## 4. Jasper 对齐
 
 1. 主题给固定高度控件（按钮、输入框、标签、分段控件）声明 `xstyle text-valign=center`（需要时加 `line-height`）；能力未声明时用上下 padding 近似并记降级。

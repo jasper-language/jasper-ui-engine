@@ -116,6 +116,12 @@ Scintilla/Lexilla、Keyman/Rime 均为暂用后端，必须可以逐个关闭和
 实际提供的 `event.text`；因此无 IME 环境不会因单纯启用 XIM 而丢字符，组合态也不会把
 组成字符同时写进文档。
 
+`TextDisplayView::caret(binding, owner, ticket, utf8_offset, width)` 从测量、命中和绘制共用的
+Parley 布局返回逻辑光标矩形。`examples/window` 在每次外部文本布局更新后把该矩形传给
+`Window::set_ime_cursor_area`，组合期间候选位置保持在基础文本的插入点；归属票据关闭、
+偏移越界/非 UTF-8 边界、负宽或非有限值均拒绝。该 API 只提供几何，不创建候选窗，也不
+证明平台候选窗实际显示位置。
+
 隔离 Xvfb X11 显示服务器中的验证结果：
 
 - XTest 系统窗口级 pointer down/up 经 winit 与公共 HostRenderer 激活 Save 一次；

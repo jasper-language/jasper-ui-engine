@@ -42,6 +42,8 @@ Windows Ink、Apple Pencil、Android MotionEvent 和 Linux libinput 的专用适
 - 指针、滚轮、命令键、IME 预编辑/提交与焦点变化现在送入根 `Engine` 和公共 `TextDisplayView` 客户端；原始物理指针坐标在宿主边界换算为逻辑坐标。
 - 窗口在获焦/恢复时请求 `set_ime_allowed(true)`，失焦、暂停和关闭时撤销；组合态 key
   不进入场景命令路由，IME 消费按下后仍到达的 key-up 只在其有场景 key-down 归属时转发。
+- 每次外部文本布局更新后从同一 Parley 布局读取 UTF-8 光标矩形，并调用
+  `set_ime_cursor_area`；矩形使用逻辑坐标，非法归属、非字符边界、负宽或非有限值拒绝。
 - 点击激活产生版本化、纯视觉 `ScenePatch`。更新后调用方检查场景焦点与无障碍树中的焦点/动作仍然存在。
 - 窗口失焦关闭命令键和外部文本焦点租约；重新聚焦时恢复两者。暂停释放 Surface 但保留场景及外部快照，关闭请求让两端退休。
 - 外部文本内容只接受宿主注入的服务快照；同步预编辑窗口只显示 transient preedit，不是编辑器或 IME 引擎。

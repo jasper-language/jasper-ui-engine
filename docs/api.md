@@ -585,6 +585,14 @@ subsequent `KeyEvent`s with `composing=true`, while empty preedit, commit and di
 clear it. Ordinary unmodified `event.text` becomes `Text` only outside composition,
 so direct-key fallback and host IME commits do not duplicate one another.
 
+`TextDisplayView::caret(binding, owner, ticket, utf8_offset, width)` returns the
+logical caret rectangle from the same layout used for display measurement, hit
+testing and painting. It checks the current input ticket and a valid UTF-8
+boundary; closed/stale ownership, negative or non-finite width and invalid offsets
+return `None`. Hosts can pass this rectangle to their window IME cursor-area API.
+This is geometry only: it does not display candidates, accept a platform IME
+engine or prove their real window placement.
+
 ### Owned UI preedit presentation state
 
 `UiPreeditView` owns an optional `UiPreeditFrame { token, text, cursor }`.

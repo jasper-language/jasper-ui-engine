@@ -169,6 +169,11 @@ impl TextDisplayView {
     pub fn hit(&self,binding:&UiInputBinding,owner:u64,ticket:UiInputTicket,x:f32,y:f32)->Option<usize> {
         self.inner.hit_display_text_from_host(binding,owner,ticket,x,y)
     }
+    /// Logical caret geometry in display-view coordinates for IME candidate placement.
+    /// 显示视图逻辑坐标中的光标几何，供宿主定位 IME 候选窗。
+    pub fn caret(&self,binding:&UiInputBinding,owner:u64,ticket:UiInputTicket,offset:usize,width:f32)->Option<Rect> {
+        self.inner.caret_display_text_from_host(binding,owner,ticket,offset,width)
+    }
     /// Read-only selected display bytes; does not access clipboard or apply edits.
     pub fn selected_text(&self,binding:&UiInputBinding,owner:u64,ticket:UiInputTicket)->Option<String> {
         self.inner.selected_display_text_from_host(binding,owner,ticket)

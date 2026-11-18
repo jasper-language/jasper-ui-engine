@@ -26,6 +26,7 @@ use jasper_ui_engine::semantics::{Role, Semantics};
 use jasper_ui_engine::style::{Color, FlexDirection, FontStyle, Length, Style};
 use softbuffer::{Context, Surface};
 use winit::application::ApplicationHandler;
+use winit::dpi::{LogicalPosition, LogicalSize, Position, Size};
 use winit::event::WindowEvent;
 use winit::event_loop::{ActiveEventLoop, EventLoop, EventLoopProxy};
 use winit::window::{Window, WindowId};
@@ -206,15 +207,17 @@ impl App {
         if size.width == 0 || size.height == 0 {
             return Ok(());
         }
-        let Some(surface) = self.surface.as_mut() else {
-            return Ok(());
-        };
         let (Some(width), Some(height)) =
             (NonZeroU32::new(size.width), NonZeroU32::new(size.height))
         else {
             return Ok(());
         };
-        surface.resize(width, height)?;
+        {
+            let Some(surface) = self.surface.as_mut() else {
+                return Ok(());
+            };
+            surface.resize(width, height)?;
+        }
         // Window size is physical; native layout and events use logical coordinates.
         // 窗口尺寸为物理像素，原生布局与事件使用逻辑坐标。
         let viewport = (size.width, size.height, window.scale_factor() as f32);
@@ -249,6 +252,7 @@ impl App {
             }
             self.external_dirty = false;
         }
+        self.sync_ime_cursor_area();
 
         self.engine
             .render_to_backend(
@@ -259,12 +263,37 @@ impl App {
                 BUDGET,
             )
             .map_err(|error| format!("native CPU frame rejected: {error:?}"))?;
+        let Some(surface) = self.surface.as_mut() else {
+            return Ok(());
+        };
         let pixels = self.backend.canvas().pixels();
         let mut buffer = surface.buffer_mut()?;
         rgba_to_u32(pixels, &mut buffer)
             .map_err(|error| format!("pixel conversion failed: {error:?}"))?;
         buffer.present()?;
         Ok(())
+    }
+
+    fn sync_ime_cursor_area(&self) {
+        let (Some(window), Some(ticket)) = (self.window.as_ref(), self.text_ticket) else {
+            return;
+        };
+        let Some(caret) = self.text.caret(
+            &self.text_binding,
+            TEXT_OWNER,
+            ticket,
+            self.text_snapshot.len(),
+            1.0,
+        ) else {
+            return;
+        };
+        window.set_ime_cursor_area(
+            Position::Logical(LogicalPosition::new(caret.x() as f64, caret.y() as f64)),
+            Size::Logical(LogicalSize::new(
+                caret.width().max(1.0) as f64,
+                caret.height().max(1.0) as f64,
+            )),
+        );
     }
 
     fn close_text_focus(&mut self) -> bool {

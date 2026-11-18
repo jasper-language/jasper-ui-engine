@@ -309,6 +309,9 @@ Web 后端和正式宿主仍需分别验收。
   `External display 中文你好`、revision 2、`retired=true`。该验证经过真实
   winit/IBus/XIM 事件接口，但使用虚拟显示和合成输入，不证明物理键盘、真实 Wayland
   合成器或完整候选窗/光标定位已验收；
+- `TextDisplayView::caret` 从同一 Parley 布局返回已准入 UTF-8 偏移的光标矩形；
+  `examples/window` 在布局更新后调用 `set_ime_cursor_area`。当前验证证明几何查询与调用
+  路径，不证明平台候选窗实际像素位置或候选列表；
 - `DesktopInput` 现在在组合态给 `KeyEvent.composing` 置位并抑制 key-derived text，
   `Ime::Commit` 是提交来源；普通无 IME 输入仍使用 winit `event.text`。宿主忽略组合态
   命令键，并只为确有场景 key-down 归属的命令 key-up 转发，避免 IME 消费按下后仍转发的

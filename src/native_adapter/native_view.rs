@@ -909,6 +909,68 @@ impl NativeTextView {
         Some(offset)
     }
 
+    /// Current display caret geometry for an admitted host offset.
+    /// 返回已准入显示文本偏移的光标几何；不访问输入法或系统候选窗。
+    pub(crate) fn caret_display_text_from_host(
+        &self,
+        binding: &UiInputBinding,
+        caller: u64,
+        ticket: UiInputTicket,
+        offset: usize,
+        width: f32,
+    ) -> Option<jasper_ui_engine::geometry::Rect> {
+        if !width.is_finite()
+            || width < 0.0
+            || !matches_ui_view_owner(self.session, self.context, caller, ticket.context)
+            || binding.admit(caller, ticket, &(offset, width)).is_none()
+        {
+            return None;
+        }
+        self.display_caret_geometry(offset, width)
+    }
+
+    fn display_caret_geometry(
+        &self,
+        offset: usize,
+        width: f32,
+    ) -> Option<jasper_ui_engine::geometry::Rect> {
+        let document = self.document.as_ref()?;
+        let root = document.get_node(self.text_node)?.inline_root_ancestor()?;
+        let layout = root.element_data()?.inline_layout_data.as_ref()?;
+        if offset > layout.text.len() || !layout.text.is_char_boundary(offset) {
+            return None;
+        }
+        let rect = document.get_client_bounding_rect(root.id)?;
+        let edges = root.final_layout();
+        let origin_x = rect.x + edges.border.left as f64 + edges.padding.left as f64;
+        let origin_y = rect.y
+            + edges.border.top as f64
+            + edges.padding.top as f64
+            + layout.block_offset as f64;
+        let scale = layout.layout.scale() as f64;
+        if !origin_x.is_finite()
+            || !origin_y.is_finite()
+            || !(scale > 0.0)
+            || !scale.is_finite()
+        {
+            return None;
+        }
+        let caret =
+            parley::Cursor::from_byte_index(&layout.layout, offset, parley::Affinity::Downstream)
+                .geometry(&layout.layout, (width as f64 * scale) as f32);
+        let geometry = jasper_ui_engine::geometry::Rect::new(
+            (origin_x + caret.x0 / scale) as f32,
+            (origin_y + caret.y0 / scale) as f32,
+            ((caret.x1 - caret.x0) / scale) as f32,
+            ((caret.y1 - caret.y0) / scale) as f32,
+        );
+        (geometry.x().is_finite()
+            && geometry.y().is_finite()
+            && geometry.width().is_finite()
+            && geometry.height().is_finite())
+        .then_some(geometry)
+    }
+
     /// Reads current selected display text for an authorized host consumer.
     /// Does not access a clipboard or send an edit/service request.
     pub(crate) fn selected_display_text_from_host(

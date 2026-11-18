@@ -149,3 +149,37 @@ fn hit_uses_the_fallback_layout() {
     assert_eq!(first_past(&a, 2), first_past(&b, 2));
     assert_ne!(first_past(&a, text.len()), first_past(&b, text.len()));
 }
+
+#[test]
+fn caret_uses_the_display_layout_and_current_binding() {
+    let (latin, cjk) = (latin(), cjk());
+    let text = "Ab中文字";
+    let view = view(&[&latin, &cjk], text);
+    let mut binding = UiInputBinding::new(OWNER, 1);
+    let ticket = binding.bind(OWNER, CONTEXT).expect("binding");
+    let start = view
+        .caret(&binding, OWNER, ticket, 0, 1.0)
+        .expect("start caret");
+    let end = view
+        .caret(&binding, OWNER, ticket, text.len(), 1.0)
+        .expect("end caret");
+    assert_eq!(start.y(), end.y());
+    assert!(end.x() > start.x());
+    assert!(start.x() >= 0.0 && end.x() <= W as f32);
+    assert!(start.y() >= 0.0 && start.bottom() <= H as f32);
+    assert!((start.width() - 1.0).abs() < 0.01);
+    assert!(start.height() > 0.0);
+    assert!(view.caret(&binding, OWNER, ticket, text.len() + 1, 1.0).is_none());
+    assert!(view
+        .caret(&binding, OWNER, ticket, text.find('中').unwrap() + 1, 1.0)
+        .is_none());
+    assert!(view
+        .caret(&binding, OWNER, ticket, text.len(), -1.0)
+        .is_none());
+    assert!(view
+        .caret(&binding, OWNER, ticket, text.len(), f32::NAN)
+        .is_none());
+    assert!(view.caret(&binding, OWNER + 1, ticket, 0, 1.0).is_none());
+    assert!(binding.close(OWNER, ticket));
+    assert!(view.caret(&binding, OWNER, ticket, 0, 1.0).is_none());
+}
