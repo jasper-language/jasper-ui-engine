@@ -359,6 +359,40 @@ impl NativeUiDocument {
         self.admit_event(context, event)
     }
 
+    /// Admit a non-binding Native operation such as focus, pointer capture, IME or scroll.
+    /// `NodeId` is only a lookup hint; `UiKey` and the full authority context remain canonical.
+    pub fn admit_native_target(
+        &self,
+        context: &UiEventContext,
+        node: NodeId,
+        permission: UiPermission,
+    ) -> Result<UiKey, UiEventAdmissionError> {
+        check_authority_values(
+            AuthorityRef {
+                identity_domain: &context.identity_domain,
+                owner: &context.owner,
+                session: &context.session,
+                revision: context.frame_revision,
+            },
+            AuthorityRef {
+                identity_domain: &self.authority.identity_domain,
+                owner: &self.authority.owner,
+                session: &self.authority.session,
+                revision: self.revision,
+            },
+        )?;
+        if context.permission_context.name.is_empty() {
+            return Err(UiEventAdmissionError::UnknownPermissionContext);
+        }
+        if !context.permission_context.permits(permission) {
+            return Err(UiEventAdmissionError::CapabilityDenied { permission });
+        }
+        if self.key_for_node(node) != Some(context.target) {
+            return Err(UiEventAdmissionError::StaleGeneration(context.target));
+        }
+        Ok(context.target)
+    }
+
     /// Map a role activation callback to the exact Framework binding. Pointer clicks prefer
     /// `click` and fall back to `activate`; keyboard/accessibility use `activate`.
     pub fn admit_activation(

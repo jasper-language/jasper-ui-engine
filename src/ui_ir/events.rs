@@ -210,6 +210,9 @@ pub enum UiEventAdmissionError {
         permission: UiPermission,
         action: String,
     },
+    CapabilityDenied {
+        permission: UiPermission,
+    },
 }
 
 impl fmt::Display for UiEventAdmissionError {
@@ -246,6 +249,12 @@ impl fmt::Display for UiEventAdmissionError {
                 f,
                 "permission {permission:?} is required to invoke action {action:?}"
             ),
+            Self::CapabilityDenied { permission } => {
+                write!(
+                    f,
+                    "permission {permission:?} is required for this Native target"
+                )
+            }
         }
     }
 }

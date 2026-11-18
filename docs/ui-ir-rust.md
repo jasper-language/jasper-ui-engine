@@ -45,6 +45,8 @@ Jasper Language/UI 共有层；Rust 不反向定义公共语义。
 `admit_native_event` 可将 Native 回调的 `NodeId` 仅作为内部查找提示；授权仍要求匹配
 `UiEventContext.target`。`admit_activation` 明确区分 pointer click、keyboard 与 accessibility，
 pointer 优先 `click`，其余使用 `activate`，不会把未绑定的键盘动作静默映射过去。
+Focus、pointer capture、IME、scroll 等非 binding 操作使用 `admit_native_target`，分别要求
+对应的 permission；同样不能用裸 NodeId 绕过 UiKey 和会话上下文。
 
 `src/ui_ir/native.rs` 提供 `NativeUiDocument`：
 

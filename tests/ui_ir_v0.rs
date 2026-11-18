@@ -226,7 +226,23 @@ fn settings_page_event_identity_requires_current_owner_session_revision_and_gene
             .is_err(),
         "a click binding does not silently accept keyboard activate"
     );
+    assert!(document
+        .admit_native_target(&context, button_node, UiPermission::Focus)
+        .is_err());
+    let focus = UiEventContext {
+        permission_context: UiPermissionContext::new("tab-focus", [UiPermission::Focus]),
+        ..context.clone()
+    };
+    assert_eq!(
+        document
+            .admit_native_target(&focus, button_node, UiPermission::Focus)
+            .unwrap(),
+        button
+    );
     let heading = document.node_for_key(UiKey::new(2, 1)).unwrap();
+    assert!(document
+        .admit_native_target(&focus, heading, UiPermission::Focus)
+        .is_err());
     assert!(document
         .admit_native_event(&context, heading, UiEventKind::Click)
         .is_err());
