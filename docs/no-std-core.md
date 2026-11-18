@@ -87,8 +87,8 @@ CPU RGBA 呈现最小契约复用现有 `RenderBackend`：
 - bare-metal compile：通过；
 - std 默认库测试：`186 passed`；
 - std `--all-features`：库测试 `296 passed, 1 ignored`，全部集成测试与 doc-test 通过；
-- 帧尺寸/预算准入、`UiKey` generation 后继和事件权限分类已有 Verus 实现级证明
-  （2/0、3/0、3/0、3/0，负向控制均被拒），并有独立 Proptest、Miri 定向用例和
-  read-boundary fuzz 覆盖；
+- 帧尺寸/预算准入、`UiKey` generation 后继、事件权限分类和 authority 优先级已有
+  Verus 实现级证明（2/0、3/0、3/0、3/0、2/0，负向控制均被拒），并有独立 Proptest、
+  Miri 定向用例和 read-boundary fuzz 覆盖；
 - 未在 Jasper-OS 用户态/内核中链接运行，未证明目标端 allocator、panic handler、
   vector/float ABI、CPU 特性、中断时钟或真实 Surface 呈现。

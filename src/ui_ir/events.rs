@@ -1,9 +1,9 @@
 //! Authenticated event-target admission after IR structural validation.
 
+use super::{EventBinding, UiEventKind, UiFrame, UiKey};
 use crate::nostd_prelude::*;
 use alloc::collections::BTreeSet;
 use core::fmt;
-use super::{EventBinding, UiEventKind, UiFrame, UiKey};
 use serde::{Deserialize, Serialize};
 
 /// The permission needed to route a bound event. Backend `NodeId` is never accepted here.
@@ -137,35 +137,69 @@ pub(super) struct AuthorityRef<'a> {
     pub revision: u64,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+// BEGIN VERIFIED AUTHORITY FAILURE TYPE
+pub(crate) enum AuthorityFailure {
+    IdentityDomain,
+    Owner,
+    Session,
+    Revision,
+}
+// END VERIFIED AUTHORITY FAILURE TYPE
+
+// BEGIN VERIFIED AUTHORITY MATCH KERNEL
+pub(crate) fn authority_failure_from_matches(
+    identity_domain_matches: bool,
+    owner_matches: bool,
+    session_matches: bool,
+    revision_matches: bool,
+) -> Option<AuthorityFailure> {
+    if !identity_domain_matches {
+        return Some(AuthorityFailure::IdentityDomain);
+    }
+    if !owner_matches {
+        return Some(AuthorityFailure::Owner);
+    }
+    if !session_matches {
+        return Some(AuthorityFailure::Session);
+    }
+    if !revision_matches {
+        return Some(AuthorityFailure::Revision);
+    }
+    None
+}
+// END VERIFIED AUTHORITY MATCH KERNEL
+
 pub(super) fn check_authority_values(
     actual: AuthorityRef<'_>,
     expected: AuthorityRef<'_>,
 ) -> Result<(), UiEventAdmissionError> {
-    if actual.identity_domain != expected.identity_domain {
-        return Err(UiEventAdmissionError::IdentityDomainMismatch {
-            expected: expected.identity_domain.into(),
-            actual: actual.identity_domain.into(),
-        });
-    }
-    if actual.owner != expected.owner {
-        return Err(UiEventAdmissionError::OwnerMismatch {
+    match authority_failure_from_matches(
+        actual.identity_domain == expected.identity_domain,
+        actual.owner == expected.owner,
+        actual.session == expected.session,
+        actual.revision == expected.revision,
+    ) {
+        None => Ok(()),
+        Some(AuthorityFailure::IdentityDomain) => {
+            Err(UiEventAdmissionError::IdentityDomainMismatch {
+                expected: expected.identity_domain.into(),
+                actual: actual.identity_domain.into(),
+            })
+        }
+        Some(AuthorityFailure::Owner) => Err(UiEventAdmissionError::OwnerMismatch {
             expected: expected.owner.into(),
             actual: actual.owner.into(),
-        });
-    }
-    if actual.session != expected.session {
-        return Err(UiEventAdmissionError::SessionMismatch {
+        }),
+        Some(AuthorityFailure::Session) => Err(UiEventAdmissionError::SessionMismatch {
             expected: expected.session.into(),
             actual: actual.session.into(),
-        });
-    }
-    if actual.revision != expected.revision {
-        return Err(UiEventAdmissionError::StaleRevision {
+        }),
+        Some(AuthorityFailure::Revision) => Err(UiEventAdmissionError::StaleRevision {
             expected: expected.revision,
             actual: actual.revision,
-        });
+        }),
     }
-    Ok(())
 }
 
 pub(super) fn check_permission(

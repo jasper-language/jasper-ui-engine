@@ -263,6 +263,46 @@ KERNELS = {
             ("dismiss-needs-activate", "Self::Dismiss => UiPermission::Dismiss", "Self::Dismiss => UiPermission::Activate"),
         ],
     },
+    "authority-failure-type": {
+        "source": "src/ui_ir/events.rs", "marker": "AUTHORITY FAILURE", "suffix": "TYPE",
+        "signature": "pub(crate) enum AuthorityFailure {",
+        "contract": "#[derive(Clone, Copy, Debug, PartialEq, Eq)]\npub(crate) enum AuthorityFailure {",
+        "depends": [], "function_count": 0, "internal_only": True,
+    },
+    "authority-match": {
+        "source": "src/ui_ir/events.rs", "marker": "AUTHORITY MATCH", "property": "UI-EVENT-AUTHORITY-001",
+        "signature": """pub(crate) fn authority_failure_from_matches(
+    identity_domain_matches: bool,
+    owner_matches: bool,
+    session_matches: bool,
+    revision_matches: bool,
+) -> Option<AuthorityFailure> {""",
+        "contract": """pub(crate) fn authority_failure_from_matches(
+    identity_domain_matches: bool,
+    owner_matches: bool,
+    session_matches: bool,
+    revision_matches: bool,
+) -> (result: Option<AuthorityFailure>)
+    ensures match result {
+        Some(AuthorityFailure::IdentityDomain) => !identity_domain_matches,
+        Some(AuthorityFailure::Owner) => identity_domain_matches && !owner_matches,
+        Some(AuthorityFailure::Session) =>
+            identity_domain_matches && owner_matches && !session_matches,
+        Some(AuthorityFailure::Revision) =>
+            identity_domain_matches && owner_matches && session_matches
+            && !revision_matches,
+        None => identity_domain_matches && owner_matches
+            && session_matches && revision_matches,
+    },
+{""",
+        "depends": ["authority-failure-type"],
+        "evidence": "ui-event-authority-kernel", "function_count": 1,
+        "scope": "actual event authority mismatch precedence and complete-equality admission over identity domain, owner, session and frame revision. String allocation in error construction, frame validation, target lookup, binding lookup, permission sets and callback dispatch are outside this kernel",
+        "mutations": [
+            ("ignore-identity-domain", "if !identity_domain_matches {", "if false {"),
+            ("owner-before-domain", "if !owner_matches {", "if !identity_domain_matches {"),
+        ],
+    },
     "version": {
         "source": "src/scene.rs", "marker": "VERSION", "property": "UI-TXN-VERSION-001",
         "signature": "fn next_scene_version(version: u64) -> Option<u64> {",

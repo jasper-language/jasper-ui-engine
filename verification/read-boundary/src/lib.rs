@@ -157,6 +157,61 @@ fn same_permission(left: UiPermission, right: UiPermission) -> bool {
     }
 }
 
+fn same_authority_failure(
+    left: Option<AuthorityFailure>,
+    right: Option<AuthorityFailure>,
+) -> bool {
+    match (left, right) {
+        (None, None)
+        | (
+            Some(AuthorityFailure::IdentityDomain),
+            Some(AuthorityFailure::IdentityDomain),
+        )
+        | (Some(AuthorityFailure::Owner), Some(AuthorityFailure::Owner))
+        | (Some(AuthorityFailure::Session), Some(AuthorityFailure::Session))
+        | (
+            Some(AuthorityFailure::Revision),
+            Some(AuthorityFailure::Revision),
+        ) => true,
+        _ => false,
+    }
+}
+
+/// Independent precedence oracle for event authority dimensions.
+/// 事件 authority 各维度的独立优先级规格。
+#[allow(clippy::too_many_arguments)]
+pub fn assert_authority_match(
+    actual_identity_domain: &str,
+    actual_owner: &str,
+    actual_session: &str,
+    actual_revision: u64,
+    expected_identity_domain: &str,
+    expected_owner: &str,
+    expected_session: &str,
+    expected_revision: u64,
+) {
+    let expected = if actual_identity_domain != expected_identity_domain {
+        Some(AuthorityFailure::IdentityDomain)
+    } else if actual_owner != expected_owner {
+        Some(AuthorityFailure::Owner)
+    } else if actual_session != expected_session {
+        Some(AuthorityFailure::Session)
+    } else if actual_revision != expected_revision {
+        Some(AuthorityFailure::Revision)
+    } else {
+        None
+    };
+    assert!(same_authority_failure(
+        authority_failure_from_matches(
+            actual_identity_domain == expected_identity_domain,
+            actual_owner == expected_owner,
+            actual_session == expected_session,
+            actual_revision == expected_revision,
+        ),
+        expected,
+    ));
+}
+
 /// Full-width oracle uses u128 so multiplication and addition do not wrap.
 /// 使用 u128 独立计算规格，避免将 usize 运算回绕误认为正确结果。
 pub fn assert_surface_span(row: usize, height: usize, stride: usize, capacity: usize) {
@@ -3903,6 +3958,24 @@ mod properties {
             assert_event_permissions();
         }
         #[test]
+        fn authority_match_property(
+            identity_domain in any::<u64>(),
+            owner in any::<u64>(),
+            session in any::<u64>(),
+            revision in any::<u64>(),
+            other in any::<u64>(),
+        ) {
+            let domain = format!("d{identity_domain}");
+            let owner = format!("o{owner}");
+            let session = format!("s{session}");
+            let other = format!("x{other}");
+            assert_authority_match(&domain, &owner, &session, revision, &domain, &owner, &session, revision);
+            assert_authority_match(&other, &owner, &session, revision, &domain, &owner, &session, revision);
+            assert_authority_match(&domain, &other, &session, revision, &domain, &owner, &session, revision);
+            assert_authority_match(&domain, &owner, &other, revision, &domain, &owner, &session, revision);
+            assert_authority_match(&domain, &owner, &session, revision.wrapping_add(1), &domain, &owner, &session, revision);
+        }
+        #[test]
         fn endpoint_property(total in any::<usize>(), pos in any::<usize>(), len in any::<usize>()) {
             assert_endpoint(total, pos, len);
         }
@@ -3955,6 +4028,15 @@ mod memory {
     #[test]
     fn event_permission_variants() {
         assert_event_permissions();
+    }
+
+    #[test]
+    fn authority_match_boundaries() {
+        assert_authority_match("d", "o", "s", 1, "d", "o", "s", 1);
+        assert_authority_match("x", "o", "s", 1, "d", "o", "s", 1);
+        assert_authority_match("d", "x", "s", 1, "d", "o", "s", 1);
+        assert_authority_match("d", "o", "x", 1, "d", "o", "s", 1);
+        assert_authority_match("d", "o", "s", 2, "d", "o", "s", 1);
     }
 
     #[test]

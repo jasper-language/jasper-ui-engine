@@ -16,7 +16,12 @@ fn main() {
         ),
         (
             "../../src/ui_ir/events.rs",
-            &["UI PERMISSION TYPE", "UI EVENT PERMISSION KERNEL"][..],
+            &[
+                "UI PERMISSION TYPE",
+                "UI EVENT PERMISSION KERNEL",
+                "AUTHORITY FAILURE TYPE",
+                "AUTHORITY MATCH KERNEL",
+            ][..],
         ),
         (
             "../../src/batch.rs",

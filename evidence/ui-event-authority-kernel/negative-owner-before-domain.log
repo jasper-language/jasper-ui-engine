@@ -1,0 +1,46 @@
+verification results:: 1 verified, 1 errors
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/ui-event-authority-kernel/negative_owner_before_domain.rs:13:1
+   |
+13 | / pub(crate) fn authority_failure_from_matches(
+14 | |     identity_domain_matches: bool,
+15 | |     owner_matches: bool,
+16 | |     session_matches: bool,
+17 | |     revision_matches: bool,
+18 | | ) -> (result: Option<AuthorityFailure>)
+   | |______________________________________^
+
+error: postcondition not satisfied
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/ui-event-authority-kernel/negative_owner_before_domain.rs:19:13
+   |
+19 |       ensures match result {
+   |  _____________^
+20 | |         Some(AuthorityFailure::IdentityDomain) => !identity_domain_matches,
+21 | |         Some(AuthorityFailure::Owner) => identity_domain_matches && !owner_matches,
+22 | |         Some(AuthorityFailure::Session) =>
+...  |
+28 | |             && session_matches && revision_matches,
+29 | |     },
+   | |_____^ failed this postcondition
+...
+43 |       None
+   |       ---- at the end of the function body
+
+error: postcondition not satisfied
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/ui-event-authority-kernel/negative_owner_before_domain.rs:19:13
+   |
+19 |       ensures match result {
+   |  _____________^
+20 | |         Some(AuthorityFailure::IdentityDomain) => !identity_domain_matches,
+21 | |         Some(AuthorityFailure::Owner) => identity_domain_matches && !owner_matches,
+22 | |         Some(AuthorityFailure::Session) =>
+...  |
+28 | |             && session_matches && revision_matches,
+29 | |     },
+   | |_____^ failed this postcondition
+...
+38 |           return Some(AuthorityFailure::Session);
+   |           -------------------------------------- at this exit
+
+error: aborting due to 2 previous errors
+
