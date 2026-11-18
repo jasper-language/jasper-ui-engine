@@ -98,7 +98,8 @@ caret 几何与 `UiKey` 一并返回，不暴露 backend 节点身份。
 - `project_compatibility_snapshot()` 返回 authority、identity 游标、revision、root、
   environment 以及当前 active/prepared resource 的只读文档快照；
 - `NativeUiCompatibilitySnapshot::validate()` 在恢复前统一校验 authority、UiNode 结构、
-  live identity 集合、environment 与 resource id/generation/kind；
+  live identity 集合、environment、Native Property Registry、resource id/generation/kind
+  及 active/prepared 生命周期可达性；
 - `NativeUiCompatibilitySnapshot::to_initial_frame()` 仅在全部身份为 generation 1 时重建
   `expected_revision=1` 的新会话帧；存在淘汰历史时结构化拒绝，不伪造 identity ledger；
 - `NativeUiDocument::from_compatibility_snapshot` 可直接按显式 identity 游标恢复 active

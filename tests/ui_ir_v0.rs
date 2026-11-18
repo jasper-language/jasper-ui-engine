@@ -488,6 +488,48 @@ fn native_compatibility_snapshot_includes_environment_and_live_resources() {
         missing_live.validate(),
         Err(jasper_ui_engine::ui_ir::UiIrError::Invalid { .. })
     ));
+    let mut promoted_candidate = snapshot.clone();
+    promoted_candidate
+        .mapped_properties
+        .get_mut("image.fit")
+        .unwrap()
+        .host_accepted = true;
+    assert!(matches!(
+        promoted_candidate.validate(),
+        Err(jasper_ui_engine::ui_ir::UiIrError::Invalid { .. })
+    ));
+    assert!(matches!(
+        NativeUiDocument::from_compatibility_snapshot(&promoted_candidate),
+        Err(jasper_ui_engine::ui_ir::UiIrError::Invalid { .. })
+    ));
+    let mut unknown_property = snapshot.clone();
+    unknown_property.mapped_properties.insert(
+        "not.in.profile",
+        jasper_ui_engine::ui_ir::MappedProperty {
+            support: SupportLevel::Required,
+            host_accepted: true,
+        },
+    );
+    assert!(matches!(
+        unknown_property.validate(),
+        Err(jasper_ui_engine::ui_ir::UiIrError::Invalid { .. })
+    ));
+    let mut empty_resource = snapshot.clone();
+    let empty_state = empty_resource.resources.get_mut("icon").unwrap();
+    empty_state.active = None;
+    empty_state.prepared = None;
+    assert!(matches!(
+        empty_resource.validate(),
+        Err(jasper_ui_engine::ui_ir::UiIrError::Invalid { .. })
+    ));
+    let mut regressed_prepare = snapshot.clone();
+    let resources = regressed_prepare.resources.get_mut("icon").unwrap();
+    resources.prepared.as_mut().unwrap().generation =
+        resources.active.as_ref().unwrap().generation;
+    assert!(matches!(
+        regressed_prepare.validate(),
+        Err(jasper_ui_engine::ui_ir::UiIrError::Invalid { .. })
+    ));
 
     let replay = snapshot.to_initial_frame().unwrap();
     let replay_document = NativeUiDocument::from_frame(&replay).unwrap();

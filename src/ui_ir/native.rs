@@ -248,7 +248,29 @@ impl NativeUiCompatibilitySnapshot {
                 "identity snapshot live cursors do not match the root subtree",
             ));
         }
+        for (property, mapped) in &self.mapped_properties {
+            let profile = native_property_profile(property).ok_or_else(|| {
+                incomplete_projection(format!(
+                    "mapped property {property:?} is absent from the Native profile"
+                ))
+            })?;
+            if *mapped
+                != (MappedProperty {
+                    support: profile.support,
+                    host_accepted: profile.host_accepted,
+                })
+            {
+                return Err(incomplete_projection(format!(
+                    "mapped property {property:?} disagrees with the Native profile"
+                )));
+            }
+        }
         for (id, state) in &self.resources {
+            if state.active.is_none() && state.prepared.is_none() {
+                return Err(incomplete_projection(
+                    "resource snapshot contains an empty resource state",
+                ));
+            }
             let mut kind = None;
             for resource in [state.active.as_ref(), state.prepared.as_ref()]
                 .into_iter()
@@ -266,6 +288,13 @@ impl NativeUiCompatibilitySnapshot {
                     ));
                 }
                 kind = Some(resource.kind);
+            }
+            if let (Some(active), Some(prepared)) = (&state.active, &state.prepared) {
+                if prepared.generation <= active.generation {
+                    return Err(incomplete_projection(
+                        "prepared resource generation must be newer than the active generation",
+                    ));
+                }
             }
         }
         Ok(())
