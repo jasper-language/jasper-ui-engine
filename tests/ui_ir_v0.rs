@@ -1256,6 +1256,25 @@ fn typed_focus_text_and_ime_use_the_same_admitted_ui_key() {
             .as_deref(),
         Some("中")
     );
+    let ime_only = UiEventContext {
+        permission_context: UiPermissionContext::new("ime-only", [UiPermission::Ime]),
+        ..context.clone()
+    };
+    assert!(matches!(
+        host.typed_ime_commit(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &ime_only,
+            field,
+            "中",
+        ),
+        Err(TypedUiTargetError::Admission(
+            jasper_ui_engine::ui_ir::UiEventAdmissionError::CapabilityDenied { .. }
+        ))
+    ));
+    assert_eq!(host.edit_state(OWNER, 2).unwrap().unwrap().text, "Alice");
     assert_eq!(
         host.typed_ime_commit(OWNER, 2, generation, &document, &context, field, "中")
             .unwrap()

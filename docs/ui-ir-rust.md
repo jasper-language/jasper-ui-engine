@@ -99,7 +99,7 @@ caret 几何与 `UiKey` 一并返回，不暴露 backend 节点身份。
 | Typed AccessKit actions | implemented / tested | backend target 必须匹配 UiKey；Focus/Click 分别要求 Focus permission 与 accessibility-action binding；Focus 切换所需 binding 在平台动作前预准入，回调只暴露 UiKey |
 | Typed semantic activation | implemented / tested | `typed_activate` 要求当前 UiKey、owner/session/revision、Surface generation 与 Activate binding/permission，回调只暴露 UiKey |
 | Typed input targets | implemented / tested | HostRenderer Focus/Key/KeyActivation/TextInput/IME/Deactivate 使用同一 UiKey 上下文授权；编辑按键和失焦将发生的 text-commit/ime-cancel binding 在 Native 状态变化前预准入，Activation 回调只暴露 UiKey；`typed_focused_node` 返回 UiKey；键输入匹配当前 Native focus，TextInput/IME 必须匹配当前编辑节点，键盘激活另需 activate binding；错误 target、permission 和 revision 均拒绝 |
-| Typed IME commit | implemented / tested | `typed_ime_commit` 要求 Ime permission 与当前编辑节点，合法 `ime-commit` binding 在文字插入前准入并返回 action |
+| Typed IME commit | implemented / tested | `typed_ime_commit` 要求 Ime + TextEdit permission 与当前编辑节点，合法 `ime-commit` binding 在文字插入前准入并返回 action |
 | Typed edit events | implemented / tested | 有序 drain E14 Changed/Commit/CompositionCancelled；owner、event revision、UiKey 与 text-commit/ime-cancel permission/binding 均校验；批次授权失败不丢事件 |
 | Typed pointer routing | implemented / tested | hit query 与 Pointer 路由使用同一 overlay/圆角/hit-slop 目标；owner/revision/Surface generation/Pointer permission 先准入；只有可能聚焦的 Pointer Down 会预准入命中链 Focus bindings，Move 不要求多余 Focus 权限；Move 的 Hover binding 已覆盖；回调只暴露 UiKey；Down→Move 后继帧后 Up 仍保持身份并准入 click binding |
 | Typed geometry queries | implemented / tested | bounds/scroll/table metrics 直接消费 UiKey，并校验 document revision、Surface generation 和 active key；table/cell 测量结果也只含 UiKey |

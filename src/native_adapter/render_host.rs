@@ -1729,6 +1729,9 @@ impl HostRenderer {
         {
             return Err(TypedUiTargetError::HostRejected);
         }
+        document
+            .admit_native_target(context, node, UiPermission::TextEdit)
+            .map_err(TypedUiTargetError::Admission)?;
         let admitted = admitted_optional_event(
             document,
             context,

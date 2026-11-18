@@ -69,6 +69,7 @@ Native 回调携带 `NodeId` 时使用 `admit_native_event`/`admit_activation`�
 映射，授权仍以 `UiEventContext.target` 的 `UiKey` 和上下文为准。
 HostRenderer 的 `typed_focus`、`typed_text_input`、`typed_set_preedit` 把目标授权与实际
 Focus/TextEdit/IME 操作合并到一次调用，避免授权后误传另一个 NodeId。
+`typed_ime_commit` 写入已提交文字前同时要求 Ime 与 TextEdit；仅有 Ime 不能修改编辑缓冲。
 `typed_focus` / `typed_accesskit_action(Focus)` / `typed_pointer(Down)` 在切换焦点前预准入
 失焦可能产生的 `text-commit` 与 `ime-cancel` binding；`typed_deactivate` 在清除焦点、按下与
 悬停之前完成相同检查，权限失败时不改变 Native 状态。窗口失活只能通过该 Typed 入口映射旧焦点
