@@ -259,6 +259,9 @@ Web 后端和正式宿主仍需分别验收。
 - 旧 `jasper-ui-host --headless` reader 在 `/tmp` 副本中指向本分支后分别接受
   settings/data-table/dialog 三份初始 frame：均为 `ack 2`、`accepted 1 / rejected 0`，
   各生成 480×320 PNG 与 dump；data-table 的 Table role 仍按 wire loss 降级，不宣称语义等价；
+- settings 的 initial+successor 双帧流返回 `ack 2`、`ack 3`，最终
+  `accepted 2 / rejected 0`；后继 frame 的 style/semantics/text/insert/remove 和
+  Move→remove+insert 兼容近似都进入最终 dump，Move 状态损失保持显式；
   副本只为新增 SceneError/Role 变体补了 exhaustive match 分支，reader 协议逻辑未改；
   原 host 仓库未修改。该证据只覆盖 CPU headless transport，不包含真实平台窗口；
 - Clippy 成功退出；仓库仍保留已登记的非阻塞历史 warning。
@@ -307,3 +310,4 @@ JUI 2 reader 诊断：
 
 将 stdout 直接作为旧 host 的 `--frames -` 输入即可；host 的锁定依赖和 engine path 属于
 另一个兼容 checkout，本次回环在临时源码副本中完成，不修改原 host 工作树。
+追加 `--successor` 会输出 default settings 的初始帧与后继帧双帧流。
