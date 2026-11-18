@@ -72,6 +72,7 @@ Loom 当前执行实际生产函数体的调用侧调度场景：两个线程共
 | UI-FRAME-PACE-001 | `frame_schedule::frame_pace` 及 FramePace 类型 | 周期为零为 None；无待绘变化为 Idle；首节拍前 WaitUntil(origin)；本周期未呈现为 RenderNow(本周期节拍)；已呈现为 WaitUntil(下一节拍)，下一节拍超出 u64 为 None；错过的周期不追帧 | proved，依赖同场 3 verified/0 errors，同周期二次绘制/无变化唤醒两反例被拒；以匹配源码的 `evidence/frame-pace-kernel/` 与六阶段报告为准；Kani 为有界域（差值与周期至多 255，另一 harness 周期取 u64::MAX 附近覆盖溢出）；不涵盖 needs_frame 标脏完整性、宿主时钟与绘制 |
 | UI-TEXT-OFFSET-001 | `text_geometry::text_offset_admits` | 布局文本长度等于源文本长度、偏移 ≤ 源文本长度（含末尾）且为字符边界时准入（充要） | proved，1 verified/0 errors，忽略长度不符/排除文本末尾两反例被拒；以匹配源码的 `evidence/text-offset-kernel/` 与六阶段报告为准；布局文本与源文本的内容相等由调用方逐字节比较；Parley 光标/命中几何与坐标换算为第三方信任边界，由 `tests/native_text_geometry.rs` 集成测试覆盖，不在证明范围 |
 | UI-TEXT-RANGE-001 | `text_geometry::text_range_admits` | 布局文本长度等于源文本长度、start ≤ end ≤ 源文本长度且两端均为字符边界时准入（充要）；等价于两端各自满足 UI-TEXT-OFFSET-001 且区间有序 | proved，1 verified/0 errors，接受反向区间/忽略终点边界两反例被拒；以匹配源码的 `evidence/text-range-kernel/` 与六阶段报告为准；Parley 选区几何与坐标换算为第三方信任边界，由 `tests/native_text_selection.rs` 集成测试覆盖，不在证明范围 |
+| UI-TEXT-PREEDIT-OFFSET-001 | `text_edit::preedit_buffer_offset_base` | 显示偏移在 caret 前/处保持原值；落在插入的预编辑区间内折叠到 caret；位于预编辑之后精确减去预编辑字节长度；无 usize 下溢 | proved，1 verified/0 errors，“预编辑内返回显示偏移”“预编辑后返回 caret”两个反例被拒；独立 oracle、Proptest、Miri 与 read-boundary fuzz 已通过，Kani harness 已登记但按仓库策略留到发版。预编辑显示文本构造、IME cursor/selection 合法性和宿主投递不在该切片 |
 | UI-GPU-READBACK-001 | `gpu_render::gpu_readback_layout` | 宽或高为零、超过 65535 时为 None（与 CPU 路径同一尺寸上限）；否则返回（填充行字节数，缓冲字节数），填充行为 256 的倍数、不小于 4×宽且小于 4×宽+256，缓冲字节数 = 填充行 × 高，无溢出 | proved，2 verified/0 errors（乘法上界经 nonlinear_arith 断言），去掉行填充/放宽高度上限两反例被拒；以匹配源码的 `evidence/gpu-readback-kernel/` 与六阶段报告为准；wgpu 拷贝、缓冲映射、设备与 Vello hybrid 渲染为第三方信任边界，由 `tests/native_gpu_render.rs` 集成测试覆盖，不在证明范围 |
 | UI-CORE-FRAME-BYTES-001 | `core_renderer::core_frame_bytes` | 宽高均非零且不超过 65535 时返回精确 `width × height × 4`；任一边界失败时拒绝，计算无溢出 | proved，2 verified/0 errors，零宽准入/错误像素字节两个反例被拒；独立 u128 Proptest、Miri 与 read-boundary fuzz 同时通过。浮点 viewport 舍入、分配和 Canvas 不在该切片 |
 | UI-CORE-FRAME-BUDGET-001 | `core_renderer::admit_core_frame_bytes` | 仅在有效 extent 且精确字节数不超过宿主额度时准入；恰好等于额度准入；未准入不进入 Canvas 分配 | proved，依赖同场 3 verified/0 errors，拒绝恰好额度/完全忽略额度两个反例被拒；独立 u128 Proptest、Miri 与 fuzz 同时覆盖。浮点 viewport 转换、分配和后端提交不在该切片 |
@@ -89,7 +90,7 @@ Loom 当前执行实际生产函数体的调用侧调度场景：两个线程共
 | UI-DECODE-BUDGET-001 | `UiBatch::decode` | 输入/操作/字符串/分配及解码开销满足声明额度 | not_verified；已在预分配前拒绝 op_count 超出剩余标签字节的帧，仍不是完整额度证明 |
 | UI-INPUT-OWNER-001 | pointer/keyboard/host | 输入归属正确；断连/撤权取消；提交不重复消费 | not_verified；跨会话宿主尚无实现 |
 | UI-TEXT-CLASS-001 | 旧 `text::is_wide/is_zero_width` | 对所有 Rust char 精确实现声明的范围表 | 以 text-class-kernel 和顺序链为准；只证明旧近似表的实现，不证明 Unicode 完整宽度、测量或字素/索引转换 |
-| UI-TEXT-INDEX-001 | 后续文本编辑接口 | 字节/标量/字素簇/平台 IME 索引转换与选区合法 | not_verified；完整接口尚未实现 |
+| UI-TEXT-INDEX-001 | `text_edit::floor_utf8_boundary` 及预编辑显示偏移分类 | 任意字节偏移先限制到文本长度，再回退到不超过请求值的最大 UTF-8 字符边界；预编辑显示偏移按 caret 前、区间内、区间后三段精确映射，所有减法不溢出 | proved（当前安全子切片），回退 2 verified/0 errors、预编辑分类 1 verified/0 errors；越界回退/非边界回退/区间内不折叠/区间后不去除长度等错误实现被拒。独立 oracle、Proptest、Miri 与 read-boundary fuzz 已通过，Kani harness 已登记但留到发版。字素簇/词边界算法、完整选区模型、Parley 布局命中与平台 IME 索引协议仍未证明；“完整文本索引”整体保持未验收 |
 | UI-RESOURCE-LIFE-001 | `ui_ir::native::resource_transition` | 资源种类不可原地改变；陈旧代只允许按精确活动代 Release；新代必须先 Prepare；Commit 只接受精确已准备代；Release 只接受精确活动代；已释放代不可重新 Prepare | proved，生产转移内核与资源种类/准入/转移类型同场 5 verified/0 errors；忽略种类变化、允许已释放代重入两个反例被拒；独立 decision oracle、Proptest、Miri 与 read-boundary fuzz 覆盖。资源 id 查找、BTreeMap 实际写入、整帧回滚、宿主存储/解码、并发与在途取消不在该切片 |
 | UI-THEME-STATE-001 | 样式更新与 Jasper 语义接缝 | 纯风格切换保持约定的值/焦点/选区/身份/滚动锚点 | not_verified；完整语义接缝尚未实现 |
 | UI-LAYOUT-HIT-001 | layout/paint/hit_test | 约定坐标/裁剪语义一致；文本命中结果合法 | not_verified；需定义浮点、字体与第三方布局边界 |
@@ -104,6 +105,8 @@ python3 scripts/verify-version.py --kernel ui-event-permission --verus "$VERUS"
 python3 scripts/verify-version.py --kernel authority-match --verus "$VERUS"
 python3 scripts/verify-version.py --kernel permission-match --verus "$VERUS"
 python3 scripts/verify-version.py --kernel resource-transition --verus "$VERUS"
+python3 scripts/verify-version.py --kernel utf8-floor-boundary --verus "$VERUS"
+python3 scripts/verify-version.py --kernel preedit-buffer-offset --verus "$VERUS"
 cargo test --locked --manifest-path verification/read-boundary/Cargo.toml \
   properties::core_frame_property -- --exact
 cargo test --locked --manifest-path verification/read-boundary/Cargo.toml \
@@ -114,6 +117,12 @@ cargo +nightly-2026-10-17 miri test --locked \
 cargo +nightly-2026-10-17 miri test --locked \
   --manifest-path verification/read-boundary/Cargo.toml \
   memory::resource_transition_boundaries -- --exact
+cargo +nightly-2026-10-17 miri test --locked \
+  --manifest-path verification/read-boundary/Cargo.toml \
+  memory::utf8_floor_boundary_boundaries -- --exact
+cargo +nightly-2026-10-17 miri test --locked \
+  --manifest-path verification/read-boundary/Cargo.toml \
+  memory::preedit_buffer_offset_boundaries -- --exact
 cargo +nightly-2026-10-17 fuzz run read_boundary fuzz/seeds/read_boundary -- \
   -max_total_time=10 -max_len=4096 -rss_limit_mb=1024 -timeout=5 -seed=12345
 ```

@@ -1333,6 +1333,83 @@ pub closed spec fn surface_view_model(view: &Rgba8SurfaceView) -> (Seq<u8>, u32,
         "mutations": [("accept-reversed-range", "    layout_len == source_len\n        && start <= end\n", "    layout_len == source_len\n"),
                       ("ignore-end-boundary", "start_on_boundary && end_on_boundary\n}", "start_on_boundary\n}")],
     },
+    "utf8-floor-boundary": {
+        "source": "src/native_adapter/text_edit.rs", "marker": "UTF8 FLOOR BOUNDARY", "property": "UI-TEXT-INDEX-001",
+        "signature": """pub(crate) fn floor_utf8_boundary(text: &str, offset: usize) -> usize {""",
+        "contract": """pub(crate) fn floor_utf8_boundary(text: &str, offset: usize) -> (result: usize)
+    ensures result <= offset,
+        result <= text.spec_bytes().len(),
+        vstd::utf8::is_char_boundary(text.spec_bytes(), result as int),
+        forall|i: int| result < i <= (if offset <= text.spec_bytes().len() {
+                offset as int
+            } else {
+                text.spec_bytes().len() as int
+            }) ==> !vstd::utf8::is_char_boundary(text.spec_bytes(), i),
+{""",
+        "spec_prelude": "use vstd::string::StringSliceAdditionalSpecFns;\nbroadcast use vstd::utf8::encode_utf8_valid_utf8;\n",
+        "extra_annotations": [(
+            "    while current > 0 && !text.is_char_boundary(current) {",
+            """    proof {
+        assert(text_len as int == text.spec_bytes().len());
+        assert(limit <= text.spec_bytes().len());
+    }
+    while current > 0 && !text.is_char_boundary(current)
+        invariant current <= limit,
+            limit <= text.spec_bytes().len(),
+            forall|i: int| current < i <= limit as int
+                ==> !vstd::utf8::is_char_boundary(text.spec_bytes(), i),
+        decreases current,
+    {""",
+        ), (
+            "        current -= 1;",
+            """        proof {
+            assert(vstd::utf8::is_char_boundary(text.spec_bytes(), 0));
+        }
+        current -= 1;""",
+        ), (
+            "    current\n}",
+            """    proof {
+        assert(limit as int == (if offset <= text.spec_bytes().len() {
+            offset as int
+        } else {
+            text.spec_bytes().len() as int
+        }));
+    }
+    current
+}""",
+        )],
+        "function_count": 1, "depends": [], "evidence": "utf8-floor-boundary-kernel",
+        "scope": "actual UTF-8 byte-offset floor used by in-scene caret placement and layout/preedit display-to-buffer mapping: clamps to text length, returns a character boundary and the greatest such boundary not above the requested offset. Preedit phase classification, grapheme/word segmentation, glyph geometry and IME delivery are outside this kernel",
+        "mutations": [
+            ("return-unclamped-offset", "    current\n}", "    offset\n}"),
+            ("return-requested-byte", "    current\n}", "    limit\n}"),
+        ],
+    },
+    "preedit-buffer-offset": {
+        "source": "src/native_adapter/text_edit.rs", "marker": "PREEDIT BUFFER OFFSET", "property": "UI-TEXT-PREEDIT-OFFSET-001",
+        "signature": """pub(crate) fn preedit_buffer_offset_base(
+    caret: usize,
+    display: usize,
+    preedit_len: usize,
+) -> usize {""",
+        "contract": """pub(crate) fn preedit_buffer_offset_base(
+    caret: usize,
+    display: usize,
+    preedit_len: usize,
+) -> (result: usize)
+    ensures result <= display,
+        display <= caret ==> result == display,
+        display > caret && display - caret <= preedit_len ==> result == caret,
+        display > caret && display - caret > preedit_len
+            ==> result as int == display as int - preedit_len as int,
+{""",
+        "function_count": 1, "depends": [], "evidence": "preedit-buffer-offset-kernel",
+        "scope": "actual display-offset to committed-buffer-offset classification before UTF-8 flooring: before/at the caret stays unchanged, inside the inserted preedit collapses to the caret, and after it removes exactly the preedit byte length. Character-boundary flooring is a separate proved dependency at the caller; IME cursor validity, display construction, grapheme movement and host delivery are outside this kernel",
+        "mutations": [
+            ("return-inside-preedit", "    } else if display - caret <= preedit_len {\n        caret", "    } else if display - caret <= preedit_len {\n        display"),
+            ("return-caret-after-preedit", "    } else {\n        display - preedit_len", "    } else {\n        caret"),
+        ],
+    },
     "gpu-readback": {
         "source": "src/native_adapter/gpu_render.rs", "marker": "GPU READBACK LAYOUT", "property": "UI-GPU-READBACK-001",
         "signature": """pub fn gpu_readback_layout(width: u32, height: u32) -> Option<(u32, u64)> {""",

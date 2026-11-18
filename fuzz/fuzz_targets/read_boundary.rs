@@ -5,8 +5,9 @@ use jasper_ui_read_verification::{
     assert_damage_convergence, assert_damage_rect, assert_damage_span, assert_damage_write, assert_focus_selection, assert_font_family, assert_font_order, assert_font_weight, assert_frame_damage, assert_glyph_skew, assert_glyph_skew_pure, assert_frame_pace, assert_frame_reuse, assert_frame_tick, assert_gpu_readback_layout, assert_header, assert_access_actions, assert_access_change, assert_access_request, assert_text_offset, assert_text_range, assert_hover_lifecycle, assert_input_retire,
     assert_keyboard_focus, assert_payload, assert_pixel_conversion, assert_pointer_order,
     assert_read, assert_resource, assert_rgb_word, assert_role, assert_scalars, assert_surface_row,
-    assert_authority_match, assert_core_frame, assert_event_permissions, assert_next_ui_identity,
-    assert_permission_match, assert_resource_transition,
+    assert_authority_match, assert_core_frame, assert_event_permissions,
+    assert_floor_utf8_boundary, assert_next_ui_identity, assert_permission_match,
+    assert_preedit_buffer_offset, assert_resource_transition,
     assert_surface_span, assert_text_classes, assert_versions, assert_view, assert_view_copy,
     assert_segment, assert_write, FrameDamage, ResourceKey,
 };
@@ -20,6 +21,15 @@ fuzz_target!(|data: &[u8]| {
     if data.len() < 24 {
         return;
     }
+    if let Ok(text) = core::str::from_utf8(&data[24..data.len().min(48)]) {
+        assert_floor_utf8_boundary(text, data.len() - 24);
+    }
+    assert_floor_utf8_boundary("aé中👨‍👩‍👧", data.len() - 24);
+    assert_preedit_buffer_offset(
+        data.len() - 24,
+        (data.len() - 24).wrapping_mul(257),
+        (data.len() - 24) / 3,
+    );
     let total = u64::from_le_bytes(data[0..8].try_into().unwrap()) as usize;
     let pos = u64::from_le_bytes(data[8..16].try_into().unwrap()) as usize;
     let len = u64::from_le_bytes(data[16..24].try_into().unwrap()) as usize;

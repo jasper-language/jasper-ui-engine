@@ -1,0 +1,47 @@
+{
+  "property": "UI-TEXT-PREEDIT-OFFSET-001",
+  "status": "proved",
+  "scope": "actual display-offset to committed-buffer-offset classification before UTF-8 flooring: before/at the caret stays unchanged, inside the inserted preedit collapses to the caret, and after it removes exactly the preedit byte length. Character-boundary flooring is a separate proved dependency at the caller; IME cursor validity, display construction, grapheme movement and host delivery are outside this kernel",
+  "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
+  "source_sha256": "28506ac990fb43983fd0915aa06af13032b7977849657c36e48cafd15575291a",
+  "sources": {
+    "src/native_adapter/text_edit.rs": "28506ac990fb43983fd0915aa06af13032b7977849657c36e48cafd15575291a"
+  },
+  "kernel_sha256": "168fa450beffc80fdce8cea4329d38935dc63a33a0cf35ebb2942e659ff7737a",
+  "dependencies": {},
+  "proof_sha256": "421b9781c578a7c2e88777e3f36363494c4dbbededb9e0366aed98b094f593eb",
+  "runner_sha256": "0a2d08fadf079665fc591fda0f73b30c90a3fde29f2de912e6c49dcbe8259fc7",
+  "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
+  "command": [
+    "/tmp/jasper-verus-0.2026.10.18/verus-x86-linux/verus",
+    "--crate-type",
+    "lib",
+    "/home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/preedit-buffer-offset-kernel/kernel.rs"
+  ],
+  "exit_code": 0,
+  "solver": {
+    "path": "/tmp/jasper-verus-0.2026.10.18/verus-x86-linux/z3",
+    "version": "Z3 version 4.16.0 - 64 bit\n",
+    "explicit_override": null
+  },
+  "verified_obligations": 1,
+  "negative_controls": [
+    {
+      "name": "return-inside-preedit",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "return-caret-after-preedit",
+      "rejected": true,
+      "exit_code": 1
+    }
+  ],
+  "negative_control_rejected": true,
+  "trust_boundary": [
+    "Verus/vstd and SMT solver",
+    "Rust/Verus integer, references and slice semantics",
+    "signature annotation/extraction script",
+    "Rust compiler and target execution"
+  ]
+}

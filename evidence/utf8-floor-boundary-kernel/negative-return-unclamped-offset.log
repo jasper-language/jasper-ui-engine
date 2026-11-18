@@ -1,0 +1,27 @@
+verification results:: 1 verified, 1 errors
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+ --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/utf8-floor-boundary-kernel/negative_return_unclamped_offset.rs:6:1
+  |
+6 | pub(crate) fn floor_utf8_boundary(text: &str, offset: usize) -> (result: usize)
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: postcondition not satisfied
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/utf8-floor-boundary-kernel/negative_return_unclamped_offset.rs:8:9
+   |
+ 8 |         result <= text.spec_bytes().len(),
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+46 |     offset
+   |     ------ at the end of the function body
+
+error: postcondition not satisfied
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/utf8-floor-boundary-kernel/negative_return_unclamped_offset.rs:9:9
+   |
+ 9 |         vstd::utf8::is_char_boundary(text.spec_bytes(), result as int),
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+46 |     offset
+   |     ------ at the end of the function body
+
+error: aborting due to 2 previous errors
+

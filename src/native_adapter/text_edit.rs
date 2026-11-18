@@ -127,6 +127,39 @@ pub(crate) fn sanitize_multiline(text: &str) -> String {
     out
 }
 
+#[allow(clippy::needless_as_bytes)]
+// BEGIN VERIFIED UTF8 FLOOR BOUNDARY KERNEL
+pub(crate) fn floor_utf8_boundary(text: &str, offset: usize) -> usize {
+    let text_len = text.as_bytes().len();
+    let limit = if offset <= text_len {
+        offset
+    } else {
+        text_len
+    };
+    let mut current = limit;
+    while current > 0 && !text.is_char_boundary(current) {
+        current -= 1;
+    }
+    current
+}
+// END VERIFIED UTF8 FLOOR BOUNDARY KERNEL
+
+// BEGIN VERIFIED PREEDIT BUFFER OFFSET KERNEL
+pub(crate) fn preedit_buffer_offset_base(
+    caret: usize,
+    display: usize,
+    preedit_len: usize,
+) -> usize {
+    if display <= caret {
+        display
+    } else if display - caret <= preedit_len {
+        caret
+    } else {
+        display - preedit_len
+    }
+}
+// END VERIFIED PREEDIT BUFFER OFFSET KERNEL
+
 impl EditBuffer {
     /// Buffer holding `text` (control characters dropped) with the caret at its end.
     /// 持有 `text`（丢弃控制字符）、光标在末尾的缓冲。
@@ -211,23 +244,9 @@ impl EditBuffer {
     pub fn buffer_offset(&self, display: usize) -> usize {
         let offset = match &self.preedit {
             None => display,
-            Some(p) => {
-                if display <= self.caret {
-                    display
-                } else if display <= self.caret + p.text.len() {
-                    self.caret
-                } else {
-                    display - p.text.len()
-                }
-            }
+            Some(p) => preedit_buffer_offset_base(self.caret, display, p.text.len()),
         };
-        self.floor_boundary(offset.min(self.text.len()))
-    }
-    fn floor_boundary(&self, mut offset: usize) -> usize {
-        while !self.text.is_char_boundary(offset) {
-            offset -= 1;
-        }
-        offset
+        floor_utf8_boundary(&self.text, offset)
     }
     fn replace_selection(&mut self, insert: &str) {
         let (start, end) = self.selection();
@@ -427,7 +446,7 @@ impl EditBuffer {
     /// Caret to a buffer offset (rounded down to a char boundary); `extend` keeps the anchor.
     /// 光标移到缓冲偏移（向下取到字符边界）；`extend` 时保留锚点。
     pub fn set_caret(&mut self, offset: usize, extend: bool) -> bool {
-        let to = self.floor_boundary(offset.min(self.text.len()));
+        let to = floor_utf8_boundary(&self.text, offset);
         self.place(to, extend)
     }
     /// Set or clear the composition. Text is sanitized; an IME cursor outside the preedit or off

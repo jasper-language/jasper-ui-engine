@@ -1,0 +1,19 @@
+verification results:: 0 verified, 1 errors
+error: postcondition not satisfied
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/preedit-buffer-offset-kernel/negative_return_caret_after_preedit.rs:12:9
+   |
+12 | /         display > caret && display - caret > preedit_len
+13 | |             ==> result as int == display as int - preedit_len as int,
+   | |____________________________________________________________________^ failed this postcondition
+14 |   {
+15 | /     if display <= caret {
+16 | |         display
+17 | |     } else if display - caret <= preedit_len {
+18 | |         caret
+19 | |     } else {
+20 | |         caret
+21 | |     }
+   | |_____- at the end of the function body
+
+error: aborting due to 1 previous error
+

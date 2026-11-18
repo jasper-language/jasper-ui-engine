@@ -2243,6 +2243,35 @@ pub fn assert_text_range(layout_len: usize, source_len: usize, start: usize, end
     assert_eq!(expected, both && start <= end);
 }
 
+/// Independent floor oracle: clamp to the byte length, then step to the greatest preceding
+/// UTF-8 character boundary. The production function must return exactly that value.
+/// 独立回退 oracle：先限制到字节长度，再回退到不超过请求值的最大 UTF-8 字符边界。
+pub fn assert_floor_utf8_boundary(text: &str, offset: usize) {
+    let limit = offset.min(text.len());
+    let mut expected = limit;
+    while expected > 0 && !text.is_char_boundary(expected) {
+        expected -= 1;
+    }
+    assert_eq!(floor_utf8_boundary(text, offset), expected);
+    assert!(text.is_char_boundary(expected));
+}
+
+/// Independent preedit phase oracle over the committed caret and display byte offset.
+/// 独立预编辑阶段 oracle：按 committed caret 与 display 字节偏移决定回退值。
+pub fn assert_preedit_buffer_offset(caret: usize, display: usize, preedit_len: usize) {
+    let expected = if display <= caret {
+        display
+    } else if display - caret <= preedit_len {
+        caret
+    } else {
+        display - preedit_len
+    };
+    assert_eq!(
+        preedit_buffer_offset_base(caret, display, preedit_len),
+        expected
+    );
+}
+
 /// Independent GPU readback layout oracle over widened integers: admitted extents are the
 /// CPU-path ones, rows pad to the next multiple of 256 bytes and the buffer is padded × height.
 /// 独立 GPU 读回布局规格（加宽整数）：准入尺寸与 CPU 路径相同，行填充到下一个 256 字节倍数，
@@ -3147,6 +3176,18 @@ mod kani_checks {
     }
 
     #[kani::proof]
+    fn utf8_floor_boundary_admission() {
+        for text in ["", "abc", "é", "中文", "👨‍👩‍👧"] {
+            assert_floor_utf8_boundary(text, kani::any());
+        }
+    }
+
+    #[kani::proof]
+    fn preedit_buffer_offset_admission() {
+        assert_preedit_buffer_offset(kani::any(), kani::any(), kani::any());
+    }
+
+    #[kani::proof]
     fn gpu_readback_layout_admission() {
         assert_gpu_readback_layout(kani::any(), kani::any());
     }
@@ -3823,6 +3864,29 @@ mod properties {
             assert_text_range(usize::MAX, usize::MAX, usize::MAX - a, usize::MAX - b, sb, eb);
         }
         #[test]
+        fn utf8_floor_boundary_property(
+            chars in prop::collection::vec(any::<char>(), 0..64),
+            offset in any::<usize>(),
+            near in 0usize..72,
+        ) {
+            let text: String = chars.into_iter().collect();
+            assert_floor_utf8_boundary(&text, offset);
+            assert_floor_utf8_boundary(&text, near);
+            assert_floor_utf8_boundary(&text, text.len().saturating_add(1));
+        }
+        #[test]
+        fn preedit_buffer_offset_property(
+            caret in any::<usize>(),
+            display in any::<usize>(),
+            preedit_len in any::<usize>(),
+            small_caret in 0usize..64,
+            delta in 0usize..64,
+        ) {
+            assert_preedit_buffer_offset(caret, display, preedit_len);
+            assert_preedit_buffer_offset(small_caret, small_caret.wrapping_add(delta), delta);
+            assert_preedit_buffer_offset(small_caret, small_caret, delta);
+        }
+        #[test]
         fn gpu_readback_layout_property(width in any::<u32>(), height in any::<u32>(), w in 0u32..70000, h in 0u32..70000) {
             assert_gpu_readback_layout(width, height);
             assert_gpu_readback_layout(w, h);
@@ -4298,6 +4362,33 @@ mod memory {
         assert_resource_transition(true, 0, 1, true, 0, 1, false, 0, 0, 0, 1, 2);
         assert_resource_transition(true, 0, 1, true, 0, 1, false, 0, 0, 0, 1, 2);
         assert_resource_transition(true, 0, 1, false, 0, 0, false, 0, 0, 0, 1, 0);
+    }
+
+    #[test]
+    fn utf8_floor_boundary_boundaries() {
+        for text in ["", "abc", "é", "中文", "👨‍👩‍👧", "a\u{301}中"] {
+            for offset in 0..text.len() + 2 {
+                assert_floor_utf8_boundary(text, offset);
+            }
+            assert_floor_utf8_boundary(text, usize::MAX);
+        }
+    }
+
+    #[test]
+    fn preedit_buffer_offset_boundaries() {
+        for (caret, display, preedit_len) in [
+            (0, 0, 0),
+            (0, 1, 0),
+            (0, usize::MAX, usize::MAX),
+            (1, 0, 4),
+            (1, 1, 4),
+            (1, 2, 1),
+            (1, 5, 4),
+            (1, 6, 4),
+            (usize::MAX - 1, usize::MAX, usize::MAX),
+        ] {
+            assert_preedit_buffer_offset(caret, display, preedit_len);
+        }
     }
 
     #[test]

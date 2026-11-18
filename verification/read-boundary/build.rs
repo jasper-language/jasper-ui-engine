@@ -81,6 +81,10 @@ fn main() {
         ),
         ("../../src/text.rs", &["TEXT CLASS KERNEL"][..]),
         (
+            "../../src/native_adapter/text_edit.rs",
+            &["UTF8 FLOOR BOUNDARY KERNEL", "PREEDIT BUFFER OFFSET KERNEL"][..],
+        ),
+        (
             "../../src/native_adapter/text_geometry.rs",
             &["TEXT OFFSET KERNEL", "TEXT RANGE KERNEL"][..],
         ),

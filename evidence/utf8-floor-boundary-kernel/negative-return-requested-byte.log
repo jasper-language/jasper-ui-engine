@@ -1,0 +1,12 @@
+verification results:: 1 verified, 1 errors
+error: postcondition not satisfied
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/utf8-floor-boundary-kernel/negative_return_requested_byte.rs:9:9
+   |
+ 9 |         vstd::utf8::is_char_boundary(text.spec_bytes(), result as int),
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+...
+46 |     limit
+   |     ----- at the end of the function body
+
+error: aborting due to 1 previous error
+
