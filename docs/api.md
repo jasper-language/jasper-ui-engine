@@ -83,6 +83,8 @@ Prepared 中间态，但不表示允许上传或绘制。
 投影为 `UiKey`；树版本与 document revision 不一致或存在未映射 NodeId 时拒绝。
 `typed_accessibility_update` 对增量 nodes/root/focus 使用 next document，对 removed 使用
 previous document，避免节点删除后丢失其公共身份。
+宿主优先使用 `HostRenderer::typed_accessibility_tree`：先校验 owner/version/Surface
+generation，再映射到 UiKey，错误 generation 与 document revision 都结构化拒绝。
 
 `Engine` 仅在 `native-engine`（或兼容实现特性）启用时存在；未启用时不会静默选用旧执行链。此前原生名称 `BlitzEngine` 保留为同一实现的兼容重导出。旧引擎明确名为 `LegacyEngine`，旧统计与错误只描述兼容路径。
 

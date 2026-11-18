@@ -16,6 +16,10 @@ use crate::surface_lifecycle::RenderedPixels;
 use crate::surface_lifecycle::{
     SurfaceCoordinator, SurfaceLifecycleError, SurfaceStatus, SurfaceStepError,
 };
+use crate::typed_accessibility::{
+    typed_accessibility_tree as project_typed_accessibility, TypedAccessibilityError,
+    TypedAccessibilityTree,
+};
 use crate::ui_ir::{
     NativeSceneUpdate, NativeUiDocument, NativeUiFrameError, ResourceKind, ResourceRef, UiFrame,
 };
@@ -101,6 +105,29 @@ impl std::fmt::Display for TypedUiResourceError {
 }
 
 impl std::error::Error for TypedUiResourceError {}
+
+/// Structured failure while projecting host-gated accessibility data to public UiKeys.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum TypedUiAccessibilityError {
+    HostRejected,
+    RevisionMismatch { host: u64, document: u64 },
+    Projection(TypedAccessibilityError),
+}
+
+impl std::fmt::Display for TypedUiAccessibilityError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::HostRejected => write!(f, "host surface generation rejected accessibility read"),
+            Self::RevisionMismatch { host, document } => write!(
+                f,
+                "host accessibility revision {host} does not match document revision {document}"
+            ),
+            Self::Projection(error) => error.fmt(f),
+        }
+    }
+}
+
+impl std::error::Error for TypedUiAccessibilityError {}
 
 impl From<SurfaceLifecycleError> for HostRenderError {
     fn from(error: SurfaceLifecycleError) -> Self {
@@ -429,6 +456,26 @@ impl HostRenderer {
             return None;
         }
         self.inner.accessibility_tree(owner, version)
+    }
+
+    /// Surface-gated accessibility tree projected losslessly onto Typed UI `UiKey`s.
+    pub fn typed_accessibility_tree(
+        &self,
+        owner: u64,
+        version: u64,
+        generation: u64,
+        document: &NativeUiDocument,
+    ) -> Result<TypedAccessibilityTree, TypedUiAccessibilityError> {
+        if version != document.revision() {
+            return Err(TypedUiAccessibilityError::RevisionMismatch {
+                host: version,
+                document: document.revision(),
+            });
+        }
+        let tree = self
+            .accessibility_tree(owner, version, generation)
+            .ok_or(TypedUiAccessibilityError::HostRejected)?;
+        project_typed_accessibility(&tree, document).map_err(TypedUiAccessibilityError::Projection)
     }
 
     /// Route one native accessibility action through the current live surface generation.

@@ -70,7 +70,7 @@ Focus、pointer capture、IME、scroll 等非 binding 操作使用 `admit_native
 | TextArea 语义与编辑 | implemented / tested | 保留 MultilineTextInput、换行输入、行内 Home/End、上下移动与多行编辑缓冲 |
 | Popover/Tooltip 语义 | implemented / tested | Native 语义角色保留；AccessKit 分别投影为 Group/Tooltip，Popover 的宿主平台细节仍为 candidate |
 | Selected 状态 | implemented / tested | Semantics、AccessibilityNode、ARIA 与 AccessKit selected 状态贯通 |
-| Typed Accessibility | implemented / tested | 完整树及增量 update 均投影为 UiKey；removed 使用 previous document、changed 使用 next document；版本不一致和未映射 NodeId 拒绝 |
+| Typed Accessibility | implemented / tested | 完整树经 HostRenderer Surface generation 门控后投影；增量 update 也投影为 UiKey；removed 使用 previous document、changed 使用 next document；版本不一致和未映射 NodeId 拒绝 |
 | 资源生命周期 | implemented / tested | Prepare 仅是 pending、不替换旧 Committed；Commit 原子提升；Release 只释放 active；上传与删除分别受 `insert_ui_image`/`remove_ui_image` 状态校验；含代数复用拒绝、节点移除后 Release 与实际解码/绘制 |
 | Environment | implemented / tested | 首帧和后继帧的 reduce-motion 均应用到 Native host；appearance/density/text-scale 保留为 Framework 环境语义 |
 | Grid、Position、Image、Overlay | candidate | 可映射到现有候选字段，`host_accepted = false`；Grid columns/rows/gap 与 Position/Overlay/Image 均已有 Native 执行测试 |
