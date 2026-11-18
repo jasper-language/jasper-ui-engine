@@ -1,0 +1,52 @@
+{
+  "property": "UI-RESOURCE-LIFE-001",
+  "status": "proved",
+  "scope": "actual Typed UI IR resource lifecycle admission and transition classification: kind stability, stale/newer generation ordering, exact prepared Commit, exact active Release, and rejected reuse after Release. ID lookup, BTreeMap mutation, frame rollback, host storage, decode, synchronization and cancellation are outside this kernel",
+  "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
+  "source_sha256": "4b94091a1fc451e7a15260b8d1fc2c9f4fa31ab81b265e21fe7048b5b8249d8c",
+  "sources": {
+    "src/ui_ir/mod.rs": "9228903274c1f0495500b20442d2e8e3261a2a6f8966ebf6bf8656a94c0c294d",
+    "src/ui_ir/native.rs": "4b94091a1fc451e7a15260b8d1fc2c9f4fa31ab81b265e21fe7048b5b8249d8c"
+  },
+  "kernel_sha256": "9c5a1c4529b0165e02ceff2d54563aeee9cadcef18abb70351adf6d31d5dda9c",
+  "dependencies": {
+    "resource-kind-type": "0facf23df4e86baa9e28af6076daa45649fdc20d3ed11bcb20e824c0beb3c263",
+    "resource-admission-type": "28e66f062a8856ed58ef1659e9c36ee91ce0f9724490d4aa744f16d3b0df2019",
+    "resource-transition-type": "a6528256942dbc833fdadbfb75c637f0b898379760bf9598d18e9b7bdbc838a4"
+  },
+  "proof_sha256": "1cfcc7af1cb7590c97a8981ebe89a89bbddc7117782992e57755b40c65b445ed",
+  "runner_sha256": "0851854a668ddcb880fcfe5224b4a8ce29477ff0cd4cf86541fe0c92dd06d6ac",
+  "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
+  "command": [
+    "/tmp/jasper-verus-0.2026.10.18/verus-x86-linux/verus",
+    "--crate-type",
+    "lib",
+    "/home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/ui-resource-transition-kernel/kernel.rs"
+  ],
+  "exit_code": 0,
+  "solver": {
+    "path": "/tmp/jasper-verus-0.2026.10.18/verus-x86-linux/z3",
+    "version": "Z3 version 4.16.0 - 64 bit\n",
+    "explicit_override": null
+  },
+  "verified_obligations": 5,
+  "negative_controls": [
+    {
+      "name": "ignore-kind-change",
+      "rejected": true,
+      "exit_code": 1
+    },
+    {
+      "name": "reuse-released-generation",
+      "rejected": true,
+      "exit_code": 1
+    }
+  ],
+  "negative_control_rejected": true,
+  "trust_boundary": [
+    "Verus/vstd and SMT solver",
+    "Rust/Verus integer, references and slice semantics",
+    "signature annotation/extraction script",
+    "Rust compiler and target execution"
+  ]
+}

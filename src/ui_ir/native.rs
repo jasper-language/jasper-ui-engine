@@ -518,6 +518,154 @@ struct ResourceState {
     prepared: Option<ResourceRef>,
 }
 
+// BEGIN VERIFIED RESOURCE TRANSITION TYPE
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum UiResourceTransition {
+    Prepare,
+    NoOp,
+    Commit,
+    ReleaseClear,
+    ReleaseKeepPrepared,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum UiResourceTransitionError {
+    KindChanged,
+    StaleGeneration,
+    GenerationNotPrepared,
+    ReleasedGeneration,
+    CommitMismatch,
+    ReleaseMismatch,
+}
+// END VERIFIED RESOURCE TRANSITION TYPE
+
+#[derive(Clone, Copy, Debug)]
+struct UiResourceDescriptor {
+    kind: ResourceKind,
+    generation: u64,
+}
+
+impl UiResourceDescriptor {
+    fn of(resource: &ResourceRef) -> Self {
+        Self {
+            kind: resource.kind,
+            generation: resource.generation,
+        }
+    }
+}
+
+// BEGIN VERIFIED RESOURCE TRANSITION KERNEL
+fn resource_transition(
+    highest_present: bool,
+    highest_kind: ResourceKind,
+    highest_generation: u64,
+    active_present: bool,
+    active_kind: ResourceKind,
+    active_generation: u64,
+    prepared_present: bool,
+    prepared_kind: ResourceKind,
+    prepared_generation: u64,
+    next_kind: ResourceKind,
+    next_generation: u64,
+    admission: ResourceAdmission,
+) -> Result<UiResourceTransition, UiResourceTransitionError> {
+    if !highest_present {
+        return match admission {
+            ResourceAdmission::Prepare => Ok(UiResourceTransition::Prepare),
+            ResourceAdmission::Commit => Err(UiResourceTransitionError::CommitMismatch),
+            ResourceAdmission::Release => Err(UiResourceTransitionError::ReleaseMismatch),
+        };
+    }
+    let same_kind = matches!(
+        (next_kind, highest_kind),
+        (ResourceKind::Image, ResourceKind::Image)
+            | (ResourceKind::Svg, ResourceKind::Svg)
+            | (ResourceKind::Font, ResourceKind::Font)
+            | (ResourceKind::Icon, ResourceKind::Icon)
+    );
+    if same_kind {
+        if next_generation < highest_generation
+            && !matches!(admission, ResourceAdmission::Release)
+        {
+            return Err(UiResourceTransitionError::StaleGeneration);
+        }
+        if next_generation > highest_generation
+            && !matches!(admission, ResourceAdmission::Prepare)
+        {
+            return Err(UiResourceTransitionError::GenerationNotPrepared);
+        }
+        match admission {
+            ResourceAdmission::Prepare => {
+                if next_generation == highest_generation {
+                    let active_matches = active_present
+                        && matches!(
+                            (active_kind, next_kind),
+                            (ResourceKind::Image, ResourceKind::Image)
+                                | (ResourceKind::Svg, ResourceKind::Svg)
+                                | (ResourceKind::Font, ResourceKind::Font)
+                                | (ResourceKind::Icon, ResourceKind::Icon)
+                        )
+                        && active_generation == next_generation;
+                    let prepared_matches = prepared_present
+                        && matches!(
+                            (prepared_kind, next_kind),
+                            (ResourceKind::Image, ResourceKind::Image)
+                                | (ResourceKind::Svg, ResourceKind::Svg)
+                                | (ResourceKind::Font, ResourceKind::Font)
+                                | (ResourceKind::Icon, ResourceKind::Icon)
+                        )
+                        && prepared_generation == next_generation;
+                    if prepared_matches || active_matches {
+                        return Ok(UiResourceTransition::NoOp);
+                    }
+                    if !active_present && !prepared_present {
+                        return Err(UiResourceTransitionError::ReleasedGeneration);
+                    }
+                }
+                Ok(UiResourceTransition::Prepare)
+            }
+            ResourceAdmission::Commit => {
+                if prepared_present
+                    && matches!(
+                        (prepared_kind, next_kind),
+                        (ResourceKind::Image, ResourceKind::Image)
+                            | (ResourceKind::Svg, ResourceKind::Svg)
+                            | (ResourceKind::Font, ResourceKind::Font)
+                            | (ResourceKind::Icon, ResourceKind::Icon)
+                    )
+                    && prepared_generation == next_generation
+                {
+                    Ok(UiResourceTransition::Commit)
+                } else {
+                    Err(UiResourceTransitionError::CommitMismatch)
+                }
+            }
+            ResourceAdmission::Release => {
+                if !active_present
+                    || !matches!(
+                        (active_kind, next_kind),
+                        (ResourceKind::Image, ResourceKind::Image)
+                            | (ResourceKind::Svg, ResourceKind::Svg)
+                            | (ResourceKind::Font, ResourceKind::Font)
+                            | (ResourceKind::Icon, ResourceKind::Icon)
+                    )
+                    || active_generation != next_generation
+                {
+                    return Err(UiResourceTransitionError::ReleaseMismatch);
+                }
+                if prepared_present {
+                    Ok(UiResourceTransition::ReleaseKeepPrepared)
+                } else {
+                    Ok(UiResourceTransition::ReleaseClear)
+                }
+            }
+        }
+    } else {
+        Err(UiResourceTransitionError::KindChanged)
+    }
+}
+// END VERIFIED RESOURCE TRANSITION KERNEL
+
 /// Validated, executable Native document profile for one admitted IR session.
 #[derive(Clone, Debug)]
 pub struct NativeUiDocument {
@@ -2141,55 +2289,65 @@ impl DocumentBuilder {
     fn resource(&mut self, path: &str, op: &ResourceOp) -> Result<(), NativeUiFrameError> {
         let resource = &op.resource;
         let highest = self.resource_generations.get(&resource.id).copied();
-        if let Some((kind, generation)) = highest {
-            if kind != resource.kind {
-                return Err(issue(
-                    &format!("{path}.resource.kind"),
-                    None,
-                    SupportLevel::Candidate,
-                    MappingIssueKind::InvalidState,
+        let current = self.resources.get(&resource.id);
+        let active = current
+            .and_then(|state| state.active.as_ref())
+            .map(UiResourceDescriptor::of);
+        let prepared = current
+            .and_then(|state| state.prepared.as_ref())
+            .map(UiResourceDescriptor::of);
+        let next = UiResourceDescriptor::of(resource);
+        let transition = resource_transition(
+            highest.is_some(),
+            highest.map_or(ResourceKind::Image, |value| value.0),
+            highest.map_or(0, |value| value.1),
+            active.is_some(),
+            active.map_or(ResourceKind::Image, |value| value.kind),
+            active.map_or(0, |value| value.generation),
+            prepared.is_some(),
+            prepared.map_or(ResourceKind::Image, |value| value.kind),
+            prepared.map_or(0, |value| value.generation),
+            next.kind,
+            next.generation,
+            op.admission,
+        )
+        .map_err(|failure| {
+            let (field, detail) = match failure {
+                UiResourceTransitionError::KindChanged => (
+                    ".resource.kind",
                     "resource kind changed without a new resource id",
-                ));
-            }
-            if resource.generation < generation && op.admission != ResourceAdmission::Release {
-                return Err(issue(
-                    &format!("{path}.resource.generation"),
-                    None,
-                    SupportLevel::Candidate,
-                    MappingIssueKind::InvalidState,
-                    "resource generation is stale",
-                ));
-            }
-            if resource.generation > generation && op.admission != ResourceAdmission::Prepare {
-                return Err(issue(
-                    &format!("{path}.resource.generation"),
-                    None,
-                    SupportLevel::Candidate,
-                    MappingIssueKind::InvalidState,
-                    "a newer resource generation must be prepared first",
-                ));
-            }
-        }
-        match op.admission {
-            ResourceAdmission::Prepare => {
-                if highest.is_some_and(|(_, generation)| generation == resource.generation) {
-                    let state = self.resources.entry(resource.id.clone()).or_default();
-                    if state.prepared.as_ref() == Some(resource)
-                        || state.active.as_ref() == Some(resource)
-                    {
-                        return Ok(());
-                    }
-                    let was_released = state.active.is_none() && state.prepared.is_none();
-                    if was_released {
-                        return Err(issue(
-                            path,
-                            None,
-                            SupportLevel::Candidate,
-                            MappingIssueKind::InvalidState,
-                            "a released resource generation cannot be reused",
-                        ));
-                    }
+                ),
+                UiResourceTransitionError::StaleGeneration => {
+                    (".resource.generation", "resource generation is stale")
                 }
+                UiResourceTransitionError::GenerationNotPrepared => (
+                    ".resource.generation",
+                    "a newer resource generation must be prepared first",
+                ),
+                UiResourceTransitionError::ReleasedGeneration => (
+                    "",
+                    "a released resource generation cannot be reused",
+                ),
+                UiResourceTransitionError::CommitMismatch => (
+                    "",
+                    "resource commit does not match the prepared generation",
+                ),
+                UiResourceTransitionError::ReleaseMismatch => (
+                    "",
+                    "resource release does not match the live generation",
+                ),
+            };
+            issue(
+                &format!("{path}{field}"),
+                None,
+                SupportLevel::Candidate,
+                MappingIssueKind::InvalidState,
+                detail,
+            )
+        })?;
+        match transition {
+            UiResourceTransition::NoOp => {}
+            UiResourceTransition::Prepare => {
                 self.resource_generations
                     .insert(resource.id.clone(), (resource.kind, resource.generation));
                 self.resources
@@ -2197,7 +2355,7 @@ impl DocumentBuilder {
                     .or_default()
                     .prepared = Some(resource.clone());
             }
-            ResourceAdmission::Commit => {
+            UiResourceTransition::Commit => {
                 let state = self.resources.get_mut(&resource.id).ok_or_else(|| {
                     issue(
                         path,
@@ -2207,18 +2365,18 @@ impl DocumentBuilder {
                         "resource was not prepared",
                     )
                 })?;
-                if state.prepared.as_ref() != Some(resource) {
-                    return Err(issue(
+                let prepared = state.prepared.take().ok_or_else(|| {
+                    issue(
                         path,
                         None,
                         SupportLevel::Candidate,
                         MappingIssueKind::InvalidState,
-                        "resource commit does not match the prepared generation",
-                    ));
-                }
-                state.active = state.prepared.take();
+                        "resource was not prepared",
+                    )
+                })?;
+                state.active = Some(prepared);
             }
-            ResourceAdmission::Release => {
+            UiResourceTransition::ReleaseKeepPrepared => {
                 let state = self.resources.get_mut(&resource.id).ok_or_else(|| {
                     issue(
                         path,
@@ -2228,19 +2386,10 @@ impl DocumentBuilder {
                         "resource was not live",
                     )
                 })?;
-                if state.active.as_ref() != Some(resource) {
-                    return Err(issue(
-                        path,
-                        None,
-                        SupportLevel::Candidate,
-                        MappingIssueKind::InvalidState,
-                        "resource release does not match the live generation",
-                    ));
-                }
                 state.active = None;
-                if state.prepared.is_none() {
-                    self.resources.remove(&resource.id);
-                }
+            }
+            UiResourceTransition::ReleaseClear => {
+                self.resources.remove(&resource.id);
             }
         }
         Ok(())

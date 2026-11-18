@@ -1,0 +1,47 @@
+verification results:: 4 verified, 1 errors
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/ui-resource-transition-kernel/negative_ignore_kind_change.rs:41:1
+   |
+41 | / fn resource_transition(
+42 | |     highest_present: bool,
+43 | |     highest_kind: ResourceKind,
+44 | |     highest_generation: u64,
+...  |
+53 | |     admission: ResourceAdmission,
+54 | | ) -> (result: Result<UiResourceTransition, UiResourceTransitionError>)
+   | |_____________________________________________________________________^
+
+error: postcondition not satisfied
+   --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/ui-resource-transition-kernel/negative_ignore_kind_change.rs:55:13
+    |
+ 55 |       ensures match result {
+    |  _____________^
+ 56 | |         Ok(UiResourceTransition::Prepare) => admission == ResourceAdmission::Prepare
+ 57 | |             && (!highest_present || (matches!(
+ 58 | |                     (highest_kind, next_kind),
+...   |
+235 | |                     && active_generation == next_generation))),
+236 | |     },
+    | |_____^ failed this postcondition
+...
+256 |               return Err(UiResourceTransitionError::StaleGeneration);
+    |               ------------------------------------------------------ at this exit
+
+error: postcondition not satisfied
+   --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/ui-resource-transition-kernel/negative_ignore_kind_change.rs:55:13
+    |
+ 55 |       ensures match result {
+    |  _____________^
+ 56 | |         Ok(UiResourceTransition::Prepare) => admission == ResourceAdmission::Prepare
+ 57 | |             && (!highest_present || (matches!(
+ 58 | |                     (highest_kind, next_kind),
+...   |
+235 | |                     && active_generation == next_generation))),
+236 | |     },
+    | |_____^ failed this postcondition
+...
+261 |               return Err(UiResourceTransitionError::GenerationNotPrepared);
+    |               ------------------------------------------------------------ at this exit
+
+error: aborting due to 2 previous errors
+

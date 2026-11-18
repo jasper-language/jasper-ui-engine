@@ -90,5 +90,9 @@ CPU RGBA 呈现最小契约复用现有 `RenderBackend`：
 - 帧尺寸/预算准入、`UiKey` generation 后继、事件权限分类、authority 优先级和权限上下文
   判定已有 Verus 实现级证明（2/0、3/0、3/0、3/0、2/0、2/0，负向控制均被拒），并有
   独立 Proptest、Miri 定向用例和 read-boundary fuzz 覆盖；
+- Typed UI IR 资源代际转移已有 Verus 实现级证明（5 verified/0 errors，负向控制被拒）：
+  Prepare 保留旧活动代，Commit 只接受精确已准备代，Release 只接受精确活动代，已释放代
+  不可重入且资源种类不能原地改变；同一内核有独立 Proptest、Miri 与 fuzz 覆盖。宿主存储、
+  资源 id 查找、整帧回滚和取消协议不在该证明范围；
 - 未在 Jasper-OS 用户态/内核中链接运行，未证明目标端 allocator、panic handler、
   vector/float ABI、CPU 特性、中断时钟或真实 Surface 呈现。

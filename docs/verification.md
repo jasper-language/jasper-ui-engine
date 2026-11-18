@@ -90,7 +90,7 @@ Loom 当前执行实际生产函数体的调用侧调度场景：两个线程共
 | UI-INPUT-OWNER-001 | pointer/keyboard/host | 输入归属正确；断连/撤权取消；提交不重复消费 | not_verified；跨会话宿主尚无实现 |
 | UI-TEXT-CLASS-001 | 旧 `text::is_wide/is_zero_width` | 对所有 Rust char 精确实现声明的范围表 | 以 text-class-kernel 和顺序链为准；只证明旧近似表的实现，不证明 Unicode 完整宽度、测量或字素/索引转换 |
 | UI-TEXT-INDEX-001 | 后续文本编辑接口 | 字节/标量/字素簇/平台 IME 索引转换与选区合法 | not_verified；完整接口尚未实现 |
-| UI-RESOURCE-LIFE-001 | 后续代际资源/宿主接口 | 旧/跨会话引用拒绝；释放/撤权后不可使用；额度保持 | not_verified；代际资源服务尚未实现 |
+| UI-RESOURCE-LIFE-001 | `ui_ir::native::resource_transition` | 资源种类不可原地改变；陈旧代只允许按精确活动代 Release；新代必须先 Prepare；Commit 只接受精确已准备代；Release 只接受精确活动代；已释放代不可重新 Prepare | proved，生产转移内核与资源种类/准入/转移类型同场 5 verified/0 errors；忽略种类变化、允许已释放代重入两个反例被拒；独立 decision oracle、Proptest、Miri 与 read-boundary fuzz 覆盖。资源 id 查找、BTreeMap 实际写入、整帧回滚、宿主存储/解码、并发与在途取消不在该切片 |
 | UI-THEME-STATE-001 | 样式更新与 Jasper 语义接缝 | 纯风格切换保持约定的值/焦点/选区/身份/滚动锚点 | not_verified；完整语义接缝尚未实现 |
 | UI-LAYOUT-HIT-001 | layout/paint/hit_test | 约定坐标/裁剪语义一致；文本命中结果合法 | not_verified；需定义浮点、字体与第三方布局边界 |
 
@@ -103,11 +103,17 @@ python3 scripts/verify-version.py --kernel ui-identity-next --verus "$VERUS"
 python3 scripts/verify-version.py --kernel ui-event-permission --verus "$VERUS"
 python3 scripts/verify-version.py --kernel authority-match --verus "$VERUS"
 python3 scripts/verify-version.py --kernel permission-match --verus "$VERUS"
+python3 scripts/verify-version.py --kernel resource-transition --verus "$VERUS"
 cargo test --locked --manifest-path verification/read-boundary/Cargo.toml \
   properties::core_frame_property -- --exact
+cargo test --locked --manifest-path verification/read-boundary/Cargo.toml \
+  properties::resource_transition_property -- --exact
 cargo +nightly-2026-10-17 miri test --locked \
   --manifest-path verification/read-boundary/Cargo.toml \
   memory::core_frame_boundaries -- --exact
+cargo +nightly-2026-10-17 miri test --locked \
+  --manifest-path verification/read-boundary/Cargo.toml \
+  memory::resource_transition_boundaries -- --exact
 cargo +nightly-2026-10-17 fuzz run read_boundary fuzz/seeds/read_boundary -- \
   -max_total_time=10 -max_len=4096 -rss_limit_mb=1024 -timeout=5 -seed=12345
 ```

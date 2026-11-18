@@ -327,6 +327,250 @@ KERNELS = {
             ("denial-before-name", "if !permission_granted {", "if !context_named {"),
         ],
     },
+    "resource-kind-type": {
+        "source": "src/ui_ir/mod.rs", "marker": "RESOURCE KIND", "suffix": "TYPE",
+        "signature": "#[derive(Clone, Copy, Debug, PartialEq, Eq)]\npub enum ResourceKind {",
+        "contract": "#[derive(Clone, Copy, Debug, PartialEq, Eq)]\npub enum ResourceKind {",
+        "depends": [], "function_count": 0, "internal_only": True,
+    },
+    "resource-admission-type": {
+        "source": "src/ui_ir/mod.rs", "marker": "RESOURCE ADMISSION", "suffix": "TYPE",
+        "signature": "#[derive(Clone, Copy, Debug, PartialEq, Eq)]\npub enum ResourceAdmission {",
+        "contract": "#[derive(Clone, Copy, Debug, PartialEq, Eq)]\npub enum ResourceAdmission {",
+        "depends": [], "function_count": 0, "internal_only": True,
+    },
+    "resource-transition-type": {
+        "source": "src/ui_ir/native.rs", "marker": "RESOURCE TRANSITION", "suffix": "TYPE",
+        "signature": "#[derive(Clone, Copy, Debug, PartialEq, Eq)]\nenum UiResourceTransition {",
+        "contract": "#[derive(Clone, Copy, Debug, PartialEq, Eq)]\nenum UiResourceTransition {",
+        "depends": ["resource-kind-type", "resource-admission-type"],
+        "function_count": 0, "internal_only": True,
+    },
+    "resource-transition": {
+        "source": "src/ui_ir/native.rs", "marker": "RESOURCE TRANSITION", "property": "UI-RESOURCE-LIFE-001",
+        "signature": """fn resource_transition(
+    highest_present: bool,
+    highest_kind: ResourceKind,
+    highest_generation: u64,
+    active_present: bool,
+    active_kind: ResourceKind,
+    active_generation: u64,
+    prepared_present: bool,
+    prepared_kind: ResourceKind,
+    prepared_generation: u64,
+    next_kind: ResourceKind,
+    next_generation: u64,
+    admission: ResourceAdmission,
+) -> Result<UiResourceTransition, UiResourceTransitionError> {""",
+        "contract": """fn resource_transition(
+    highest_present: bool,
+    highest_kind: ResourceKind,
+    highest_generation: u64,
+    active_present: bool,
+    active_kind: ResourceKind,
+    active_generation: u64,
+    prepared_present: bool,
+    prepared_kind: ResourceKind,
+    prepared_generation: u64,
+    next_kind: ResourceKind,
+    next_generation: u64,
+    admission: ResourceAdmission,
+) -> (result: Result<UiResourceTransition, UiResourceTransitionError>)
+    ensures match result {
+        Ok(UiResourceTransition::Prepare) => admission == ResourceAdmission::Prepare
+            && (!highest_present || (matches!(
+                    (highest_kind, next_kind),
+                    (ResourceKind::Image, ResourceKind::Image)
+                        | (ResourceKind::Svg, ResourceKind::Svg)
+                        | (ResourceKind::Font, ResourceKind::Font)
+                        | (ResourceKind::Icon, ResourceKind::Icon)
+                )
+                && next_generation >= highest_generation
+                && !(next_generation == highest_generation
+                    && ((active_present && matches!(
+                            (active_kind, next_kind),
+                            (ResourceKind::Image, ResourceKind::Image)
+                                | (ResourceKind::Svg, ResourceKind::Svg)
+                                | (ResourceKind::Font, ResourceKind::Font)
+                                | (ResourceKind::Icon, ResourceKind::Icon)
+                        )
+                            && active_generation == next_generation)
+                        || (prepared_present && matches!(
+                                (prepared_kind, next_kind),
+                                (ResourceKind::Image, ResourceKind::Image)
+                                    | (ResourceKind::Svg, ResourceKind::Svg)
+                                    | (ResourceKind::Font, ResourceKind::Font)
+                                    | (ResourceKind::Icon, ResourceKind::Icon)
+                            )
+                            && prepared_generation == next_generation)))
+                && !(next_generation == highest_generation
+                    && !active_present && !prepared_present))),
+        Ok(UiResourceTransition::NoOp) => admission == ResourceAdmission::Prepare
+            && highest_present && matches!(
+                (highest_kind, next_kind),
+                (ResourceKind::Image, ResourceKind::Image)
+                    | (ResourceKind::Svg, ResourceKind::Svg)
+                    | (ResourceKind::Font, ResourceKind::Font)
+                    | (ResourceKind::Icon, ResourceKind::Icon)
+            )
+            && highest_generation == next_generation
+            && ((active_present && matches!(
+                    (active_kind, next_kind),
+                    (ResourceKind::Image, ResourceKind::Image)
+                        | (ResourceKind::Svg, ResourceKind::Svg)
+                        | (ResourceKind::Font, ResourceKind::Font)
+                        | (ResourceKind::Icon, ResourceKind::Icon)
+                )
+                    && active_generation == next_generation)
+                || (prepared_present && matches!(
+                        (prepared_kind, next_kind),
+                        (ResourceKind::Image, ResourceKind::Image)
+                            | (ResourceKind::Svg, ResourceKind::Svg)
+                            | (ResourceKind::Font, ResourceKind::Font)
+                            | (ResourceKind::Icon, ResourceKind::Icon)
+                    )
+                    && prepared_generation == next_generation)),
+        Ok(UiResourceTransition::Commit) => admission == ResourceAdmission::Commit
+            && highest_present && matches!(
+                (highest_kind, next_kind),
+                (ResourceKind::Image, ResourceKind::Image)
+                    | (ResourceKind::Svg, ResourceKind::Svg)
+                    | (ResourceKind::Font, ResourceKind::Font)
+                    | (ResourceKind::Icon, ResourceKind::Icon)
+            )
+            && next_generation <= highest_generation
+            && prepared_present && matches!(
+                (prepared_kind, next_kind),
+                (ResourceKind::Image, ResourceKind::Image)
+                    | (ResourceKind::Svg, ResourceKind::Svg)
+                    | (ResourceKind::Font, ResourceKind::Font)
+                    | (ResourceKind::Icon, ResourceKind::Icon)
+            )
+            && prepared_generation == next_generation,
+        Ok(UiResourceTransition::ReleaseClear) => admission == ResourceAdmission::Release
+            && active_present && matches!(
+                (active_kind, next_kind),
+                (ResourceKind::Image, ResourceKind::Image)
+                    | (ResourceKind::Svg, ResourceKind::Svg)
+                    | (ResourceKind::Font, ResourceKind::Font)
+                    | (ResourceKind::Icon, ResourceKind::Icon)
+            )
+            && active_generation == next_generation && !prepared_present
+            && highest_present && matches!(
+                (highest_kind, next_kind),
+                (ResourceKind::Image, ResourceKind::Image)
+                    | (ResourceKind::Svg, ResourceKind::Svg)
+                    | (ResourceKind::Font, ResourceKind::Font)
+                    | (ResourceKind::Icon, ResourceKind::Icon)
+            )
+            && next_generation <= highest_generation,
+        Ok(UiResourceTransition::ReleaseKeepPrepared) =>
+            admission == ResourceAdmission::Release
+            && active_present && matches!(
+                (active_kind, next_kind),
+                (ResourceKind::Image, ResourceKind::Image)
+                    | (ResourceKind::Svg, ResourceKind::Svg)
+                    | (ResourceKind::Font, ResourceKind::Font)
+                    | (ResourceKind::Icon, ResourceKind::Icon)
+            )
+            && active_generation == next_generation && prepared_present
+            && highest_present && matches!(
+                (highest_kind, next_kind),
+                (ResourceKind::Image, ResourceKind::Image)
+                    | (ResourceKind::Svg, ResourceKind::Svg)
+                    | (ResourceKind::Font, ResourceKind::Font)
+                    | (ResourceKind::Icon, ResourceKind::Icon)
+            )
+            && next_generation <= highest_generation,
+        Err(UiResourceTransitionError::KindChanged) =>
+            highest_present && !matches!(
+                (highest_kind, next_kind),
+                (ResourceKind::Image, ResourceKind::Image)
+                    | (ResourceKind::Svg, ResourceKind::Svg)
+                    | (ResourceKind::Font, ResourceKind::Font)
+                    | (ResourceKind::Icon, ResourceKind::Icon)
+            ),
+        Err(UiResourceTransitionError::StaleGeneration) =>
+            highest_present && matches!(
+                (highest_kind, next_kind),
+                (ResourceKind::Image, ResourceKind::Image)
+                    | (ResourceKind::Svg, ResourceKind::Svg)
+                    | (ResourceKind::Font, ResourceKind::Font)
+                    | (ResourceKind::Icon, ResourceKind::Icon)
+            )
+            && next_generation < highest_generation
+            && !matches!(admission, ResourceAdmission::Release),
+        Err(UiResourceTransitionError::GenerationNotPrepared) =>
+            highest_present && matches!(
+                (highest_kind, next_kind),
+                (ResourceKind::Image, ResourceKind::Image)
+                    | (ResourceKind::Svg, ResourceKind::Svg)
+                    | (ResourceKind::Font, ResourceKind::Font)
+                    | (ResourceKind::Icon, ResourceKind::Icon)
+            )
+            && next_generation > highest_generation
+            && !matches!(admission, ResourceAdmission::Prepare),
+        Err(UiResourceTransitionError::ReleasedGeneration) =>
+            admission == ResourceAdmission::Prepare
+            && highest_present && matches!(
+                (highest_kind, next_kind),
+                (ResourceKind::Image, ResourceKind::Image)
+                    | (ResourceKind::Svg, ResourceKind::Svg)
+                    | (ResourceKind::Font, ResourceKind::Font)
+                    | (ResourceKind::Icon, ResourceKind::Icon)
+            )
+            && highest_generation == next_generation
+            && !active_present && !prepared_present,
+        Err(UiResourceTransitionError::CommitMismatch) =>
+            admission == ResourceAdmission::Commit
+            && (!highest_present || (matches!(
+                    (highest_kind, next_kind),
+                    (ResourceKind::Image, ResourceKind::Image)
+                        | (ResourceKind::Svg, ResourceKind::Svg)
+                        | (ResourceKind::Font, ResourceKind::Font)
+                        | (ResourceKind::Icon, ResourceKind::Icon)
+                )
+                && next_generation <= highest_generation
+                && !(prepared_present && matches!(
+                        (prepared_kind, next_kind),
+                        (ResourceKind::Image, ResourceKind::Image)
+                            | (ResourceKind::Svg, ResourceKind::Svg)
+                            | (ResourceKind::Font, ResourceKind::Font)
+                            | (ResourceKind::Icon, ResourceKind::Icon)
+                    )
+                    && prepared_generation == next_generation))),
+        Err(UiResourceTransitionError::ReleaseMismatch) =>
+            admission == ResourceAdmission::Release
+            && (!highest_present || (matches!(
+                    (highest_kind, next_kind),
+                    (ResourceKind::Image, ResourceKind::Image)
+                        | (ResourceKind::Svg, ResourceKind::Svg)
+                        | (ResourceKind::Font, ResourceKind::Font)
+                        | (ResourceKind::Icon, ResourceKind::Icon)
+                )
+                && next_generation <= highest_generation
+                && !(active_present && matches!(
+                        (active_kind, next_kind),
+                        (ResourceKind::Image, ResourceKind::Image)
+                            | (ResourceKind::Svg, ResourceKind::Svg)
+                            | (ResourceKind::Font, ResourceKind::Font)
+                            | (ResourceKind::Icon, ResourceKind::Icon)
+                    )
+                    && active_generation == next_generation))),
+    },
+{""",
+        "depends": [
+            "resource-kind-type",
+            "resource-admission-type",
+            "resource-transition-type",
+        ],
+        "evidence": "ui-resource-transition-kernel", "function_count": 1,
+        "scope": "actual Typed UI IR resource lifecycle admission and transition classification: kind stability, stale/newer generation ordering, exact prepared Commit, exact active Release, and rejected reuse after Release. ID lookup, BTreeMap mutation, frame rollback, host storage, decode, synchronization and cancellation are outside this kernel",
+        "mutations": [
+            ("ignore-kind-change", "if same_kind {", "if true {"),
+            ("reuse-released-generation", "return Err(UiResourceTransitionError::ReleasedGeneration);", "return Ok(UiResourceTransition::Prepare);"),
+        ],
+    },
     "version": {
         "source": "src/scene.rs", "marker": "VERSION", "property": "UI-TXN-VERSION-001",
         "signature": "fn next_scene_version(version: u64) -> Option<u64> {",

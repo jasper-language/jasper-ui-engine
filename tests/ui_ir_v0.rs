@@ -1455,6 +1455,35 @@ fn resource_generations_reject_prepare_commit_release_misuse_and_reuse() {
         ))
         .unwrap();
     assert!(document.committed_resource("logo").is_none());
+    let revision = document.revision();
+    assert!(document
+        .apply_frame(&operate(
+            revision,
+            serde_json::json!([{
+                "op": "resource",
+                "resource": { "id": "logo", "generation": 2, "kind": "image" },
+                "admission": "commit"
+            }])
+        ))
+        .is_err());
+    assert_eq!(document.revision(), revision);
+    assert_eq!(
+        document
+            .prepared_resource("logo")
+            .map(|resource| resource.generation),
+        Some(1)
+    );
+    assert!(document
+        .apply_frame(&operate(
+            revision,
+            serde_json::json!([{
+                "op": "resource",
+                "resource": { "id": "logo", "generation": 1, "kind": "image" },
+                "admission": "release"
+            }])
+        ))
+        .is_err());
+    assert_eq!(document.revision(), revision);
     document
         .apply_frame(&operate(
             document.revision(),
@@ -1471,6 +1500,41 @@ fn resource_generations_reject_prepare_commit_release_misuse_and_reuse() {
             .map(|resource| resource.generation),
         Some(1)
     );
+    let revision = document.revision();
+    assert!(document
+        .apply_frame(&operate(
+            revision,
+            serde_json::json!([{
+                "op": "resource",
+                "resource": { "id": "logo", "generation": 1, "kind": "image" },
+                "admission": "commit"
+            }])
+        ))
+        .is_err());
+    assert_eq!(document.revision(), revision);
+    assert_eq!(
+        document
+            .committed_resource("logo")
+            .map(|resource| resource.generation),
+        Some(1)
+    );
+    assert!(document
+        .apply_frame(&operate(
+            revision,
+            serde_json::json!([{
+                "op": "resource",
+                "resource": { "id": "logo", "generation": 2, "kind": "image" },
+                "admission": "release"
+            }])
+        ))
+        .is_err());
+    assert_eq!(document.revision(), revision);
+    assert_eq!(
+        document
+            .committed_resource("logo")
+            .map(|resource| resource.generation),
+        Some(1)
+    );
     document
         .apply_frame(&operate(
             document.revision(),
@@ -1481,6 +1545,30 @@ fn resource_generations_reject_prepare_commit_release_misuse_and_reuse() {
             }]),
         ))
         .unwrap();
+    assert_eq!(
+        document
+            .committed_resource("logo")
+            .map(|resource| resource.generation),
+        Some(1)
+    );
+    assert_eq!(
+        document
+            .prepared_resource("logo")
+            .map(|resource| resource.generation),
+        Some(2)
+    );
+    let revision = document.revision();
+    assert!(document
+        .apply_frame(&operate(
+            revision,
+            serde_json::json!([{
+                "op": "resource",
+                "resource": { "id": "logo", "generation": 3, "kind": "svg" },
+                "admission": "prepare"
+            }])
+        ))
+        .is_err());
+    assert_eq!(document.revision(), revision);
     assert_eq!(
         document
             .committed_resource("logo")

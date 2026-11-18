@@ -208,6 +208,152 @@ pub fn assert_permission_match(context_named: bool, permission_granted: bool) {
     ));
 }
 
+fn resource_kind(index: u8) -> ResourceKind {
+    match index % 4 {
+        0 => ResourceKind::Image,
+        1 => ResourceKind::Svg,
+        2 => ResourceKind::Font,
+        _ => ResourceKind::Icon,
+    }
+}
+
+fn resource_admission(index: u8) -> ResourceAdmission {
+    match index % 3 {
+        0 => ResourceAdmission::Prepare,
+        1 => ResourceAdmission::Commit,
+        _ => ResourceAdmission::Release,
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn expected_resource_transition(
+    highest_present: bool,
+    highest_kind: ResourceKind,
+    highest_generation: u64,
+    active_present: bool,
+    active_kind: ResourceKind,
+    active_generation: u64,
+    prepared_present: bool,
+    prepared_kind: ResourceKind,
+    prepared_generation: u64,
+    next_kind: ResourceKind,
+    next_generation: u64,
+    admission: ResourceAdmission,
+) -> Result<UiResourceTransition, UiResourceTransitionError> {
+    if !highest_present {
+        return match admission {
+            ResourceAdmission::Prepare => Ok(UiResourceTransition::Prepare),
+            ResourceAdmission::Commit => Err(UiResourceTransitionError::CommitMismatch),
+            ResourceAdmission::Release => Err(UiResourceTransitionError::ReleaseMismatch),
+        };
+    }
+    if highest_kind != next_kind {
+        return Err(UiResourceTransitionError::KindChanged);
+    }
+    if next_generation < highest_generation && admission != ResourceAdmission::Release {
+        return Err(UiResourceTransitionError::StaleGeneration);
+    }
+    if next_generation > highest_generation && admission != ResourceAdmission::Prepare {
+        return Err(UiResourceTransitionError::GenerationNotPrepared);
+    }
+    match admission {
+        ResourceAdmission::Prepare => {
+            if next_generation == highest_generation {
+                let active_matches = active_present
+                    && active_kind == next_kind
+                    && active_generation == next_generation;
+                let prepared_matches = prepared_present
+                    && prepared_kind == next_kind
+                    && prepared_generation == next_generation;
+                if active_matches || prepared_matches {
+                    return Ok(UiResourceTransition::NoOp);
+                }
+                if !active_present && !prepared_present {
+                    return Err(UiResourceTransitionError::ReleasedGeneration);
+                }
+            }
+            Ok(UiResourceTransition::Prepare)
+        }
+        ResourceAdmission::Commit => {
+            if prepared_present
+                && prepared_kind == next_kind
+                && prepared_generation == next_generation
+            {
+                Ok(UiResourceTransition::Commit)
+            } else {
+                Err(UiResourceTransitionError::CommitMismatch)
+            }
+        }
+        ResourceAdmission::Release => {
+            if !active_present
+                || active_kind != next_kind
+                || active_generation != next_generation
+            {
+                return Err(UiResourceTransitionError::ReleaseMismatch);
+            }
+            if prepared_present {
+                Ok(UiResourceTransition::ReleaseKeepPrepared)
+            } else {
+                Ok(UiResourceTransition::ReleaseClear)
+            }
+        }
+    }
+}
+
+/// Independent decision oracle for the Typed UI resource lifecycle.
+/// Typed UI 资源生命周期决策的独立规格。
+#[allow(clippy::too_many_arguments)]
+pub fn assert_resource_transition(
+    highest_present: bool,
+    highest_kind: u8,
+    highest_generation: u64,
+    active_present: bool,
+    active_kind: u8,
+    active_generation: u64,
+    prepared_present: bool,
+    prepared_kind: u8,
+    prepared_generation: u64,
+    incoming_kind: u8,
+    incoming_generation: u64,
+    admission: u8,
+) {
+    let highest_kind = resource_kind(highest_kind);
+    let active_kind = resource_kind(active_kind);
+    let prepared_kind = resource_kind(prepared_kind);
+    let next_kind = resource_kind(incoming_kind);
+    let admission = resource_admission(admission);
+    assert_eq!(
+        resource_transition(
+            highest_present,
+            highest_kind,
+            highest_generation,
+            active_present,
+            active_kind,
+            active_generation,
+            prepared_present,
+            prepared_kind,
+            prepared_generation,
+            next_kind,
+            incoming_generation,
+            admission,
+        ),
+        expected_resource_transition(
+            highest_present,
+            highest_kind,
+            highest_generation,
+            active_present,
+            active_kind,
+            active_generation,
+            prepared_present,
+            prepared_kind,
+            prepared_generation,
+            next_kind,
+            incoming_generation,
+            admission,
+        ),
+    );
+}
+
 /// Independent precedence oracle for event authority dimensions.
 /// 事件 authority 各维度的独立优先级规格。
 #[allow(clippy::too_many_arguments)]
@@ -3026,6 +3172,24 @@ mod kani_checks {
     }
 
     #[kani::proof]
+    fn resource_transition_admission() {
+        assert_resource_transition(
+            kani::any(),
+            kani::any(),
+            kani::any(),
+            kani::any(),
+            kani::any(),
+            kani::any(),
+            kani::any(),
+            kani::any(),
+            kani::any(),
+            kani::any(),
+            kani::any(),
+            kani::any(),
+        );
+    }
+
+    #[kani::proof]
     fn access_actions_rules() {
         assert_access_actions(kani::any(), kani::any(), kani::any());
     }
@@ -4016,6 +4180,36 @@ mod properties {
             assert_permission_match(context_named, permission_granted);
         }
         #[test]
+        fn resource_transition_property(
+            highest_present in any::<bool>(),
+            highest_kind in any::<u8>(),
+            highest_generation in any::<u64>(),
+            active_present in any::<bool>(),
+            active_kind in any::<u8>(),
+            active_generation in any::<u64>(),
+            prepared_present in any::<bool>(),
+            prepared_kind in any::<u8>(),
+            prepared_generation in any::<u64>(),
+            incoming_kind in any::<u8>(),
+            incoming_generation in any::<u64>(),
+            admission in any::<u8>(),
+        ) {
+            assert_resource_transition(
+                highest_present,
+                highest_kind,
+                highest_generation,
+                active_present,
+                active_kind,
+                active_generation,
+                prepared_present,
+                prepared_kind,
+                prepared_generation,
+                incoming_kind,
+                incoming_generation,
+                admission,
+            );
+        }
+        #[test]
         fn endpoint_property(total in any::<usize>(), pos in any::<usize>(), len in any::<usize>()) {
             assert_endpoint(total, pos, len);
         }
@@ -4086,6 +4280,24 @@ mod memory {
                 assert_permission_match(context_named, permission_granted);
             }
         }
+    }
+
+    #[test]
+    fn resource_transition_boundaries() {
+        for admission in 0..3 {
+            assert_resource_transition(false, 0, 0, false, 0, 0, false, 0, 0, 0, 1, admission);
+            assert_resource_transition(true, 0, 2, true, 0, 2, false, 0, 0, 0, 2, admission);
+            assert_resource_transition(true, 0, 2, true, 0, 2, true, 0, 3, 0, 2, admission);
+            assert_resource_transition(true, 0, 2, false, 0, 0, true, 0, 3, 0, 3, admission);
+            assert_resource_transition(true, 0, 2, true, 0, 1, false, 0, 0, 0, 1, admission);
+            assert_resource_transition(true, 0, 2, true, 0, 2, false, 0, 0, 0, 0, admission);
+            assert_resource_transition(true, 0, 2, true, 0, 2, false, 0, 0, 1, 2, admission);
+        }
+        assert_resource_transition(true, 0, 1, true, 0, 1, false, 0, 0, 0, 1, 0);
+        assert_resource_transition(true, 0, 1, true, 0, 1, false, 0, 0, 0, 1, 1);
+        assert_resource_transition(true, 0, 1, true, 0, 1, false, 0, 0, 0, 1, 2);
+        assert_resource_transition(true, 0, 1, true, 0, 1, false, 0, 0, 0, 1, 2);
+        assert_resource_transition(true, 0, 1, false, 0, 0, false, 0, 0, 0, 1, 0);
     }
 
     #[test]

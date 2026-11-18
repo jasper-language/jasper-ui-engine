@@ -26,6 +26,14 @@ fn main() {
             ][..],
         ),
         (
+            "../../src/ui_ir/mod.rs",
+            &["RESOURCE KIND TYPE", "RESOURCE ADMISSION TYPE"][..],
+        ),
+        (
+            "../../src/ui_ir/native.rs",
+            &["RESOURCE TRANSITION TYPE", "RESOURCE TRANSITION KERNEL"][..],
+        ),
+        (
             "../../src/batch.rs",
             &[
                 "DECODE RANGE KERNEL",

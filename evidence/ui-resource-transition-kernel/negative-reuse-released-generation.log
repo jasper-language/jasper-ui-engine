@@ -1,0 +1,19 @@
+verification results:: 4 verified, 1 errors
+error: postcondition not satisfied
+   --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/ui-resource-transition-kernel/negative_reuse_released_generation.rs:55:13
+    |
+ 55 |       ensures match result {
+    |  _____________^
+ 56 | |         Ok(UiResourceTransition::Prepare) => admission == ResourceAdmission::Prepare
+ 57 | |             && (!highest_present || (matches!(
+ 58 | |                     (highest_kind, next_kind),
+...   |
+235 | |                     && active_generation == next_generation))),
+236 | |     },
+    | |_____^ failed this postcondition
+...
+288 |                           return Ok(UiResourceTransition::Prepare);
+    |                           ---------------------------------------- at this exit
+
+error: aborting due to 1 previous error
+

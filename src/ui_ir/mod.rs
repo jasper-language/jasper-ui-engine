@@ -1316,22 +1316,28 @@ impl ResourceRef {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+// BEGIN VERIFIED RESOURCE KIND TYPE
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ResourceKind {
     Image,
     Svg,
     Font,
     Icon,
 }
+// END VERIFIED RESOURCE KIND TYPE
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+// BEGIN VERIFIED RESOURCE ADMISSION TYPE
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ResourceAdmission {
     Prepare,
     Commit,
     Release,
 }
+// END VERIFIED RESOURCE ADMISSION TYPE
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
