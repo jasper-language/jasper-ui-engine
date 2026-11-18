@@ -1641,6 +1641,27 @@ mod tests {
     use jasper_ui_engine::scene::NodeId;
 
     #[test]
+    fn preedit_cleanup_remaps_utf8_cursor_boundaries() {
+        assert_eq!(normalized_preedit(None, Some((0, 0))), (None, None));
+        assert_eq!(
+            normalized_preedit(Some("a\t中"), Some((2, 5))),
+            (Some("a中".into()), Some((1, 4)))
+        );
+        assert_eq!(
+            normalized_preedit(Some("\u{7f}a😀\nb"), Some((1, 6))),
+            (Some("a😀b".into()), Some((0, 5)))
+        );
+        assert_eq!(
+            normalized_preedit(Some("a😀"), Some((2, 5))),
+            (Some("a😀".into()), None)
+        );
+        assert_eq!(
+            normalized_preedit(Some("\n\t"), Some((0, 2))),
+            (None, None)
+        );
+    }
+
+    #[test]
     #[cfg(feature = "cpu-pending")]
     fn native_update_frame_matches_sequential_final_pixels() {
         let bytes = std::fs::read(
