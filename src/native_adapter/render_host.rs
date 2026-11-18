@@ -1335,6 +1335,13 @@ impl HostRenderer {
         let target = document
             .admit_native_target(context, node, UiPermission::TextEdit)
             .map_err(TypedUiTargetError::Admission)?;
+        if self
+            .edit_state(owner, version)
+            .and_then(|state| state.map(|state| state.node))
+            != Some(node)
+        {
+            return Err(TypedUiTargetError::HostRejected);
+        }
         if !self.text_input(owner, version, generation, text) {
             return Err(TypedUiTargetError::HostRejected);
         }
@@ -1375,6 +1382,13 @@ impl HostRenderer {
         let target = document
             .admit_native_target(context, node, UiPermission::Ime)
             .map_err(TypedUiTargetError::Admission)?;
+        if self
+            .edit_state(owner, version)
+            .and_then(|state| state.map(|state| state.node))
+            != Some(node)
+        {
+            return Err(TypedUiTargetError::HostRejected);
+        }
         if !self.set_preedit(owner, version, generation, text, cursor) {
             return Err(TypedUiTargetError::HostRejected);
         }

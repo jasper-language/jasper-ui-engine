@@ -89,7 +89,7 @@ caret 几何与 `UiKey` 一并返回，不暴露 backend 节点身份。
 | Selected 状态 | implemented / tested | Semantics、AccessibilityNode、ARIA 与 AccessKit selected 状态贯通 |
 | Typed Accessibility | implemented / tested | 完整树与增量 update 均经 HostRenderer Surface generation 门控；前后 document revision、update 顺序、removed/changed UiKey 映射均校验 |
 | Typed AccessKit actions | implemented / tested | backend target 必须匹配 UiKey；Focus/Click 分别要求 Focus permission 与 accessibility-action binding；Focus/Activation 回调只暴露 UiKey |
-| Typed input targets | implemented / tested | HostRenderer Focus/Key/KeyActivation/TextInput/IME 使用同一 UiKey 上下文授权；Focus/Key/Activation 回调只暴露 UiKey；键输入匹配当前 Native focus，键盘激活另需 activate binding；错误 target、permission 和 revision 均拒绝 |
+| Typed input targets | implemented / tested | HostRenderer Focus/Key/KeyActivation/TextInput/IME 使用同一 UiKey 上下文授权；Focus/Key/Activation 回调只暴露 UiKey；键输入匹配当前 Native focus，TextInput/IME 必须匹配当前编辑节点，键盘激活另需 activate binding；错误 target、permission 和 revision 均拒绝 |
 | Typed edit events | implemented / tested | 有序 drain E14 Changed/Commit/CompositionCancelled；owner、event revision、UiKey 与 text-commit/ime-cancel permission/binding 均校验 |
 | Typed pointer routing | implemented / tested | hit query 与 Pointer 路由使用同一 overlay/圆角/hit-slop 目标；owner/revision/Surface generation/Pointer permission 先准入，回调只暴露 UiKey；Down→Move 后继帧后 Up 仍保持身份并准入 click binding |
 | Typed geometry queries | implemented / tested | bounds/scroll/table metrics 直接消费 UiKey，并校验 document revision、Surface generation 和 active key；table/cell 测量结果也只含 UiKey |

@@ -1189,6 +1189,39 @@ fn typed_focus_text_and_ime_use_the_same_admitted_ui_key() {
         ),
         Err(TypedUiTargetError::Admission(_))
     ));
+    let button = document.node_for_key(UiKey::new(4, 1)).unwrap();
+    let button_context = UiEventContext {
+        target: UiKey::new(4, 1),
+        permission_context: UiPermissionContext::new("button-focus", [UiPermission::Focus]),
+        ..context.clone()
+    };
+    host.typed_focus(
+        OWNER,
+        2,
+        generation,
+        &document,
+        &button_context,
+        button,
+        &mut |_| {},
+    )
+    .unwrap();
+    assert!(matches!(
+        host.typed_text_input(OWNER, 2, generation, &document, &context, field, "x"),
+        Err(TypedUiTargetError::HostRejected)
+    ));
+    assert!(matches!(
+        host.typed_set_preedit(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &context,
+            field,
+            Some("x"),
+            None,
+        ),
+        Err(TypedUiTargetError::HostRejected)
+    ));
     assert!(matches!(
         host.typed_focus(
             OWNER,
