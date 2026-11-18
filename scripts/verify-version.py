@@ -185,6 +185,48 @@ KERNELS = {
             ("ignore-budget", "if bytes > max_bytes as u64", "if false"),
         ],
     },
+    "ui-key-type": {
+        "source": "src/ui_ir/mod.rs", "marker": "UI KEY", "suffix": "TYPE",
+        "signature": "pub struct UiKey {",
+        "contract": "#[derive(Clone, Copy, Debug, PartialEq, Eq)]\npub struct UiKey {",
+        "depends": [], "function_count": 0, "internal_only": True,
+    },
+    "identity-error-type": {
+        "source": "src/ui_ir/identity.rs", "marker": "IDENTITY ERROR", "suffix": "TYPE",
+        "signature": "pub enum IdentityError {",
+        "contract": "#[derive(Clone, Copy, Debug, PartialEq, Eq)]\npub enum IdentityError {",
+        "depends": ["ui-key-type"], "function_count": 0, "internal_only": True,
+    },
+    "ui-identity-next": {
+        "source": "src/ui_ir/identity.rs", "marker": "UI IDENTITY NEXT", "property": "UI-IDENTITY-NEXT-001",
+        "signature": """pub(crate) fn next_ui_identity(
+    semantic_id: u64,
+    last_generation: u64,
+    live: bool,
+) -> Result<UiKey, IdentityError> {""",
+        "contract": """pub(crate) fn next_ui_identity(
+    semantic_id: u64,
+    last_generation: u64,
+    live: bool,
+) -> (result: Result<UiKey, IdentityError>)
+    ensures match result {
+        Ok(key) => !live && last_generation < u64::MAX
+            && key.semantic_id == semantic_id
+            && key.generation as int == last_generation as int + 1,
+        Err(IdentityError::AlreadyLive(id)) => live && id == semantic_id,
+        Err(IdentityError::GenerationExhausted(id)) => !live
+            && last_generation == u64::MAX && id == semantic_id,
+        Err(_) => false,
+    },
+{""",
+        "depends": ["ui-key-type", "identity-error-type"],
+        "evidence": "ui-identity-next-kernel", "function_count": 1,
+        "scope": "actual next-generation preparation shared by UiIdentityLedger::allocate and claim: live rejection, exact plus-one successor and explicit u64::MAX exhaustion. Entry insertion, mutation ordering, retirement, snapshot restore and whole-document callers are outside this kernel",
+        "mutations": [
+            ("admit-live", "if live {", "if false {"),
+            ("reuse-last", "let Some(generation) = last_generation.checked_add(1) else {", "let Some(generation) = Some(last_generation) else {"),
+        ],
+    },
     "version": {
         "source": "src/scene.rs", "marker": "VERSION", "property": "UI-TXN-VERSION-001",
         "signature": "fn next_scene_version(version: u64) -> Option<u64> {",

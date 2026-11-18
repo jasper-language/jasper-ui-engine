@@ -1,0 +1,22 @@
+verification results:: 2 verified, 1 errors
+error: postcondition not satisfied
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/ui-identity-next-kernel/negative_reuse_last.rs:29:13
+   |
+29 |       ensures match result {
+   |  _____________^
+30 | |         Ok(key) => !live && last_generation < u64::MAX
+31 | |             && key.semantic_id == semantic_id
+32 | |             && key.generation as int == last_generation as int + 1,
+...  |
+36 | |         Err(_) => false,
+37 | |     },
+   | |_____^ failed this postcondition
+...
+45 | /     Ok(UiKey {
+46 | |         semantic_id,
+47 | |         generation,
+48 | |     })
+   | |______- at the end of the function body
+
+error: aborting due to 1 previous error
+

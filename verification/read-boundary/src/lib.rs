@@ -74,6 +74,36 @@ pub fn assert_core_frame(width: u32, height: u32, budget: usize) {
     );
 }
 
+/// Independent successor oracle for Typed UI identity generations.
+/// Typed UI 身份 generation 的独立后继规格。
+pub fn assert_next_ui_identity(semantic_id: u64, last_generation: u64, live: bool) {
+    match next_ui_identity(semantic_id, last_generation, live) {
+        Ok(key) => {
+            assert!(!live);
+            assert!(last_generation < u64::MAX);
+            assert_eq!(key.semantic_id, semantic_id);
+            assert_eq!(key.generation as u128, last_generation as u128 + 1);
+        }
+        Err(IdentityError::AlreadyLive(id)) => {
+            assert!(live);
+            assert_eq!(id, semantic_id);
+        }
+        Err(IdentityError::GenerationExhausted(id)) => {
+            assert!(!live);
+            assert_eq!(last_generation, u64::MAX);
+            assert_eq!(id, semantic_id);
+        }
+        Err(IdentityError::InvalidDomain)
+        | Err(IdentityError::Unknown(_))
+        | Err(IdentityError::Stale(_))
+        | Err(IdentityError::Retired(_))
+        | Err(IdentityError::InvalidSnapshot)
+        | Err(IdentityError::UnexpectedGeneration { .. }) => {
+            panic!("next identity returned an unexpected error")
+        }
+    }
+}
+
 /// Full-width oracle uses u128 so multiplication and addition do not wrap.
 /// 使用 u128 独立计算规格，避免将 usize 运算回绕误认为正确结果。
 pub fn assert_surface_span(row: usize, height: usize, stride: usize, capacity: usize) {
@@ -2842,6 +2872,11 @@ mod kani_checks {
     }
 
     #[kani::proof]
+    fn next_ui_identity_admission() {
+        assert_next_ui_identity(kani::any(), kani::any(), kani::any());
+    }
+
+    #[kani::proof]
     fn access_actions_rules() {
         assert_access_actions(kani::any(), kani::any(), kani::any());
     }
@@ -3796,6 +3831,16 @@ mod properties {
             assert_core_frame(small_width, small_height, exact + slack);
         }
         #[test]
+        fn next_ui_identity_property(
+            semantic_id in any::<u64>(),
+            last_generation in any::<u64>(),
+            live in any::<bool>(),
+        ) {
+            assert_next_ui_identity(semantic_id, last_generation, live);
+            assert_next_ui_identity(semantic_id, u64::MAX, false);
+            assert_next_ui_identity(semantic_id, u64::MAX, true);
+        }
+        #[test]
         fn endpoint_property(total in any::<usize>(), pos in any::<usize>(), len in any::<usize>()) {
             assert_endpoint(total, pos, len);
         }
@@ -3827,6 +3872,21 @@ mod memory {
             for budget in [0, 1, 15, 16, 64 * 1024 * 1024, usize::MAX] {
                 assert_core_frame(width, height, budget);
             }
+        }
+    }
+
+    #[test]
+    fn next_ui_identity_boundaries() {
+        for (last_generation, live) in [
+            (0, false),
+            (0, true),
+            (1, false),
+            (u64::MAX - 1, false),
+            (u64::MAX - 1, true),
+            (u64::MAX, false),
+            (u64::MAX, true),
+        ] {
+            assert_next_ui_identity(7, last_generation, live);
         }
     }
 

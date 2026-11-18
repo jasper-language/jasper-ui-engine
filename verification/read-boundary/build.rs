@@ -7,6 +7,14 @@ fn main() {
     let mut generated = String::new();
     for (file, markers) in [
         (
+            "../../src/ui_ir/mod.rs",
+            &["UI KEY TYPE"][..],
+        ),
+        (
+            "../../src/ui_ir/identity.rs",
+            &["IDENTITY ERROR TYPE", "UI IDENTITY NEXT KERNEL"][..],
+        ),
+        (
             "../../src/batch.rs",
             &[
                 "DECODE RANGE KERNEL",

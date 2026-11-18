@@ -3,10 +3,10 @@
 //! This ledger is deliberately separate from every backend `NodeId`. It never reuses a
 //! `(semantic_id, generation)` pair and refuses exhaustion instead of wrapping.
 
+use super::UiKey;
 use crate::nostd_prelude::*;
 use alloc::collections::BTreeMap;
 use core::fmt;
-use super::UiKey;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug)]
@@ -38,6 +38,25 @@ pub struct UiIdentityLedger {
     identity_domain: String,
     records: BTreeMap<u64, Record>,
 }
+
+// BEGIN VERIFIED UI IDENTITY NEXT KERNEL
+pub(crate) fn next_ui_identity(
+    semantic_id: u64,
+    last_generation: u64,
+    live: bool,
+) -> Result<UiKey, IdentityError> {
+    if live {
+        return Err(IdentityError::AlreadyLive(semantic_id));
+    }
+    let Some(generation) = last_generation.checked_add(1) else {
+        return Err(IdentityError::GenerationExhausted(semantic_id));
+    };
+    Ok(UiKey {
+        semantic_id,
+        generation,
+    })
+}
+// END VERIFIED UI IDENTITY NEXT KERNEL
 
 impl UiIdentityLedger {
     pub fn new(identity_domain: impl Into<String>) -> Result<Self, IdentityError> {
@@ -110,15 +129,10 @@ impl UiIdentityLedger {
             last_generation: 0,
             live: false,
         });
-        if record.live {
-            return Err(IdentityError::AlreadyLive(semantic_id));
-        }
-        let Some(generation) = record.last_generation.checked_add(1) else {
-            return Err(IdentityError::GenerationExhausted(semantic_id));
-        };
-        record.last_generation = generation;
+        let key = next_ui_identity(semantic_id, record.last_generation, record.live)?;
+        record.last_generation = key.generation;
         record.live = true;
-        Ok(UiKey::new(semantic_id, generation))
+        Ok(key)
     }
 
     /// Claim one exact Framework-assigned key. The generation must be the next generation for
@@ -128,17 +142,14 @@ impl UiIdentityLedger {
             last_generation: 0,
             live: false,
         });
-        if record.live {
-            return Err(IdentityError::AlreadyLive(key.semantic_id));
-        }
-        let Some(generation) = record.last_generation.checked_add(1) else {
-            return Err(IdentityError::GenerationExhausted(key.semantic_id));
-        };
-        let expected = UiKey::new(key.semantic_id, generation);
+        let expected = next_ui_identity(key.semantic_id, record.last_generation, record.live)?;
         if key != expected {
-            return Err(IdentityError::UnexpectedGeneration { expected, actual: key });
+            return Err(IdentityError::UnexpectedGeneration {
+                expected,
+                actual: key,
+            });
         }
-        record.last_generation = generation;
+        record.last_generation = expected.generation;
         record.live = true;
         Ok(())
     }
@@ -186,6 +197,7 @@ impl UiIdentityLedger {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+// BEGIN VERIFIED IDENTITY ERROR TYPE
 pub enum IdentityError {
     InvalidDomain,
     AlreadyLive(u64),
@@ -196,6 +208,7 @@ pub enum IdentityError {
     InvalidSnapshot,
     UnexpectedGeneration { expected: UiKey, actual: UiKey },
 }
+// END VERIFIED IDENTITY ERROR TYPE
 
 impl fmt::Display for IdentityError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -300,7 +313,10 @@ mod tests {
             })
         );
         ledger.claim(UiKey::new(7, 2)).unwrap();
-        assert_eq!(ledger.admit(UiKey::new(7, 1)), Err(IdentityError::Stale(UiKey::new(7, 1))));
+        assert_eq!(
+            ledger.admit(UiKey::new(7, 1)),
+            Err(IdentityError::Stale(UiKey::new(7, 1)))
+        );
     }
 
     #[test]
@@ -312,7 +328,10 @@ mod tests {
         ledger.claim(UiKey::new(8, 1)).unwrap();
 
         let mut restored = UiIdentityLedger::from_snapshot(ledger.snapshot()).unwrap();
-        assert_eq!(restored.admit(UiKey::new(7, 1)), Err(IdentityError::Stale(UiKey::new(7, 1))));
+        assert_eq!(
+            restored.admit(UiKey::new(7, 1)),
+            Err(IdentityError::Stale(UiKey::new(7, 1)))
+        );
         assert_eq!(restored.admit(UiKey::new(7, 2)), Ok(()));
         restored.retire(UiKey::new(7, 2)).unwrap();
         assert_eq!(restored.allocate(7), Ok(UiKey::new(7, 3)));

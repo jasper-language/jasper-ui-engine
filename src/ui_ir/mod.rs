@@ -43,10 +43,12 @@ pub const IR_VERSION: &str = "0.1.0";
 /// Public node identity within one identity domain.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
+// BEGIN VERIFIED UI KEY TYPE
 pub struct UiKey {
     pub semantic_id: u64,
     pub generation: u64,
 }
+// END VERIFIED UI KEY TYPE
 
 impl UiKey {
     pub const fn new(semantic_id: u64, generation: u64) -> Self {

@@ -1,0 +1,48 @@
+verification results:: 2 verified, 1 errors
+note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/ui-identity-next-kernel/negative_admit_live.rs:24:1
+   |
+24 | / pub(crate) fn next_ui_identity(
+25 | |     semantic_id: u64,
+26 | |     last_generation: u64,
+27 | |     live: bool,
+28 | | ) -> (result: Result<UiKey, IdentityError>)
+   | |__________________________________________^
+
+error: postcondition not satisfied
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/ui-identity-next-kernel/negative_admit_live.rs:29:13
+   |
+29 |       ensures match result {
+   |  _____________^
+30 | |         Ok(key) => !live && last_generation < u64::MAX
+31 | |             && key.semantic_id == semantic_id
+32 | |             && key.generation as int == last_generation as int + 1,
+...  |
+36 | |         Err(_) => false,
+37 | |     },
+   | |_____^ failed this postcondition
+...
+45 | /     Ok(UiKey {
+46 | |         semantic_id,
+47 | |         generation,
+48 | |     })
+   | |______- at the end of the function body
+
+error: postcondition not satisfied
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/ui-identity-next-kernel/negative_admit_live.rs:29:13
+   |
+29 |       ensures match result {
+   |  _____________^
+30 | |         Ok(key) => !live && last_generation < u64::MAX
+31 | |             && key.semantic_id == semantic_id
+32 | |             && key.generation as int == last_generation as int + 1,
+...  |
+36 | |         Err(_) => false,
+37 | |     },
+   | |_____^ failed this postcondition
+...
+43 |           return Err(IdentityError::GenerationExhausted(semantic_id));
+   |           ----------------------------------------------------------- at this exit
+
+error: aborting due to 2 previous errors
+
