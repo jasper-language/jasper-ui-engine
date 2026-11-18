@@ -274,6 +274,8 @@ Web 后端和正式宿主仍需分别验收。
 - settings 初始 frame 经旧 host CPU 命中测试注入 Save 点击后，输出 target 4 的
   `hover in → pointer-down → focus in → pointer-up → click`，帧保持 accepted；
   这是 host 注入动作，不代表真实平台 OS 事件已验收；
+- 同一点击动作在真实 `--window --smoke` 路径也产生上述 target 4 事件序列并成功写出
+  480×320 呈现截图；仍属于 host 注入，不是系统级鼠标事件验收；
   副本只为新增 SceneError/Role 变体补了 exhaustive match 分支，reader 协议逻辑未改；
   原 host 仓库未修改。该证据只覆盖 CPU headless transport，不包含真实平台窗口；
 - Clippy 成功退出；仓库仍保留已登记的非阻塞历史 warning。
