@@ -276,6 +276,9 @@ Web 后端和正式宿主仍需分别验收。
   这是 host 注入动作，不代表真实平台 OS 事件已验收；
 - 同一点击动作在真实 `--window --smoke` 路径也产生上述 target 4 事件序列并成功写出
   480×320 呈现截图；仍属于 host 注入，不是系统级鼠标事件验收；
+- settings `--interaction` 四帧流在真实窗口中依次接受 focus、` Bob` text input 和
+  Enter：`ack 2/3/4/5`、`accepted 4 / rejected 0`，输出 target 3 的
+  `focus in → key Enter → text-commit "Alice Bob"`，截图确认最终编辑文本；
   副本只为新增 SceneError/Role 变体补了 exhaustive match 分支，reader 协议逻辑未改；
   原 host 仓库未修改。该证据只覆盖 CPU headless transport，不包含真实平台窗口；
 - Clippy 成功退出；仓库仍保留已登记的非阻塞历史 warning。
@@ -325,3 +328,5 @@ JUI 2 reader 诊断：
 将 stdout 直接作为旧 host 的 `--frames -` 输入即可；host 的锁定依赖和 engine path 属于
 另一个兼容 checkout，本次回环在临时源码副本中完成，不修改原 host 工作树。
 追加 `--successor` 会输出 default settings 的初始帧与后继帧双帧流。
+追加 `--interaction` 会再输出两个版本化 no-op frame，供 host 逐帧注入 focus/
+text-input/Enter 交互。

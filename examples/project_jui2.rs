@@ -4,10 +4,14 @@ use jasper_ui_engine::ui_ir::{
 
 fn main() {
     let mut successor = false;
+    let mut interaction = false;
     let mut fixture_path = None;
     for arg in std::env::args().skip(1) {
         if arg == "--successor" {
             successor = true;
+        } else if arg == "--interaction" {
+            successor = true;
+            interaction = true;
         } else if fixture_path.replace(arg).is_some() {
             panic!("only one fixture path is accepted");
         }
@@ -65,6 +69,30 @@ fn main() {
             project_jui2_scene_update(&document, &update).expect("JUI 2 successor frame");
         print!("{}", projected.text);
         print_losses("successor", &projected.losses);
+    }
+    if interaction {
+        for on in [true, false] {
+            let revision = document.revision();
+            let mut value: serde_json::Value =
+                serde_json::from_slice(&bytes).expect("fixture JSON");
+            value["expected_revision"] = serde_json::json!(revision);
+            value["next_revision"] = serde_json::json!(revision + 1);
+            value["ops"] = serde_json::json!([
+                {
+                    "op": "env",
+                    "env": { "reduce_motion": on }
+                }
+            ]);
+            let encoded = serde_json::to_vec(&value).expect("fixture JSON");
+            let frame = UiFrame::from_json_slice(&encoded).expect("interaction UI IR");
+            let update = document
+                .apply_frame_with_patches(&frame)
+                .expect("interaction update");
+            let projected =
+                project_jui2_scene_update(&document, &update).expect("JUI 2 interaction frame");
+            print!("{}", projected.text);
+            print_losses("interaction", &projected.losses);
+        }
     }
 }
 
