@@ -207,6 +207,48 @@ pub struct NativeUiCompatibilitySnapshot {
     pub losses: BTreeMap<UiKey, Vec<NativeNodeLoss>>,
 }
 
+impl NativeUiCompatibilitySnapshot {
+    /// Rebuild a fresh initial frame from this snapshot. This is intentionally restricted to
+    /// generation-one identities because an initial frame cannot reproduce retirement history.
+    pub fn to_initial_frame(&self) -> Result<UiFrame, UiIrError> {
+        ensure_initial_generations(&self.root)?;
+        let mut ops = Vec::new();
+        for state in self.resources.values() {
+            if let Some(resource) = &state.active {
+                ops.push(UiOp::resource(
+                    resource.clone(),
+                    ResourceAdmission::Prepare,
+                ));
+                ops.push(UiOp::resource(
+                    resource.clone(),
+                    ResourceAdmission::Commit,
+                ));
+            }
+            if let Some(resource) = &state.prepared {
+                ops.push(UiOp::resource(
+                    resource.clone(),
+                    ResourceAdmission::Prepare,
+                ));
+            }
+        }
+        ops.push(UiOp::insert(None, 0, self.root.clone()));
+        if self.environment != UiEnvironment::default() {
+            ops.push(UiOp::environment(self.environment.clone()));
+        }
+        let frame = UiFrame {
+            ir_version: IR_VERSION.into(),
+            identity_domain: self.identity_domain.clone(),
+            owner: self.owner.clone(),
+            session: self.session.clone(),
+            expected_revision: 1,
+            next_revision: 2,
+            ops,
+        };
+        frame.validate()?;
+        Ok(frame)
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum NativeUiFrameError {
     InvalidIr(UiIrError),
@@ -2059,6 +2101,22 @@ fn incomplete_projection(detail: impl Into<String>) -> UiIrError {
         path: "$.compatibility".into(),
         detail: detail.into(),
     }
+}
+
+fn ensure_initial_generations(node: &UiNode) -> Result<(), UiIrError> {
+    if node.key.generation != 1 {
+        return Err(UiIrError::Invalid {
+            path: "$.compatibility.root".into(),
+            detail: format!(
+                "initial replay requires generation-one identities, found {}:{}",
+                node.key.semantic_id, node.key.generation
+            ),
+        });
+    }
+    for child in node.children.as_deref().unwrap_or_default() {
+        ensure_initial_generations(child)?;
+    }
+    Ok(())
 }
 
 fn validate_element_transport(path: &str, element: &UiElement) -> Result<(), NativeUiFrameError> {

@@ -439,6 +439,11 @@ fn native_compatibility_snapshot_includes_environment_and_live_resources() {
     assert_eq!(snapshot.resources["pending"].active, None);
     assert_eq!(snapshot.resources["pending"].prepared, Some(prepared));
     assert!(snapshot.losses.is_empty(), "{:?}", snapshot.losses);
+
+    let replay = snapshot.to_initial_frame().unwrap();
+    let replay_document = NativeUiDocument::from_frame(&replay).unwrap();
+    let replay_snapshot = replay_document.project_compatibility_snapshot().unwrap();
+    assert_eq!(replay_snapshot, snapshot);
 }
 
 #[test]
@@ -821,6 +826,11 @@ fn native_document_never_reuses_a_removed_ui_key_and_accepts_the_next_generation
     assert_eq!(document.current_identity(2), Some(next));
     assert!(document.node_for_key(next).is_some());
     assert!(document.node_for_key(removed).is_none());
+    let snapshot = document.project_compatibility_snapshot().unwrap();
+    assert!(matches!(
+        snapshot.to_initial_frame(),
+        Err(jasper_ui_engine::ui_ir::UiIrError::Invalid { .. })
+    ));
 }
 
 #[test]
