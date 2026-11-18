@@ -574,6 +574,16 @@ fn native_compatibility_snapshot_includes_environment_and_live_resources() {
         regressed_prepare.validate(),
         Err(jasper_ui_engine::ui_ir::UiIrError::Invalid { .. })
     ));
+    let mut impossible_revision = snapshot.clone();
+    impossible_revision.revision = 1;
+    assert!(matches!(
+        impossible_revision.validate(),
+        Err(jasper_ui_engine::ui_ir::UiIrError::Invalid { .. })
+    ));
+    assert!(matches!(
+        NativeUiDocument::from_compatibility_snapshot(&impossible_revision),
+        Err(jasper_ui_engine::ui_ir::UiIrError::Invalid { .. })
+    ));
 
     let replay = snapshot.to_initial_frame().unwrap();
     let replay_document = NativeUiDocument::from_frame(&replay).unwrap();

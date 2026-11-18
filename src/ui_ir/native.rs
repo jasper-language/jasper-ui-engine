@@ -219,9 +219,9 @@ impl NativeUiCompatibilitySnapshot {
         nonempty("$.identity_domain", &self.identity_domain)?;
         nonempty("$.owner", &self.owner)?;
         nonempty("$.session", &self.session)?;
-        if self.revision == 0 {
+        if self.revision < 2 {
             return Err(incomplete_projection(
-                "compatibility snapshot revision must be at least one",
+                "compatibility snapshot revision must be at least two",
             ));
         }
         self.environment.validate("$.environment")?;
@@ -925,9 +925,9 @@ impl DocumentBuilder {
                 "identity snapshot domain does not match the document authority",
             ));
         }
-        if snapshot.revision == 0 {
+        if snapshot.revision < 2 {
             return Err(incomplete_projection(
-                "compatibility snapshot revision must be at least one",
+                "compatibility snapshot revision must be at least two",
             ));
         }
         let identity = UiIdentityLedger::from_snapshot(snapshot.identity.clone())
