@@ -13,7 +13,7 @@ use crate::overlay::{
     OverlayAlign as NativeOverlayAlign, OverlayAnchor as NativeOverlayAnchor,
     OverlaySide as NativeOverlaySide,
 };
-use crate::scene::{Node, NodeId, NodeKind};
+use crate::scene::{Node, NodeId, NodeKind, ScenePatch};
 use crate::semantics::{LivePoliteness, Role, Semantics};
 use crate::style::{
     Align as NativeAlign, Color as NativeColor, Display as NativeDisplay,
@@ -605,6 +605,172 @@ pub fn project_jui2_initial_frame(
     Ok(Jui2CompatibilityFrame { text, losses })
 }
 
+/// Encode one already-admitted Native scene update as a JUI 2 successor frame.
+///
+/// JUI 2 has no identity-preserving Move operation. Such a patch is represented as
+/// remove+insert for compatibility and the interaction loss is reported.
+pub fn project_jui2_scene_update(
+    document: &NativeUiDocument,
+    update: &NativeSceneUpdate,
+) -> Result<Jui2CompatibilityFrame, UiIrError> {
+    if update.expected_revision.checked_add(1) != Some(update.next_revision)
+        || document.revision() != update.next_revision
+    {
+        return Err(UiIrError::Invalid {
+            path: "$.jui2.update".into(),
+            detail: "scene update revisions do not name the current document successor".into(),
+        });
+    }
+    let snapshot = document.project_compatibility_snapshot()?;
+    let mut losses = vec![NativeNodeLoss {
+        path: "$.jui2.identity".into(),
+        detail: "JUI 2 update transport carries backend NodeIds, not UiKey identity".into(),
+    }];
+    if compatibility_node_has_events(&snapshot.root) {
+        losses.push(NativeNodeLoss {
+            path: "$.jui2.events".into(),
+            detail: "JUI 2 updates do not carry event bindings".into(),
+        });
+    }
+    if !snapshot.resources.is_empty() {
+        losses.push(NativeNodeLoss {
+            path: "$.jui2.resources".into(),
+            detail: "resource payloads and generations travel outside JUI 2 updates".into(),
+        });
+    }
+    if snapshot.environment != UiEnvironment::default() {
+        losses.push(NativeNodeLoss {
+            path: "$.jui2.environment".into(),
+            detail: "JUI 2 environment is host state, not a scene frame operation".into(),
+        });
+    }
+
+    let mut text = format!(
+        "frame\t{}\t{}\n",
+        update.expected_revision, update.next_revision
+    );
+    for patch in &update.patches {
+        match patch {
+            ScenePatch::Insert { parent, index, node } => {
+                encode_jui2_node(
+                    document,
+                    node,
+                    Some(*parent),
+                    *index,
+                    &mut text,
+                    &mut losses,
+                )?;
+            }
+            ScenePatch::UpdateStyle { id, style } => {
+                let path = format!("$.jui2.update.style.{}", id.0);
+                let id = jui2_numeric(id.0, &format!("{path}.id"))?;
+                let style = project_native_style_to_jui2(style);
+                if !style.base.is_empty() {
+                    text.push_str("style\t");
+                    text.push_str(&id);
+                    for (key, value) in &style.base {
+                        text.push('\t');
+                        text.push_str(key);
+                        text.push('=');
+                        text.push_str(&jui2_escape(value));
+                    }
+                    text.push('\n');
+                }
+                if !style.xstyle.is_empty() {
+                    text.push_str("xstyle\t");
+                    text.push_str(&id);
+                    for (key, value) in &style.xstyle {
+                        text.push('\t');
+                        text.push_str(key);
+                        text.push('=');
+                        text.push_str(&jui2_escape(value));
+                    }
+                    text.push('\n');
+                }
+                losses.extend(style.losses.into_iter().map(|loss| NativeNodeLoss {
+                    path: format!("{path}.{}", loss.path),
+                    detail: loss.detail.into(),
+                }));
+            }
+            ScenePatch::UpdateSemantics { id, semantics } => {
+                let path = format!("$.jui2.update.semantics.{}", id.0);
+                let id = jui2_numeric(id.0, &format!("{path}.id"))?;
+                let semantics = project_native_semantics_to_jui2(semantics);
+                text.push_str("sem\t");
+                text.push_str(&id);
+                for (key, value) in &semantics.fields {
+                    text.push('\t');
+                    text.push_str(key);
+                    text.push('=');
+                    text.push_str(&jui2_escape(value));
+                }
+                text.push('\n');
+                losses.extend(
+                    semantics
+                        .losses
+                        .into_iter()
+                        .map(|loss| NativeNodeLoss {
+                            path: format!("{path}.{}", loss.path),
+                            detail: loss.detail.into(),
+                        }),
+                );
+            }
+            ScenePatch::UpdateText { id, text: value } => {
+                let id = jui2_numeric(id.0, "$.jui2.update.text.id")?;
+                writeln!(text, "text\t{id}\t{}", jui2_escape(value))
+                    .expect("writing JUI 2 text to String cannot fail");
+            }
+            ScenePatch::SetCanvas { id, .. } => {
+                let id = jui2_numeric(id.0, "$.jui2.update.canvas.id")?;
+                losses.push(NativeNodeLoss {
+                    path: format!("$.jui2.update.canvas.{id}"),
+                    detail: "JUI 2 frame transport has no Canvas command".into(),
+                });
+            }
+            ScenePatch::SetScroll { id, offset } => {
+                let id = jui2_numeric(id.0, "$.jui2.update.scroll.id")?;
+                let x = jui2_transport_int(offset.x, "$.jui2.update.scroll.x")?;
+                let y = jui2_transport_int(offset.y, "$.jui2.update.scroll.y")?;
+                writeln!(text, "scroll\t{id}\t{x}\t{y}")
+                    .expect("writing JUI 2 text to String cannot fail");
+            }
+            ScenePatch::Move {
+                id,
+                parent,
+                index,
+            } => {
+                let node = document.scene().find(*id).ok_or_else(|| UiIrError::Invalid {
+                    path: "$.jui2.update.move".into(),
+                    detail: "moved node is absent from the final document".into(),
+                })?;
+                let id = jui2_numeric(id.0, "$.jui2.update.move.id")?;
+                losses.push(NativeNodeLoss {
+                    path: format!("$.jui2.update.move.{id}"),
+                    detail: "JUI 2 has no Move; remove+insert cannot preserve focus or press state"
+                        .into(),
+                });
+                writeln!(text, "remove\t{id}")
+                    .expect("writing JUI 2 text to String cannot fail");
+                encode_jui2_node(
+                    document,
+                    node,
+                    Some(*parent),
+                    *index,
+                    &mut text,
+                    &mut losses,
+                )?;
+            }
+            ScenePatch::Remove { id } => {
+                let id = jui2_numeric(id.0, "$.jui2.update.remove.id")?;
+                writeln!(text, "remove\t{id}")
+                    .expect("writing JUI 2 text to String cannot fail");
+            }
+        }
+    }
+    text.push_str("end\n");
+    Ok(Jui2CompatibilityFrame { text, losses })
+}
+
 fn compatibility_node_has_events(node: &UiNode) -> bool {
     node.events.as_ref().is_some_and(|events| !events.is_empty())
         || node
@@ -733,6 +899,19 @@ fn jui2_escape(value: &str) -> String {
         }
     }
     out
+}
+
+fn jui2_transport_int(value: f32, path: &str) -> Result<String, UiIrError> {
+    if !value.is_finite()
+        || value.fract() != 0.0
+        || value.abs() > 999_999_999.0
+    {
+        return Err(UiIrError::Invalid {
+            path: path.into(),
+            detail: "JUI 2 integer transport requires an exact signed nine-digit value".into(),
+        });
+    }
+    Ok((value as i64).to_string())
 }
 
 fn jui2_number(value: f32) -> String {

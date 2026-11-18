@@ -557,6 +557,67 @@ fn native_document_projects_to_loss_aware_jui2_initial_frame() {
 }
 
 #[test]
+fn native_scene_update_projects_to_loss_aware_jui2_successor_frame() {
+    use jasper_ui_engine::ui_ir::project_jui2_scene_update;
+
+    let bytes = fixture("settings-page.ir.json");
+    let mut document = NativeUiDocument::from_json_slice(&bytes).unwrap();
+    let mut value: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    value["expected_revision"] = serde_json::json!(2);
+    value["next_revision"] = serde_json::json!(3);
+    value["ops"] = serde_json::json!([
+        {
+            "op": "update",
+            "key": { "semantic_id": 2, "generation": 1 },
+            "fields": {
+                "element": { "kind": "text", "content": "Updated" },
+                "semantics": { "role": "heading", "label": "Updated", "level": 1 },
+                "style": { "typography": { "size": 20 } }
+            }
+        },
+        {
+            "op": "insert",
+            "parent": { "semantic_id": 1, "generation": 1 },
+            "index": 3,
+            "node": {
+                "key": { "semantic_id": 13, "generation": 1 },
+                "element": { "kind": "text", "content": "New" },
+                "semantics": { "role": "text", "label": "New" }
+            }
+        },
+        {
+            "op": "move",
+            "key": { "semantic_id": 13, "generation": 1 },
+            "parent": { "semantic_id": 1, "generation": 1 },
+            "index": 0
+        },
+        {
+            "op": "remove",
+            "key": { "semantic_id": 4, "generation": 1 }
+        }
+    ]);
+    let frame = UiFrame::from_json_slice(&serde_json::to_vec(&value).unwrap()).unwrap();
+    let update = document.apply_frame_with_patches(&frame).unwrap();
+    let projected = project_jui2_scene_update(&document, &update).unwrap();
+    assert!(projected.text.starts_with("frame\t2\t3\n"));
+    assert!(projected.text.contains("text\t2\tUpdated\n"));
+    assert!(projected
+        .text
+        .contains("sem\t2\trole=heading\tlevel=1\tlabel=Updated\n"));
+    assert!(projected.text.contains("insert\t1\t0\t5\ttext\n"));
+    assert!(projected.text.contains("remove\t5\n"));
+    assert!(projected.text.contains("remove\t4\n"));
+    assert!(projected
+        .losses
+        .iter()
+        .any(|loss| loss.path == "$.jui2.update.move.5"));
+    assert!(projected
+        .losses
+        .iter()
+        .any(|loss| loss.path == "$.jui2.identity"));
+}
+
+#[test]
 fn native_node_projection_recovers_public_tree_semantics_events_and_styles() {
     use jasper_ui_engine::ui_ir::{SemanticRole, UiOp};
 
