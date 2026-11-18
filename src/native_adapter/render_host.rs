@@ -67,6 +67,7 @@ impl std::error::Error for TypedUiApplyError {}
 pub enum TypedUiResourceError {
     HostRevision { document: u64, current: Option<u64> },
     ResourceNotCommitted { id: String, generation: u64 },
+    ResourceStillActive { id: String },
     UnsupportedKind(ResourceKind),
     Image(ImageError),
 }
@@ -82,6 +83,12 @@ impl std::fmt::Display for TypedUiResourceError {
                 formatter,
                 "resource {id:?} generation {generation} is not the committed Typed IR resource"
             ),
+            Self::ResourceStillActive { id } => {
+                write!(
+                    formatter,
+                    "resource {id:?} is still active in the Typed IR document"
+                )
+            }
             Self::UnsupportedKind(kind) => {
                 write!(
                     formatter,
@@ -684,6 +691,29 @@ impl HostRenderer {
 
     pub fn remove_image(&mut self, owner: u64, id: &str) -> Option<bool> {
         self.inner.remove_image(owner, id)
+    }
+
+    /// Remove host bytes only after the Typed IR document has released the resource.
+    pub fn remove_ui_image(
+        &mut self,
+        owner: u64,
+        document: &NativeUiDocument,
+        id: &str,
+    ) -> Result<Option<bool>, TypedUiResourceError> {
+        let current = self
+            .inner
+            .snapshot_identity(owner)
+            .map(|(version, _)| version);
+        if current != Some(document.revision()) {
+            return Err(TypedUiResourceError::HostRevision {
+                document: document.revision(),
+                current,
+            });
+        }
+        if document.active_resource(id).is_some() {
+            return Err(TypedUiResourceError::ResourceStillActive { id: id.into() });
+        }
+        Ok(self.inner.remove_image(owner, id))
     }
 
     pub fn set_image_limits(

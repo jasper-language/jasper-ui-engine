@@ -71,6 +71,8 @@ Native 回调携带 `NodeId` 时使用 `admit_native_event`/`admit_activation`�
 Prepared 中间态，但不表示允许上传或绘制。
 `HostRenderer::insert_ui_image` 只接受当前 document revision 对应的精确 Committed
 `ResourceRef`；错误 id/generation、错误宿主 revision 和不可作为图片的 kind 都拒绝。
+`remove_ui_image` 只允许在 document 已 Release 且资源不再 active/prepared 后执行，
+避免宿主提前删除仍被 IR 引用的字节。
 `HostRenderer::try_apply_ui_frame` 会在 detached document 上完成 IR 映射，再经 Surface
 活跃代数与 Native 事务准入；任一侧拒绝都不推进 document 或活动视图。
 成功后同时应用 IR `reduce_motion`；其他 appearance/density/text-scale 字段仍作为已解析环境

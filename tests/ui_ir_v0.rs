@@ -1217,6 +1217,30 @@ fn committed_ir_resource_reaches_the_live_native_image_store() {
     let report = host.image_report(OWNER).unwrap();
     assert_eq!(report.resources, 1);
     assert!(report.failed.is_empty(), "{:?}", report.failed);
+
+    assert!(matches!(
+        host.remove_ui_image(OWNER, &document, "logo"),
+        Err(TypedUiResourceError::ResourceStillActive { .. })
+    ));
+    let mut release: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    release["expected_revision"] = serde_json::json!(document.revision());
+    release["next_revision"] = serde_json::json!(document.revision() + 1);
+    release["ops"] = serde_json::json!([
+        { "op": "remove", "key": { "semantic_id": 9, "generation": 1 } },
+        {
+            "op": "resource",
+            "resource": { "id": "logo", "generation": 1, "kind": "image" },
+            "admission": "release"
+        }
+    ]);
+    let release = UiFrame::from_json_slice(&serde_json::to_vec(&release).unwrap()).unwrap();
+    host.try_apply_ui_frame(OWNER, &mut document, &release)
+        .unwrap();
+    assert_eq!(
+        host.remove_ui_image(OWNER, &document, "logo").unwrap(),
+        Some(true)
+    );
+    assert_eq!(host.image_report(OWNER).unwrap().resources, 0);
 }
 
 #[cfg(feature = "gpu-pending")]
