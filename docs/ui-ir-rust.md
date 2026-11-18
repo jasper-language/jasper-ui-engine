@@ -99,6 +99,8 @@ caret 几何与 `UiKey` 一并返回，不暴露 backend 节点身份。
   environment 以及当前 active/prepared resource 的只读文档快照；
 - `NativeUiCompatibilitySnapshot::to_initial_frame()` 仅在全部身份为 generation 1 时重建
   `expected_revision=1` 的新会话帧；存在淘汰历史时结构化拒绝，不伪造 identity ledger；
+- `NativeUiDocument::from_compatibility_snapshot` 可直接按显式 identity 游标恢复 active
+  NativeUiDocument，支持当前 revision 与 generation > 1 的 live keys；
 - box/flex/Grid/position/paint/typography 中当前 Typed v0.1 可表达的字段会投影；
 - Native shadow、单侧 border、outline、text decoration、hit-slop、transform、motion、
   gradient、material、image、overlay 等字段逐项进入 `losses`；

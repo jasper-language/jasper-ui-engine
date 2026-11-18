@@ -205,6 +205,7 @@ pub struct NativeUiCompatibilitySnapshot {
     pub root: UiNode,
     pub environment: UiEnvironment,
     pub resources: BTreeMap<String, NativeResourceProjection>,
+    pub mapped_properties: BTreeMap<&'static str, MappedProperty>,
     pub losses: BTreeMap<UiKey, Vec<NativeNodeLoss>>,
 }
 
@@ -568,8 +569,17 @@ impl NativeUiDocument {
             root: projection.node,
             environment: self.environment.clone(),
             resources,
+            mapped_properties: self.mapped_properties.clone(),
             losses: projection.losses,
         })
+    }
+
+    /// Restore an active Native document directly from a compatibility snapshot, including its
+    /// identity cursors and current resource state. Released resource tombstones remain absent.
+    pub fn from_compatibility_snapshot(
+        snapshot: &NativeUiCompatibilitySnapshot,
+    ) -> Result<Self, UiIrError> {
+        DocumentBuilder::restore(snapshot)
     }
 
     fn project_compatibility_node_inner(
@@ -805,6 +815,146 @@ impl DocumentBuilder {
             mapped_properties: BTreeMap::new(),
             patches: Vec::new(),
         }
+    }
+
+    fn restore(snapshot: &NativeUiCompatibilitySnapshot) -> Result<NativeUiDocument, UiIrError> {
+        if snapshot.identity.identity_domain != snapshot.identity_domain {
+            return Err(incomplete_projection(
+                "identity snapshot domain does not match the document authority",
+            ));
+        }
+        if snapshot.revision == 0 {
+            return Err(incomplete_projection(
+                "compatibility snapshot revision must be at least one",
+            ));
+        }
+        let identity = UiIdentityLedger::from_snapshot(snapshot.identity.clone())
+            .map_err(|error| incomplete_projection(format!("invalid identity snapshot: {error}")))?;
+        let authority = Authority {
+            identity_domain: snapshot.identity_domain.clone(),
+            owner: snapshot.owner.clone(),
+            session: snapshot.session.clone(),
+        };
+        let mut builder = Self::new(authority, identity);
+        builder.revision = snapshot.revision;
+        builder.environment = snapshot.environment.clone();
+        builder.resources = snapshot
+            .resources
+            .iter()
+            .map(|(id, state)| {
+                (
+                    id.clone(),
+                    ResourceState {
+                        active: state.active.clone(),
+                        prepared: state.prepared.clone(),
+                    },
+                )
+            })
+            .collect();
+        for (id, state) in &snapshot.resources {
+            for resource in [state.active.as_ref(), state.prepared.as_ref()]
+                .into_iter()
+                .flatten()
+            {
+                if resource.id != *id || resource.generation == 0 {
+                    return Err(incomplete_projection(
+                        "resource snapshot contains an invalid id or generation",
+                    ));
+                }
+                match builder.resource_generations.get(id).copied() {
+                    Some((kind, _)) if kind != resource.kind => {
+                        return Err(incomplete_projection(
+                            "resource snapshot changes kind within one id",
+                        ))
+                    }
+                    Some((kind, generation)) => {
+                        builder
+                            .resource_generations
+                            .insert(id.clone(), (kind, generation.max(resource.generation)));
+                    }
+                    None => {
+                        builder
+                            .resource_generations
+                            .insert(id.clone(), (resource.kind, resource.generation));
+                    }
+                }
+            }
+        }
+        builder.reserve_snapshot_keys("$.compatibility.root", &snapshot.root)?;
+        let root = builder
+            .build_node("$.compatibility.root", &snapshot.root)
+            .map_err(|error| incomplete_projection(format!("style mapping failed: {error}")))?;
+        builder.scene = Scene::from_root_at(root, snapshot.revision)
+            .ok_or_else(|| incomplete_projection("snapshot root is empty or has duplicate ids"))?;
+        builder
+            .rebuild_style_resources()
+            .map_err(|error| incomplete_projection(format!("resource rebuild failed: {error}")))?;
+        builder
+            .validate_style_resources()
+            .map_err(|error| incomplete_projection(format!("resource validation failed: {error}")))?;
+        let live_records = snapshot
+            .identity
+            .records
+            .values()
+            .filter(|record| record.live)
+            .count();
+        if live_records != builder.key_to_node.len() {
+            return Err(incomplete_projection(
+                "identity snapshot live cursors do not match the active subtree",
+            ));
+        }
+        builder.mapped_properties = snapshot.mapped_properties.clone();
+        Ok(NativeUiDocument {
+            authority: builder.authority,
+            identity: builder.identity,
+            revision: snapshot.revision,
+            scene: builder.scene,
+            next_node_id: builder.next_node_id,
+            key_to_node: builder.key_to_node,
+            node_to_key: builder.node_to_key,
+            element_kinds: builder.element_kinds,
+            event_bindings: builder.event_bindings,
+            resource_refs: builder.resource_refs,
+            node_resource_refs: builder.node_resource_refs,
+            resource_generations: builder.resource_generations,
+            resources: builder.resources,
+            environment: builder.environment,
+            mapped_properties: builder.mapped_properties,
+        })
+    }
+
+    fn reserve_snapshot_keys(
+        &mut self,
+        path: &str,
+        node: &UiNode,
+    ) -> Result<(), UiIrError> {
+        self.identity.admit(node.key).map_err(|error| {
+            incomplete_projection(format!("{path}: identity is not live in snapshot: {error}"))
+        })?;
+        if self.key_to_node.contains_key(&node.key) {
+            return Err(incomplete_projection(format!(
+                "{path}: duplicate snapshot identity {}:{}",
+                node.key.semantic_id, node.key.generation
+            )));
+        }
+        let id = NodeId(self.next_node_id);
+        self.next_node_id = self
+            .next_node_id
+            .checked_add(1)
+            .ok_or_else(|| incomplete_projection("backend node identity space is exhausted"))?;
+        self.key_to_node.insert(node.key, id);
+        self.node_to_key.insert(id, node.key);
+        self.element_kinds.insert(node.key, node.element.kind);
+        for (index, child) in node
+            .children
+            .as_deref()
+            .unwrap_or_default()
+            .iter()
+            .enumerate()
+        {
+            self.reserve_snapshot_keys(&format!("{path}.children[{index}]"), child)?;
+        }
+        Ok(())
     }
 
     fn finish(mut self, revision: u64) -> Result<NativeUiDocument, NativeUiFrameError> {

@@ -130,6 +130,16 @@ impl Scene {
         Ok(scene)
     }
 
+    /// Restore an already validated nonempty version used by compatibility snapshots.
+    pub(crate) fn from_root_at(root: Node, version: u64) -> Option<Self> {
+        if version == 0 {
+            return None;
+        }
+        let scene = Self { root, version };
+        scene.validate().ok()?;
+        Some(scene)
+    }
+
     /// Rechecks identity uniqueness, including direct edits to the public root.
     /// 重新检查身份唯一性，覆盖对公开 root 的直接修改。
     pub fn validate(&self) -> Result<(), SceneError> {

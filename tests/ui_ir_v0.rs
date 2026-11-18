@@ -446,7 +446,19 @@ fn native_compatibility_snapshot_includes_environment_and_live_resources() {
     let replay = snapshot.to_initial_frame().unwrap();
     let replay_document = NativeUiDocument::from_frame(&replay).unwrap();
     let replay_snapshot = replay_document.project_compatibility_snapshot().unwrap();
-    assert_eq!(replay_snapshot, snapshot);
+    assert_eq!(replay_snapshot.identity, snapshot.identity);
+    assert_eq!(replay_snapshot.owner, snapshot.owner);
+    assert_eq!(replay_snapshot.session, snapshot.session);
+    assert_eq!(replay_snapshot.revision, snapshot.revision);
+    assert_eq!(replay_snapshot.root, snapshot.root);
+    assert_eq!(replay_snapshot.environment, snapshot.environment);
+    assert_eq!(replay_snapshot.resources, snapshot.resources);
+    assert_eq!(replay_snapshot.losses, snapshot.losses);
+    let restored = NativeUiDocument::from_compatibility_snapshot(&snapshot).unwrap();
+    assert_eq!(
+        restored.project_compatibility_snapshot().unwrap(),
+        snapshot
+    );
 }
 
 #[test]
@@ -836,6 +848,13 @@ fn native_document_never_reuses_a_removed_ui_key_and_accepts_the_next_generation
         snapshot.to_initial_frame(),
         Err(jasper_ui_engine::ui_ir::UiIrError::Invalid { .. })
     ));
+    let restored = NativeUiDocument::from_compatibility_snapshot(&snapshot).unwrap();
+    assert_eq!(restored.revision(), 4);
+    assert_eq!(restored.current_identity(2), Some(next));
+    assert_eq!(
+        restored.project_compatibility_snapshot().unwrap(),
+        snapshot
+    );
 }
 
 #[test]

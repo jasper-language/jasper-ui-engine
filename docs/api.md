@@ -76,6 +76,8 @@ active/prepared resources，以及可恢复的 identity generation/live 游标�
 集合，且不携带 resource tombstone/history 或组件/Signal 声明。`to_initial_frame()` 只为
 generation-one 身份重建新会话；存在代数退休历史时会结构化拒绝，调用方仍可单独使用
 `UiIdentityLedger::from_snapshot` 恢复显式 identity domain。
+`NativeUiDocument::from_compatibility_snapshot` 可直接恢复含当前 revision、generation > 1
+live keys、environment 与 active/prepared resources 的 Native document。
 Native 回调携带 `NodeId` 时使用 `admit_native_event`/`admit_activation`；内部 NodeId 仅用于
 映射，授权仍以 `UiEventContext.target` 的 `UiKey` 和上下文为准。
 HostRenderer 的 `typed_focus`、`typed_text_input`、`typed_set_preedit` 把目标授权与实际
