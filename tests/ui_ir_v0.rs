@@ -1287,7 +1287,10 @@ fn typed_focus_text_and_ime_use_the_same_admitted_ui_key() {
     let button = document.node_for_key(UiKey::new(4, 1)).unwrap();
     let button_context = UiEventContext {
         target: UiKey::new(4, 1),
-        permission_context: UiPermissionContext::new("button-focus", [UiPermission::Focus]),
+        permission_context: UiPermissionContext::new(
+            "button-focus-with-blur-commit",
+            [UiPermission::Focus, UiPermission::TextEdit],
+        ),
         ..context.clone()
     };
     host.typed_focus(
@@ -1463,7 +1466,7 @@ fn typed_edit_drain_preserves_order_and_admits_commit_binding() {
 
 #[cfg(feature = "native-blitz-cpu-pending")]
 #[test]
-fn typed_ime_cancel_is_admitted_after_leaving_the_editing_field() {
+fn typed_focus_change_preadmits_commit_and_ime_cancel() {
     use jasper_ui_engine::native::host::HostRenderer;
     use jasper_ui_engine::native::{
         EventReply, PointerAction, SceneEditEventKind, TypedUiEditError, TypedUiPointerError,
@@ -1498,7 +1501,11 @@ fn typed_ime_cancel_is_admitted_after_leaving_the_editing_field() {
         frame_revision: 2,
         permission_context: UiPermissionContext::new(
             "ime-host",
-            [UiPermission::Focus, UiPermission::Ime],
+            [
+                UiPermission::Focus,
+                UiPermission::TextEdit,
+                UiPermission::Ime,
+            ],
         ),
     };
     host.typed_focus(
@@ -1511,6 +1518,35 @@ fn typed_ime_cancel_is_admitted_after_leaving_the_editing_field() {
         &mut |_| {},
     )
     .unwrap();
+    let button = document.node_for_key(UiKey::new(4, 1)).unwrap();
+    host.typed_text_input(OWNER, 2, generation, &document, &field_context, field, "!")
+        .unwrap();
+    let button_without_text_commit = UiEventContext {
+        target: UiKey::new(4, 1),
+        permission_context: UiPermissionContext::new(
+            "focus-ime-only",
+            [UiPermission::Focus, UiPermission::Ime],
+        ),
+        ..field_context.clone()
+    };
+    assert!(matches!(
+        host.typed_focus(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &button_without_text_commit,
+            button,
+            &mut |_| {},
+        ),
+        Err(TypedUiTargetError::Admission(
+            jasper_ui_engine::ui_ir::UiEventAdmissionError::PermissionDenied { .. }
+        ))
+    ));
+    assert_eq!(
+        host.typed_focused_node(OWNER, 2, &document).unwrap(),
+        Some(UiKey::new(3, 1))
+    );
     host.typed_set_preedit(
         OWNER,
         2,
@@ -1523,7 +1559,6 @@ fn typed_ime_cancel_is_admitted_after_leaving_the_editing_field() {
     )
     .unwrap();
 
-    let button = document.node_for_key(UiKey::new(4, 1)).unwrap();
     let button_without_ime = UiEventContext {
         target: UiKey::new(4, 1),
         permission_context: UiPermissionContext::new("focus-only", [UiPermission::Focus]),
@@ -1574,14 +1609,29 @@ fn typed_ime_cancel_is_admitted_after_leaving_the_editing_field() {
     let events = host
         .typed_take_edit_events(OWNER, &document, &field_context, false)
         .unwrap();
-    assert_eq!(events.len(), 1);
+    assert_eq!(events.len(), 3);
     assert_eq!(events[0].target, UiKey::new(3, 1));
     assert_eq!(
         events[0].kind,
+        SceneEditEventKind::Changed("Alice!".into())
+    );
+    assert_eq!(
+        events[1].kind,
+        SceneEditEventKind::Commit("Alice!".into())
+    );
+    assert_eq!(
+        events[1]
+            .admitted
+            .as_ref()
+            .map(|event| (event.event, event.action.as_str())),
+        Some((UiEventKind::TextCommit, "name"))
+    );
+    assert_eq!(
+        events[2].kind,
         SceneEditEventKind::CompositionCancelled
     );
     assert_eq!(
-        events[0]
+        events[2]
             .admitted
             .as_ref()
             .map(|event| (event.event, event.action.as_str())),

@@ -937,14 +937,14 @@ impl HostRenderer {
                 let key = document
                     .admit_native_target(context, node, UiPermission::Focus)
                     .map_err(TypedUiAccessibilityActionError::Admission)?;
-                self.preadmit_ime_cancel_for_focus_change(
+                self.preadmit_edit_end_for_focus_change(
                     owner,
                     version,
                     document,
                     context,
                     Some(node),
                 )
-                .map_err(map_ime_cancel_accessibility_action_error)?;
+                .map_err(map_edit_end_accessibility_action_error)?;
                 TypedAccessibilityAction::Focused(key)
             }
             crate::native::host::accesskit::Action::Click => {
@@ -1055,14 +1055,14 @@ impl HostRenderer {
         let target = document
             .admit_native_target(context, node, UiPermission::Focus)
             .map_err(TypedUiTargetError::Admission)?;
-        self.preadmit_ime_cancel_for_focus_change(
+        self.preadmit_edit_end_for_focus_change(
             owner,
             version,
             document,
             context,
             Some(node),
         )
-        .map_err(map_ime_cancel_target_error)?;
+        .map_err(map_edit_end_target_error)?;
         let mut focus_admissions = Vec::new();
         for focus_node in [self.focused_node(owner, version), Some(node)]
             .into_iter()
@@ -1124,29 +1124,38 @@ impl HostRenderer {
             .map(|target| target.map(|(key, _)| key))
     }
 
-    fn preadmit_ime_cancel_for_focus_change(
+    fn preadmit_edit_end_for_focus_change(
         &self,
         owner: u64,
         version: u64,
         document: &NativeUiDocument,
         context: &UiEventContext,
         next_focus: Option<NodeId>,
-    ) -> Result<(), ImeCancelPreadmissionError> {
+    ) -> Result<(), EditEndPreadmissionError> {
         let current_focus = self.focused_node(owner, version);
         if current_focus == next_focus {
             return Ok(());
         }
-        let Some(state) = self.edit_state(owner, version).flatten() else {
-            return Ok(());
-        };
-        if state.preedit.is_none() {
+        let will_commit = self
+            .inner
+            .edit_will_commit(owner, version)
+            .unwrap_or(false);
+        let state = self.edit_state(owner, version).flatten();
+        if !will_commit && state.as_ref().is_none_or(|state| state.preedit.is_none()) {
             return Ok(());
         }
+        let state = state.ok_or(EditEndPreadmissionError::UnmappedTarget)?;
         let key = document
             .key_for_node(state.node)
-            .ok_or(ImeCancelPreadmissionError::UnmappedTarget)?;
-        admitted_optional_event(document, context, key, state.node, UiEventKind::ImeCancel)
-            .map_err(ImeCancelPreadmissionError::Admission)?;
+            .ok_or(EditEndPreadmissionError::UnmappedTarget)?;
+        if will_commit {
+            admitted_optional_event(document, context, key, state.node, UiEventKind::TextCommit)
+                .map_err(EditEndPreadmissionError::Admission)?;
+        }
+        if state.preedit.is_some() {
+            admitted_optional_event(document, context, key, state.node, UiEventKind::ImeCancel)
+                .map_err(EditEndPreadmissionError::Admission)?;
+        }
         Ok(())
     }
 
@@ -1180,14 +1189,14 @@ impl HostRenderer {
 
         let mut focus_admissions = Vec::new();
         if phase == PointerAction::Down {
-            self.preadmit_ime_cancel_for_focus_change(
+            self.preadmit_edit_end_for_focus_change(
                 owner,
                 version,
                 document,
                 context,
                 target.map(|(_, node)| node),
             )
-            .map_err(map_ime_cancel_pointer_error)?;
+            .map_err(map_edit_end_pointer_error)?;
             let mut focus_candidates = Vec::new();
             if let Some((_, node)) = target {
                 focus_candidates.push(node);
@@ -2357,14 +2366,14 @@ impl HostRenderer {
             }
             _ => None,
         };
-        self.preadmit_ime_cancel_for_focus_change(
+        self.preadmit_edit_end_for_focus_change(
             owner,
             version,
             document,
             context,
             None,
         )
-        .map_err(map_ime_cancel_target_error)?;
+        .map_err(map_edit_end_target_error)?;
         let mut mapping_error = false;
         let accepted = self.deactivate(owner, version, generation, &mut |event| {
             if let Some(target) = document.key_for_node(event.node) {
@@ -2518,34 +2527,34 @@ impl HostRenderer {
     }
 }
 
-enum ImeCancelPreadmissionError {
+enum EditEndPreadmissionError {
     UnmappedTarget,
     Admission(UiEventAdmissionError),
 }
 
-fn map_ime_cancel_target_error(error: ImeCancelPreadmissionError) -> TypedUiTargetError {
+fn map_edit_end_target_error(error: EditEndPreadmissionError) -> TypedUiTargetError {
     match error {
-        ImeCancelPreadmissionError::UnmappedTarget => TypedUiTargetError::UnmappedTarget,
-        ImeCancelPreadmissionError::Admission(error) => TypedUiTargetError::Admission(error),
+        EditEndPreadmissionError::UnmappedTarget => TypedUiTargetError::UnmappedTarget,
+        EditEndPreadmissionError::Admission(error) => TypedUiTargetError::Admission(error),
     }
 }
 
-fn map_ime_cancel_pointer_error(error: ImeCancelPreadmissionError) -> TypedUiPointerError {
+fn map_edit_end_pointer_error(error: EditEndPreadmissionError) -> TypedUiPointerError {
     match error {
-        ImeCancelPreadmissionError::UnmappedTarget => TypedUiPointerError::UnmappedTarget,
-        ImeCancelPreadmissionError::Admission(error) => TypedUiPointerError::Admission(error),
+        EditEndPreadmissionError::UnmappedTarget => TypedUiPointerError::UnmappedTarget,
+        EditEndPreadmissionError::Admission(error) => TypedUiPointerError::Admission(error),
     }
 }
 
 #[cfg(feature = "accesskit-pending")]
-fn map_ime_cancel_accessibility_action_error(
-    error: ImeCancelPreadmissionError,
+fn map_edit_end_accessibility_action_error(
+    error: EditEndPreadmissionError,
 ) -> TypedUiAccessibilityActionError {
     match error {
-        ImeCancelPreadmissionError::UnmappedTarget => {
+        EditEndPreadmissionError::UnmappedTarget => {
             TypedUiAccessibilityActionError::UnmappedTarget
         }
-        ImeCancelPreadmissionError::Admission(error) => {
+        EditEndPreadmissionError::Admission(error) => {
             TypedUiAccessibilityActionError::Admission(error)
         }
     }

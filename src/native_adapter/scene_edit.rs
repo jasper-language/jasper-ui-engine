@@ -442,6 +442,16 @@ impl NativeScene {
         }
         Some(&self.edit.events)
     }
+    /// Whether the next blur of the active edit session would queue `Commit`.
+    pub(crate) fn edit_will_commit_from_host(&self, caller: u64, version: u64) -> Option<bool> {
+        if caller != self.owner || version != self.scene_version || !self.document.is_open() {
+            return None;
+        }
+        Some(self.edit.session.as_ref().is_some_and(|session| {
+            let text = session.buffer.text();
+            text != session.source && session.committed.as_deref() != Some(text)
+        }))
+    }
     /// The active session at `version`, or Some(None) without one. None for a foreign caller,
     /// a stale version or a closed view.
     /// `version` 时的当前会话；无会话时为 Some(None)。非归属方、过期版本或已关闭视图为 None。

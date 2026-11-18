@@ -822,6 +822,9 @@ impl SceneHostView {
     pub(crate) fn pending_edit_events(&self,owner:u64)->Option<&[SceneEditEvent]> {
         self.inner.edit_events_from_host(owner)
     }
+    pub(crate) fn edit_will_commit(&self,owner:u64,version:u64)->Option<bool> {
+        self.inner.edit_will_commit_from_host(owner,version)
+    }
     /// E14 active edit session (Some(None) without one). None for a foreign owner, a stale
     /// version or a closed view.
     /// E14 当前编辑会话（无会话时为 Some(None)）。非归属方、过期版本或已关闭视图为 None。
