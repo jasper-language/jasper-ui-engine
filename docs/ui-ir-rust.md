@@ -265,6 +265,8 @@ Web 后端和正式宿主仍需分别验收。
 - settings 的 initial+successor 双帧流返回 `ack 2`、`ack 3`，最终
   `accepted 2 / rejected 0`；后继 frame 的 style/semantics/text/insert/remove 和
   Move→remove+insert 兼容近似都进入最终 dump，Move 状态损失保持显式；
+- 在临时旧 host 测试中，`project_jui2_event` 对 hover/pointer/click/focus/key/
+  text-commit/ime-cancel/dismiss-request 的输出逐字等于 host 公开 `event_line`；
   副本只为新增 SceneError/Role 变体补了 exhaustive match 分支，reader 协议逻辑未改；
   原 host 仓库未修改。该证据只覆盖 CPU headless transport，不包含真实平台窗口；
 - Clippy 成功退出；仓库仍保留已登记的非阻塞历史 warning。
