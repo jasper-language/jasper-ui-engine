@@ -1662,6 +1662,87 @@ fn typed_pointer_routes_and_activates_by_ui_key_across_an_identity_preserving_mo
 
 #[cfg(feature = "native-blitz-cpu-pending")]
 #[test]
+fn typed_pointer_focus_pre_admission_is_limited_to_down_without_blocking_hover() {
+    use jasper_ui_engine::native::host::HostRenderer;
+    use jasper_ui_engine::native::{EventReply, PointerAction, TypedUiPointerError};
+
+    const OWNER: u64 = 91;
+    let mut value: serde_json::Value =
+        serde_json::from_slice(&fixture("settings-page.ir.json")).unwrap();
+    value["ops"][0]["node"]["children"][2]["events"] = serde_json::json!([
+        { "event": "click", "action": "save" },
+        { "event": "focus", "action": "focus-save" }
+    ]);
+    let frame = UiFrame::from_json_slice(&serde_json::to_vec(&value).unwrap()).unwrap();
+    let document = NativeUiDocument::from_frame(&frame).unwrap();
+    let font = std::fs::read(
+        std::env::var("JASPER_UI_TEST_FONT")
+            .expect("JASPER_UI_TEST_FONT must name an injected font"),
+    )
+    .unwrap();
+    let mut host = HostRenderer::new_ui_document(OWNER, &document, &font, 480, 320).unwrap();
+    let generation = host.surface_status(OWNER).unwrap().generation;
+    let button = UiKey::new(4, 1);
+    let bounds = host
+        .typed_node_bounds(OWNER, 2, generation, &document, button)
+        .unwrap()
+        .unwrap();
+    let (x, y) = (
+        bounds.x() + bounds.width() / 2.0,
+        bounds.y() + bounds.height() / 2.0,
+    );
+    let context = UiEventContext {
+        target: button,
+        identity_domain: "orders-app/window-main".into(),
+        owner: "desktop-host".into(),
+        session: "session-2026-11-17-1".into(),
+        frame_revision: 2,
+        permission_context: UiPermissionContext::new(
+            "pointer-only",
+            [UiPermission::Pointer, UiPermission::Activate],
+        ),
+    };
+    assert_eq!(
+        host.typed_pointer(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &context,
+            PointerAction::Move,
+            x,
+            y,
+            false,
+            &mut |_| EventReply::default(),
+            &mut |_| {},
+        )
+        .unwrap(),
+        Some(button)
+    );
+    assert_eq!(host.typed_focused_node(OWNER, 2, &document).unwrap(), None);
+    assert!(matches!(
+        host.typed_pointer(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &context,
+            PointerAction::Down,
+            x,
+            y,
+            true,
+            &mut |_| EventReply::default(),
+            &mut |_| {},
+        ),
+        Err(TypedUiPointerError::Admission(
+            jasper_ui_engine::ui_ir::UiEventAdmissionError::PermissionDenied { .. }
+        ))
+    ));
+    assert_eq!(host.typed_focused_node(OWNER, 2, &document).unwrap(), None);
+}
+
+#[cfg(feature = "native-blitz-cpu-pending")]
+#[test]
 fn typed_keyboard_activation_requires_activate_binding() {
     use jasper_ui_engine::native::host::HostRenderer;
     use jasper_ui_engine::native::{

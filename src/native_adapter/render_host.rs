@@ -1137,25 +1137,27 @@ impl HostRenderer {
         }
 
         let mut focus_admissions = Vec::new();
-        let mut focus_candidates = Vec::new();
-        if let Some((_, node)) = target {
-            focus_candidates.push(node);
-            if let Some(current) = self.focused_node(owner, version) {
-                focus_candidates.push(current);
+        if phase == PointerAction::Down {
+            let mut focus_candidates = Vec::new();
+            if let Some((_, node)) = target {
+                focus_candidates.push(node);
+                if let Some(current) = self.focused_node(owner, version) {
+                    focus_candidates.push(current);
+                }
+                focus_candidates.extend(source_ancestors(document.scene(), node));
             }
-            focus_candidates.extend(source_ancestors(document.scene(), node));
-        }
-        focus_candidates.sort_unstable();
-        focus_candidates.dedup();
-        for focus_node in focus_candidates {
-            let key = document
-                .key_for_node(focus_node)
-                .ok_or(TypedUiPointerError::UnmappedTarget)?;
-            if let Some(admitted) =
-                admitted_optional_event(document, context, key, focus_node, UiEventKind::Focus)
-                    .map_err(TypedUiPointerError::Admission)?
-            {
-                focus_admissions.push((key, admitted));
+            focus_candidates.sort_unstable();
+            focus_candidates.dedup();
+            for focus_node in focus_candidates {
+                let key = document
+                    .key_for_node(focus_node)
+                    .ok_or(TypedUiPointerError::UnmappedTarget)?;
+                if let Some(admitted) =
+                    admitted_optional_event(document, context, key, focus_node, UiEventKind::Focus)
+                        .map_err(TypedUiPointerError::Admission)?
+                {
+                    focus_admissions.push((key, admitted));
+                }
             }
         }
 

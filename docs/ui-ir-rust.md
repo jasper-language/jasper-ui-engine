@@ -94,7 +94,7 @@ caret 几何与 `UiKey` 一并返回，不暴露 backend 节点身份。
 | Typed input targets | implemented / tested | HostRenderer Focus/Key/KeyActivation/TextInput/IME 使用同一 UiKey 上下文授权；Focus/Key binding 在 Native 状态变化前预准入，Activation 回调只暴露 UiKey；`typed_focused_node` 返回 UiKey；键输入匹配当前 Native focus，TextInput/IME 必须匹配当前编辑节点，键盘激活另需 activate binding；错误 target、permission 和 revision 均拒绝 |
 | Typed IME commit | implemented / tested | `typed_ime_commit` 要求 Ime permission 与当前编辑节点，合法 `ime-commit` binding 在文字插入前准入并返回 action |
 | Typed edit events | implemented / tested | 有序 drain E14 Changed/Commit/CompositionCancelled；owner、event revision、UiKey 与 text-commit/ime-cancel permission/binding 均校验 |
-| Typed pointer routing | implemented / tested | hit query 与 Pointer 路由使用同一 overlay/圆角/hit-slop 目标；owner/revision/Surface generation/Pointer permission 先准入；命中链可能触发的 Focus binding 在 Pointer 副作用前预准入，回调只暴露 UiKey；Down→Move 后继帧后 Up 仍保持身份并准入 click binding |
+| Typed pointer routing | implemented / tested | hit query 与 Pointer 路由使用同一 overlay/圆角/hit-slop 目标；owner/revision/Surface generation/Pointer permission 先准入；只有可能聚焦的 Pointer Down 会预准入命中链 Focus bindings，Move 不要求多余 Focus 权限；回调只暴露 UiKey；Down→Move 后继帧后 Up 仍保持身份并准入 click binding |
 | Typed geometry queries | implemented / tested | bounds/scroll/table metrics 直接消费 UiKey，并校验 document revision、Surface generation 和 active key；table/cell 测量结果也只含 UiKey |
 | Typed scroll event | implemented / tested | `typed_scroll_event` 校验 Surface、revision、UiKey、有限非零 delta 与 Scroll binding/permission；不改 Native offset，视觉更新仍由 Framework 的版本化场景帧提交 |
 | 资源生命周期 | implemented / tested | Prepare 仅是 pending、不替换旧 Committed；Commit 原子提升；Release 只释放 active；上传与删除分别受 `insert_ui_image`/`remove_ui_image` 状态校验；含代数复用拒绝、节点移除后 Release 与实际解码/绘制 |
