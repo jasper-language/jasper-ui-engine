@@ -468,6 +468,26 @@ fn native_compatibility_snapshot_includes_environment_and_live_resources() {
     assert_eq!(snapshot.resources["icon"].active, Some(committed));
     assert_eq!(snapshot.resources["icon"].prepared, Some(prepared));
     assert!(snapshot.losses.is_empty(), "{:?}", snapshot.losses);
+    snapshot.validate().unwrap();
+
+    let mut bad_identity = snapshot.clone();
+    bad_identity.identity_domain = "other/window".into();
+    assert!(matches!(
+        bad_identity.validate(),
+        Err(jasper_ui_engine::ui_ir::UiIrError::Invalid { .. })
+    ));
+    let mut bad_resource = snapshot.clone();
+    bad_resource.resources.get_mut("icon").unwrap().active.as_mut().unwrap().id = "wrong".into();
+    assert!(matches!(
+        bad_resource.validate(),
+        Err(jasper_ui_engine::ui_ir::UiIrError::Invalid { .. })
+    ));
+    let mut missing_live = snapshot.clone();
+    missing_live.identity.records.remove(&1);
+    assert!(matches!(
+        missing_live.validate(),
+        Err(jasper_ui_engine::ui_ir::UiIrError::Invalid { .. })
+    ));
 
     let replay = snapshot.to_initial_frame().unwrap();
     let replay_document = NativeUiDocument::from_frame(&replay).unwrap();

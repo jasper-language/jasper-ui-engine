@@ -24,7 +24,7 @@ use crate::style::{
     Style as NativeStyle, TextAlign as NativeTextAlign,
     TextAlignVertical as NativeVerticalAlign, TextDirection as NativeTextDirection,
 };
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -210,9 +210,71 @@ pub struct NativeUiCompatibilitySnapshot {
 }
 
 impl NativeUiCompatibilitySnapshot {
+    pub fn validate(&self) -> Result<(), UiIrError> {
+        if self.identity.identity_domain != self.identity_domain {
+            return Err(incomplete_projection(
+                "identity snapshot domain does not match the document authority",
+            ));
+        }
+        nonempty("$.identity_domain", &self.identity_domain)?;
+        nonempty("$.owner", &self.owner)?;
+        nonempty("$.session", &self.session)?;
+        if self.revision == 0 {
+            return Err(incomplete_projection(
+                "compatibility snapshot revision must be at least one",
+            ));
+        }
+        self.environment.validate("$.environment")?;
+        let identity = UiIdentityLedger::from_snapshot(self.identity.clone())
+            .map_err(|error| incomplete_projection(format!("invalid identity snapshot: {error}")))?;
+        let mut keys = BTreeSet::new();
+        self.root.validate("$.root", &mut keys)?;
+        for key in &keys {
+            identity.admit(*key).map_err(|error| {
+                incomplete_projection(format!(
+                    "snapshot contains an inactive identity {}:{}: {error}",
+                    key.semantic_id, key.generation
+                ))
+            })?;
+        }
+        let live_records = self
+            .identity
+            .records
+            .values()
+            .filter(|record| record.live)
+            .count();
+        if live_records != keys.len() {
+            return Err(incomplete_projection(
+                "identity snapshot live cursors do not match the root subtree",
+            ));
+        }
+        for (id, state) in &self.resources {
+            let mut kind = None;
+            for resource in [state.active.as_ref(), state.prepared.as_ref()]
+                .into_iter()
+                .flatten()
+            {
+                resource.validate(&format!("$.resources.{id}"))?;
+                if resource.id != *id {
+                    return Err(incomplete_projection(
+                        "resource snapshot key does not match its ResourceRef id",
+                    ));
+                }
+                if kind.is_some_and(|kind| kind != resource.kind) {
+                    return Err(incomplete_projection(
+                        "resource snapshot changes kind within one id",
+                    ));
+                }
+                kind = Some(resource.kind);
+            }
+        }
+        Ok(())
+    }
+
     /// Rebuild a fresh initial frame from this snapshot. This is intentionally restricted to
     /// generation-one identities because an initial frame cannot reproduce retirement history.
     pub fn to_initial_frame(&self) -> Result<UiFrame, UiIrError> {
+        self.validate()?;
         ensure_lossless_restore(self)?;
         ensure_initial_generations(&self.root)?;
         let mut ops = Vec::new();
@@ -819,6 +881,7 @@ impl DocumentBuilder {
     }
 
     fn restore(snapshot: &NativeUiCompatibilitySnapshot) -> Result<NativeUiDocument, UiIrError> {
+        snapshot.validate()?;
         ensure_lossless_restore(snapshot)?;
         if snapshot.identity.identity_domain != snapshot.identity_domain {
             return Err(incomplete_projection(
