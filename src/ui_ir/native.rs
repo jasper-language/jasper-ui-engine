@@ -382,7 +382,7 @@ impl NativeUiDocument {
     /// target. Typed pointer routing uses this before a hit result exists; bound events still
     /// pass through `admit_native_event`, and target-bearing operations use
     /// `admit_native_target`.
-    pub fn admit_permission(
+    pub(crate) fn admit_permission(
         &self,
         context: &UiEventContext,
         permission: UiPermission,

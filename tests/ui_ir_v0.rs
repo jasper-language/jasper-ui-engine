@@ -967,7 +967,7 @@ fn typed_focus_text_and_ime_use_the_same_admitted_ui_key() {
             ],
         ),
     };
-    let mut focus_events = 0usize;
+    let mut focus_events = Vec::new();
     assert_eq!(
         host.typed_focus(
             OWNER,
@@ -976,18 +976,25 @@ fn typed_focus_text_and_ime_use_the_same_admitted_ui_key() {
             &document,
             &context,
             field,
-            &mut |_| focus_events += 1,
+            &mut |event| focus_events.push(event),
         )
         .unwrap(),
         UiKey::new(3, 1)
     );
-    assert_eq!(focus_events, 1);
+    assert_eq!(
+        focus_events,
+        vec![jasper_ui_engine::native::TypedUiFocusEvent {
+            target: UiKey::new(3, 1),
+            focused: true,
+        }]
+    );
     assert_eq!(
         host.typed_text_input(OWNER, 2, generation, &document, &context, field, "!")
             .unwrap(),
         UiKey::new(3, 1)
     );
     assert_eq!(host.edit_state(OWNER, 2).unwrap().unwrap().text, "Alice!");
+    let mut typed_keys = Vec::new();
     assert_eq!(
         host.typed_key(
             OWNER,
@@ -1005,12 +1012,18 @@ fn typed_focus_text_and_ime_use_the_same_admitted_ui_key() {
                 modifiers: Modifiers::default(),
                 location: KeyLocation::Standard,
             },
-            &mut |_| EventReply::default(),
+            &mut |event| {
+                typed_keys.push(event);
+                EventReply::default()
+            },
             &mut |_| {},
         )
         .unwrap(),
         UiKey::new(3, 1)
     );
+    assert_eq!(typed_keys.len(), 1);
+    assert_eq!(typed_keys[0].target, UiKey::new(3, 1));
+    assert_eq!(typed_keys[0].key, "Backspace");
     assert_eq!(host.edit_state(OWNER, 2).unwrap().unwrap().text, "Alice");
     assert_eq!(
         host.typed_set_preedit(
@@ -1160,6 +1173,7 @@ fn typed_pointer_routes_and_activates_by_ui_key_across_an_identity_preserving_mo
         ),
     };
     let mut down = Vec::new();
+    let mut focus = Vec::new();
     assert_eq!(
         host.typed_pointer(
             OWNER,
@@ -1175,7 +1189,7 @@ fn typed_pointer_routes_and_activates_by_ui_key_across_an_identity_preserving_mo
                 down.push(event);
                 EventReply::default()
             },
-            &mut |_| {},
+            &mut |event| focus.push(event),
         )
         .unwrap(),
         Some(button)
@@ -1184,6 +1198,13 @@ fn typed_pointer_routes_and_activates_by_ui_key_across_an_identity_preserving_mo
     assert!(down
         .iter()
         .any(|event| event.kind == SceneEventKind::Pointer(PointerAction::Down)));
+    assert_eq!(
+        focus,
+        vec![jasper_ui_engine::native::TypedUiFocusEvent {
+            target: button,
+            focused: true,
+        }]
+    );
 
     let wrong_target = UiEventContext {
         target: UiKey::new(2, 1),
@@ -1372,7 +1393,7 @@ fn typed_keyboard_activation_requires_activate_binding() {
         modifiers: Modifiers::default(),
         location: KeyLocation::Standard,
     };
-    let mut activations = 0usize;
+    let mut activations = Vec::new();
     let admitted = host
         .typed_key_with_activation(
             OWNER,
@@ -1384,12 +1405,17 @@ fn typed_keyboard_activation_requires_activate_binding() {
             &enter,
             &mut |_| EventReply::default(),
             &mut |_| {},
-            &mut |_| activations += 1,
+            &mut |event| activations.push(event),
         )
         .unwrap()
         .unwrap();
     assert_eq!(admitted.action, "keyboard-save");
-    assert_eq!(activations, 1);
+    assert_eq!(
+        activations,
+        vec![jasper_ui_engine::native::TypedUiActivationEvent {
+            target: UiKey::new(4, 1),
+        }]
+    );
 
     let click_only = NativeUiDocument::from_json_slice(&fixture("settings-page.ir.json")).unwrap();
     let mut host = HostRenderer::new_ui_document(OWNER + 1, &click_only, &font, 480, 320).unwrap();
@@ -1616,7 +1642,7 @@ fn typed_accesskit_actions_require_ui_key_and_permissions() {
         ),
     };
 
-    let mut activated = 0usize;
+    let mut activated = Vec::new();
     let result = host
         .typed_accesskit_action(
             OWNER,
@@ -1626,16 +1652,21 @@ fn typed_accesskit_actions_require_ui_key_and_permissions() {
             &context,
             &request(Action::Click),
             &mut |_| {},
-            &mut |_| activated += 1,
+            &mut |event| activated.push(event),
         )
         .unwrap();
     assert!(matches!(
         result,
         TypedAccessibilityAction::Activated(ref event) if event.action == "save-accessible"
     ));
-    assert_eq!(activated, 1);
+    assert_eq!(
+        activated,
+        vec![jasper_ui_engine::native::TypedUiActivationEvent {
+            target: UiKey::new(4, 1),
+        }]
+    );
 
-    let mut focused = 0usize;
+    let mut focused = Vec::new();
     let result = host
         .typed_accesskit_action(
             OWNER,
@@ -1644,12 +1675,18 @@ fn typed_accesskit_actions_require_ui_key_and_permissions() {
             &document,
             &context,
             &request(Action::Focus),
-            &mut |_| focused += 1,
+            &mut |event| focused.push(event),
             &mut |_| {},
         )
         .unwrap();
     assert_eq!(result, TypedAccessibilityAction::Focused(UiKey::new(4, 1)));
-    assert_eq!(focused, 1);
+    assert_eq!(
+        focused,
+        vec![jasper_ui_engine::native::TypedUiFocusEvent {
+            target: UiKey::new(4, 1),
+            focused: true,
+        }]
+    );
 
     let focus_only = UiEventContext {
         permission_context: UiPermissionContext::new("focus-only", [UiPermission::Focus]),

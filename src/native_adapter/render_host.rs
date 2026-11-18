@@ -10,8 +10,8 @@ use crate::native::host::SceneHostView;
 #[cfg(feature = "gpu-pending")]
 use crate::native::host::{GpuFrameError, GpuRenderer};
 use crate::native::{
-    EventReply, PointerAction, SceneEventKind, SceneFocusEvent, SceneQuota, SceneUpdate,
-    SceneUpdateError,
+    EventReply, PointerAction, SceneEventKind, SceneFocusEvent, SceneKeyEvent, SceneQuota,
+    SceneUpdate, SceneUpdateError,
 };
 use crate::scene::{NodeId, Scene, ScenePatch};
 #[cfg(feature = "cpu-pending")]
@@ -145,6 +145,7 @@ impl std::error::Error for TypedUiAccessibilityError {}
 pub enum TypedUiTargetError {
     HostRejected,
     RevisionMismatch { host: u64, document: u64 },
+    UnmappedTarget,
     Admission(UiEventAdmissionError),
 }
 
@@ -156,6 +157,9 @@ impl std::fmt::Display for TypedUiTargetError {
                 f,
                 "host revision {host} does not match document revision {document}"
             ),
+            Self::UnmappedTarget => {
+                write!(f, "Native event target has no active Typed UI key")
+            }
             Self::Admission(error) => error.fmt(f),
         }
     }
@@ -231,6 +235,32 @@ pub struct TypedUiPointerEvent {
     pub modifiers: crate::input::Modifiers,
 }
 
+/// A focus transition projected to public identity.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct TypedUiFocusEvent {
+    pub target: UiKey,
+    pub focused: bool,
+}
+
+/// A command-key event projected to public identity.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TypedUiKeyEvent {
+    pub target: UiKey,
+    pub key: String,
+    pub code: String,
+    pub pressed: bool,
+    pub repeat: bool,
+    pub composing: bool,
+    pub modifiers: crate::input::Modifiers,
+    pub location: crate::native::KeyLocation,
+}
+
+/// A host-admitted activation projected to public identity.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct TypedUiActivationEvent {
+    pub target: UiKey,
+}
+
 /// Typed AccessKit action result after UiKey and permission admission.
 #[cfg(feature = "accesskit-pending")]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -244,6 +274,7 @@ pub enum TypedAccessibilityAction {
 pub enum TypedUiAccessibilityActionError {
     HostRejected,
     ActionNotSupported,
+    UnmappedTarget,
     Admission(UiEventAdmissionError),
 }
 
@@ -254,6 +285,9 @@ impl std::fmt::Display for TypedUiAccessibilityActionError {
             Self::HostRejected => write!(f, "host rejected accessibility action"),
             Self::ActionNotSupported => {
                 write!(f, "accessibility action is not supported by Typed UI")
+            }
+            Self::UnmappedTarget => {
+                write!(f, "Native accessibility target has no active Typed UI key")
             }
             Self::Admission(error) => error.fmt(f),
         }
@@ -673,8 +707,8 @@ impl HostRenderer {
         document: &NativeUiDocument,
         context: &UiEventContext,
         request: &crate::native::host::accesskit::ActionRequest,
-        focus: &mut impl FnMut(SceneFocusEvent),
-        activation: &mut impl FnMut(crate::native::SceneActivationEvent),
+        focus: &mut impl FnMut(TypedUiFocusEvent),
+        activation: &mut impl FnMut(TypedUiActivationEvent),
     ) -> Result<TypedAccessibilityAction, TypedUiAccessibilityActionError> {
         let node = NodeId(request.target_node.0);
         let result = match request.action {
@@ -692,7 +726,42 @@ impl HostRenderer {
             }
             _ => return Err(TypedUiAccessibilityActionError::ActionNotSupported),
         };
-        if !self.accesskit_action(owner, version, generation, request, focus, activation) {
+        let mut focus_mapping_error = false;
+        let mut activation_mapping_error = false;
+        let mut focus_key = |event: SceneFocusEvent| -> Option<TypedUiFocusEvent> {
+            document
+                .key_for_node(event.node)
+                .map(|target| TypedUiFocusEvent {
+                    target,
+                    focused: event.focused,
+                })
+                .or_else(|| {
+                    focus_mapping_error = true;
+                    None
+                })
+        };
+        let accepted = self.accesskit_action(
+            owner,
+            version,
+            generation,
+            request,
+            &mut |event| {
+                if let Some(event) = focus_key(event) {
+                    focus(event);
+                }
+            },
+            &mut |event| {
+                if let Some(target) = document.key_for_node(event.node) {
+                    activation(TypedUiActivationEvent { target });
+                } else {
+                    activation_mapping_error = true;
+                }
+            },
+        );
+        if focus_mapping_error || activation_mapping_error {
+            return Err(TypedUiAccessibilityActionError::UnmappedTarget);
+        }
+        if !accepted {
             return Err(TypedUiAccessibilityActionError::HostRejected);
         }
         Ok(result)
@@ -718,7 +787,7 @@ impl HostRenderer {
         document: &NativeUiDocument,
         context: &UiEventContext,
         node: NodeId,
-        sink: &mut impl FnMut(SceneFocusEvent),
+        sink: &mut impl FnMut(TypedUiFocusEvent),
     ) -> Result<UiKey, TypedUiTargetError> {
         if version != document.revision() {
             return Err(TypedUiTargetError::RevisionMismatch {
@@ -729,7 +798,21 @@ impl HostRenderer {
         let target = document
             .admit_native_target(context, node, UiPermission::Focus)
             .map_err(TypedUiTargetError::Admission)?;
-        if !self.focus(owner, version, generation, node, sink) {
+        let mut mapping_error = false;
+        let accepted = self.focus(owner, version, generation, node, &mut |event| {
+            if let Some(target) = document.key_for_node(event.node) {
+                sink(TypedUiFocusEvent {
+                    target,
+                    focused: event.focused,
+                });
+            } else {
+                mapping_error = true;
+            }
+        });
+        if mapping_error {
+            return Err(TypedUiTargetError::UnmappedTarget);
+        }
+        if !accepted {
             return Err(TypedUiTargetError::HostRejected);
         }
         Ok(target)
@@ -767,7 +850,7 @@ impl HostRenderer {
         y: f32,
         pressed: bool,
         pointer: &mut impl FnMut(TypedUiPointerEvent) -> EventReply,
-        focus: &mut impl FnMut(SceneFocusEvent),
+        focus: &mut impl FnMut(TypedUiFocusEvent),
     ) -> Result<Option<UiKey>, TypedUiPointerError> {
         document
             .admit_permission(context, UiPermission::Pointer)
@@ -780,6 +863,7 @@ impl HostRenderer {
         }
 
         let mut routing_error = None;
+        let mut focus_mapping_error = false;
         let accepted = self.pointer(
             owner,
             version,
@@ -789,6 +873,9 @@ impl HostRenderer {
             y,
             pressed,
             &mut |event| {
+                if routing_error.is_some() {
+                    return EventReply::default();
+                }
                 let Some(target) = document.key_for_node(event.node) else {
                     routing_error = Some(TypedUiPointerError::UnmappedTarget);
                     return EventReply::default();
@@ -837,8 +924,20 @@ impl HostRenderer {
                     modifiers: event.modifiers,
                 })
             },
-            focus,
+            &mut |event| {
+                if let Some(target) = document.key_for_node(event.node) {
+                    focus(TypedUiFocusEvent {
+                        target,
+                        focused: event.focused,
+                    });
+                } else {
+                    focus_mapping_error = true;
+                }
+            },
         );
+        if focus_mapping_error {
+            return Err(TypedUiPointerError::UnmappedTarget);
+        }
         if let Some(error) = routing_error {
             return Err(error);
         }
@@ -921,8 +1020,8 @@ impl HostRenderer {
         context: &UiEventContext,
         node: NodeId,
         input: &crate::native::HostKeyInput<'_>,
-        key: &mut impl FnMut(crate::native::SceneKeyEvent) -> crate::native::EventReply,
-        focus: &mut impl FnMut(SceneFocusEvent),
+        key: &mut impl FnMut(TypedUiKeyEvent) -> crate::native::EventReply,
+        focus: &mut impl FnMut(TypedUiFocusEvent),
     ) -> Result<UiKey, TypedUiTargetError> {
         if version != document.revision() {
             return Err(TypedUiTargetError::RevisionMismatch {
@@ -936,7 +1035,45 @@ impl HostRenderer {
         if self.focused_node(owner, version) != Some(node) {
             return Err(TypedUiTargetError::HostRejected);
         }
-        if !self.key(owner, version, generation, input, key, focus) {
+        let mut key_mapping_error = false;
+        let mut focus_mapping_error = false;
+        let accepted = self.key(
+            owner,
+            version,
+            generation,
+            input,
+            &mut |event: SceneKeyEvent| {
+                if let Some(target) = document.key_for_node(event.node) {
+                    key(TypedUiKeyEvent {
+                        target,
+                        key: event.key,
+                        code: event.code,
+                        pressed: event.pressed,
+                        repeat: event.repeat,
+                        composing: event.composing,
+                        modifiers: event.modifiers,
+                        location: event.location,
+                    })
+                } else {
+                    key_mapping_error = true;
+                    EventReply::default()
+                }
+            },
+            &mut |event| {
+                if let Some(target) = document.key_for_node(event.node) {
+                    focus(TypedUiFocusEvent {
+                        target,
+                        focused: event.focused,
+                    });
+                } else {
+                    focus_mapping_error = true;
+                }
+            },
+        );
+        if key_mapping_error || focus_mapping_error {
+            return Err(TypedUiTargetError::UnmappedTarget);
+        }
+        if !accepted {
             return Err(TypedUiTargetError::HostRejected);
         }
         Ok(target)
@@ -951,9 +1088,9 @@ impl HostRenderer {
         context: &UiEventContext,
         node: NodeId,
         input: &crate::native::HostKeyInput<'_>,
-        key: &mut impl FnMut(crate::native::SceneKeyEvent) -> crate::native::EventReply,
-        focus: &mut impl FnMut(SceneFocusEvent),
-        activation: &mut impl FnMut(crate::native::SceneActivationEvent),
+        key: &mut impl FnMut(TypedUiKeyEvent) -> crate::native::EventReply,
+        focus: &mut impl FnMut(TypedUiFocusEvent),
+        activation: &mut impl FnMut(TypedUiActivationEvent),
     ) -> Result<Option<AdmittedEvent>, TypedUiTargetError> {
         if version != document.revision() {
             return Err(TypedUiTargetError::RevisionMismatch {
@@ -969,13 +1106,41 @@ impl HostRenderer {
         }
         let mut admitted = None;
         let mut admission_error = None;
+        let mut key_mapping_error = false;
+        let mut focus_mapping_error = false;
+        let mut activation_mapping_error = false;
         let accepted = self.key_with_activation(
             owner,
             version,
             generation,
             input,
-            key,
-            focus,
+            &mut |event: SceneKeyEvent| {
+                if let Some(target) = document.key_for_node(event.node) {
+                    key(TypedUiKeyEvent {
+                        target,
+                        key: event.key,
+                        code: event.code,
+                        pressed: event.pressed,
+                        repeat: event.repeat,
+                        composing: event.composing,
+                        modifiers: event.modifiers,
+                        location: event.location,
+                    })
+                } else {
+                    key_mapping_error = true;
+                    EventReply::default()
+                }
+            },
+            &mut |event| {
+                if let Some(target) = document.key_for_node(event.node) {
+                    focus(TypedUiFocusEvent {
+                        target,
+                        focused: event.focused,
+                    });
+                } else {
+                    focus_mapping_error = true;
+                }
+            },
             &mut |event| match document.admit_activation(
                 context,
                 event.node,
@@ -983,13 +1148,20 @@ impl HostRenderer {
             ) {
                 Ok(result) => {
                     admitted = Some(result);
-                    activation(event);
+                    if let Some(target) = document.key_for_node(event.node) {
+                        activation(TypedUiActivationEvent { target });
+                    } else {
+                        activation_mapping_error = true;
+                    }
                 }
                 Err(error) => admission_error = Some(error),
             },
         );
         if let Some(error) = admission_error {
             return Err(TypedUiTargetError::Admission(error));
+        }
+        if key_mapping_error || focus_mapping_error || activation_mapping_error {
+            return Err(TypedUiTargetError::UnmappedTarget);
         }
         if !accepted {
             return Err(TypedUiTargetError::HostRejected);
