@@ -965,8 +965,12 @@ fn patch_oracle(tree: &Node, patch: &ScenePatch) -> (Node, Result<(), SceneError
         }
         let mut rebuilt = removal_oracle(tree, id.0)
             .expect("the moved node exists in the source tree");
-        let path = find_oracle_path(&rebuilt, parent.0)
-            .expect("the destination parent exists outside the moved subtree");
+        let Some(path) = find_oracle_path(&rebuilt, parent.0) else {
+            // The raw patch kernel removes before its second parent lookup. Malformed trees with
+            // duplicate identities can therefore return an error after preserving that removal;
+            // the transactional Scene path prevents this state from committing.
+            return (rebuilt, Err(SceneError::NodeNotFound(*parent)));
+        };
         let target = path
             .iter()
             .fold(&mut rebuilt, |node, &at| &mut node.children[at]);
@@ -2833,6 +2837,11 @@ mod kani_checks {
     }
 
     #[kani::proof]
+    fn core_frame_admission() {
+        assert_core_frame(kani::any(), kani::any(), kani::any());
+    }
+
+    #[kani::proof]
     fn access_actions_rules() {
         assert_access_actions(kani::any(), kani::any(), kani::any());
     }
@@ -3819,6 +3828,25 @@ mod memory {
                 assert_core_frame(width, height, budget);
             }
         }
+    }
+
+    #[test]
+    fn duplicate_identity_move_matches_raw_partial_failure() {
+        let tree = removal_leaf(
+            0,
+            vec![
+                removal_leaf(1, vec![removal_leaf(2, Vec::new())]),
+                removal_leaf(2, vec![removal_leaf(3, Vec::new())]),
+            ],
+        );
+        assert_scene_patch(
+            tree,
+            ScenePatch::Move {
+                id: NodeId(2),
+                parent: NodeId(3),
+                index: 0,
+            },
+        );
     }
 
     #[test]

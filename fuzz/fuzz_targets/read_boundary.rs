@@ -5,6 +5,7 @@ use jasper_ui_read_verification::{
     assert_damage_convergence, assert_damage_rect, assert_damage_span, assert_damage_write, assert_focus_selection, assert_font_family, assert_font_order, assert_font_weight, assert_frame_damage, assert_glyph_skew, assert_glyph_skew_pure, assert_frame_pace, assert_frame_reuse, assert_frame_tick, assert_gpu_readback_layout, assert_header, assert_access_actions, assert_access_change, assert_access_request, assert_text_offset, assert_text_range, assert_hover_lifecycle, assert_input_retire,
     assert_keyboard_focus, assert_payload, assert_pixel_conversion, assert_pointer_order,
     assert_read, assert_resource, assert_rgb_word, assert_role, assert_scalars, assert_surface_row,
+    assert_core_frame,
     assert_surface_span, assert_text_classes, assert_versions, assert_view, assert_view_copy,
     assert_segment, assert_write, FrameDamage, ResourceKey,
 };
@@ -188,6 +189,8 @@ fuzz_target!(|data: &[u8]| {
     assert_access_request(data[3], data[0] & 16 == 16, data[1] & 16 == 16);
     assert_gpu_readback_layout(len as u32, total as u32);
     assert_gpu_readback_layout((len % 70000) as u32, (pos % 70000) as u32);
+    assert_core_frame(len as u32, total as u32, pos);
+    assert_core_frame((len % 70000) as u32, (pos % 70000) as u32, total);
     assert_frame_tick(total as u64, pos as u64, len as u64);
     assert_frame_tick(pos as u64 % 1000, len as u64 % 17, total as u64 % 5000);
     assert_frame_pace(data[0] & 1 == 1, if data[1] & 1 == 0 { None } else { Some(len as u64) }, total as u64, pos as u64, len as u64);

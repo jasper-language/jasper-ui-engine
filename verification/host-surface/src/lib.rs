@@ -1,5 +1,11 @@
 //! Executes the production surface lifecycle source extracted by `build.rs`.
 //! 执行由 `build.rs` 提取的生产 Surface 生命周期源码。
+pub(crate) mod nostd_prelude {
+    pub use std::prelude::v1::*;
+}
+
+pub use jasper_ui_engine::style;
+
 mod actual {
     include!(concat!(env!("OUT_DIR"), "/actual.rs"));
 }

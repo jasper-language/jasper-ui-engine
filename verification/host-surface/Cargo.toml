@@ -6,6 +6,9 @@ publish = false
 
 [workspace]
 
+[dependencies]
+jasper-ui-engine = { path = "../..", default-features = false }
+
 [dev-dependencies]
 proptest = { version = "=1.12.0", default-features = false, features = ["std"] }
 

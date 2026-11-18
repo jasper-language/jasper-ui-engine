@@ -143,6 +143,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "itoa"
+version = "1.0.19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3bd1574e617a9a6c1f8f8181bd7e841e1f20e4277607ef28945765188d6284d4"
+
+[[package]]
 name = "jaso"
 version = "0.1.0"
 source = "git+https://github.com/jasper-language/jasper-os?rev=0f1e5c1b70dea503bceee33a745c2c6f312a9824#0f1e5c1b70dea503bceee33a745c2c6f312a9824"
@@ -157,6 +163,8 @@ version = "0.1.0"
 dependencies = [
  "jaso",
  "libc",
+ "serde",
+ "serde_json",
  "taffy",
 ]
 
@@ -174,6 +182,9 @@ dependencies = [
 [[package]]
 name = "jasper-ui-host-surface-verification"
 version = "0.0.0"
+dependencies = [
+ "jasper-ui-engine",
+]
 
 [[package]]
 name = "jasper-ui-read-verification"
@@ -204,6 +215,12 @@ dependencies = [
  "arbitrary",
  "cc",
 ]
+
+[[package]]
+name = "memchr"
+version = "2.8.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
 
 [[package]]
 name = "proc-macro2"
@@ -239,6 +256,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "ryu"
+version = "1.0.23"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9774ba4a74de5f7b1c1451ed6cd5285a32eddb5cccb8cc655a4e50009e06477f"
+
+[[package]]
 name = "semver"
 version = "1.0.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -272,6 +295,19 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 3.0.9",
+]
+
+[[package]]
+name = "serde_json"
+version = "1.0.145"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "402a6f66d8c709116cf22f558eab210f5a50187f702eb4d7e5ef38d9a7f1c79c"
+dependencies = [
+ "itoa",
+ "memchr",
+ "ryu",
+ "serde",
+ "serde_core",
 ]
 
 [[package]]
@@ -346,7 +382,6 @@ version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3c8480887e8803986d96a7173729565520d4bbb721ad6b7ad6941a22897207aa"
 dependencies = [
- "serde",
  "slotmap",
  "smallvec",
 ]
