@@ -1466,12 +1466,31 @@ impl HostRenderer {
             return Err(TypedUiTargetError::HostRejected);
         }
         self.preadmit_editing_key(owner, version, document, context, node, input)?;
+        let focus_admissions = if key_may_change_focus(input) {
+            document
+                .admit_permission(context, UiPermission::Focus)
+                .map_err(TypedUiTargetError::Admission)?;
+            let focusables =
+                crate::semantics::SemanticsTree::from_scene(document.scene()).focusables();
+            if focusables.iter().any(|candidate| *candidate != node) {
+                self.preadmit_edit_end_for_focus_change(
+                    owner,
+                    version,
+                    document,
+                    context,
+                    None,
+                )
+                .map_err(map_edit_end_target_error)?;
+            }
+            preadmit_focus_events(document, context)?
+        } else {
+            Vec::new()
+        };
         let key_admission =
             admitted_optional_event(document, context, target, node, UiEventKind::Key)
                 .map_err(TypedUiTargetError::Admission)?;
         let mut key_mapping_error = false;
         let mut focus_mapping_error = false;
-        let mut focus_admission_error = None;
         let accepted = self.key(
             owner,
             version,
@@ -1497,28 +1516,19 @@ impl HostRenderer {
             },
             &mut |event| {
                 if let Some(target) = document.key_for_node(event.node) {
-                    match admitted_optional_event(
-                        document,
-                        context,
+                    focus(TypedUiFocusEvent {
                         target,
-                        event.node,
-                        UiEventKind::Focus,
-                    ) {
-                        Ok(admitted) => focus(TypedUiFocusEvent {
-                            target,
-                            focused: event.focused,
-                            admitted,
-                        }),
-                        Err(error) => focus_admission_error = Some(error),
-                    }
+                        focused: event.focused,
+                        admitted: focus_admissions
+                            .iter()
+                            .find(|(key, _)| *key == target)
+                            .map(|(_, admitted)| admitted.clone()),
+                    });
                 } else {
                     focus_mapping_error = true;
                 }
             },
         );
-        if let Some(error) = focus_admission_error {
-            return Err(TypedUiTargetError::Admission(error));
-        }
         if key_mapping_error || focus_mapping_error {
             return Err(TypedUiTargetError::UnmappedTarget);
         }
@@ -1557,6 +1567,26 @@ impl HostRenderer {
             return Err(TypedUiTargetError::HostRejected);
         }
         self.preadmit_editing_key(owner, version, document, context, node, input)?;
+        let focus_admissions = if key_may_change_focus(input) {
+            document
+                .admit_permission(context, UiPermission::Focus)
+                .map_err(TypedUiTargetError::Admission)?;
+            let focusables =
+                crate::semantics::SemanticsTree::from_scene(document.scene()).focusables();
+            if focusables.iter().any(|candidate| *candidate != node) {
+                self.preadmit_edit_end_for_focus_change(
+                    owner,
+                    version,
+                    document,
+                    context,
+                    None,
+                )
+                .map_err(map_edit_end_target_error)?;
+            }
+            preadmit_focus_events(document, context)?
+        } else {
+            Vec::new()
+        };
         let key_admission =
             admitted_optional_event(document, context, target, node, UiEventKind::Key)
                 .map_err(TypedUiTargetError::Admission)?;
@@ -1565,7 +1595,6 @@ impl HostRenderer {
         let mut key_mapping_error = false;
         let mut focus_mapping_error = false;
         let mut activation_mapping_error = false;
-        let mut focus_admission_error = None;
         let accepted = self.key_with_activation(
             owner,
             version,
@@ -1591,20 +1620,14 @@ impl HostRenderer {
             },
             &mut |event| {
                 if let Some(target) = document.key_for_node(event.node) {
-                    match admitted_optional_event(
-                        document,
-                        context,
+                    focus(TypedUiFocusEvent {
                         target,
-                        event.node,
-                        UiEventKind::Focus,
-                    ) {
-                        Ok(admitted) => focus(TypedUiFocusEvent {
-                            target,
-                            focused: event.focused,
-                            admitted,
-                        }),
-                        Err(error) => focus_admission_error = Some(error),
-                    }
+                        focused: event.focused,
+                        admitted: focus_admissions
+                            .iter()
+                            .find(|(key, _)| *key == target)
+                            .map(|(_, admitted)| admitted.clone()),
+                    });
                 } else {
                     focus_mapping_error = true;
                 }
@@ -1626,9 +1649,6 @@ impl HostRenderer {
             },
         );
         if let Some(error) = admission_error {
-            return Err(TypedUiTargetError::Admission(error));
-        }
-        if let Some(error) = focus_admission_error {
             return Err(TypedUiTargetError::Admission(error));
         }
         if key_mapping_error || focus_mapping_error || activation_mapping_error {
@@ -2731,6 +2751,34 @@ fn key_may_edit_text(input: &crate::native::HostKeyInput<'_>, multiline: bool) -
                     .any(|key| input.key.eq_ignore_ascii_case(key))
         }
     }
+}
+
+fn key_may_change_focus(input: &crate::native::HostKeyInput<'_>) -> bool {
+    input.key == "Tab"
+        && input.pressed
+        && !input.composing
+        && !input.modifiers.control
+        && !input.modifiers.alt
+        && !input.modifiers.meta
+}
+
+fn preadmit_focus_events(
+    document: &NativeUiDocument,
+    context: &UiEventContext,
+) -> Result<Vec<(UiKey, AdmittedEvent)>, TypedUiTargetError> {
+    let mut admissions = Vec::new();
+    for node in crate::semantics::SemanticsTree::from_scene(document.scene()).focusables() {
+        let key = document
+            .key_for_node(node)
+            .ok_or(TypedUiTargetError::UnmappedTarget)?;
+        if let Some(admitted) =
+            admitted_optional_event(document, context, key, node, UiEventKind::Focus)
+                .map_err(TypedUiTargetError::Admission)?
+        {
+            admissions.push((key, admitted));
+        }
+    }
+    Ok(admissions)
 }
 
 fn admitted_optional_event(

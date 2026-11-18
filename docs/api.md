@@ -93,7 +93,8 @@ Focus/TextEdit/IME 操作合并到一次调用，避免授权后误传另一个 
 `typed_key` 还要求目标等于当前 Native focus，并持有 Keyboard permission。
 当按键会进入 Native 编辑缓冲（Backspace/Delete、方向/Home/End、Enter/Escape 和编辑快捷键）
 时，还须在默认行为发生前持有 TextEdit；TextArea 的 ArrowUp/ArrowDown 同样按编辑键门控。
-Enter 将产生提交时同时预准入 `text-commit` binding。
+Enter 将产生提交时同时预准入 `text-commit` binding。Tab/Shift+Tab 在任何焦点导航前要求
+Focus permission，并预准入可达 Focus bindings 与失焦编辑结束；权限失败不移动焦点。
 `typed_key_with_activation` 在键盘激活时要求 `activate` binding 和 Activate permission；
 只有 `click` 绑定时不会把 Enter/Space 的回调交给 Framework。
 所有带 Surface generation 的 Typed 焦点、键盘、文本、IME 与激活变更入口都在授权和映射前

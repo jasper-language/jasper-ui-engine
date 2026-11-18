@@ -1992,6 +1992,132 @@ fn typed_text_area_vertical_motion_requires_text_edit_permission() {
 
 #[cfg(feature = "native-blitz-cpu-pending")]
 #[test]
+fn typed_keyboard_focus_navigation_requires_focus_permission() {
+    use jasper_ui_engine::native::host::HostRenderer;
+    use jasper_ui_engine::native::{
+        EventReply, HostKeyInput, KeyLocation, Modifiers, TypedUiTargetError,
+    };
+
+    const OWNER: u64 = 91;
+    let mut value: serde_json::Value =
+        serde_json::from_slice(&fixture("settings-page.ir.json")).unwrap();
+    value["ops"][0]["node"]["children"][2]["events"] = serde_json::json!([
+        { "event": "focus", "action": "focus-save" }
+    ]);
+    let document =
+        NativeUiDocument::from_json_slice(&serde_json::to_vec(&value).unwrap()).unwrap();
+    let font = std::fs::read(
+        std::env::var("JASPER_UI_TEST_FONT")
+            .expect("JASPER_UI_TEST_FONT must name an injected font"),
+    )
+    .unwrap();
+    let mut host = HostRenderer::new_ui_document(OWNER, &document, &font, 480, 320).unwrap();
+    let generation = host.surface_status(OWNER).unwrap().generation;
+    let field = document.node_for_key(UiKey::new(3, 1)).unwrap();
+    let button = UiKey::new(4, 1);
+    let base = UiEventContext {
+        target: UiKey::new(3, 1),
+        identity_domain: document.identity_domain().into(),
+        owner: document.owner().into(),
+        session: document.session().into(),
+        frame_revision: document.revision(),
+        permission_context: UiPermissionContext::new(
+            "focus-and-keyboard",
+            [UiPermission::Focus, UiPermission::Keyboard],
+        ),
+    };
+    host.typed_focus(
+        OWNER,
+        document.revision(),
+        generation,
+        &document,
+        &base,
+        field,
+        &mut |_| {},
+    )
+    .unwrap();
+
+    let keyboard_only = UiEventContext {
+        permission_context: UiPermissionContext::new("keyboard-only", [UiPermission::Keyboard]),
+        ..base.clone()
+    };
+    let tab = HostKeyInput {
+        key: "Tab",
+        code: "Tab",
+        pressed: true,
+        repeat: false,
+        composing: false,
+        modifiers: Modifiers::default(),
+        location: KeyLocation::Standard,
+    };
+    assert!(matches!(
+        host.typed_key(
+            OWNER,
+            document.revision(),
+            generation,
+            &document,
+            &keyboard_only,
+            field,
+            &tab,
+            &mut |_| EventReply::default(),
+            &mut |_| {},
+        ),
+        Err(TypedUiTargetError::Admission(
+            jasper_ui_engine::ui_ir::UiEventAdmissionError::CapabilityDenied { .. }
+        ))
+    ));
+    assert_eq!(
+        host.typed_focused_node(OWNER, document.revision(), &document)
+            .unwrap(),
+        Some(UiKey::new(3, 1))
+    );
+
+    let mut focus_events = Vec::new();
+    assert_eq!(
+        host.typed_key(
+            OWNER,
+            document.revision(),
+            generation,
+            &document,
+            &base,
+            field,
+            &tab,
+            &mut |_| EventReply::default(),
+            &mut |event| focus_events.push(event),
+        )
+        .unwrap(),
+        UiKey::new(3, 1)
+    );
+    assert_eq!(
+        host.typed_focused_node(OWNER, document.revision(), &document)
+            .unwrap(),
+        Some(button)
+    );
+    assert_eq!(focus_events.len(), 2);
+    assert_eq!(
+        focus_events[0],
+        jasper_ui_engine::native::TypedUiFocusEvent {
+            target: UiKey::new(3, 1),
+            focused: false,
+            admitted: None,
+        }
+    );
+    assert_eq!(
+        focus_events[1],
+        jasper_ui_engine::native::TypedUiFocusEvent {
+            target: button,
+            focused: true,
+            admitted: Some(jasper_ui_engine::ui_ir::AdmittedEvent {
+                target: button,
+                event: UiEventKind::Focus,
+                action: "focus-save".into(),
+            }),
+        }
+    );
+}
+
+#[cfg(feature = "native-blitz-cpu-pending")]
+#[test]
 fn typed_edit_drain_preserves_order_and_admits_commit_binding() {
     use jasper_ui_engine::native::host::HostRenderer;
     use jasper_ui_engine::native::{

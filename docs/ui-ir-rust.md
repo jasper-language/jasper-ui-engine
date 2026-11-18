@@ -61,7 +61,8 @@ Focus 切换、AccessKit Focus 与 Pointer Down 若会触发失焦提交或结�
 按下和悬停，两者都只向调用方返回旧焦点的 `UiKey`。
 `typed_key`/`typed_key_with_activation` 对会改动编辑缓冲或选区的按键在默认编辑行为前要求
 TextEdit；TextArea 的 ArrowUp/ArrowDown 也按编辑键处理；Enter 产生提交时预准入
-`text-commit`，不能只凭 Keyboard 修改文本框。
+`text-commit`，不能只凭 Keyboard 修改文本框。Tab/Shift+Tab 在任何 Native 焦点移动前要求
+Focus permission，并预准入所有可达 Focus binding 与可能的失焦编辑结束。
 Focus、Key、Pointer、键盘激活和 AccessKit 动作的 Typed 回调分别使用
 `TypedUiFocusEvent`、`TypedUiKeyEvent`、`TypedUiPointerEvent`、
 `TypedUiActivationEvent`，只携带 `UiKey`；如果 Native 回调目标无法映射回当前文档，
@@ -229,8 +230,8 @@ Web 后端和正式宿主仍需分别验收。
 
 - `native-engine-cpu,accesskit-pending` 完整 `cargo test` 成功退出：库测试
   `272 passed, 1 ignored`（忽略项是显式性能测量），全部集成测试和 doc-test 通过；
-- 同一特性集的 `ui_ir_v0`：`41 passed`；
-- 软件 Vulkan（lvp/llvmpipe）+ `gpu-pending` 的 `ui_ir_v0`：`42 passed`；
+- 同一特性集的 `ui_ir_v0`：`42 passed`；
+- 软件 Vulkan（lvp/llvmpipe）+ `gpu-pending` 的 `ui_ir_v0`：`43 passed`；
 - 无 Native 特性的 Legacy 库测试：`180 passed`；`cargo check --no-default-features
   --all-targets` 成功；
 - Clippy 成功退出；仓库仍保留已登记的非阻塞历史 warning。
