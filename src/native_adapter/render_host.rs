@@ -27,6 +27,7 @@ use crate::ui_ir::{
     AdmittedEvent, NativeSceneUpdate, NativeUiDocument, NativeUiFrameError, ResourceKind,
     ResourceRef, UiEventAdmissionError, UiEventContext, UiEventKind, UiFrame, UiKey, UiPermission,
 };
+use std::collections::BTreeMap;
 
 /// Host coordinator failure. A lifecycle rejection precedes all native engine work.
 /// 宿主协调失败；生命周期拒绝先于任何原生引擎工作。
@@ -1135,9 +1136,31 @@ impl HostRenderer {
                 .map_err(TypedUiPointerError::Admission)?;
         }
 
+        let mut focus_admissions = Vec::new();
+        let mut focus_candidates = Vec::new();
+        if let Some((_, node)) = target {
+            focus_candidates.push(node);
+            if let Some(current) = self.focused_node(owner, version) {
+                focus_candidates.push(current);
+            }
+            focus_candidates.extend(source_ancestors(document.scene(), node));
+        }
+        focus_candidates.sort_unstable();
+        focus_candidates.dedup();
+        for focus_node in focus_candidates {
+            let key = document
+                .key_for_node(focus_node)
+                .ok_or(TypedUiPointerError::UnmappedTarget)?;
+            if let Some(admitted) =
+                admitted_optional_event(document, context, key, focus_node, UiEventKind::Focus)
+                    .map_err(TypedUiPointerError::Admission)?
+            {
+                focus_admissions.push((key, admitted));
+            }
+        }
+
         let mut routing_error = None;
         let mut focus_mapping_error = false;
-        let mut focus_admission_error = None;
         let accepted = self.pointer(
             owner,
             version,
@@ -1200,28 +1223,19 @@ impl HostRenderer {
             },
             &mut |event| {
                 if let Some(target) = document.key_for_node(event.node) {
-                    match admitted_optional_event(
-                        document,
-                        context,
+                    focus(TypedUiFocusEvent {
                         target,
-                        event.node,
-                        UiEventKind::Focus,
-                    ) {
-                        Ok(admitted) => focus(TypedUiFocusEvent {
-                            target,
-                            focused: event.focused,
-                            admitted,
-                        }),
-                        Err(error) => focus_admission_error = Some(error),
-                    }
+                        focused: event.focused,
+                        admitted: focus_admissions
+                            .iter()
+                            .find(|(key, _)| *key == target)
+                            .map(|(_, admitted)| admitted.clone()),
+                    });
                 } else {
                     focus_mapping_error = true;
                 }
             },
         );
-        if let Some(error) = focus_admission_error {
-            return Err(TypedUiPointerError::Admission(error));
-        }
         if focus_mapping_error {
             return Err(TypedUiPointerError::UnmappedTarget);
         }
@@ -2402,4 +2416,25 @@ fn admitted_optional_event(
     document
         .admit_native_event(&event_context, node, kind)
         .map(Some)
+}
+
+fn source_ancestors(scene: &Scene, node: NodeId) -> Vec<NodeId> {
+    let mut parents = BTreeMap::new();
+    let mut stack = vec![&scene.root];
+    while let Some(parent) = stack.pop() {
+        for child in &parent.children {
+            parents.insert(child.id, parent.id);
+            stack.push(child);
+        }
+    }
+    let mut ancestors = Vec::new();
+    let mut current = parents.get(&node).copied();
+    for _ in 0..=parents.len() {
+        let Some(ancestor) = current else {
+            break;
+        };
+        ancestors.push(ancestor);
+        current = parents.get(&ancestor).copied();
+    }
+    ancestors
 }
