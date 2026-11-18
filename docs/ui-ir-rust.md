@@ -77,7 +77,7 @@ Jasper Language/UI 共有层；Rust 不反向定义公共语义。
 ## Fixtures
 
 `tests/fixtures/ui-ir-v0/` 与 appfw `codex/ir-v0@1e55d96` 的三份 fixture 字节一致，并在测试中
-固定 FNV-1a 摘要。当前覆盖：
+固定 FNV-1a 摘要；三份 fixture 同时通过 JSON→Rust→JSON→Rust 结构 round-trip。当前覆盖：
 
 - `settings-page.ir.json`：Schema 解析、Native 映射、真实 SceneHostView、语义、几何和 CPU 渲染；
 - `data-table.ir.json`：Schema 解析、Table/Row/Cell 语义、真实 SceneHostView 与 CPU 渲染；

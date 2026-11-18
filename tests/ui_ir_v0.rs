@@ -31,7 +31,14 @@ fn canonical_fixtures_are_pinned_to_the_appfw_schema_copy() {
     for (name, hash) in expected {
         let bytes = fixture(name);
         assert_eq!(fnv1a(&bytes), hash, "fixture drift: {name}");
-        UiFrame::from_json_slice(&bytes).unwrap_or_else(|error| panic!("{name}: {error}"));
+        let frame =
+            UiFrame::from_json_slice(&bytes).unwrap_or_else(|error| panic!("{name}: {error}"));
+        let encoded = frame.to_json_vec().unwrap();
+        assert_eq!(
+            UiFrame::from_json_slice(&encoded).unwrap(),
+            frame,
+            "typed IR round-trip: {name}"
+        );
     }
 }
 
