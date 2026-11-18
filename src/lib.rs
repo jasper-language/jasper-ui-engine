@@ -115,6 +115,7 @@ pub mod canvas;
 pub mod canvas_tiny_skia;
 pub mod composition_identity;
 pub mod core_host;
+pub mod core_renderer;
 #[cfg(all(feature = "desktop", not(jasper_no_std_core)))]
 pub mod desktop;
 pub mod engine;

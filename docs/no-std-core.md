@@ -58,6 +58,11 @@ CPU RGBA 呈现最小契约复用现有 `RenderBackend`：
 - `HostInbox<UiBatch>`：对宿主消息执行会话/epoch/顺序/容量准入；
 - `Scene` / `ScenePatch`：语义场景和原子补丁输入。
 
+`CoreRgbaRenderer::render(&Scene)` 提供最小 Scene → CPU RGBA8 路径：输出
+`CoreRgbaFrame { width, height, pixels, scene_version }`，像素为紧密行优先 RGBA8。
+它只使用布局、绘制和内存 Canvas，不创建窗口、Surface、GPU 设备或系统资源。宿主仍负责
+把该帧复制/提交到自己的显示缓冲并调用 `present` 语义。
+
 这些是 Rust 调用边界，不是正式 ABI 或 Jasper-OS syscall 定义。
 
 ## 不在 Core
