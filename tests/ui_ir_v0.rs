@@ -1965,6 +1965,35 @@ fn same_data_table_fixture_executes_and_exposes_table_semantics() {
 
 #[cfg(feature = "native-blitz-cpu-pending")]
 #[test]
+fn typed_table_metrics_project_table_and_cell_identities() {
+    use jasper_ui_engine::native::host::HostRenderer;
+
+    const OWNER: u64 = 89;
+    let document = NativeUiDocument::from_json_slice(&fixture("data-table.ir.json")).unwrap();
+    let font = std::fs::read(
+        std::env::var("JASPER_UI_TEST_FONT")
+            .expect("JASPER_UI_TEST_FONT must name an injected font"),
+    )
+    .unwrap();
+    let host = HostRenderer::new_ui_document(OWNER, &document, &font, 640, 320).unwrap();
+    let generation = host.surface_status(OWNER).unwrap().generation;
+    let metrics = host
+        .typed_table_metrics(OWNER, 2, generation, &document, UiKey::new(20, 1))
+        .unwrap()
+        .unwrap();
+    assert_eq!(metrics.target, UiKey::new(20, 1));
+    assert_eq!(
+        metrics
+            .cells
+            .iter()
+            .map(|cell| cell.target)
+            .collect::<Vec<_>>(),
+        vec![UiKey::new(22, 1), UiKey::new(23, 1)]
+    );
+}
+
+#[cfg(feature = "native-blitz-cpu-pending")]
+#[test]
 fn same_dialog_fixture_executes_with_candidate_overlay_metadata() {
     use jasper_ui_engine::native::host::SceneHostView;
 

@@ -173,6 +173,7 @@ pub enum TypedUiGeometryError {
     HostRejected,
     RevisionMismatch { host: u64, document: u64 },
     UnknownKey(UiKey),
+    UnmappedTarget,
 }
 
 impl std::fmt::Display for TypedUiGeometryError {
@@ -188,6 +189,9 @@ impl std::fmt::Display for TypedUiGeometryError {
                 "Typed UI key {}:{} is not active",
                 key.semantic_id, key.generation
             ),
+            Self::UnmappedTarget => {
+                write!(f, "Native geometry target has no active Typed UI key")
+            }
         }
     }
 }
@@ -291,6 +295,25 @@ pub struct TypedUiOverlayInfo {
     pub placement: Option<crate::native::OverlayPlacement>,
     pub suppressed: Option<crate::native::OverlaySuppression>,
     pub return_focus: Option<UiKey>,
+}
+
+/// One measured table cell projected to public identity.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct TypedUiTableCellMetrics {
+    pub target: UiKey,
+    pub row: usize,
+    pub column: usize,
+    pub rect: crate::geometry::Rect,
+}
+
+/// Measured table geometry with public table/cell identities.
+#[derive(Clone, Debug, PartialEq)]
+pub struct TypedUiTableMetrics {
+    pub target: UiKey,
+    pub rect: crate::geometry::Rect,
+    pub column_widths: Vec<f32>,
+    pub row_heights: Vec<f32>,
+    pub cells: Vec<TypedUiTableCellMetrics>,
 }
 
 /// One overlay dismiss request projected to public identity.
@@ -1549,12 +1572,35 @@ impl HostRenderer {
         generation: u64,
         document: &NativeUiDocument,
         key: UiKey,
-    ) -> Result<Option<crate::TableMetrics>, TypedUiGeometryError> {
+    ) -> Result<Option<TypedUiTableMetrics>, TypedUiGeometryError> {
         self.geometry_target(owner, version, generation, document, key)?;
         let node = document
             .node_for_key(key)
             .ok_or(TypedUiGeometryError::UnknownKey(key))?;
-        Ok(self.table_metrics(owner, version, node))
+        self.table_metrics(owner, version, node)
+            .map(|metrics| {
+                Ok(TypedUiTableMetrics {
+                    target: key,
+                    rect: metrics.rect,
+                    column_widths: metrics.column_widths,
+                    row_heights: metrics.row_heights,
+                    cells: metrics
+                        .cells
+                        .into_iter()
+                        .map(|cell| {
+                            Ok(TypedUiTableCellMetrics {
+                                target: document
+                                    .key_for_node(cell.node)
+                                    .ok_or(TypedUiGeometryError::UnmappedTarget)?,
+                                row: cell.row,
+                                column: cell.column,
+                                rect: cell.rect,
+                            })
+                        })
+                        .collect::<Result<_, _>>()?,
+                })
+            })
+            .transpose()
     }
 
     pub(crate) fn overlays(

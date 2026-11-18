@@ -92,7 +92,7 @@ caret 几何与 `UiKey` 一并返回，不暴露 backend 节点身份。
 | Typed input targets | implemented / tested | HostRenderer Focus/Key/KeyActivation/TextInput/IME 使用同一 UiKey 上下文授权；Focus/Key/Activation 回调只暴露 UiKey；键输入匹配当前 Native focus，键盘激活另需 activate binding；错误 target、permission 和 revision 均拒绝 |
 | Typed edit events | implemented / tested | 有序 drain E14 Changed/Commit/CompositionCancelled；owner、event revision、UiKey 与 text-commit/ime-cancel permission/binding 均校验 |
 | Typed pointer routing | implemented / tested | hit query 与 Pointer 路由使用同一 overlay/圆角/hit-slop 目标；owner/revision/Surface generation/Pointer permission 先准入，回调只暴露 UiKey；Down→Move 后继帧后 Up 仍保持身份并准入 click binding |
-| Typed geometry queries | implemented / tested | bounds/scroll/table metrics 直接消费 UiKey，并校验 document revision、Surface generation 和 active key |
+| Typed geometry queries | implemented / tested | bounds/scroll/table metrics 直接消费 UiKey，并校验 document revision、Surface generation 和 active key；table/cell 测量结果也只含 UiKey |
 | 资源生命周期 | implemented / tested | Prepare 仅是 pending、不替换旧 Committed；Commit 原子提升；Release 只释放 active；上传与删除分别受 `insert_ui_image`/`remove_ui_image` 状态校验；含代数复用拒绝、节点移除后 Release 与实际解码/绘制 |
 | Environment | implemented / tested | 首帧和后继帧的 reduce-motion 均应用到 Native host；appearance/density/text-scale 保留为 Framework 环境语义 |
 | Grid、Position、Image、Overlay | candidate | 可映射到现有候选字段，`host_accepted = false`；Grid columns/rows/gap 与 Position/Overlay/Image 均已有 Native 执行测试 |
