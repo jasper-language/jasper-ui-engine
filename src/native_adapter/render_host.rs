@@ -722,6 +722,36 @@ impl HostRenderer {
             && self.inner.key(owner, version, input, key, focus)
     }
 
+    pub fn typed_key(
+        &mut self,
+        owner: u64,
+        version: u64,
+        generation: u64,
+        document: &NativeUiDocument,
+        context: &UiEventContext,
+        node: NodeId,
+        input: &crate::native::HostKeyInput<'_>,
+        key: &mut impl FnMut(crate::native::SceneKeyEvent) -> crate::native::EventReply,
+        focus: &mut impl FnMut(SceneFocusEvent),
+    ) -> Result<UiKey, TypedUiTargetError> {
+        if version != document.revision() {
+            return Err(TypedUiTargetError::RevisionMismatch {
+                host: version,
+                document: document.revision(),
+            });
+        }
+        let target = document
+            .admit_native_target(context, node, UiPermission::Keyboard)
+            .map_err(TypedUiTargetError::Admission)?;
+        if self.focused_node(owner, version) != Some(node) {
+            return Err(TypedUiTargetError::HostRejected);
+        }
+        if !self.key(owner, version, generation, input, key, focus) {
+            return Err(TypedUiTargetError::HostRejected);
+        }
+        Ok(target)
+    }
+
     /// `key` plus engine keyboard activation; see `Engine::key_with_activation`.
     /// `key` 加引擎键盘激活；见 `Engine::key_with_activation`。
     pub fn key_with_activation(

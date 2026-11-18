@@ -937,7 +937,9 @@ fn host_renderer_applies_initial_typed_ir_environment() {
 #[test]
 fn typed_focus_text_and_ime_use_the_same_admitted_ui_key() {
     use jasper_ui_engine::native::host::HostRenderer;
-    use jasper_ui_engine::native::TypedUiTargetError;
+    use jasper_ui_engine::native::{
+        EventReply, HostKeyInput, KeyLocation, Modifiers, TypedUiTargetError,
+    };
 
     const OWNER: u64 = 83;
     let document = NativeUiDocument::from_json_slice(&fixture("settings-page.ir.json")).unwrap();
@@ -959,6 +961,7 @@ fn typed_focus_text_and_ime_use_the_same_admitted_ui_key() {
             "text-host",
             [
                 UiPermission::Focus,
+                UiPermission::Keyboard,
                 UiPermission::TextEdit,
                 UiPermission::Ime,
             ],
@@ -985,6 +988,30 @@ fn typed_focus_text_and_ime_use_the_same_admitted_ui_key() {
         UiKey::new(3, 1)
     );
     assert_eq!(host.edit_state(OWNER, 2).unwrap().unwrap().text, "Alice!");
+    assert_eq!(
+        host.typed_key(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &context,
+            field,
+            &HostKeyInput {
+                key: "Backspace",
+                code: "Backspace",
+                pressed: true,
+                repeat: false,
+                composing: false,
+                modifiers: Modifiers::default(),
+                location: KeyLocation::Standard,
+            },
+            &mut |_| EventReply::default(),
+            &mut |_| {},
+        )
+        .unwrap(),
+        UiKey::new(3, 1)
+    );
+    assert_eq!(host.edit_state(OWNER, 2).unwrap().unwrap().text, "Alice");
     assert_eq!(
         host.typed_set_preedit(
             OWNER,
@@ -1030,6 +1057,35 @@ fn typed_focus_text_and_ime_use_the_same_admitted_ui_key() {
     };
     assert!(matches!(
         host.typed_text_input(OWNER, 2, generation, &document, &no_text, field, "x"),
+        Err(TypedUiTargetError::Admission(_))
+    ));
+    let no_keyboard = UiEventContext {
+        permission_context: UiPermissionContext::new(
+            "text-only",
+            [UiPermission::Focus, UiPermission::TextEdit],
+        ),
+        ..context.clone()
+    };
+    assert!(matches!(
+        host.typed_key(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &no_keyboard,
+            field,
+            &HostKeyInput {
+                key: "Backspace",
+                code: "Backspace",
+                pressed: true,
+                repeat: false,
+                composing: false,
+                modifiers: Modifiers::default(),
+                location: KeyLocation::Standard,
+            },
+            &mut |_| EventReply::default(),
+            &mut |_| {},
+        ),
         Err(TypedUiTargetError::Admission(_))
     ));
     assert!(matches!(
