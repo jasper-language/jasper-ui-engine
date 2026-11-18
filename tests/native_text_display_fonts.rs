@@ -204,6 +204,20 @@ fn preedit_preserves_only_local_utf8_cursor_ranges() {
         view.preedit_cursor(&binding, OWNER, token),
         Some(Some((1, 4)))
     );
+    let end = view
+        .preedit_caret(&binding, OWNER, token, 1.0)
+        .expect("preedit end caret");
+    assert!(view.preedit_with_cursor(
+        &binding,
+        OWNER,
+        token,
+        Some("a中"),
+        Some((1, 1))
+    ));
+    let start = view
+        .preedit_caret(&binding, OWNER, token, 1.0)
+        .expect("preedit start caret");
+    assert!(start.x() < end.x());
     assert!(view.preedit_with_cursor(
         &binding,
         OWNER,

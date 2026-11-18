@@ -167,6 +167,9 @@ impl TextDisplayView {
     pub fn preedit_cursor(&self,binding:&UiInputBinding,owner:u64,token:UiCompositionToken)->Option<Option<(usize,usize)>> {
         self.inner.preedit_cursor_from_host(binding,owner,token)
     }
+    pub fn preedit_caret(&self,binding:&UiInputBinding,owner:u64,token:UiCompositionToken,width:f32)->Option<Rect> {
+        self.inner.preedit_caret_from_host(binding,owner,token,width)
+    }
     pub fn cancel_preedit(&mut self,owner:u64,token:UiCompositionToken)->bool {
         self.inner.cancel_preedit_from_host(owner,token)
     }

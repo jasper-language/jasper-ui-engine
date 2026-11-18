@@ -124,8 +124,10 @@ Parley 布局返回逻辑光标矩形。`examples/window` 在每次外部文本�
 
 桌面宿主不再丢弃 `InputEvent::Preedit.cursor`：兼容入口 `preedit(text)` 保持无 cursor，
 新入口 `preedit_with_cursor(..., text, cursor)` 保存预编辑文本内的局部 UTF-8 光标/选区；
-`preedit_cursor` 在有效组合上返回该值。非法范围或非 UTF-8 边界只丢弃 cursor，不清除预编辑
-文本。当前候选窗定位仍基于基础文本光标，预编辑数据保留不冒充平台候选位置验收。
+`preedit_cursor` 在有效组合上返回该值，`preedit_caret` 从预编辑自己的 Parley 布局返回
+cursor 几何。桌面宿主优先用该几何调用 `set_ime_cursor_area`，无有效预编辑 cursor 时才
+回退基础文本光标。非法范围或非 UTF-8 边界只丢弃 cursor，不清除预编辑文本；平台候选窗
+实际显示位置仍未验收。
 
 隔离 Xvfb X11 显示服务器中的验证结果：
 

@@ -314,7 +314,8 @@ Web 后端和正式宿主仍需分别验收。
   `examples/window` 在布局更新后调用 `set_ime_cursor_area`。当前验证证明几何查询与调用
   路径，不证明平台候选窗实际像素位置或候选列表；
 - 桌面 `InputEvent::Preedit.cursor` 经 `TextDisplayView::preedit_with_cursor` 保留为
-  预编辑局部 UTF-8 范围；非法范围丢弃 cursor 而保留文本，旧 `preedit(text)` 入口保持兼容；
+  预编辑局部 UTF-8 范围，`preedit_caret` 从预编辑布局提供候选几何；非法范围丢弃 cursor
+  而保留文本，旧 `preedit(text)` 入口保持兼容；
 - `verification/native-projection` 已同步 `preedit_cursor`、ImageStore/OverlayState 字段：
   `21 passed`；
 - `DesktopInput` 现在在组合态给 `KeyEvent.composing` 置位并抑制 key-derived text，

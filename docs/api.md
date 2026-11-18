@@ -598,7 +598,8 @@ optional UTF-8 cursor/selection inside the preedit text; the compatible
 `preedit(...)` entry keeps cursor absent. `preedit_cursor(...)` returns `Some(None)`
 for an active composition with no cursor and `None` for an invalid token. Cursor
 ranges outside the preedit or on a non-UTF-8 boundary are dropped while the preedit
-text remains visible.
+text remains visible. `preedit_caret(..., width)` returns the caret rectangle from
+that preedit's own Parley layout when a cursor is present.
 
 ### Owned UI preedit presentation state
 

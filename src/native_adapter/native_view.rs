@@ -962,8 +962,34 @@ impl NativeTextView {
         offset: usize,
         width: f32,
     ) -> Option<jasper_ui_engine::geometry::Rect> {
+        self.text_caret_geometry(self.text_node, offset, width)
+    }
+
+    pub(crate) fn preedit_caret_from_host(
+        &self,
+        binding: &UiInputBinding,
+        caller: u64,
+        token: UiCompositionToken,
+        width: f32,
+    ) -> Option<jasper_ui_engine::geometry::Rect> {
+        if !width.is_finite()
+            || width < 0.0
+            || !self.preedit.accepts(binding, caller, token)
+        {
+            return None;
+        }
+        let (_, focus) = self.preedit_cursor?;
+        self.text_caret_geometry(self.preedit_node, focus, width)
+    }
+
+    fn text_caret_geometry(
+        &self,
+        text_node: blitz_dom::NodeId,
+        offset: usize,
+        width: f32,
+    ) -> Option<jasper_ui_engine::geometry::Rect> {
         let document = self.document.as_ref()?;
-        let root = document.get_node(self.text_node)?.inline_root_ancestor()?;
+        let root = document.get_node(text_node)?.inline_root_ancestor()?;
         let layout = root.element_data()?.inline_layout_data.as_ref()?;
         if offset > layout.text.len() || !layout.text.is_char_boundary(offset) {
             return None;

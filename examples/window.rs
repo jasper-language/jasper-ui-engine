@@ -278,13 +278,20 @@ impl App {
         let (Some(window), Some(ticket)) = (self.window.as_ref(), self.text_ticket) else {
             return;
         };
-        let Some(caret) = self.text.caret(
-            &self.text_binding,
-            TEXT_OWNER,
-            ticket,
-            self.text_snapshot.len(),
-            1.0,
-        ) else {
+        let preedit_caret = self.text_preedit.and_then(|token| {
+            self.text
+                .preedit_caret(&self.text_binding, TEXT_OWNER, token, 1.0)
+        });
+        let caret = preedit_caret.or_else(|| {
+            self.text.caret(
+                &self.text_binding,
+                TEXT_OWNER,
+                ticket,
+                self.text_snapshot.len(),
+                1.0,
+            )
+        });
+        let Some(caret) = caret else {
             return;
         };
         window.set_ime_cursor_area(
