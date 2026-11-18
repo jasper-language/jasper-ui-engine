@@ -5,18 +5,18 @@
 //! authenticated owner, version and presentation generations, and coordinates pause/resume/retire.
 //! 它不持有窗口、原生 Surface、GPU 设备或交换链；只把宿主持有资源绑定到已认证归属、版本与
 //! 呈现代数，并协调暂停、恢复和退休。
-use crate::image_resource::{ImageError, ImageInfo, ImageLimits, ImageReport};
 use crate::native::host::SceneHostView;
 #[cfg(feature = "gpu-pending")]
 use crate::native::host::{GpuFrameError, GpuRenderer};
+use crate::image_resource::{ImageError, ImageInfo, ImageLimits, ImageReport};
 use crate::native::{SceneFocusEvent, SceneQuota, SceneUpdate, SceneUpdateError};
 use crate::scene::{NodeId, Scene, ScenePatch};
+use crate::ui_ir::{NativeSceneUpdate, NativeUiDocument, NativeUiFrameError, UiFrame};
 #[cfg(feature = "cpu-pending")]
 use crate::surface_lifecycle::RenderedPixels;
 use crate::surface_lifecycle::{
     SurfaceCoordinator, SurfaceLifecycleError, SurfaceStatus, SurfaceStepError,
 };
-use crate::ui_ir::{NativeSceneUpdate, NativeUiDocument, NativeUiFrameError, UiFrame};
 
 /// Host coordinator failure. A lifecycle rejection precedes all native engine work.
 /// 宿主协调失败；生命周期拒绝先于任何原生引擎工作。
@@ -51,9 +51,7 @@ impl std::fmt::Display for TypedUiApplyError {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Frame(error) => write!(formatter, "Typed UI IR frame rejected: {error}"),
-            Self::Host(error) => {
-                write!(formatter, "Native host rejected Typed UI IR frame: {error}")
-            }
+            Self::Host(error) => write!(formatter, "Native host rejected Typed UI IR frame: {error}"),
         }
     }
 }
