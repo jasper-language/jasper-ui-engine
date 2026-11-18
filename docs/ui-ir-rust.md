@@ -31,6 +31,8 @@ Jasper Language/UI 共有层；Rust 不反向定义公共语义。
 - 首次分配 generation 1；
 - retirement 后只分配 `last + 1`；
 - 旧组合不可复用；
+- `UiIdentityLedger::snapshot` / `from_snapshot` 显式保留并恢复每个 semantic id 的
+  last generation 与 live/retired 游标，不重新分配历史代际；
 - `NativeUiDocument` 在每个 insert/remove 中原子 claim/retire 精确 `UiKey`；
 - identity domain 为空时拒绝构造 ledger；
 - `u64::MAX` 显式返回 `GenerationExhausted`，不回绕。
@@ -93,8 +95,8 @@ caret 几何与 `UiKey` 一并返回，不暴露 backend 节点身份。
 - `NativeUiDocument::project_compatibility_style(UiKey)` 自动从当前节点映射这两项上下文；
 - `NativeUiDocument::project_compatibility_node(UiKey)` 递归恢复 `UiNode` 子树、element、
   semantics、events、children 和每节点 style，并以 `UiKey` 为键聚合 `NativeNodeLoss`；
-- `project_compatibility_snapshot()` 返回 authority、revision、root、environment 以及当前
-  active/prepared resource 的只读文档快照；
+- `project_compatibility_snapshot()` 返回 authority、identity 游标、revision、root、
+  environment 以及当前 active/prepared resource 的只读文档快照；
 - `NativeUiCompatibilitySnapshot::to_initial_frame()` 仅在全部身份为 generation 1 时重建
   `expected_revision=1` 的新会话帧；存在淘汰历史时结构化拒绝，不伪造 identity ledger；
 - box/flex/Grid/position/paint/typography 中当前 Typed v0.1 可表达的字段会投影；
@@ -103,9 +105,9 @@ caret 几何与 `UiKey` 一并返回，不暴露 backend 节点身份。
 - image/overlay 在没有 exact resource/UiKey 上下文时不会伪造身份，而是保留为损失；
 - 只有 `is_lossless() == true` 才表示本次投影没有遗漏非默认 Native 字段。
 
-快照会把可表达 Native 默认显式化，并对无子节点/空事件列表使用规范化 `None`；全文档快照只
-包含当前 resource 状态，不恢复 released resource tombstones/history、identity retirement
-history、Framework 组件声明、Signal 依赖、事件会话或正式 ABI。Grid 投影仍继承
+快照会把可表达 Native 默认显式化，并对无子节点/空事件列表使用规范化 `None`；全文档快照
+包含 identity retirement 游标，但只包含当前 resource 状态，不包含 released resource
+tombstones/history、Framework 组件声明、Signal 依赖、事件会话或正式 ABI。Grid 投影仍继承
 candidate/`host_accepted=false` 状态。
 
 ## Native 映射状态

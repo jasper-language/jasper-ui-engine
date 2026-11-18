@@ -13,6 +13,21 @@ struct Record {
     live: bool,
 }
 
+/// One auditable identity cursor in a compatibility snapshot.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct IdentityRecordSnapshot {
+    pub last_generation: u64,
+    pub live: bool,
+}
+
+/// Explicit identity-domain history. Unlike an initial UiFrame, this preserves retirement
+/// cursors and therefore cannot re-enable an already retired `(semantic_id, generation)` pair.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UiIdentitySnapshot {
+    pub identity_domain: String,
+    pub records: BTreeMap<u64, IdentityRecordSnapshot>,
+}
+
 /// Rust-side identity allocator for one stable identity domain.
 #[derive(Clone, Debug)]
 pub struct UiIdentityLedger {
@@ -34,6 +49,55 @@ impl UiIdentityLedger {
 
     pub fn identity_domain(&self) -> &str {
         &self.identity_domain
+    }
+
+    pub fn snapshot(&self) -> UiIdentitySnapshot {
+        UiIdentitySnapshot {
+            identity_domain: self.identity_domain.clone(),
+            records: self
+                .records
+                .iter()
+                .map(|(semantic_id, record)| {
+                    (
+                        *semantic_id,
+                        IdentityRecordSnapshot {
+                            last_generation: record.last_generation,
+                            live: record.live,
+                        },
+                    )
+                })
+                .collect(),
+        }
+    }
+
+    /// Restore an explicit identity history without allocating or recycling generations.
+    pub fn from_snapshot(snapshot: UiIdentitySnapshot) -> Result<Self, IdentityError> {
+        if snapshot.identity_domain.is_empty() {
+            return Err(IdentityError::InvalidDomain);
+        }
+        if snapshot
+            .records
+            .values()
+            .any(|record| record.last_generation == 0)
+        {
+            return Err(IdentityError::InvalidSnapshot);
+        }
+        Ok(Self {
+            identity_domain: snapshot.identity_domain,
+            records: snapshot
+                .records
+                .into_iter()
+                .map(|(semantic_id, record)| {
+                    (
+                        semantic_id,
+                        Record {
+                            last_generation: record.last_generation,
+                            live: record.live,
+                        },
+                    )
+                })
+                .collect(),
+        })
     }
 
     /// Allocate the first generation, or the next one after a retired generation.
@@ -125,6 +189,7 @@ pub enum IdentityError {
     Unknown(UiKey),
     Stale(UiKey),
     Retired(UiKey),
+    InvalidSnapshot,
     UnexpectedGeneration { expected: UiKey, actual: UiKey },
 }
 
@@ -153,6 +218,7 @@ impl fmt::Display for IdentityError {
                 "identity {}:{} is retired",
                 key.semantic_id, key.generation
             ),
+            Self::InvalidSnapshot => write!(f, "identity snapshot contains an invalid cursor"),
             Self::UnexpectedGeneration { expected, actual } => write!(
                 f,
                 "identity {}:{} is not the next generation {}:{}",
@@ -231,5 +297,21 @@ mod tests {
         );
         ledger.claim(UiKey::new(7, 2)).unwrap();
         assert_eq!(ledger.admit(UiKey::new(7, 1)), Err(IdentityError::Stale(UiKey::new(7, 1))));
+    }
+
+    #[test]
+    fn snapshot_restore_preserves_live_and_retired_generation_cursors() {
+        let mut ledger = UiIdentityLedger::new("orders-app/window-main").unwrap();
+        ledger.claim(UiKey::new(7, 1)).unwrap();
+        ledger.retire(UiKey::new(7, 1)).unwrap();
+        ledger.claim(UiKey::new(7, 2)).unwrap();
+        ledger.claim(UiKey::new(8, 1)).unwrap();
+
+        let mut restored = UiIdentityLedger::from_snapshot(ledger.snapshot()).unwrap();
+        assert_eq!(restored.admit(UiKey::new(7, 1)), Err(IdentityError::Stale(UiKey::new(7, 1))));
+        assert_eq!(restored.admit(UiKey::new(7, 2)), Ok(()));
+        restored.retire(UiKey::new(7, 2)).unwrap();
+        assert_eq!(restored.allocate(7), Ok(UiKey::new(7, 3)));
+        assert_eq!(restored.admit(UiKey::new(8, 1)), Ok(()));
     }
 }

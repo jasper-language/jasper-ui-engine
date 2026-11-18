@@ -429,6 +429,9 @@ fn native_compatibility_snapshot_includes_environment_and_live_resources() {
     let document = NativeUiDocument::from_frame(&frame).unwrap();
     let snapshot = document.project_compatibility_snapshot().unwrap();
     assert_eq!(snapshot.identity_domain, "compat/window");
+    assert_eq!(snapshot.identity.identity_domain, "compat/window");
+    assert_eq!(snapshot.identity.records[&1].last_generation, 1);
+    assert!(snapshot.identity.records[&1].live);
     assert_eq!(snapshot.owner, "host");
     assert_eq!(snapshot.session, "session");
     assert_eq!(snapshot.revision, 2);
@@ -827,6 +830,8 @@ fn native_document_never_reuses_a_removed_ui_key_and_accepts_the_next_generation
     assert!(document.node_for_key(next).is_some());
     assert!(document.node_for_key(removed).is_none());
     let snapshot = document.project_compatibility_snapshot().unwrap();
+    assert_eq!(snapshot.identity.records[&2].last_generation, 2);
+    assert!(snapshot.identity.records[&2].live);
     assert!(matches!(
         snapshot.to_initial_frame(),
         Err(jasper_ui_engine::ui_ir::UiIrError::Invalid { .. })

@@ -19,7 +19,9 @@ mod compat;
 pub use events::{
     AdmittedEvent, UiEventAdmissionError, UiEventContext, UiPermission, UiPermissionContext,
 };
-pub use identity::{IdentityError, UiIdentityLedger};
+pub use identity::{
+    IdentityError, IdentityRecordSnapshot, UiIdentityLedger, UiIdentitySnapshot,
+};
 pub use compat::{
     project_native_style, project_native_style_with_context, NativeStyleContext, NativeStyleLoss,
     NativeStyleProjection,

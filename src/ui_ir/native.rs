@@ -198,6 +198,7 @@ pub struct NativeResourceProjection {
 #[derive(Clone, Debug, PartialEq)]
 pub struct NativeUiCompatibilitySnapshot {
     pub identity_domain: String,
+    pub identity: UiIdentitySnapshot,
     pub owner: String,
     pub session: String,
     pub revision: u64,
@@ -441,6 +442,10 @@ impl NativeUiDocument {
         self.identity.current(semantic_id)
     }
 
+    pub fn identity_snapshot(&self) -> UiIdentitySnapshot {
+        self.identity.snapshot()
+    }
+
     pub fn node_for_key(&self, key: UiKey) -> Option<NodeId> {
         self.key_to_node.get(&key).copied()
     }
@@ -556,6 +561,7 @@ impl NativeUiDocument {
             .collect();
         Ok(NativeUiCompatibilitySnapshot {
             identity_domain: self.identity_domain().into(),
+            identity: self.identity.snapshot(),
             owner: self.owner().into(),
             session: self.session().into(),
             revision: self.revision,
