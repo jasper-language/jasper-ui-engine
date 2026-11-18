@@ -308,7 +308,9 @@ impl App {
             return true;
         };
         if let Some(token) = self.text_preedit.take() {
-            self.text.cancel_preedit(TEXT_OWNER, token);
+            if self.text.cancel_preedit(TEXT_OWNER, token) {
+                self.external_dirty = true;
+            }
         }
         if self
             .text
@@ -386,6 +388,7 @@ impl App {
                 if !self.text.cancel_preedit(TEXT_OWNER, token) {
                     return Err("preedit cancel rejected".into());
                 }
+                self.external_dirty = true;
             }
             return Ok(());
         }
