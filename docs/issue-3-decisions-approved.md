@@ -46,7 +46,7 @@
 | 架构方向与六项裁决 | approved |
 | `ir-v0` Schema | Language/UI draft；Rust Native consumer implemented / tested |
 | Typed Property Registry | upstream registry pinned；Rust profile implemented / tested |
-| 兼容 adapter | `UiFrame → ScenePatch`、受限 Native Style ↔ Typed Style、raw Legacy Scene → UiNode（显式 identity + loss report）、Native Style/Semantics → JUI 2 键值、NativeUiDocument/SceneUpdate → JUI 2 initial/successor frame、UiKey → JUI 2 event 行、UiNode 子树/资源/环境/identity 快照及直接文档恢复 implemented / tested；三份 canonical initial frame、settings initial+successor 双帧流和 typed event lines 已与旧 Host CPU reader/formatter 对齐，settings 双帧流也通过真实窗口 CPU softbuffer smoke；Table role/Move/Scene events 等损失仍显式报告；无条件可逆 adapter、完整平台输入/IME/AccessKit/硬件 GPU 验收 not complete |
+| 兼容 adapter | `UiFrame → ScenePatch`、受限 Native Style ↔ Typed Style、raw Legacy Scene → UiNode（显式 identity + loss report）、Native Style/Semantics → JUI 2 键值、NativeUiDocument/SceneUpdate → JUI 2 initial/successor frame、UiKey → JUI 2 event 行、UiNode 子树/资源/环境/identity 快照及直接文档恢复 implemented / tested；三份 canonical initial frame、settings initial+successor 双帧流和 typed event lines 已与旧 Host CPU reader/formatter 对齐，settings 双帧流通过真实窗口 CPU softbuffer smoke，host 注入 Save 点击产生完整 target-bound pointer/focus/click 序列；Table role/Move/Scene events 等损失仍显式报告；无条件可逆 adapter、真实平台 OS 输入/IME、AccessKit 与硬件 GPU 验收 not complete |
 | 候选能力映射 | in progress；Grid/Position/Image/Overlay 仍 candidate、`host_accepted=false` |
 | 双后端 golden case | not run |
 | 正式 ABI | not started |

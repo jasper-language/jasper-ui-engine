@@ -271,6 +271,9 @@ Web 后端和正式宿主仍需分别验收。
 - 在可用 X11 `:0` / Wayland `wayland-0` 环境中，settings initial+successor 双帧流通过
   真实 `--window --smoke` CPU softbuffer 呈现：`ack 2/3`、`accepted 2 / rejected 0`，
   生成 480×320 截图；该验证不覆盖窗口平台输入/IME、AccessKit 或硬件 GPU；
+- settings 初始 frame 经旧 host CPU 命中测试注入 Save 点击后，输出 target 4 的
+  `hover in → pointer-down → focus in → pointer-up → click`，帧保持 accepted；
+  这是 host 注入动作，不代表真实平台 OS 事件已验收；
   副本只为新增 SceneError/Role 变体补了 exhaustive match 分支，reader 协议逻辑未改；
   原 host 仓库未修改。该证据只覆盖 CPU headless transport，不包含真实平台窗口；
 - Clippy 成功退出；仓库仍保留已登记的非阻塞历史 warning。
