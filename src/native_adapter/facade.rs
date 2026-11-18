@@ -157,7 +157,15 @@ impl TextDisplayView {
         self.inner.accepts_preedit(binding,owner,token)
     }
     pub fn preedit(&mut self,binding:&UiInputBinding,owner:u64,token:UiCompositionToken,text:Option<&str>)->bool {
-        self.inner.set_preedit_from_host(binding,owner,token,text)
+        self.inner.set_preedit_from_host(binding,owner,token,text,None)
+    }
+    /// Apply preedit text with the host IME's local UTF-8 cursor/selection.
+    /// 应用预编辑文本及宿主输入法的局部 UTF-8 光标/选区。
+    pub fn preedit_with_cursor(&mut self,binding:&UiInputBinding,owner:u64,token:UiCompositionToken,text:Option<&str>,cursor:Option<(usize,usize)>)->bool {
+        self.inner.set_preedit_from_host(binding,owner,token,text,cursor)
+    }
+    pub fn preedit_cursor(&self,binding:&UiInputBinding,owner:u64,token:UiCompositionToken)->Option<Option<(usize,usize)>> {
+        self.inner.preedit_cursor_from_host(binding,owner,token)
     }
     pub fn cancel_preedit(&mut self,owner:u64,token:UiCompositionToken)->bool {
         self.inner.cancel_preedit_from_host(owner,token)
@@ -400,6 +408,11 @@ impl TextInputSession {
         text:Option<&str>)->bool {
         if self.retired || !self.owns_composition(token) {return false;}
         view.preedit(&self.binding,self.owner,token,text)
+    }
+    pub fn preedit_with_cursor(&mut self,view:&mut TextDisplayView,token:UiCompositionToken,
+        text:Option<&str>,cursor:Option<(usize,usize)>)->bool {
+        if self.retired || !self.owns_composition(token) {return false;}
+        view.preedit_with_cursor(&self.binding,self.owner,token,text,cursor)
     }
 
     /// Cancel the active composition locally, then deliver its exact cancellation

@@ -19,6 +19,7 @@ pub(crate) struct NativeTextView {
     bold_aliases: std::collections::BTreeSet<u64>,
     document: ViewSlot<BaseDocument>,
     preedit: UiCompositionSlot,
+    preedit_cursor: Option<(usize, usize)>,
     component_version: u64,
     session: u64,
     context: UiInputContext,
@@ -239,6 +240,7 @@ impl NativeTextView {
             bold_aliases,
             document: ViewSlot::new(document),
             preedit: UiCompositionSlot::new(),
+            preedit_cursor: None,
             component_version: 0,
             session,
             context,
@@ -271,6 +273,7 @@ impl NativeTextView {
             tree.set_node_text(self.text_node, text);
             tree.set_node_text(self.preedit_node, "");
         }
+        self.preedit_cursor = None;
         document.clear_text_selection();
         document.resolve(0.0);
         if let Some(token) = self.preedit.current_token() {
@@ -303,6 +306,7 @@ impl NativeTextView {
             if !self.set_preedit_display(None) {
                 return None;
             }
+            self.preedit_cursor = None;
         }
         self.preedit.begin(binding, caller, ticket)
     }
@@ -329,6 +333,7 @@ impl NativeTextView {
         caller: u64,
         token: UiCompositionToken,
         text: Option<&str>,
+        cursor: Option<(usize, usize)>,
     ) -> bool {
         if !self.preedit.accepts(binding, caller, token) {
             return false;
@@ -340,7 +345,30 @@ impl NativeTextView {
         let Some(input) = binding.admit(caller, ticket, &text) else {
             return false;
         };
-        self.set_preedit_display(*input.payload())
+        if !self.set_preedit_display(*input.payload()) {
+            return false;
+        }
+        self.preedit_cursor = text.and_then(|text| {
+            cursor.filter(|&(start, end)| {
+                !text.is_empty()
+                    && start <= end
+                    && end <= text.len()
+                    && text.is_char_boundary(start)
+                    && text.is_char_boundary(end)
+            })
+        });
+        true
+    }
+
+    pub(crate) fn preedit_cursor_from_host(
+        &self,
+        binding: &UiInputBinding,
+        caller: u64,
+        token: UiCompositionToken,
+    ) -> Option<Option<(usize, usize)>> {
+        self.preedit
+            .accepts(binding, caller, token)
+            .then_some(self.preedit_cursor)
     }
 
     /// Projects an admitted external UTF-8 byte selection into upstream text layout.
@@ -1057,6 +1085,7 @@ impl NativeTextView {
             let _ = self.preedit.cancel(caller, token);
         }
         let cleared = self.set_preedit_display(None);
+        self.preedit_cursor = None;
         if cleared && was_focused {
             sink(crate::native_events::NativeFocusEvent {
                 owner: ticket,
@@ -1927,20 +1956,38 @@ mod tests {
         let old = view
             .begin_preedit_from_host(&binding, 10, ticket)
             .expect("old token");
-        assert!(view.set_preedit_from_host(&binding, 10, old, Some("old")));
+        assert!(view.set_preedit_from_host(&binding, 10, old, Some("old"), None));
         assert!(view.cancel_preedit_from_host(10, old));
         assert!(binding.accepts(10, ticket));
-        assert!(!view.set_preedit_from_host(&binding, 10, old, Some("late")));
+        assert!(!view.set_preedit_from_host(
+            &binding,
+            10,
+            old,
+            Some("late"),
+            None
+        ));
         let fresh = view
             .begin_preedit_from_host(&binding, 10, ticket)
             .expect("fresh token");
         assert!(fresh.serial > old.serial);
-        assert!(view.set_preedit_from_host(&binding, 10, fresh, Some("successor")));
+        assert!(view.set_preedit_from_host(
+            &binding,
+            10,
+            fresh,
+            Some("successor"),
+            None
+        ));
         #[cfg(feature = "cpu-pending")]
         let before = view.render_cpu(1024 * 1024).expect("successor frame");
         assert!(!view.cancel_preedit_from_host(10, old));
         assert!(!view.cancel_preedit_from_host(11, fresh));
-        assert!(!view.set_preedit_from_host(&binding, 10, old, Some("late")));
+        assert!(!view.set_preedit_from_host(
+            &binding,
+            10,
+            old,
+            Some("late"),
+            None
+        ));
         #[cfg(feature = "cpu-pending")]
         assert_eq!(
             view.render_cpu(1024 * 1024).expect("late rejection frame"),
@@ -1971,7 +2018,13 @@ mod tests {
         let old = view
             .begin_preedit_from_host(&binding, 10, old_ticket)
             .expect("old token");
-        assert!(view.set_preedit_from_host(&binding, 10, old, Some("old preedit")));
+        assert!(view.set_preedit_from_host(
+            &binding,
+            10,
+            old,
+            Some("old preedit"),
+            None
+        ));
         assert!(view.set_selection_from_host(&binding, 10, old_ticket, Some((0, 3))));
         assert!(view.apply_display_snapshot_from_host(
             10,
@@ -1981,7 +2034,13 @@ mod tests {
         ));
         assert!(view.preedit.current_token().is_none());
         assert!(binding.accepts(10, old_ticket)); // Host owns the separate focus binding.
-        assert!(!view.set_preedit_from_host(&binding, 10, old, Some("late")));
+        assert!(!view.set_preedit_from_host(
+            &binding,
+            10,
+            old,
+            Some("late"),
+            None
+        ));
         assert!(!view.cancel_preedit_from_host(10, old));
         let ticket = binding
             .replace(10, old_ticket, next_context)
@@ -1993,7 +2052,13 @@ mod tests {
             .begin_preedit_from_host(&binding, 10, ticket)
             .expect("new token");
         assert!(fresh.serial > old.serial);
-        assert!(view.set_preedit_from_host(&binding, 10, fresh, Some("new preedit")));
+        assert!(view.set_preedit_from_host(
+            &binding,
+            10,
+            fresh,
+            Some("new preedit"),
+            None
+        ));
         assert!(view.set_selection_from_host(&binding, 10, ticket, Some((0, 3))));
         assert_eq!(
             view.selected_display_text_from_host(&binding, 10, ticket)
@@ -2002,7 +2067,13 @@ mod tests {
         );
         #[cfg(feature = "cpu-pending")]
         let before = view.render_cpu(1024 * 1024).expect("new snapshot frame");
-        assert!(!view.set_preedit_from_host(&binding, 10, old, Some("late")));
+        assert!(!view.set_preedit_from_host(
+            &binding,
+            10,
+            old,
+            Some("late"),
+            None
+        ));
         assert!(!view.cancel_preedit_from_host(10, old));
         #[cfg(feature = "cpu-pending")]
         assert_eq!(
@@ -2030,7 +2101,13 @@ mod tests {
             .expect("old composition");
         #[cfg(feature = "cpu-pending")]
         let empty = view.render_cpu(1024 * 1024).expect("empty preedit frame");
-        assert!(view.set_preedit_from_host(&binding, 10, old, Some("old composition text")));
+        assert!(view.set_preedit_from_host(
+            &binding,
+            10,
+            old,
+            Some("old composition text"),
+            None
+        ));
         let successor = binding
             .replace(10, ticket, context)
             .expect("replacement binding");
@@ -2045,7 +2122,13 @@ mod tests {
                 == empty,
             "old preedit pixels retained"
         );
-        assert!(!view.set_preedit_from_host(&binding, 10, old, Some("late")));
+        assert!(!view.set_preedit_from_host(
+            &binding,
+            10,
+            old,
+            Some("late"),
+            None
+        ));
         assert!(!view.cancel_preedit_from_host(10, old));
     }
 
@@ -2068,7 +2151,13 @@ mod tests {
         let token = view
             .begin_preedit_from_host(&binding, 10, ticket)
             .expect("active composition");
-        assert!(view.set_preedit_from_host(&binding, 10, token, Some("预编辑")));
+        assert!(view.set_preedit_from_host(
+            &binding,
+            10,
+            token,
+            Some("预编辑"),
+            None
+        ));
         assert!(view.set_selection_from_host(&binding, 10, ticket, Some((0, 6))));
         assert!(view.set_scroll_from_host(&binding, 10, ticket, 0.0, 8.0));
         for (version, foreground, background) in [
@@ -2100,9 +2189,21 @@ mod tests {
             #[cfg(feature = "cpu-pending")]
             assert!(view.render_cpu(1024 * 1024).is_some());
         }
-        assert!(view.set_preedit_from_host(&binding, 10, token, Some("更新预编辑")));
+        assert!(view.set_preedit_from_host(
+            &binding,
+            10,
+            token,
+            Some("更新预编辑"),
+            None
+        ));
         assert!(view.close_focus_from_host(&mut binding, 10, ticket));
-        assert!(!view.set_preedit_from_host(&binding, 10, token, Some("迟到")));
+        assert!(!view.set_preedit_from_host(
+            &binding,
+            10,
+            token,
+            Some("迟到"),
+            None
+        ));
     }
 
     #[test]

@@ -313,6 +313,10 @@ Web 后端和正式宿主仍需分别验收。
 - `TextDisplayView::caret` 从同一 Parley 布局返回已准入 UTF-8 偏移的光标矩形；
   `examples/window` 在布局更新后调用 `set_ime_cursor_area`。当前验证证明几何查询与调用
   路径，不证明平台候选窗实际像素位置或候选列表；
+- 桌面 `InputEvent::Preedit.cursor` 经 `TextDisplayView::preedit_with_cursor` 保留为
+  预编辑局部 UTF-8 范围；非法范围丢弃 cursor 而保留文本，旧 `preedit(text)` 入口保持兼容；
+- `verification/native-projection` 已同步 `preedit_cursor`、ImageStore/OverlayState 字段：
+  `21 passed`；
 - `DesktopInput` 现在在组合态给 `KeyEvent.composing` 置位并抑制 key-derived text，
   `Ime::Commit` 是提交来源；普通无 IME 输入仍使用 winit `event.text`。宿主忽略组合态
   命令键，并只为确有场景 key-down 归属的命令 key-up 转发，避免 IME 消费按下后仍转发的

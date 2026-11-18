@@ -183,3 +183,35 @@ fn caret_uses_the_display_layout_and_current_binding() {
     assert!(binding.close(OWNER, ticket));
     assert!(view.caret(&binding, OWNER, ticket, 0, 1.0).is_none());
 }
+
+#[test]
+fn preedit_preserves_only_local_utf8_cursor_ranges() {
+    let latin = latin();
+    let mut view = view(&[&latin], "base");
+    let mut binding = UiInputBinding::new(OWNER, 1);
+    let ticket = binding.bind(OWNER, CONTEXT).expect("binding");
+    let token = view
+        .begin_preedit(&binding, OWNER, ticket)
+        .expect("composition token");
+    assert!(view.preedit_with_cursor(
+        &binding,
+        OWNER,
+        token,
+        Some("a中"),
+        Some((1, 4))
+    ));
+    assert_eq!(
+        view.preedit_cursor(&binding, OWNER, token),
+        Some(Some((1, 4)))
+    );
+    assert!(view.preedit_with_cursor(
+        &binding,
+        OWNER,
+        token,
+        Some("a中"),
+        Some((2, 4))
+    ));
+    assert_eq!(view.preedit_cursor(&binding, OWNER, token), Some(None));
+    assert!(view.cancel_preedit(OWNER, token));
+    assert_eq!(view.preedit_cursor(&binding, OWNER, token), None);
+}

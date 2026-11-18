@@ -369,7 +369,11 @@ impl App {
         Ok(())
     }
 
-    fn update_preedit(&mut self, text: Option<&str>) -> Result<(), Box<dyn std::error::Error>> {
+    fn update_preedit(
+        &mut self,
+        text: Option<&str>,
+        cursor: Option<(usize, usize)>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         if text.is_none_or(str::is_empty) {
             if let Some(token) = self.text_preedit.take() {
                 if !self.text.cancel_preedit(TEXT_OWNER, token) {
@@ -389,7 +393,7 @@ impl App {
         let token = self.text_preedit.ok_or("missing preedit token")?;
         if !self
             .text
-            .preedit(&self.text_binding, TEXT_OWNER, token, text)
+            .preedit_with_cursor(&self.text_binding, TEXT_OWNER, token, text, cursor)
         {
             return Err("preedit update rejected".into());
         }
@@ -543,7 +547,9 @@ impl App {
                     self.pressed_commands.remove(&key.key);
                 }
             }
-            InputEvent::Preedit { text, .. } => self.update_preedit(Some(&text))?,
+            InputEvent::Preedit { text, cursor } => {
+                self.update_preedit(Some(&text), cursor)?
+            }
             InputEvent::Text(text) => {
                 self.text_snapshot.push_str(&text);
                 let snapshot = self.text_snapshot.clone();
@@ -552,7 +558,7 @@ impl App {
             InputEvent::Composition(_) => {}
             InputEvent::ImeEnabled(enabled) => {
                 if !enabled {
-                    self.update_preedit(None)?;
+                    self.update_preedit(None, None)?;
                 }
             }
             InputEvent::Focus(focus) => {

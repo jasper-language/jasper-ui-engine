@@ -122,6 +122,11 @@ Parley 布局返回逻辑光标矩形。`examples/window` 在每次外部文本�
 偏移越界/非 UTF-8 边界、负宽或非有限值均拒绝。该 API 只提供几何，不创建候选窗，也不
 证明平台候选窗实际显示位置。
 
+桌面宿主不再丢弃 `InputEvent::Preedit.cursor`：兼容入口 `preedit(text)` 保持无 cursor，
+新入口 `preedit_with_cursor(..., text, cursor)` 保存预编辑文本内的局部 UTF-8 光标/选区；
+`preedit_cursor` 在有效组合上返回该值。非法范围或非 UTF-8 边界只丢弃 cursor，不清除预编辑
+文本。当前候选窗定位仍基于基础文本光标，预编辑数据保留不冒充平台候选位置验收。
+
 隔离 Xvfb X11 显示服务器中的验证结果：
 
 - XTest 系统窗口级 pointer down/up 经 winit 与公共 HostRenderer 激活 Save 一次；

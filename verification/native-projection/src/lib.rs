@@ -8,6 +8,7 @@ use view_slot::ViewSlot;
 // This is an explicitly abstract backend payload, not a mock renderer or ABI model.
 struct BaseDocument;
 mod blitz_dom { pub struct NodeId; pub struct FontContext; }
+mod image_resource { pub(crate) struct ImageStore; }
 mod native_view {pub(crate) use super::NativeTextView;}
 include!(concat!(env!("OUT_DIR"), "/actual.rs"));
 
@@ -15,6 +16,7 @@ pub fn check_projection(version: u64, close: bool) {
     let mut view = NativeTextView {
         bold_aliases: std::collections::BTreeSet::new(),
         document: ViewSlot::new(BaseDocument), preedit: UiCompositionSlot::new(),
+        preedit_cursor: None,
         component_version: version, session: 1,
         context: UiInputContext { target: NodeId(2), target_generation: 3, document: 4, revision: 5 },
         content_node: blitz_dom::NodeId, text_node: blitz_dom::NodeId,
@@ -62,6 +64,7 @@ pub fn check_public_projection(version:u64,ids:[u64;10],close:bool) {
     let incoming=UiInputContext {target:NodeId(ids[6]),target_generation:ids[7],document:ids[8],revision:ids[9]};
     let mut view=TextDisplayView {inner:NativeTextView {
         bold_aliases:std::collections::BTreeSet::new(),document:ViewSlot::new(BaseDocument),preedit:UiCompositionSlot::new(),component_version:version,
+        preedit_cursor:None,
         session:ids[4],context:current,content_node:blitz_dom::NodeId,text_node:blitz_dom::NodeId,
         text_element:blitz_dom::NodeId,preedit_node:blitz_dom::NodeId,preedit_element:blitz_dom::NodeId,
     }};
@@ -106,6 +109,7 @@ pub fn check_public_close(version:u64,ids:[u64;10],closed:bool,active:bool) {
     let mut binding=UiInputBinding::new(ids[4],1);let ticket=binding.bind(ids[4],current).unwrap();
     let mut preedit=UiCompositionSlot::new();if active {assert!(preedit.begin(&binding,ids[4],ticket).is_some());}
     let mut view=TextDisplayView {inner:NativeTextView {bold_aliases:std::collections::BTreeSet::new(),document:ViewSlot::new(BaseDocument),preedit,
+        preedit_cursor:None,
         component_version:version,session:ids[4],context:current,content_node:blitz_dom::NodeId,text_node:blitz_dom::NodeId,
         text_element:blitz_dom::NodeId,preedit_node:blitz_dom::NodeId,preedit_element:blitz_dom::NodeId}};
     if closed {assert!(view.inner.document.close());}
@@ -150,7 +154,7 @@ pub mod capture_policy;
 pub fn check_host_context(ids:[u64;10]) {
     let context=UiInputContext {target:NodeId(ids[0]),target_generation:ids[1],document:ids[2],revision:ids[3]};
     let expected=UiInputContext {target:NodeId(ids[6]),target_generation:ids[7],document:ids[8],revision:ids[9]};
-    let view=NativeTextView {bold_aliases:std::collections::BTreeSet::new(),document:ViewSlot::new(BaseDocument),preedit:UiCompositionSlot::new(),component_version:0,
+    let view=NativeTextView {bold_aliases:std::collections::BTreeSet::new(),document:ViewSlot::new(BaseDocument),preedit:UiCompositionSlot::new(),preedit_cursor:None,component_version:0,
         session:ids[4],context,content_node:blitz_dom::NodeId,text_node:blitz_dom::NodeId,text_element:blitz_dom::NodeId,
         preedit_node:blitz_dom::NodeId,preedit_element:blitz_dom::NodeId};
     assert_eq!(view.host_context_matches(ids[5],expected),

@@ -7,11 +7,13 @@ pub struct Scene;
 pub struct MaterialState;
 mod jasper_ui_engine {pub mod motion {pub struct MotionState;}}
 mod scene_edit {pub struct EditState;}
+mod scene_overlay {pub(crate) struct OverlayState;}
 fn scene_fixture(owner:u64,scene_version:u64,node_count:usize)->NativeScene {
     NativeScene {source:Scene,font_ctx:blitz_dom::FontContext,bold_aliases:BTreeSet::new(),document:ViewSlot::new(BaseDocument),
         owner,scene_version,node_count,parents:BTreeMap::new(),children:BTreeMap::new(),displayed:BTreeMap::new(),
         semantics:BTreeMap::new(),nodes:BTreeMap::new(),frame_dirty:true,frame_cache:None,families:BTreeSet::new(),
-        last_pointer:None,motion:jasper_ui_engine::motion::MotionState,material:MaterialState,edit:scene_edit::EditState}
+        last_pointer:None,motion:jasper_ui_engine::motion::MotionState,material:MaterialState,edit:scene_edit::EditState,
+        images:crate::image_resource::ImageStore,overlays:scene_overlay::OverlayState}
 }
 include!(concat!(env!("OUT_DIR"),"/actual_scene.rs"));
 pub fn check(version:u64,owner:u64,caller:u64,closed:bool) {

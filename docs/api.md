@@ -593,6 +593,13 @@ return `None`. Hosts can pass this rectangle to their window IME cursor-area API
 This is geometry only: it does not display candidates, accept a platform IME
 engine or prove their real window placement.
 
+`TextDisplayView::preedit_with_cursor(..., text, cursor)` preserves the host IME's
+optional UTF-8 cursor/selection inside the preedit text; the compatible
+`preedit(...)` entry keeps cursor absent. `preedit_cursor(...)` returns `Some(None)`
+for an active composition with no cursor and `None` for an invalid token. Cursor
+ranges outside the preedit or on a non-UTF-8 boundary are dropped while the preedit
+text remains visible.
+
 ### Owned UI preedit presentation state
 
 `UiPreeditView` owns an optional `UiPreeditFrame { token, text, cursor }`.
