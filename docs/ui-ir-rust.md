@@ -88,7 +88,7 @@ Jasper Language/UI 共有层；Rust 不反向定义公共语义。
 | Schema | appfw v0.1 draft；Rust consumer profile 已实现 |
 | Rust structural tests | passed |
 | Native CPU same-fixture execution | all three canonical fixtures passed on Linux x86_64 test environment |
-| Native GPU same-fixture | not run in this slice |
+| Native GPU same-fixture | settings-page passed with llvmpipe/Vulkan; max channel delta 1 over 170/153600 pixels |
 | Web SSR / real browser | not run in this slice |
 | Real platform host acceptance | not run |
 | Formal verification | not performed for UI IR validation/mapping/event admission |
@@ -111,5 +111,17 @@ export JASPER_UI_TEST_FONT=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf
   --no-default-features --test ui_ir_v0
 ```
 
+Native GPU fixture 对照（软件 Vulkan）：
+
+```bash
+VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json \
+WGPU_BACKEND=vulkan \
+/home/auth/.cargo/bin/cargo test --locked \
+  --features native-engine-cpu,accesskit-pending,gpu-pending \
+  --no-default-features --test ui_ir_v0 \
+  same_settings_fixture_executes_on_native_gpu_and_tracks_cpu
+```
+
 CPU 测试只证明当前 Linux 环境下该 fixture 可构造并产出非空帧；不证明正式平台验收、GPU 或
-Web 等价。
+Web 等价。Native GPU 对照需启用 `gpu-pending` 并通过 lvp/llvmpipe；该运行只证明软件 Vulkan
+上的同 IR CPU/GPU 像素差上限为 1，不证明真实硬件、窗口呈现或跨平台验收。

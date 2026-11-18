@@ -609,3 +609,64 @@ fn same_dialog_fixture_executes_with_candidate_overlay_metadata() {
         .chunks_exact(4)
         .any(|pixel| pixel.iter().any(|byte| *byte != 0)));
 }
+
+#[cfg(feature = "gpu-pending")]
+#[test]
+fn same_settings_fixture_executes_on_native_gpu_and_tracks_cpu() {
+    use jasper_ui_engine::engine::Engine;
+    use jasper_ui_engine::native::host::GpuRenderer;
+
+    const OWNER: u64 = 74;
+    const WIDTH: u32 = 480;
+    const HEIGHT: u32 = 320;
+    const BUDGET: usize = 64 * 1024 * 1024;
+    let font = std::fs::read(
+        std::env::var("JASPER_UI_TEST_FONT")
+            .expect("JASPER_UI_TEST_FONT must name an injected font"),
+    )
+    .unwrap();
+    let document = NativeUiDocument::from_json_slice(&fixture("settings-page.ir.json")).unwrap();
+    let mut engine =
+        Engine::new(OWNER, document.scene(), &font, WIDTH, HEIGHT).expect("Native scene");
+    let mut gpu = GpuRenderer::new_headless().expect("Native GPU adapter");
+    eprintln!("typed UI IR GPU adapter: {:?}", gpu.adapter_info());
+
+    let mut cpu = vec![0u8; (WIDTH * HEIGHT * 4) as usize];
+    assert!(engine.render_to_surface(
+        OWNER,
+        document.revision(),
+        &mut cpu,
+        (WIDTH * 4) as usize,
+        BUDGET,
+    ));
+    assert!(engine.invalidate_frame(OWNER));
+    let gpu = engine
+        .render_gpu(OWNER, document.revision(), &mut gpu, BUDGET)
+        .expect("GPU frame");
+    assert_eq!(gpu.len(), cpu.len());
+    assert!(gpu
+        .chunks_exact(4)
+        .any(|pixel| pixel.iter().any(|byte| *byte != 0)));
+
+    let mut differing = 0usize;
+    let mut max_delta = 0u8;
+    for (gpu, cpu) in gpu.chunks_exact(4).zip(cpu.chunks_exact(4)) {
+        let delta = gpu
+            .iter()
+            .zip(cpu)
+            .map(|(gpu, cpu)| gpu.abs_diff(*cpu))
+            .max()
+            .unwrap_or(0);
+        differing += usize::from(delta != 0);
+        max_delta = max_delta.max(delta);
+    }
+    eprintln!(
+        "typed UI IR gpu vs cpu: {differing}/{} pixels differ, max channel delta {max_delta}",
+        WIDTH * HEIGHT
+    );
+    assert!(max_delta <= 1, "channel delta {max_delta} exceeds 1");
+    assert!(
+        differing < (WIDTH * HEIGHT / 20) as usize,
+        "more than 5% of pixels differ"
+    );
+}

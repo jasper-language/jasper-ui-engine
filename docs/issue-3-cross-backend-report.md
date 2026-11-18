@@ -50,7 +50,8 @@ Rust 引擎已新增 Typed UI IR v0.1 consumer profile，并以 appfw `codex/ir-
 - `settings-page` 已通过真实 Native `SceneHostView` 构造、语义/几何查询和 CPU 非空帧输出；
 - `dialog-overlay` 已通过真实 Native CPU overlay 查询和帧输出，overlay/position 仍保留为 candidate；
 - `data-table` 的 Table/Row/Cell 语义已保留，并通过真实 Native CPU fixture 执行；
+- `settings-page` 已通过 llvmpipe/Vulkan 的 Native GPU 执行与 CPU 对照：170/153600 像素不同，最大通道差 1；
 - 身份 generation、owner/session/revision/permission 事件准入已有定向测试。
 
-这仍不是双后端黄金用例：Web SSR、真实浏览器、Native GPU、真实平台宿主和同 IR 像素差异表
-均未在本轮执行。跨后端状态继续为 `not_run`。
+这仍不是双后端黄金用例：Web SSR、真实浏览器、真实硬件 GPU、真实平台宿主和完整差异表
+均未执行。跨后端状态继续为 `not_run`。
