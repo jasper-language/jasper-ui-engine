@@ -46,7 +46,7 @@
 | 架构方向与六项裁决 | approved |
 | `ir-v0` Schema | Language/UI draft；Rust Native consumer implemented / tested |
 | Typed Property Registry | upstream registry pinned；Rust profile implemented / tested |
-| 兼容 adapter | `UiFrame → ScenePatch`、受限 Native Style ↔ Typed Style、raw Legacy Scene → UiNode（显式 identity + loss report）、Native Style/Semantics → JUI 2 键值、NativeUiDocument/SceneUpdate → JUI 2 initial/successor frame、UiKey → JUI 2 event 行、UiNode 子树/资源/环境/identity 快照及直接文档恢复 implemented / tested；三份 canonical initial frame、settings initial+successor 双帧流和 typed event lines 已与旧 Host CPU reader/formatter 对齐，真实窗口 CPU softbuffer smoke 产生完整 pointer/focus/click，交互流经 host 注入 text input/Enter 产生 `text-commit Alice Bob`；Table role/Move/Scene events 等损失仍显式报告；无条件可逆 adapter、真实平台 OS 输入/IME、AccessKit 与硬件 GPU 验收 not complete |
+| 兼容 adapter | `UiFrame → ScenePatch`、受限 Native Style ↔ Typed Style、raw Legacy Scene → UiNode（显式 identity + loss report）、Native Style/Semantics → JUI 2 键值、NativeUiDocument/SceneUpdate → JUI 2 initial/successor frame、UiKey → JUI 2 event 行、UiNode 子树/资源/环境/identity 快照及直接文档恢复 implemented / tested；三份 canonical initial frame、settings initial+successor 双帧流和 typed event lines 已与旧 Host CPU reader/formatter 对齐，真实窗口 CPU softbuffer smoke 产生完整 pointer/focus/click，交互流经 host 注入 text input/Enter 产生 `text-commit Alice Bob`；Intel UHD 630 与 NVIDIA RTX 3060 硬件 Vulkan 离屏 `ui_ir_v0` 通过；Table role/Move/Scene events 等损失仍显式报告；无条件可逆 adapter、真实平台 OS 输入/IME、AccessKit 与硬件窗口呈现验收 not complete |
 | 候选能力映射 | in progress；Grid/Position/Image/Overlay 仍 candidate、`host_accepted=false` |
 | 双后端 golden case | not run |
 | 正式 ABI | not started |

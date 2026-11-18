@@ -232,7 +232,7 @@ fixture 实际映射出的 `mapped_properties` 与 profile 一致。
 | Property Registry | 公共 registry 固定摘要；Native profile 逐项一致；candidate 不冒充 accepted | 已覆盖 consumer profile |
 | 回滚与兼容 | Native Style/Typed Style 双向受限投影、raw Legacy Scene 显式 identity 反向投影、JUI 2 initial/successor/event 桥及逐项损失已测试；三份 canonical 初始帧和 settings 双帧流经旧 Host CPU reader 接受；旧 raw Scene/ScenePatch、PSS/xstyle、LegacyEngine 测试继续通过 | Rust 兼容桥已覆盖；无条件可逆与真实平台未验收 |
 | Web / 真浏览器 | 未执行 | 未验收 |
-| 真实硬件 GPU / 平台宿主 | 未执行 | 未验收 |
+| 真实硬件 GPU / 平台宿主 | Intel UHD 630 与 NVIDIA RTX 3060 Vulkan 离屏 UI IR 全量测试通过；CPU softbuffer 窗口 smoke 通过 | 部分覆盖；OS 输入/IME/AccessKit 与硬件窗口呈现未验收 |
 | 形式化证明 | 本批未新增 | 未验收 |
 
 本表是 Rust consumer 的审阅清单，不是 issue #3 全链路完成声明；语言侧 Schema/Framework、
@@ -246,9 +246,9 @@ Web 后端和正式宿主仍需分别验收。
 | Rust structural tests | passed |
 | Rust Clippy | `cargo clippy --lib --tests` 成功退出；仍保留非阻塞工程 warning，不作为形式化证明 |
 | Native CPU same-fixture execution | all three canonical fixtures passed on Linux x86_64 test environment |
-| Native GPU same-fixture | settings-page passed with llvmpipe/Vulkan; max channel delta 1 over 170/153600 pixels |
+| Native GPU same-fixture | settings-page passed with llvmpipe/Vulkan, Intel UHD 630/Vulkan and NVIDIA RTX 3060/Vulkan; hardware max channel delta 1 |
 | Web SSR / real browser | not run in this slice |
-| Real platform host acceptance | partial: CPU window smoke passed on available X11/Wayland endpoint; full input/IME/AccessKit/hardware GPU acceptance not run |
+| Real platform host acceptance | partial: CPU window smoke passed on available X11/Wayland endpoint; hardware Vulkan offscreen render passed on Intel UHD 630 and NVIDIA RTX 3060; full OS input/IME/AccessKit and hardware window presentation not run |
 | Formal verification | not performed for UI IR validation/mapping/event admission |
 | Cross-backend equivalence | not established |
 
@@ -258,6 +258,9 @@ Web 后端和正式宿主仍需分别验收。
   `272 passed, 1 ignored`（忽略项是显式性能测量），全部集成测试和 doc-test 通过；
 - 同一特性集的 `ui_ir_v0`：`48 passed`；
 - 软件 Vulkan（lvp/llvmpipe）+ `gpu-pending` 的 `ui_ir_v0`：`49 passed`；
+- 硬件 Vulkan 离屏的 `ui_ir_v0`：Intel UHD 630 `49 passed`（141/153600 pixels differ,
+  max channel delta 1）；NVIDIA RTX 3060 `49 passed`（157/153600 pixels differ,
+  max channel delta 1）；不代表硬件窗口 Surface/swapchain 呈现；
 - 无 Native 特性的 Legacy 库测试：`180 passed`；`cargo check --no-default-features
   --all-targets` 成功；
 - 旧 `jasper-ui-host --headless` reader 在 `/tmp` 副本中指向本分支后分别接受
@@ -283,8 +286,9 @@ Web 后端和正式宿主仍需分别验收。
   原 host 仓库未修改。该证据只覆盖 CPU headless transport，不包含真实平台窗口；
 - Clippy 成功退出；仓库仍保留已登记的非阻塞历史 warning。
 
-运行前注入了 Latin/CJK、regular/bold/italic 测试字体；这些计数只对应当前 Linux 测试环境，
-不是真实硬件 GPU、真实平台宿主或 Web/浏览器验收。
+运行前注入了 Latin/CJK、regular/bold/italic 测试字体；这些计数只对应当前 Linux 测试环境。
+软件 Vulkan 计数不是硬件证据；硬件 Vulkan 计数来自实际 Intel/NVIDIA adapter，但不代表硬件
+窗口呈现、完整平台宿主或 Web/浏览器验收。
 
 ## 复现
 
