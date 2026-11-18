@@ -47,6 +47,11 @@ Jasper Language/UI 共有层；Rust 不反向定义公共语义。
 pointer 优先 `click`，其余使用 `activate`，不会把未绑定的键盘动作静默映射过去。
 Focus、pointer capture、IME、scroll 等非 binding 操作使用 `admit_native_target`，分别要求
 对应的 permission；同样不能用裸 NodeId 绕过 UiKey 和会话上下文。
+Pointer 命中查询先经过 owner、frame revision、Surface generation、overlay 遮挡、圆角排除和
+hit-slop 修正，再映射为 `UiKey`。实际 Pointer 路由会把每个派发事件转换为
+`TypedUiPointerEvent`；其中 `target` 始终是 `UiKey`，backend `NodeId` 不进入回调。
+Pointer Down/Up/Move 的绑定按实际接收节点单独准入；嵌套内容的点击若激活源祖先控件，
+该激活绑定也按真实控件身份准入，不会错误地强迫回调目标等于最初的 Pointer 命中节点。
 
 `src/ui_ir/native.rs` 提供 `NativeUiDocument`：
 
@@ -73,6 +78,7 @@ Focus、pointer capture、IME、scroll 等非 binding 操作使用 `admit_native
 | Typed Accessibility | implemented / tested | 完整树与增量 update 均经 HostRenderer Surface generation 门控；前后 document revision、update 顺序、removed/changed UiKey 映射均校验 |
 | Typed AccessKit actions | implemented / tested | backend target 必须匹配 UiKey；Focus/Click 分别要求 Focus permission 与 accessibility-action binding |
 | Typed input targets | implemented / tested | HostRenderer Focus/Key/KeyActivation/TextInput/IME 使用同一 UiKey 上下文授权；键输入匹配当前 Native focus，键盘激活另需 activate binding；错误 target、permission 和 revision 均拒绝 |
+| Typed pointer routing | implemented / tested | hit query 与 Pointer 路由使用同一 overlay/圆角/hit-slop 目标；owner/revision/Surface generation/Pointer permission 先准入，回调只暴露 UiKey；Down→Move 后继帧后 Up 仍保持身份并准入 click binding |
 | Typed geometry queries | implemented / tested | bounds/scroll/table metrics 直接消费 UiKey，并校验 document revision、Surface generation 和 active key |
 | 资源生命周期 | implemented / tested | Prepare 仅是 pending、不替换旧 Committed；Commit 原子提升；Release 只释放 active；上传与删除分别受 `insert_ui_image`/`remove_ui_image` 状态校验；含代数复用拒绝、节点移除后 Release 与实际解码/绘制 |
 | Environment | implemented / tested | 首帧和后继帧的 reduce-motion 均应用到 Native host；appearance/density/text-scale 保留为 Framework 环境语义 |

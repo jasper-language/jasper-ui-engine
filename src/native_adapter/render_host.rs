@@ -9,7 +9,10 @@ use crate::image_resource::{ImageError, ImageInfo, ImageLimits, ImageReport};
 use crate::native::host::SceneHostView;
 #[cfg(feature = "gpu-pending")]
 use crate::native::host::{GpuFrameError, GpuRenderer};
-use crate::native::{SceneFocusEvent, SceneQuota, SceneUpdate, SceneUpdateError};
+use crate::native::{
+    EventReply, PointerAction, SceneEventKind, SceneFocusEvent, SceneQuota, SceneUpdate,
+    SceneUpdateError,
+};
 use crate::scene::{NodeId, Scene, ScenePatch};
 #[cfg(feature = "cpu-pending")]
 use crate::surface_lifecycle::RenderedPixels;
@@ -186,6 +189,47 @@ impl std::fmt::Display for TypedUiGeometryError {
 }
 
 impl std::error::Error for TypedUiGeometryError {}
+
+/// Pointer hit/routing rejection before a backend NodeId can cross the host boundary.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum TypedUiPointerError {
+    HostRejected,
+    RevisionMismatch { host: u64, document: u64 },
+    InvalidPoint,
+    UnmappedTarget,
+    Admission(UiEventAdmissionError),
+}
+
+impl std::fmt::Display for TypedUiPointerError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::HostRejected => write!(formatter, "host surface generation rejected pointer routing"),
+            Self::RevisionMismatch { host, document } => write!(
+                formatter,
+                "host revision {host} does not match document revision {document}"
+            ),
+            Self::InvalidPoint => write!(formatter, "pointer sample is not finite"),
+            Self::UnmappedTarget => {
+                write!(formatter, "Native pointer target has no active Typed UI key")
+            }
+            Self::Admission(error) => error.fmt(formatter),
+        }
+    }
+}
+
+impl std::error::Error for TypedUiPointerError {}
+
+/// One backend-routed pointer event projected to public identity. `admitted` is present only
+/// when the Typed frame binds the corresponding event and the host context authorizes it.
+#[derive(Clone, Debug, PartialEq)]
+pub struct TypedUiPointerEvent {
+    pub target: UiKey,
+    pub kind: SceneEventKind,
+    pub admitted: Option<AdmittedEvent>,
+    pub position: (f32, f32),
+    pub primary_pressed: bool,
+    pub modifiers: crate::input::Modifiers,
+}
 
 /// Typed AccessKit action result after UiKey and permission admission.
 #[cfg(feature = "accesskit-pending")]
@@ -689,6 +733,152 @@ impl HostRenderer {
             return Err(TypedUiTargetError::HostRejected);
         }
         Ok(target)
+    }
+
+    /// Read-only pointer hit query projected to public node identity. The result follows the
+    /// same presented geometry, overlay blocking, corner exclusion and hit slop as pointer
+    /// routing. `Ok(None)` means the sample has no interactive Typed target.
+    pub fn typed_pointer_target(
+        &self,
+        owner: u64,
+        version: u64,
+        generation: u64,
+        document: &NativeUiDocument,
+        x: f32,
+        y: f32,
+    ) -> Result<Option<UiKey>, TypedUiPointerError> {
+        self.pointer_route_target(owner, version, generation, document, x, y)
+            .map(|target| target.map(|(key, _)| key))
+    }
+
+    /// Route a pointer sample only after the current Surface and Typed authority admit it.
+    /// Pointer callbacks receive `UiKey`s, never backend NodeIds. A bound pointer or activation
+    /// event is admitted separately against the node that actually received it, so activation
+    /// may still belong to a source ancestor of the hit target.
+    pub fn typed_pointer(
+        &mut self,
+        owner: u64,
+        version: u64,
+        generation: u64,
+        document: &NativeUiDocument,
+        context: &UiEventContext,
+        phase: PointerAction,
+        x: f32,
+        y: f32,
+        pressed: bool,
+        pointer: &mut impl FnMut(TypedUiPointerEvent) -> EventReply,
+        focus: &mut impl FnMut(SceneFocusEvent),
+    ) -> Result<Option<UiKey>, TypedUiPointerError> {
+        document
+            .admit_permission(context, UiPermission::Pointer)
+            .map_err(TypedUiPointerError::Admission)?;
+        let target = self.pointer_route_target(owner, version, generation, document, x, y)?;
+        if let Some((_, node)) = target {
+            document
+                .admit_native_target(context, node, UiPermission::Pointer)
+                .map_err(TypedUiPointerError::Admission)?;
+        }
+
+        let mut routing_error = None;
+        let accepted = self.pointer(
+            owner,
+            version,
+            generation,
+            phase,
+            x,
+            y,
+            pressed,
+            &mut |event| {
+                let Some(target) = document.key_for_node(event.node) else {
+                    routing_error = Some(TypedUiPointerError::UnmappedTarget);
+                    return EventReply::default();
+                };
+                let mut event_context = context.clone();
+                event_context.target = target;
+                let admitted = match typed_pointer_event_kind(event.kind) {
+                    Some(kind) if document.event_binding(target, kind).is_some() => {
+                        match document.admit_native_event(&event_context, event.node, kind) {
+                            Ok(event) => Some(event),
+                            Err(error) => {
+                                routing_error = Some(TypedUiPointerError::Admission(error));
+                                return EventReply::default();
+                            }
+                        }
+                    }
+                    None if event.kind == SceneEventKind::Activate => {
+                        let kind = if document
+                            .event_binding(target, UiEventKind::Click)
+                            .is_some()
+                        {
+                            UiEventKind::Click
+                        } else {
+                            UiEventKind::Activate
+                        };
+                        if document.event_binding(target, kind).is_some() {
+                            match document.admit_native_event(&event_context, event.node, kind) {
+                                Ok(event) => Some(event),
+                                Err(error) => {
+                                    routing_error = Some(TypedUiPointerError::Admission(error));
+                                    return EventReply::default();
+                                }
+                            }
+                        } else {
+                            None
+                        }
+                    }
+                    _ => None,
+                };
+                pointer(TypedUiPointerEvent {
+                    target,
+                    kind: event.kind,
+                    admitted,
+                    position: event.position,
+                    primary_pressed: event.primary_pressed,
+                    modifiers: event.modifiers,
+                })
+            },
+            focus,
+        );
+        if let Some(error) = routing_error {
+            return Err(error);
+        }
+        if !accepted {
+            return Err(TypedUiPointerError::HostRejected);
+        }
+        Ok(target.map(|(key, _)| key))
+    }
+
+    fn pointer_route_target(
+        &self,
+        owner: u64,
+        version: u64,
+        generation: u64,
+        document: &NativeUiDocument,
+        x: f32,
+        y: f32,
+    ) -> Result<Option<(UiKey, NodeId)>, TypedUiPointerError> {
+        if version != document.revision() {
+            return Err(TypedUiPointerError::RevisionMismatch {
+                host: version,
+                document: document.revision(),
+            });
+        }
+        if !self.surface.render_allowed(owner, generation) {
+            return Err(TypedUiPointerError::HostRejected);
+        }
+        if !x.is_finite() || !y.is_finite() {
+            return Err(TypedUiPointerError::InvalidPoint);
+        }
+        let Some(node) = self
+            .inner
+            .pointer_target_from_host(owner, version, x, y)
+        else {
+            return Ok(None);
+        };
+        let key = document
+            .key_for_node(node)
+            .ok_or(TypedUiPointerError::UnmappedTarget)?;
+        Ok(Some((key, node)))
     }
 
     pub fn pointer(
@@ -1351,5 +1541,15 @@ impl HostRenderer {
     #[cfg(feature = "gpu-pending")]
     pub fn gpu_presented(&mut self, owner: u64, generation: u64) -> bool {
         self.surface.presented(owner, generation)
+    }
+}
+
+fn typed_pointer_event_kind(kind: SceneEventKind) -> Option<UiEventKind> {
+    match kind {
+        SceneEventKind::Pointer(PointerAction::Down) => Some(UiEventKind::PointerDown),
+        SceneEventKind::Pointer(PointerAction::Move) => Some(UiEventKind::Hover),
+        SceneEventKind::Pointer(PointerAction::Up) => Some(UiEventKind::PointerUp),
+        SceneEventKind::Pointer(PointerAction::Cancel | PointerAction::Leave)
+        | SceneEventKind::Activate => None,
     }
 }

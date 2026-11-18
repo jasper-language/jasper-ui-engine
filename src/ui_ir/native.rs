@@ -371,6 +371,22 @@ impl NativeUiDocument {
         node: NodeId,
         permission: UiPermission,
     ) -> Result<UiKey, UiEventAdmissionError> {
+        self.admit_permission(context, permission)?;
+        if self.key_for_node(node) != Some(context.target) {
+            return Err(UiEventAdmissionError::StaleGeneration(context.target));
+        }
+        Ok(context.target)
+    }
+
+    /// Admit the authority and capability of a host interaction independently of the backend
+    /// target. Typed pointer routing uses this before a hit result exists; bound events still
+    /// pass through `admit_native_event`, and target-bearing operations use
+    /// `admit_native_target`.
+    pub fn admit_permission(
+        &self,
+        context: &UiEventContext,
+        permission: UiPermission,
+    ) -> Result<(), UiEventAdmissionError> {
         check_authority_values(
             AuthorityRef {
                 identity_domain: &context.identity_domain,
@@ -391,10 +407,7 @@ impl NativeUiDocument {
         if !context.permission_context.permits(permission) {
             return Err(UiEventAdmissionError::CapabilityDenied { permission });
         }
-        if self.key_for_node(node) != Some(context.target) {
-            return Err(UiEventAdmissionError::StaleGeneration(context.target));
-        }
-        Ok(context.target)
+        Ok(())
     }
 
     /// Map a role activation callback to the exact Framework binding. Pointer clicks prefer

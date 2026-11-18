@@ -1717,6 +1717,60 @@ impl NativeScene {
         }
         out
     }
+    /// Deepest mapped source node under a view-local sample. The pinned backend performs the
+    /// native hit test; this function only projects its ancestor chain back to source identity.
+    fn native_pointer_target(&self, x: f32, y: f32) -> Option<NodeId> {
+        let document = self.document.as_ref()?;
+        let scroll = document.viewport_scroll();
+        let mut reverse = BTreeMap::new();
+        for (id, (element, text)) in &self.nodes {
+            reverse.insert(*element, *id);
+            if let Some(text) = text {
+                reverse.insert(*text, *id);
+            }
+        }
+        let limit = self.nodes.len().saturating_mul(4).saturating_add(16);
+        let hit = document.hit((x as f64 + scroll.x) as f32, (y as f64 + scroll.y) as f32)?;
+        let mut cursor = Some(hit.node_id);
+        for _ in 0..limit {
+            let current = cursor?;
+            if let Some(id) = reverse.get(&current) {
+                return Some(*id);
+            }
+            cursor = document.get_node(current)?.parent;
+        }
+        None
+    }
+    /// Occlusion- and overlay-aware source target for the same sample coordinates accepted by
+    /// `pointer`. This is a read-only query; press events and focus remain in pointer routing.
+    pub(crate) fn pointer_target_from_host(
+        &self,
+        caller: u64,
+        version: u64,
+        x: f32,
+        y: f32,
+    ) -> Option<NodeId> {
+        if caller != self.owner
+            || version != self.scene_version
+            || !x.is_finite()
+            || !y.is_finite()
+            || self
+                .overlays
+                .blocks_outside_at(self, x, y)
+        {
+            return None;
+        }
+        let adjustment = self.pointer_hit_adjustment(x, y);
+        let (target_x, target_y) = adjustment.steer.unwrap_or((x, y));
+        let target = self.native_pointer_target(target_x, target_y)?;
+        let target = match adjustment.exclude {
+            Some(excluded) if source_subtree_contains(&self.parents, target, excluded) => {
+                self.parents.get(&excluded).copied().flatten()?
+            }
+            _ => target,
+        };
+        self.source_visible(target).then_some(target)
+    }
     /// E5: displayed nodes whose presented style has a material, with their logical border-box
     /// size and presented radii.
     /// E5：呈现样式带材质的已显示节点，附逻辑边框盒尺寸与呈现圆角。
@@ -1903,33 +1957,7 @@ impl NativeScene {
         if !has_slop && !has_radius {
             return PointerHitAdjustment::default();
         }
-        let Some(document) = self.document.as_ref() else {
-            return PointerHitAdjustment::default();
-        };
-        let scroll = document.viewport_scroll();
-        let mut reverse = BTreeMap::new();
-        for (id, (element, text)) in &self.nodes {
-            reverse.insert(*element, *id);
-            if let Some(text) = text {
-                reverse.insert(*text, *id);
-            }
-        }
-        let limit = self.nodes.len().saturating_mul(4).saturating_add(16);
-        let natural = |cx: f32, cy: f32| -> Option<NodeId> {
-            let hit = document.hit(
-                (cx as f64 + scroll.x) as f32,
-                (cy as f64 + scroll.y) as f32,
-            )?;
-            let mut cursor = Some(hit.node_id);
-            for _ in 0..limit {
-                let current = cursor?;
-                if let Some(id) = reverse.get(&current) {
-                    return Some(*id);
-                }
-                cursor = document.get_node(current)?.parent;
-            }
-            None
-        };
+        let natural = |cx: f32, cy: f32| self.native_pointer_target(cx, cy);
         let target = natural(x, y);
         if has_slop {
             let mut best: Option<(f32, NodeId, crate::style_effects::LogicalBox, (f32, f32))> =

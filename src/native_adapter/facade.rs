@@ -12,7 +12,7 @@ pub use native_events::{NativeFocusEvent as TextFocusEvent,NativePointerEvent as
 pub use jasper_ui_engine::input::Modifiers;
 pub use native_events::NativeEventReply as EventReply;
 pub use scene_events::{role_activates_on_click,role_activates_on_key,ScenePointerInput,SceneKeyEvent,SceneEvent,SceneEventKind,SceneSemanticsNode,SceneSemanticsSnapshot,SceneActivationEvent,SceneFocusEvent};
-pub use crate::render_host::{HostRenderError,HostRenderer,TypedUiAccessibilityError,TypedUiApplyError,TypedUiGeometryError,TypedUiResourceError,TypedUiTargetError};
+pub use crate::render_host::{HostRenderError,HostRenderer,TypedUiAccessibilityError,TypedUiApplyError,TypedUiGeometryError,TypedUiPointerError,TypedUiPointerEvent,TypedUiResourceError,TypedUiTargetError};
 #[cfg(feature="accesskit-pending")]
 pub use crate::render_host::TypedAccessibilityAction;
 #[cfg(feature="accesskit-pending")]
@@ -29,7 +29,7 @@ pub use crate::typed_accessibility::{typed_accessibility_tree,typed_accessibilit
 /// This module does not acquire windows, surfaces, devices or OS services.
 pub mod host {
 use super::*;
-pub use crate::render_host::{HostRenderError,HostRenderer,TypedUiAccessibilityError,TypedUiApplyError,TypedUiResourceError};
+pub use crate::render_host::{HostRenderError,HostRenderer,TypedUiAccessibilityError,TypedUiApplyError,TypedUiPointerError,TypedUiPointerEvent,TypedUiResourceError};
 pub use crate::surface_lifecycle::{SurfaceLifecycleError,SurfaceState,SurfaceStatus};
 pub use jasper_ui_engine::input_identity::{UiInputBinding,UiInputContext,UiInputTicket};
 pub use jasper_ui_engine::composition_identity::UiCompositionToken;
@@ -639,6 +639,11 @@ impl SceneHostView {
     /// Embedding host owns OS screen transforms and native accessibility API mapping.
     pub fn node_bounds(&self,owner:u64,version:u64,node:NodeId)->Option<Rect> {
         self.inner.node_bounds_from_host(owner,version,node)
+    }
+    /// Internal pointer-target projection for typed host adapters. Public Typed UI APIs map the
+    /// result to `UiKey` before returning it to Framework code.
+    pub(crate) fn pointer_target_from_host(&self,owner:u64,version:u64,x:f32,y:f32)->Option<NodeId> {
+        self.inner.pointer_target_from_host(owner,version,x,y)
     }
     /// Authoritative native scroll extent, offset and maximum for a `Overflow::Scroll` node.
     /// `ScrollGeometry::visible(overscan)` is the content-space virtualization window.

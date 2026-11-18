@@ -427,6 +427,24 @@ impl OverlayState {
         (spec.blocks_outside(), spec.blocks_outside())
     }
 
+    /// Non-mutating overlay visibility check for pointer-target queries. Press-time dismiss
+    /// requests remain exclusive to `pointer_gate` so a hit query cannot duplicate host events.
+    pub(super) fn blocks_outside_at(&self, view: &NativeScene, x: f32, y: f32) -> bool {
+        let Some((overlay, _, placement)) = self.top() else {
+            return false;
+        };
+        if placement
+            .rect
+            .contains(crate::geometry::Point::new(x, y))
+        {
+            return false;
+        }
+        view.source
+            .find(overlay)
+            .and_then(|node| node.style.overlay)
+            .is_some_and(|spec| spec.blocks_outside())
+    }
+
     pub(super) fn escape_request(&mut self, view: &NativeScene) {
         let Some((overlay, _, _)) = self.top() else {
             return;

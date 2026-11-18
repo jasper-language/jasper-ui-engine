@@ -1104,6 +1104,214 @@ fn typed_focus_text_and_ime_use_the_same_admitted_ui_key() {
 
 #[cfg(feature = "native-blitz-cpu-pending")]
 #[test]
+fn typed_pointer_routes_and_activates_by_ui_key_across_an_identity_preserving_move() {
+    use jasper_ui_engine::native::host::HostRenderer;
+    use jasper_ui_engine::native::{
+        EventReply, PointerAction, SceneEventKind, TypedUiPointerError,
+    };
+
+    const OWNER: u64 = 86;
+    let bytes = fixture("settings-page.ir.json");
+    let mut document = NativeUiDocument::from_json_slice(&bytes).unwrap();
+    let font = std::fs::read(
+        std::env::var("JASPER_UI_TEST_FONT")
+            .expect("JASPER_UI_TEST_FONT must name an injected font"),
+    )
+    .unwrap();
+    let mut host = HostRenderer::new_ui_document(OWNER, &document, &font, 480, 320).unwrap();
+    let generation = host.surface_status(OWNER).unwrap().generation;
+    let button = UiKey::new(4, 1);
+    let button_node = document.node_for_key(button).unwrap();
+    let bounds = host
+        .typed_node_bounds(OWNER, 2, generation, &document, button)
+        .unwrap()
+        .unwrap();
+    let (x, y) = (
+        bounds.x() + bounds.width() / 2.0,
+        bounds.y() + bounds.height() / 2.0,
+    );
+    assert_eq!(
+        host.typed_pointer_target(OWNER, 2, generation, &document, x, y)
+            .unwrap(),
+        Some(button)
+    );
+    assert!(matches!(
+        host.typed_pointer_target(OWNER, 2, generation, &document, f32::NAN, y),
+        Err(TypedUiPointerError::InvalidPoint)
+    ));
+    assert!(matches!(
+        host.typed_pointer_target(OWNER, 3, generation, &document, x, y),
+        Err(TypedUiPointerError::RevisionMismatch { .. })
+    ));
+    assert!(matches!(
+        host.typed_pointer_target(OWNER, 2, generation + 1, &document, x, y),
+        Err(TypedUiPointerError::HostRejected)
+    ));
+
+    let context = UiEventContext {
+        target: button,
+        identity_domain: "orders-app/window-main".into(),
+        owner: "desktop-host".into(),
+        session: "session-2026-11-17-1".into(),
+        frame_revision: 2,
+        permission_context: UiPermissionContext::new(
+            "pointer-host",
+            [UiPermission::Pointer, UiPermission::Activate],
+        ),
+    };
+    let mut down = Vec::new();
+    assert_eq!(
+        host.typed_pointer(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &context,
+            PointerAction::Down,
+            x,
+            y,
+            true,
+            &mut |event| {
+                down.push(event);
+                EventReply::default()
+            },
+            &mut |_| {},
+        )
+        .unwrap(),
+        Some(button)
+    );
+    assert!(down.iter().all(|event| event.target == button));
+    assert!(down
+        .iter()
+        .any(|event| event.kind == SceneEventKind::Pointer(PointerAction::Down)));
+
+    let wrong_target = UiEventContext {
+        target: UiKey::new(2, 1),
+        ..context.clone()
+    };
+    assert!(matches!(
+        host.typed_pointer(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &wrong_target,
+            PointerAction::Move,
+            x,
+            y,
+            true,
+            &mut |_| EventReply::default(),
+            &mut |_| {},
+        ),
+        Err(TypedUiPointerError::Admission(_))
+    ));
+    let no_pointer = UiEventContext {
+        permission_context: UiPermissionContext::new("activate-only", [UiPermission::Activate]),
+        ..context.clone()
+    };
+    assert!(matches!(
+        host.typed_pointer(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &no_pointer,
+            PointerAction::Move,
+            x,
+            y,
+            true,
+            &mut |_| EventReply::default(),
+            &mut |_| {},
+        ),
+        Err(TypedUiPointerError::Admission(
+            jasper_ui_engine::ui_ir::UiEventAdmissionError::CapabilityDenied { .. }
+        ))
+    ));
+
+    let mut successor: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    successor["expected_revision"] = serde_json::json!(2);
+    successor["next_revision"] = serde_json::json!(3);
+    successor["ops"] = serde_json::json!([{
+        "op": "move",
+        "key": { "semantic_id": 4, "generation": 1 },
+        "parent": { "semantic_id": 1, "generation": 1 },
+        "index": 1
+    }]);
+    let successor = UiFrame::from_json_slice(&serde_json::to_vec(&successor).unwrap()).unwrap();
+    host.try_apply_ui_frame(OWNER, &mut document, &successor)
+        .unwrap();
+    assert_eq!(document.revision(), 3);
+    assert_eq!(document.node_for_key(button), Some(button_node));
+    let moved = host
+        .typed_node_bounds(OWNER, 3, generation, &document, button)
+        .unwrap()
+        .unwrap();
+    let (x, y) = (
+        moved.x() + moved.width() / 2.0,
+        moved.y() + moved.height() / 2.0,
+    );
+    assert_eq!(
+        host.typed_pointer_target(OWNER, 3, generation, &document, x, y)
+            .unwrap(),
+        Some(button)
+    );
+    assert!(matches!(
+        host.typed_pointer(
+            OWNER,
+            3,
+            generation,
+            &document,
+            &context,
+            PointerAction::Move,
+            x,
+            y,
+            true,
+            &mut |_| EventReply::default(),
+            &mut |_| {},
+        ),
+        Err(TypedUiPointerError::Admission(
+            jasper_ui_engine::ui_ir::UiEventAdmissionError::StaleRevision { .. }
+        ))
+    ));
+
+    let context = UiEventContext {
+        frame_revision: 3,
+        ..context
+    };
+    let mut up = Vec::new();
+    assert_eq!(
+        host.typed_pointer(
+            OWNER,
+            3,
+            generation,
+            &document,
+            &context,
+            PointerAction::Up,
+            x,
+            y,
+            false,
+            &mut |event| {
+                up.push(event);
+                EventReply::default()
+            },
+            &mut |_| {},
+        )
+        .unwrap(),
+        Some(button)
+    );
+    let activation = up
+        .iter()
+        .find(|event| event.kind == SceneEventKind::Activate)
+        .expect("completed click activates the same Typed target");
+    assert_eq!(activation.target, button);
+    assert_eq!(
+        activation.admitted.as_ref().map(|event| event.action.as_str()),
+        Some("save")
+    );
+}
+
+#[cfg(feature = "native-blitz-cpu-pending")]
+#[test]
 fn typed_keyboard_activation_requires_activate_binding() {
     use jasper_ui_engine::native::host::HostRenderer;
     use jasper_ui_engine::native::{
