@@ -300,11 +300,12 @@ fn project_image(
         return;
     };
     let Some(resource) = image_resource.filter(|resource| {
-        resource.id == image.source && resource.kind != ResourceKind::Font
+        resource.id == image.source
+            && matches!(resource.kind, ResourceKind::Image | ResourceKind::Svg)
     }) else {
         losses.push(NativeStyleLoss {
             path: "style.image",
-            detail: "Typed image requires the node's exact committed non-font ResourceRef",
+            detail: "Typed image requires the node's exact committed Image/SVG ResourceRef",
         });
         return;
     };
