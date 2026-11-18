@@ -728,6 +728,9 @@ impl SceneHostView {
     pub fn overlays(&self,owner:u64,version:u64)->Option<Vec<OverlayInfo>> {
         self.inner.overlays_from_host(owner,version)
     }
+    pub(crate) fn pending_overlay_events(&self,owner:u64)->Option<&[OverlayEvent]> {
+        self.inner.overlay_events_from_host(owner)
+    }
     /// Drain overlay dismiss requests since the last call. The engine never closes an overlay;
     /// the Framework applies the resulting scene update. None for a foreign owner.
     /// 取出自上次调用以来的浮层关闭请求。引擎从不自行关闭浮层；Framework 应用相应场景更新。
@@ -815,6 +818,9 @@ impl SceneHostView {
     /// 焦点、文字输入或帧调用之后取出；同一次调用的提交先于其失焦行发送。非归属方为 None。
     pub fn take_edit_events(&mut self,owner:u64)->Option<Vec<SceneEditEvent>> {
         self.inner.take_edit_events_from_host(owner)
+    }
+    pub(crate) fn pending_edit_events(&self,owner:u64)->Option<&[SceneEditEvent]> {
+        self.inner.edit_events_from_host(owner)
     }
     /// E14 active edit session (Some(None) without one). None for a foreign owner, a stale
     /// version or a closed view.

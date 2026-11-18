@@ -1405,6 +1405,16 @@ impl NativeScene {
         Some(self.overlays.take_events())
     }
 
+    pub(crate) fn overlay_events_from_host(
+        &self,
+        caller: u64,
+    ) -> Option<&[crate::overlay::OverlayEvent]> {
+        if caller != self.owner {
+            return None;
+        }
+        Some(self.overlays.events())
+    }
+
     /// Host supplies physical surface extent and DPI; scene version is independent.
     /// Candidate scale bound matches text-view policy; no window/GPU/OS operation is owned here.
     pub(crate) fn set_viewport_from_host(

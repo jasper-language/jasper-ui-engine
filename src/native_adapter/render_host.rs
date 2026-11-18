@@ -1662,7 +1662,8 @@ impl HostRenderer {
 
     /// Drain E14 edit events and project their targets to `UiKey`. `changed_as_commit` forwards
     /// live-text `Changed` events to a bound `text-commit`, matching the documented host mode.
-    /// The whole drained batch is validated before it is returned; no backend NodeId is exposed.
+    /// The whole batch is projected and admitted before it is drained, so a rejected batch
+    /// remains available for a corrected context. No backend NodeId is exposed.
     pub fn typed_take_edit_events(
         &mut self,
         owner: u64,
@@ -1671,7 +1672,8 @@ impl HostRenderer {
         changed_as_commit: bool,
     ) -> Result<Vec<TypedUiEditEvent>, TypedUiEditError> {
         let events = self
-            .take_edit_events(owner)
+            .inner
+            .pending_edit_events(owner)
             .ok_or(TypedUiEditError::HostRejected)?;
         let mut typed = Vec::with_capacity(events.len());
         for event in events {
@@ -1711,10 +1713,13 @@ impl HostRenderer {
             };
             typed.push(TypedUiEditEvent {
                 target,
-                kind: event.kind,
+                kind: event.kind.clone(),
                 admitted,
             });
         }
+        self.inner
+            .take_edit_events(owner)
+            .ok_or(TypedUiEditError::HostRejected)?;
         Ok(typed)
     }
 
@@ -1972,8 +1977,9 @@ impl HostRenderer {
         self.inner.take_overlay_events(owner)
     }
 
-    /// Drain overlay dismiss requests into Typed identity. A queued request may name an earlier
-    /// revision carried by a frame transaction, but never a future document revision.
+    /// Drain overlay dismiss requests into Typed identity after the whole batch projects and
+    /// admits. A rejected batch remains queued for a corrected authority context. A request may
+    /// name an earlier revision carried by a frame transaction, but never a future revision.
     pub fn typed_take_overlay_events(
         &mut self,
         owner: u64,
@@ -1981,7 +1987,8 @@ impl HostRenderer {
         context: &UiEventContext,
     ) -> Result<Vec<TypedUiOverlayEvent>, TypedUiOverlayError> {
         let events = self
-            .take_overlay_events(owner)
+            .inner
+            .pending_overlay_events(owner)
             .ok_or(TypedUiOverlayError::HostRejected)?;
         let mut typed = Vec::with_capacity(events.len());
         for event in events {
@@ -2014,6 +2021,8 @@ impl HostRenderer {
                 admitted,
             });
         }
+        self.take_overlay_events(owner)
+            .ok_or(TypedUiOverlayError::HostRejected)?;
         Ok(typed)
     }
 

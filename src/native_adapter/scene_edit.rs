@@ -434,6 +434,14 @@ impl NativeScene {
         }
         Some(std::mem::take(&mut self.edit.events))
     }
+    /// Inspect pending edit events without consuming them so Typed admission can reject a whole
+    /// batch before delivery.
+    pub(crate) fn edit_events_from_host(&self, caller: u64) -> Option<&[SceneEditEvent]> {
+        if caller != self.owner {
+            return None;
+        }
+        Some(&self.edit.events)
+    }
     /// The active session at `version`, or Some(None) without one. None for a foreign caller,
     /// a stale version or a closed view.
     /// `version` 时的当前会话；无会话时为 Some(None)。非归属方、过期版本或已关闭视图为 None。

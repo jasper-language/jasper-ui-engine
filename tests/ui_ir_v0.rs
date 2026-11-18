@@ -1415,6 +1415,24 @@ fn typed_edit_drain_preserves_order_and_admits_commit_binding() {
     )
     .unwrap();
 
+    let no_text = UiEventContext {
+        permission_context: UiPermissionContext::new(
+            "keyboard-only",
+            [
+                UiPermission::Focus,
+                UiPermission::Keyboard,
+                UiPermission::Ime,
+            ],
+        ),
+        ..context.clone()
+    };
+    assert!(matches!(
+        host.typed_take_edit_events(OWNER, &document, &no_text, false),
+        Err(TypedUiEditError::Admission(
+            jasper_ui_engine::ui_ir::UiEventAdmissionError::PermissionDenied { .. }
+        ))
+    ));
+
     let events = host
         .typed_take_edit_events(OWNER, &document, &context, false)
         .unwrap();
@@ -1445,6 +1463,108 @@ fn typed_edit_drain_preserves_order_and_admits_commit_binding() {
 
 #[cfg(feature = "native-blitz-cpu-pending")]
 #[test]
+fn typed_ime_cancel_is_admitted_after_leaving_the_editing_field() {
+    use jasper_ui_engine::native::host::HostRenderer;
+    use jasper_ui_engine::native::{SceneEditEventKind, TypedUiEditError};
+
+    const OWNER: u64 = 92;
+    let mut value: serde_json::Value =
+        serde_json::from_slice(&fixture("settings-page.ir.json")).unwrap();
+    value["ops"][0]["node"]["children"][1]["events"]
+        .as_array_mut()
+        .unwrap()
+        .extend([
+            serde_json::json!({ "event": "focus", "action": "focus-name" }),
+            serde_json::json!({ "event": "ime-cancel", "action": "cancel-name" }),
+        ]);
+    let document =
+        NativeUiDocument::from_json_slice(&serde_json::to_vec(&value).unwrap()).unwrap();
+    let font = std::fs::read(
+        std::env::var("JASPER_UI_TEST_FONT")
+            .expect("JASPER_UI_TEST_FONT must name an injected font"),
+    )
+    .unwrap();
+    let mut host = HostRenderer::new_ui_document(OWNER, &document, &font, 480, 320).unwrap();
+    let generation = host.surface_status(OWNER).unwrap().generation;
+    let field = document.node_for_key(UiKey::new(3, 1)).unwrap();
+    let field_context = UiEventContext {
+        target: UiKey::new(3, 1),
+        identity_domain: "orders-app/window-main".into(),
+        owner: "desktop-host".into(),
+        session: "session-2026-11-17-1".into(),
+        frame_revision: 2,
+        permission_context: UiPermissionContext::new(
+            "ime-host",
+            [UiPermission::Focus, UiPermission::Ime],
+        ),
+    };
+    host.typed_focus(
+        OWNER,
+        2,
+        generation,
+        &document,
+        &field_context,
+        field,
+        &mut |_| {},
+    )
+    .unwrap();
+    host.typed_set_preedit(
+        OWNER,
+        2,
+        generation,
+        &document,
+        &field_context,
+        field,
+        Some("中"),
+        None,
+    )
+    .unwrap();
+
+    let button = document.node_for_key(UiKey::new(4, 1)).unwrap();
+    let button_context = UiEventContext {
+        target: UiKey::new(4, 1),
+        ..field_context.clone()
+    };
+    host.typed_focus(
+        OWNER,
+        2,
+        generation,
+        &document,
+        &button_context,
+        button,
+        &mut |_| {},
+    )
+    .unwrap();
+    let no_ime = UiEventContext {
+        permission_context: UiPermissionContext::new("focus-only", [UiPermission::Focus]),
+        ..field_context.clone()
+    };
+    assert!(matches!(
+        host.typed_take_edit_events(OWNER, &document, &no_ime, false),
+        Err(TypedUiEditError::Admission(
+            jasper_ui_engine::ui_ir::UiEventAdmissionError::PermissionDenied { .. }
+        ))
+    ));
+    let events = host
+        .typed_take_edit_events(OWNER, &document, &field_context, false)
+        .unwrap();
+    assert_eq!(events.len(), 1);
+    assert_eq!(events[0].target, UiKey::new(3, 1));
+    assert_eq!(
+        events[0].kind,
+        SceneEditEventKind::CompositionCancelled
+    );
+    assert_eq!(
+        events[0]
+            .admitted
+            .as_ref()
+            .map(|event| (event.event, event.action.as_str())),
+        Some((UiEventKind::ImeCancel, "cancel-name"))
+    );
+}
+
+#[cfg(feature = "native-blitz-cpu-pending")]
+#[test]
 fn typed_pointer_routes_and_activates_by_ui_key_across_an_identity_preserving_move() {
     use jasper_ui_engine::native::host::HostRenderer;
     use jasper_ui_engine::native::{
@@ -1452,7 +1572,16 @@ fn typed_pointer_routes_and_activates_by_ui_key_across_an_identity_preserving_mo
     };
 
     const OWNER: u64 = 86;
-    let bytes = fixture("settings-page.ir.json");
+    let mut value: serde_json::Value =
+        serde_json::from_slice(&fixture("settings-page.ir.json")).unwrap();
+    value["ops"][0]["node"]["children"][2]["events"]
+        .as_array_mut()
+        .unwrap()
+        .push(serde_json::json!({
+            "event": "hover",
+            "action": "preview-save"
+        }));
+    let bytes = serde_json::to_vec(&value).unwrap();
     let mut document = NativeUiDocument::from_json_slice(&bytes).unwrap();
     let font = std::fs::read(
         std::env::var("JASPER_UI_TEST_FONT")
@@ -1500,6 +1629,39 @@ fn typed_pointer_routes_and_activates_by_ui_key_across_an_identity_preserving_mo
             [UiPermission::Pointer, UiPermission::Activate],
         ),
     };
+    let mut hover = Vec::new();
+    assert_eq!(
+        host.typed_pointer(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &context,
+            PointerAction::Move,
+            x,
+            y,
+            false,
+            &mut |event| {
+                hover.push(event);
+                EventReply::default()
+            },
+            &mut |_| {},
+        )
+        .unwrap(),
+        Some(button)
+    );
+    let hover = hover
+        .into_iter()
+        .find(|event| event.kind == SceneEventKind::Pointer(PointerAction::Move))
+        .expect("pointer move is projected to the hover target");
+    assert_eq!(hover.target, button);
+    assert_eq!(
+        hover
+            .admitted
+            .as_ref()
+            .map(|event| (event.event, event.action.as_str())),
+        Some((UiEventKind::Hover, "preview-save"))
+    );
     let mut down = Vec::new();
     let mut focus = Vec::new();
     assert_eq!(
@@ -2421,7 +2583,7 @@ fn typed_overlay_info_and_dismiss_request_use_ui_keys_without_promoting_candidat
 
     let no_dismiss = UiEventContext {
         permission_context: UiPermissionContext::new("pointer-only", [UiPermission::Pointer]),
-        ..context
+        ..context.clone()
     };
     host.typed_pointer(
         OWNER,
@@ -2443,6 +2605,11 @@ fn typed_overlay_info_and_dismiss_request_use_ui_keys_without_promoting_candidat
             jasper_ui_engine::ui_ir::UiEventAdmissionError::PermissionDenied { .. }
         ))
     ));
+    let events = host
+        .typed_take_overlay_events(OWNER, &document, &context)
+        .unwrap();
+    assert_eq!(events.len(), 1);
+    assert_eq!(events[0].target, UiKey::new(32, 1));
 }
 
 #[cfg(feature = "native-blitz-cpu-pending")]

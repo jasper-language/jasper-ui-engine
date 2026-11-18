@@ -61,6 +61,8 @@ E14 编辑事件通过 `typed_take_edit_events` 取出：事件 revision 可来�
 但不得新于当前文档；
 `Changed`（live-text 模式）、`Commit` 和 `CompositionCancelled` 分别准入
 `text-commit`/`ime-cancel`；返回值只含 `TypedUiEditEvent`，不暴露 NodeId。
+整批事件先完成 UiKey 投影和授权，全部成功后才从 Native 出站队列移除；授权失败时批次保留，
+修正 permission context 后可重试。`typed_take_overlay_events` 对 `Dismiss` 使用同一事务性顺序。
 当前编辑会话由 `typed_edit_state` 查询，返回 `TypedUiEditState`；文本、选区、预编辑和
 caret 几何与 `UiKey` 一并返回，不暴露 backend 节点身份。
 
@@ -93,8 +95,8 @@ caret 几何与 `UiKey` 一并返回，不暴露 backend 节点身份。
 | Typed semantic activation | implemented / tested | `typed_activate` 要求当前 UiKey、owner/session/revision、Surface generation 与 Activate binding/permission，回调只暴露 UiKey |
 | Typed input targets | implemented / tested | HostRenderer Focus/Key/KeyActivation/TextInput/IME 使用同一 UiKey 上下文授权；Focus/Key binding 在 Native 状态变化前预准入，Activation 回调只暴露 UiKey；`typed_focused_node` 返回 UiKey；键输入匹配当前 Native focus，TextInput/IME 必须匹配当前编辑节点，键盘激活另需 activate binding；错误 target、permission 和 revision 均拒绝 |
 | Typed IME commit | implemented / tested | `typed_ime_commit` 要求 Ime permission 与当前编辑节点，合法 `ime-commit` binding 在文字插入前准入并返回 action |
-| Typed edit events | implemented / tested | 有序 drain E14 Changed/Commit/CompositionCancelled；owner、event revision、UiKey 与 text-commit/ime-cancel permission/binding 均校验 |
-| Typed pointer routing | implemented / tested | hit query 与 Pointer 路由使用同一 overlay/圆角/hit-slop 目标；owner/revision/Surface generation/Pointer permission 先准入；只有可能聚焦的 Pointer Down 会预准入命中链 Focus bindings，Move 不要求多余 Focus 权限；回调只暴露 UiKey；Down→Move 后继帧后 Up 仍保持身份并准入 click binding |
+| Typed edit events | implemented / tested | 有序 drain E14 Changed/Commit/CompositionCancelled；owner、event revision、UiKey 与 text-commit/ime-cancel permission/binding 均校验；批次授权失败不丢事件 |
+| Typed pointer routing | implemented / tested | hit query 与 Pointer 路由使用同一 overlay/圆角/hit-slop 目标；owner/revision/Surface generation/Pointer permission 先准入；只有可能聚焦的 Pointer Down 会预准入命中链 Focus bindings，Move 不要求多余 Focus 权限；Move 的 Hover binding 已覆盖；回调只暴露 UiKey；Down→Move 后继帧后 Up 仍保持身份并准入 click binding |
 | Typed geometry queries | implemented / tested | bounds/scroll/table metrics 直接消费 UiKey，并校验 document revision、Surface generation 和 active key；table/cell 测量结果也只含 UiKey |
 | Typed scroll event | implemented / tested | `typed_scroll_event` 校验 Surface、revision、UiKey、有限非零 delta 与 Scroll binding/permission；不改 Native offset，视觉更新仍由 Framework 的版本化场景帧提交 |
 | 资源生命周期 | implemented / tested | Prepare 仅是 pending、不替换旧 Committed；Commit 原子提升；Release 只释放 active；上传与删除分别受 `insert_ui_image`/`remove_ui_image` 状态校验；含代数复用拒绝、节点移除后 Release 与实际解码/绘制 |
@@ -110,7 +112,8 @@ caret 几何与 `UiKey` 一并返回，不暴露 backend 节点身份。
 
 Overlay 虽仍为 candidate，其查询和 dismiss-request 已有 Typed 出口：
 `TypedUiOverlayInfo`/`TypedUiOverlayEvent` 只包含 `UiKey`，并校验 owner、document revision、
-Dismiss binding 与 permission；不会因为 identity 已 Typed 而把 overlay 能力提升为 accepted。
+Dismiss binding 与 permission；整批授权成功前不出队，拒绝后可用修正上下文重试。不会因为
+identity 已 Typed 而把 overlay 能力提升为 accepted。
 
 ## Fixtures
 

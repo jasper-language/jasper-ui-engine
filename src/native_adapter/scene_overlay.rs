@@ -45,6 +45,10 @@ impl OverlayState {
         }
     }
 
+    pub(super) fn events(&self) -> &[OverlayEvent] {
+        &self.events
+    }
+
     pub(super) fn configure(&mut self, view: &mut NativeScene) -> bool {
         let root = view.source.root.id;
         let mut ranked = Vec::<(NodeId, i32, usize)>::new();
