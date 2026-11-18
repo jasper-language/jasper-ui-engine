@@ -1156,6 +1156,38 @@ fn typed_focus_text_and_ime_use_the_same_admitted_ui_key() {
     let edit = host.typed_edit_state(OWNER, 2, &document).unwrap().unwrap();
     assert_eq!(edit.target, UiKey::new(3, 1));
     assert_eq!(edit.text, "Alice!");
+    let no_text_edit = UiEventContext {
+        permission_context: UiPermissionContext::new(
+            "keyboard-only",
+            [UiPermission::Focus, UiPermission::Keyboard],
+        ),
+        ..context.clone()
+    };
+    assert!(matches!(
+        host.typed_key(
+            OWNER,
+            2,
+            generation,
+            &document,
+            &no_text_edit,
+            field,
+            &HostKeyInput {
+                key: "Backspace",
+                code: "Backspace",
+                pressed: true,
+                repeat: false,
+                composing: false,
+                modifiers: Modifiers::default(),
+                location: KeyLocation::Standard,
+            },
+            &mut |_| EventReply::default(),
+            &mut |_| {},
+        ),
+        Err(TypedUiTargetError::Admission(
+            jasper_ui_engine::ui_ir::UiEventAdmissionError::CapabilityDenied { .. }
+        ))
+    ));
+    assert_eq!(host.edit_state(OWNER, 2).unwrap().unwrap().text, "Alice!");
     let mut typed_keys = Vec::new();
     assert_eq!(
         host.typed_key(

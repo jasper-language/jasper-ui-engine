@@ -74,6 +74,8 @@ Focus/TextEdit/IME 操作合并到一次调用，避免授权后误传另一个 
 悬停之前完成相同检查，权限失败时不改变 Native 状态。窗口失活只能通过该 Typed 入口映射旧焦点
 回 `UiKey`。
 `typed_key` 还要求目标等于当前 Native focus，并持有 Keyboard permission。
+当按键会进入 Native 编辑缓冲（Backspace/Delete、方向/Home/End、Enter/Escape 和编辑快捷键）
+时，还须在默认行为发生前持有 TextEdit；Enter 将产生提交时同时预准入 `text-commit` binding。
 `typed_key_with_activation` 在键盘激活时要求 `activate` binding 和 Activate permission；
 只有 `click` 绑定时不会把 Enter/Space 的回调交给 Framework。
 几何查询使用 `typed_node_bounds` / `typed_scroll_geometry` / `typed_table_metrics`：

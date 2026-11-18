@@ -1159,6 +1159,34 @@ impl HostRenderer {
         Ok(())
     }
 
+    fn preadmit_editing_key(
+        &self,
+        owner: u64,
+        version: u64,
+        document: &NativeUiDocument,
+        context: &UiEventContext,
+        node: NodeId,
+        input: &crate::native::HostKeyInput<'_>,
+    ) -> Result<(), TypedUiTargetError> {
+        if !key_may_edit_text(input) || self.edit_state(owner, version).flatten().is_none() {
+            return Ok(());
+        }
+        document
+            .admit_native_target(context, node, UiPermission::TextEdit)
+            .map_err(TypedUiTargetError::Admission)?;
+        if input.key == "Enter" && self.inner.edit_will_commit(owner, version) == Some(true) {
+            admitted_optional_event(
+                document,
+                context,
+                context.target,
+                node,
+                UiEventKind::TextCommit,
+            )
+            .map_err(TypedUiTargetError::Admission)?;
+        }
+        Ok(())
+    }
+
     /// Route a pointer sample only after the current Surface and Typed authority admit it.
     /// Pointer callbacks receive `UiKey`s, never backend NodeIds. A bound pointer or activation
     /// event is admitted separately against the node that actually received it, so activation
@@ -1397,6 +1425,7 @@ impl HostRenderer {
         if self.focused_node(owner, version) != Some(node) {
             return Err(TypedUiTargetError::HostRejected);
         }
+        self.preadmit_editing_key(owner, version, document, context, node, input)?;
         let key_admission =
             admitted_optional_event(document, context, target, node, UiEventKind::Key)
                 .map_err(TypedUiTargetError::Admission)?;
@@ -1484,6 +1513,7 @@ impl HostRenderer {
         if self.focused_node(owner, version) != Some(node) {
             return Err(TypedUiTargetError::HostRejected);
         }
+        self.preadmit_editing_key(owner, version, document, context, node, input)?;
         let key_admission =
             admitted_optional_event(document, context, target, node, UiEventKind::Key)
                 .map_err(TypedUiTargetError::Admission)?;
@@ -2568,6 +2598,26 @@ fn typed_pointer_event_kind(kind: SceneEventKind) -> Option<UiEventKind> {
         SceneEventKind::Pointer(PointerAction::Cancel | PointerAction::Leave)
         | SceneEventKind::Activate => None,
     }
+}
+
+fn key_may_edit_text(input: &crate::native::HostKeyInput<'_>) -> bool {
+    if !input.pressed || input.composing {
+        return false;
+    }
+    matches!(
+        input.key,
+        "Backspace"
+            | "Delete"
+            | "ArrowLeft"
+            | "ArrowRight"
+            | "Home"
+            | "End"
+            | "Enter"
+            | "Escape"
+    ) || ((input.modifiers.control || input.modifiers.meta)
+        && ["a", "c", "x", "v"]
+            .iter()
+            .any(|key| input.key.eq_ignore_ascii_case(key)))
 }
 
 fn admitted_optional_event(
