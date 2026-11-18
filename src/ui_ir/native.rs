@@ -554,6 +554,7 @@ impl UiResourceDescriptor {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 // BEGIN VERIFIED RESOURCE TRANSITION KERNEL
 fn resource_transition(
     highest_present: bool,

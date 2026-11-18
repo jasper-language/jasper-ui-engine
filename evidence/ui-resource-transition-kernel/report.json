@@ -3,10 +3,10 @@
   "status": "proved",
   "scope": "actual Typed UI IR resource lifecycle admission and transition classification: kind stability, stale/newer generation ordering, exact prepared Commit, exact active Release, and rejected reuse after Release. ID lookup, BTreeMap mutation, frame rollback, host storage, decode, synchronization and cancellation are outside this kernel",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "4b94091a1fc451e7a15260b8d1fc2c9f4fa31ab81b265e21fe7048b5b8249d8c",
+  "source_sha256": "b27fb6c32f7ec3f3958130a46e16235cbad0a04666a424f28f8d5d14777d8797",
   "sources": {
     "src/ui_ir/mod.rs": "9228903274c1f0495500b20442d2e8e3261a2a6f8966ebf6bf8656a94c0c294d",
-    "src/ui_ir/native.rs": "4b94091a1fc451e7a15260b8d1fc2c9f4fa31ab81b265e21fe7048b5b8249d8c"
+    "src/ui_ir/native.rs": "b27fb6c32f7ec3f3958130a46e16235cbad0a04666a424f28f8d5d14777d8797"
   },
   "kernel_sha256": "9c5a1c4529b0165e02ceff2d54563aeee9cadcef18abb70351adf6d31d5dda9c",
   "dependencies": {

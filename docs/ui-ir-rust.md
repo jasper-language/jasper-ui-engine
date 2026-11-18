@@ -228,13 +228,13 @@ fixture 实际映射出的 `mapped_properties` 与 profile 一致。
 | `UiKey` 防复用 | Native insert claim / remove retire；旧组合拒绝、下一 generation 接受、失败不推进 revision | 已覆盖当前文档生命周期 |
 | 事件身份与权限 | owner/identity domain/session/revision、Pointer/Focus/Key/Activate/Scroll/编辑/IME/Overlay/AccessKit Typed 准入 | 已覆盖现有 v0.1 事件 |
 | 焦点与编辑一致性 | 当前 focus/编辑目标必须等于授权 UiKey；Move 保持焦点、按下、编辑缓冲与 IME | 已覆盖 Native |
-| 资源生命周期 | Prepare/Commit/Release、generation、节点引用、上传/删除与 GPU/CPU image 测试 | 已覆盖当前 image/SVG 路径 |
+| 资源生命周期 | Prepare/Commit/Release、generation、节点引用、上传/删除与 GPU/CPU image 测试；代际转移分类已有 Verus 实现级证明 | 当前 image/SVG 路径已覆盖；ID 查找、BTreeMap 写入、整帧回滚和宿主存储仍不在证明范围 |
 | 活动宿主同步 | detached mapping、精确 Surface generation、原子 ScenePatch 和 reduce-motion 同提交 | 已覆盖 Rust host |
 | Property Registry | 公共 registry 固定摘要；Native profile 与 51 个属性逐项一致；另有 mapping-site 守卫防止 profile 增项后漏接映射；candidate 不冒充 accepted | 已覆盖 consumer profile 与映射入口 |
 | 回滚与兼容 | Native Style/Typed Style 双向受限投影、raw Legacy Scene 显式 identity 反向投影、JUI 2 initial/successor/event 桥及逐项损失已测试；三份 canonical 初始帧和 settings 双帧流经旧 Host CPU reader 接受；旧 raw Scene/ScenePatch、PSS/xstyle、LegacyEngine 测试继续通过 | Rust 兼容桥已覆盖；无条件可逆与真实平台未验收 |
 | Web / 真浏览器 | 未执行 | 未验收 |
 | 真实硬件 GPU / 平台宿主 | Intel UHD 630 与 NVIDIA RTX 3060 Vulkan 离屏 UI IR 全量测试通过；NVIDIA RTX 3060 硬件窗口 `gpu_window --once` present 成功；Intel 窗口因 Surface/adapter queue family 不兼容失败；Xvfb X11 系统窗口级 XTest 指针/键盘与 IBus/libpinyin 预编辑/提交通过；desktop-accessibility host 在 AT-SPI 总线发布 Settings/Name/Save 树，Save `DoAction` 回环到 JUI 2 click | 部分覆盖；物理桌面/真实 Wayland 合成器输入与硬件窗口完整无障碍未验收；硬件窗口只覆盖 NVIDIA 单帧基础场景 |
-| 形式化证明 | 本批未新增 | 未验收 |
+| 形式化证明 | `UiKey` 后继、事件权限分类、authority 优先级、权限上下文准入和资源代际转移已有匹配当前源码的 Verus 报告与负向控制；均有独立 Proptest、Miri 与 fuzz 补充覆盖 | 五个窄内核 proved；完整 Schema 校验、Scene 映射、文档事务、宿主同步与跨后端一致性仍未证明 |
 
 本表是 Rust consumer 的审阅清单，不是 issue #3 全链路完成声明；语言侧 Schema/Framework、
 Web 后端和正式宿主仍需分别验收。
@@ -250,7 +250,7 @@ Web 后端和正式宿主仍需分别验收。
 | Native GPU same-fixture | settings-page passed with llvmpipe/Vulkan, Intel UHD 630/Vulkan and NVIDIA RTX 3060/Vulkan; hardware max channel delta 1 |
 | Web SSR / real browser | not run in this slice |
 | Real platform host acceptance | partial: CPU window smoke passed; hardware Vulkan offscreen passed on Intel UHD 630 and NVIDIA RTX 3060; NVIDIA hardware window single-frame present passed; Intel hardware window blocked by Surface/adapter queue-family mismatch; Xvfb X11/XTest pointer, keyboard and IBus/libpinyin preedit/commit passed through winit and the public host; AT-SPI tree publication and Save action round-trip passed; physical desktop input, real Wayland compositor input and hardware-window accessibility not run |
-| Formal verification | not performed for UI IR validation/mapping/event admission |
+| Formal verification | partial: `UiKey` successor, event permission classification, authority precedence, permission-context admission and resource generation transitions have scoped implementation proofs with rejected negative controls; whole-document validation, mapping, host transactions and cross-backend equivalence remain unproved |
 | Cross-backend equivalence | not established |
 
 ### 2026-11-18 执行记录
@@ -271,6 +271,11 @@ Web 后端和正式宿主仍需分别验收。
   `157/153600`、Intel UHD 630 仍为 `141/153600`，最大通道差均为 1；
 - 新增 property mapping-site 守卫后，当前全特性 `ui_ir_v0` 为 `50 passed`；该测试确认
   registry/profile 的 51 个属性都仍有对应映射入口，不替代逐字段运行时行为验收；
+- Typed UI IR 当前五项窄形式化切片已按最终源码复核：`UiKey` generation 后继 3 verified、
+  事件权限分类 3 verified、authority 优先级 2 verified、权限上下文准入 2 verified、
+  资源代际转移 5 verified，均为 0 errors；六类负向控制全部被拒。这些纯判定链另有独立
+  Proptest、Miri 与 read-boundary fuzz 覆盖；这不构成完整 IR validator、Native mapper、
+  整帧事务或跨后端一致性的证明；
 - `gpu_window --once` 在 NVIDIA RTX 3060/Vulkan 上成功：
   `Bgra8UnormSrgb`、present `Fifo`、frame 1、device generation 1；Intel UHD 630
   能创建 adapter，但其 X11 Surface 报 adapter queue family 不兼容，因此 Intel 硬件窗口不计通过；
