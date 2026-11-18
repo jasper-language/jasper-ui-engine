@@ -257,12 +257,12 @@ Web 后端和正式宿主仍需分别验收。
 
 - `native-engine-cpu` + `desktop` 完整 `cargo test` 成功退出：库测试
   `282 passed, 1 ignored`（忽略项是显式性能测量），全部集成测试和 doc-test 通过；
-- 单作业串行 `cargo test --all-features --tests` 完整成功退出：库测试
-  `290 passed, 1 ignored`，全部集成测试通过，其中 `ui_ir_v0` `49 passed`、Native
+- 统一字体入口 `scripts/test-all-features-fonts.sh` 以单作业串行运行
+  `cargo test --all-features --tests` 并完整成功退出：库测试 `296 passed, 1 ignored`，
+  全部集成测试通过，其中 `ui_ir_v0` `49 passed`、Native
   AccessKit `3 passed`、交互生命周期 `7 passed`、UI plugin acceptance/gate
   `9/13 passed`，并包含 GPU 与 CPU 对照套件；`--all-features --doc` 另为
   `1 passed`。并行 all-targets 曾因磁盘耗尽中断，未计为通过；
-- 同一特性集的 `ui_ir_v0`：`48 passed`；
 - 软件 Vulkan（lvp/llvmpipe）+ `gpu-pending` 的 `ui_ir_v0`：`49 passed`；
 - 硬件 Vulkan 离屏的 `ui_ir_v0`：Intel UHD 630 `49 passed`（141/153600 pixels differ,
   max channel delta 1）；NVIDIA RTX 3060 `49 passed`（157/153600 pixels differ,
@@ -272,7 +272,7 @@ Web 后端和正式宿主仍需分别验收。
 - `gpu_window --once` 在 NVIDIA RTX 3060/Vulkan 上成功：
   `Bgra8UnormSrgb`、present `Fifo`、frame 1、device generation 1；Intel UHD 630
   能创建 adapter，但其 X11 Surface 报 adapter queue family 不兼容，因此 Intel 硬件窗口不计通过；
-- 无 Native 特性的 Legacy 库测试：`180 passed`；`cargo check --no-default-features
+- 无 Native 特性的 Legacy 库测试：`186 passed`；`cargo check --no-default-features
   --all-targets` 成功；
 - 旧 `jasper-ui-host --headless` reader 在 `/tmp` 副本中指向本分支后分别接受
   settings/data-table/dialog 三份初始 frame：均为 `ack 2`、`accepted 1 / rejected 0`，
