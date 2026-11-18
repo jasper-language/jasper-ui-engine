@@ -373,6 +373,18 @@ CPU 测试只证明当前 Linux 环境下该 fixture 可构造并产出非空帧
 Web 等价。Native GPU 对照需启用 `gpu-pending` 并通过 lvp/llvmpipe；该运行只证明软件 Vulkan
 上的同 IR CPU/GPU 像素差上限为 1，不证明真实硬件、窗口呈现或跨平台验收。
 
+全特性回归使用统一字体验证和串行入口：
+
+```bash
+scripts/test-all-features-fonts.sh --check-env
+scripts/test-all-features-fonts.sh
+```
+
+脚本显式设置 `JASPER_UI_TEST_FONT`、`_LATIN_FONT`、`_CJK_FONT`、`_BOLD_FONT` 与
+`_ITALIC_FONT`，并允许调用方用同名环境变量覆盖缺省路径；随后串行运行全特性测试和 doc-test，
+关闭 incremental/debug objects 以限制构建缓存。缺少任何可读字体时在构建前以状态 2 退出。
+该入口只解决测试环境复现，不改变 Web、真实平台宿主或形式化证明的验收状态。
+
 JUI 2 reader 诊断：
 
 ```bash
