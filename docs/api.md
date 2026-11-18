@@ -71,7 +71,9 @@ let scene = document.scene();
 `NativeUiDocument::project_compatibility_style(UiKey)`；显式调用
 `project_native_style_with_context` 时可提供精确 image `ResourceRef` 与 overlay `UiKey` 锚点。
 `NativeUiDocument::project_compatibility_node(UiKey)` 进一步恢复只读 `UiNode` 子树及逐节点损失；
-它规范化默认/空集合，且不携带 resource history、environment、身份退休历史或组件/Signal 声明。
+`project_compatibility_snapshot()` 还包括 authority、revision、environment 与当前
+active/prepared resources。快照规范化默认/空集合，且不携带 resource tombstone/history、
+身份退休历史或组件/Signal 声明。
 Native 回调携带 `NodeId` 时使用 `admit_native_event`/`admit_activation`；内部 NodeId 仅用于
 映射，授权仍以 `UiEventContext.target` 的 `UiKey` 和上下文为准。
 HostRenderer 的 `typed_focus`、`typed_text_input`、`typed_set_preedit` 把目标授权与实际

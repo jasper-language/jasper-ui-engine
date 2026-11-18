@@ -187,6 +187,26 @@ pub struct NativeUiNodeProjection {
     pub losses: BTreeMap<UiKey, Vec<NativeNodeLoss>>,
 }
 
+/// Current resource state visible to the compatibility envelope.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NativeResourceProjection {
+    pub active: Option<ResourceRef>,
+    pub prepared: Option<ResourceRef>,
+}
+
+/// Read-only compatibility snapshot of one active Native document.
+#[derive(Clone, Debug, PartialEq)]
+pub struct NativeUiCompatibilitySnapshot {
+    pub identity_domain: String,
+    pub owner: String,
+    pub session: String,
+    pub revision: u64,
+    pub root: UiNode,
+    pub environment: UiEnvironment,
+    pub resources: BTreeMap<String, NativeResourceProjection>,
+    pub losses: BTreeMap<UiKey, Vec<NativeNodeLoss>>,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum NativeUiFrameError {
     InvalidIr(UiIrError),
@@ -466,6 +486,42 @@ impl NativeUiDocument {
         Some(self.project_compatibility_node_inner(key, &mut losses).map(
             |node| NativeUiNodeProjection { node, losses },
         ))
+    }
+
+    /// Produce a full read-only document snapshot for diagnostics and compatibility bridging.
+    /// Identity retirement history and released resource tombstones are intentionally absent.
+    pub fn project_compatibility_snapshot(
+        &self,
+    ) -> Result<NativeUiCompatibilitySnapshot, UiIrError> {
+        let root = self
+            .key_for_node(self.scene.root.id)
+            .ok_or_else(|| incomplete_projection("root identity mapping is missing"))?;
+        let projection = self
+            .project_compatibility_node(root)
+            .ok_or_else(|| incomplete_projection("root node is not active"))??;
+        let resources = self
+            .resources
+            .iter()
+            .map(|(id, state)| {
+                (
+                    id.clone(),
+                    NativeResourceProjection {
+                        active: state.active.clone(),
+                        prepared: state.prepared.clone(),
+                    },
+                )
+            })
+            .collect();
+        Ok(NativeUiCompatibilitySnapshot {
+            identity_domain: self.identity_domain().into(),
+            owner: self.owner().into(),
+            session: self.session().into(),
+            revision: self.revision,
+            root: projection.node,
+            environment: self.environment.clone(),
+            resources,
+            losses: projection.losses,
+        })
     }
 
     fn project_compatibility_node_inner(

@@ -365,6 +365,83 @@ fn native_node_projection_recovers_public_tree_semantics_events_and_styles() {
 }
 
 #[test]
+fn native_compatibility_snapshot_includes_environment_and_live_resources() {
+    use jasper_ui_engine::ui_ir::{
+        Appearance, ElementKind, ResourceAdmission, ResourceKind, ResourceRef, SemanticRole,
+        UiElement, UiEnvironment, UiNode, UiOp, UiSemantics,
+    };
+
+    let committed = ResourceRef {
+        id: "icon".into(),
+        generation: 2,
+        kind: ResourceKind::Icon,
+    };
+    let prepared = ResourceRef {
+        id: "pending".into(),
+        generation: 1,
+        kind: ResourceKind::Image,
+    };
+    let environment = UiEnvironment {
+        appearance: Some(Appearance::Dark),
+        reduce_motion: Some(true),
+        ..UiEnvironment::default()
+    };
+    let frame = UiFrame {
+        ir_version: jasper_ui_engine::ui_ir::IR_VERSION.into(),
+        identity_domain: "compat/window".into(),
+        owner: "host".into(),
+        session: "session".into(),
+        expected_revision: 1,
+        next_revision: 2,
+        ops: vec![
+            UiOp::resource(committed.clone(), ResourceAdmission::Prepare),
+            UiOp::resource(committed.clone(), ResourceAdmission::Commit),
+            UiOp::resource(prepared.clone(), ResourceAdmission::Prepare),
+            UiOp::insert(
+                None,
+                0,
+                UiNode {
+                    key: UiKey::new(1, 1),
+                    element: UiElement {
+                        kind: ElementKind::Container,
+                        content: None,
+                        attributes: None,
+                    },
+                    semantics: UiSemantics {
+                        role: SemanticRole::Container,
+                        label: String::new(),
+                        description: String::new(),
+                        value: String::new(),
+                        disabled: false,
+                        focusable: false,
+                        hidden: false,
+                        selected: false,
+                        level: None,
+                    },
+                    style: None,
+                    events: None,
+                    children: None,
+                },
+            ),
+            UiOp::environment(environment.clone()),
+        ],
+    };
+    let document = NativeUiDocument::from_frame(&frame).unwrap();
+    let snapshot = document.project_compatibility_snapshot().unwrap();
+    assert_eq!(snapshot.identity_domain, "compat/window");
+    assert_eq!(snapshot.owner, "host");
+    assert_eq!(snapshot.session, "session");
+    assert_eq!(snapshot.revision, 2);
+    assert_eq!(snapshot.root.key, UiKey::new(1, 1));
+    assert_eq!(snapshot.environment, environment);
+    assert_eq!(snapshot.resources["icon"].active, Some(committed));
+    assert_eq!(snapshot.resources["icon"].prepared, None);
+    assert_eq!(snapshot.resources["pending"].active, None);
+    assert_eq!(snapshot.resources["pending"].prepared, Some(prepared));
+    assert!(snapshot.losses.is_empty(), "{:?}", snapshot.losses);
+}
+
+#[test]
 fn duplicate_and_zero_generations_are_rejected_before_native_mapping() {
     let bytes = fixture("settings-page.ir.json");
     let mut value: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
