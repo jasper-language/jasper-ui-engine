@@ -165,6 +165,17 @@ Web 后端和正式宿主仍需分别验收。
 | Formal verification | not performed for UI IR validation/mapping/event admission |
 | Cross-backend equivalence | not established |
 
+### 2026-11-18 执行记录
+
+- `native-engine-cpu,accesskit-pending` 完整 `cargo test` 成功退出：库测试
+  `271 passed, 1 ignored`（忽略项是显式性能测量），全部集成测试和 doc-test 通过；
+- 同一特性集的 `ui_ir_v0`：`35 passed`；
+- 软件 Vulkan（lvp/llvmpipe）+ `gpu-pending` 的 `ui_ir_v0`：`36 passed`；
+- Clippy 成功退出；仓库仍保留已登记的非阻塞历史 warning。
+
+运行前注入了 Latin/CJK、regular/bold/italic 测试字体；这些计数只对应当前 Linux 测试环境，
+不是真实硬件 GPU、真实平台宿主或 Web/浏览器验收。
+
 ## 复现
 
 默认结构/映射测试：

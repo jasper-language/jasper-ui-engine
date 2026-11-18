@@ -54,6 +54,7 @@ Rust 引擎已新增 Typed UI IR v0.1 consumer profile，并以 appfw `codex/ir-
 - Native document 已接入精确 generation claim/retire；删除后的旧 `UiKey` 不可重插，下一 generation 才可创建；
 - Focus/Key/Pointer/Scroll/编辑/IME/Overlay/AccessKit 的 Typed 出口、绑定 action 和权限准入已有测试；活动帧 `Move` 保持焦点、指针按下和 TextArea/IME 编辑状态；Committed image resource 已接入真实 `SceneHostView.insert_image`；
 - `HostRenderer::try_apply_ui_frame_at` 已被精确 Surface generation 门控；旧 generation 或暂停状态下 IR mapping、document 与 Native host 均不推进。
+- 2026-11-18 的 CPU/AccessKit 完整测试成功退出（库测试 `271 passed, 1 ignored`，全部集成测试与 doc-test 通过）；Typed edit/overlay 批次在授权失败时保留待重试，Focus/Pointer/AccessKit 的 IME 取消在 Native 状态变化前预准入。
 
 这仍不是双后端黄金用例：Web SSR、真实浏览器、真实硬件 GPU、真实平台宿主和完整差异表
 均未执行。跨后端状态继续为 `not_run`。
