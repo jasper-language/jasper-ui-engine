@@ -56,6 +56,9 @@ pub struct SceneEditState {
     /// Active preedit text, if any.
     /// 进行中的预编辑文本（若有）。
     pub preedit: Option<String>,
+    /// IME cursor/selection inside `preedit`, as UTF-8 offsets into that text.
+    /// 预编辑文本内的输入法光标/选区，使用该文本的 UTF-8 偏移。
+    pub preedit_cursor: Option<(usize, usize)>,
     /// Caret rectangle in node_bounds coordinates (untransformed layout frame), where the IME
     /// candidate window goes. None when the layout gives no geometry.
     /// node_bounds 坐标（未变换布局坐标系）下的光标矩形，输入法候选窗的位置；布局无几何时为 None。

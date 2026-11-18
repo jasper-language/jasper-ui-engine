@@ -289,6 +289,7 @@ pub struct TypedUiEditState {
     pub anchor: usize,
     pub caret: usize,
     pub preedit: Option<String>,
+    pub preedit_cursor: Option<(usize, usize)>,
     pub caret_rect: Option<crate::geometry::Rect>,
 }
 
@@ -1926,6 +1927,7 @@ impl HostRenderer {
                     anchor: state.anchor,
                     caret: state.caret,
                     preedit: state.preedit,
+                    preedit_cursor: state.preedit_cursor,
                     caret_rect: state.caret_rect,
                 })
             })

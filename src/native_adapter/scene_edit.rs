@@ -474,6 +474,7 @@ impl NativeScene {
             anchor: session.buffer.anchor(),
             caret: session.buffer.caret(),
             preedit: session.buffer.preedit().map(|p| p.text.clone()),
+            preedit_cursor: session.buffer.preedit().and_then(|p| p.cursor),
             caret_rect: self.caret_geometry(session.node, caret, CARET_WIDTH),
         }))
     }

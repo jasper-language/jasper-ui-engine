@@ -2169,7 +2169,7 @@ fn typed_focus_text_and_ime_use_the_same_admitted_ui_key() {
             &context,
             field,
             Some("中"),
-            None,
+            Some((3, 3)),
         )
         .unwrap(),
         UiKey::new(3, 1)
@@ -2181,6 +2181,13 @@ fn typed_focus_text_and_ime_use_the_same_admitted_ui_key() {
             .preedit
             .as_deref(),
         Some("中")
+    );
+    assert_eq!(
+        host.typed_edit_state(OWNER, 2, &document)
+            .unwrap()
+            .unwrap()
+            .preedit_cursor,
+        Some((3, 3))
     );
     assert_eq!(
         host.typed_edit_state(OWNER, 2, &document)

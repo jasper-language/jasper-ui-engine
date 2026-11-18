@@ -103,7 +103,7 @@
 text_input(owner, version, text) -> bool
 set_preedit(owner, version, text: Option<&str>, cursor: Option<(usize, usize)>) -> bool
 take_edit_events(owner) -> Option<Vec<SceneEditEvent>>
-edit_state(owner, version) -> Option<Option<SceneEditState>>   // node、text、anchor、caret、preedit、caret_rect（输入法候选窗定位）
+edit_state(owner, version) -> Option<Option<SceneEditState>>   // node、text、anchor、caret、preedit、preedit_cursor、caret_rect（输入法候选窗定位）
 caret_blink(owner, now_ms) -> Option<CaretBlink>               // visible、next_toggle_ms
 ```
 
