@@ -103,6 +103,9 @@ caret 几何与 `UiKey` 一并返回，不暴露 backend 节点身份。
   live identity 集合、environment、Native Property Registry、resource id/generation/kind
   及 active/prepared 生命周期可达性，并交叉核对 image 必须精确引用 committed Image/SVG、
   node overlay anchor 必须指向 live identity；
+- `NativeUiCompatibilitySnapshot::to_json_vec()` / `from_json_slice()` 提供严格 JSON
+  round-trip；未知字段、未知 property、重复 loss identity 和无效快照均结构化拒绝。该格式是
+  Rust compatibility envelope，不是公共 ABI；
 - `NativeUiCompatibilitySnapshot::to_initial_frame()` 仅在全部身份为 generation 1 时重建
   `expected_revision=1` 的新会话帧；存在淘汰历史时结构化拒绝，不伪造 identity ledger；
 - `NativeUiDocument::from_compatibility_snapshot` 可直接按显式 identity 游标恢复 active

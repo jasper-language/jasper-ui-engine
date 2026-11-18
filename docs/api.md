@@ -83,6 +83,9 @@ live keys、environment 与 active/prepared resources 的 Native document。两�
 Registry 与资源生命周期一致性；revision 低于活动首帧的 2、不可达的空资源状态或非更新的
 prepared generation 会被拒绝。节点 image 必须是当前 committed Image/SVG；节点锚定 overlay
 必须引用 live `UiKey`。
+`NativeUiCompatibilitySnapshot::to_json_vec()` / `from_json_slice()` 提供严格持久化
+round-trip；读入时拒绝未知字段、未知 property、重复 loss identity 与任何 `validate()` 失败。
+该 JSON envelope 不是正式 ABI。
 Native 回调携带 `NodeId` 时使用 `admit_native_event`/`admit_activation`；内部 NodeId 仅用于
 映射，授权仍以 `UiEventContext.target` 的 `UiKey` 和上下文为准。
 HostRenderer 的 `typed_focus`、`typed_text_input`、`typed_set_preedit` 把目标授权与实际

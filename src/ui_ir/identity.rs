@@ -4,6 +4,7 @@
 //! `(semantic_id, generation)` pair and refuses exhaustion instead of wrapping.
 
 use super::UiKey;
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::fmt;
 
@@ -14,7 +15,8 @@ struct Record {
 }
 
 /// One auditable identity cursor in a compatibility snapshot.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct IdentityRecordSnapshot {
     pub last_generation: u64,
     pub live: bool,
@@ -22,7 +24,8 @@ pub struct IdentityRecordSnapshot {
 
 /// Explicit identity-domain history. Unlike an initial UiFrame, this preserves retirement
 /// cursors and therefore cannot re-enable an already retired `(semantic_id, generation)` pair.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct UiIdentitySnapshot {
     pub identity_domain: String,
     pub records: BTreeMap<u64, IdentityRecordSnapshot>,

@@ -513,6 +513,45 @@ fn native_compatibility_snapshot_includes_environment_and_live_resources() {
     assert_eq!(snapshot.resources["icon"].prepared, Some(prepared));
     assert!(snapshot.losses.is_empty(), "{:?}", snapshot.losses);
     snapshot.validate().unwrap();
+    let encoded = snapshot.to_json_vec().unwrap();
+    assert_eq!(
+        jasper_ui_engine::ui_ir::NativeUiCompatibilitySnapshot::from_json_slice(&encoded).unwrap(),
+        snapshot
+    );
+    let mut wire: serde_json::Value = serde_json::from_slice(&encoded).unwrap();
+    wire["mapped_properties"]["not.in.profile"] =
+        serde_json::json!({ "support": "required", "host_accepted": true });
+    assert!(matches!(
+        jasper_ui_engine::ui_ir::NativeUiCompatibilitySnapshot::from_json_slice(
+            &serde_json::to_vec(&wire).unwrap()
+        ),
+        Err(jasper_ui_engine::ui_ir::UiIrError::Invalid { .. })
+    ));
+    let mut wire: serde_json::Value = serde_json::from_slice(&encoded).unwrap();
+    wire["losses"] = serde_json::json!([
+        {
+            "key": { "semantic_id": 1, "generation": 1 },
+            "losses": []
+        },
+        {
+            "key": { "semantic_id": 1, "generation": 1 },
+            "losses": []
+        }
+    ]);
+    assert!(matches!(
+        jasper_ui_engine::ui_ir::NativeUiCompatibilitySnapshot::from_json_slice(
+            &serde_json::to_vec(&wire).unwrap()
+        ),
+        Err(jasper_ui_engine::ui_ir::UiIrError::Invalid { .. })
+    ));
+    let mut wire: serde_json::Value = serde_json::from_slice(&encoded).unwrap();
+    wire["unknown"] = serde_json::json!(true);
+    assert!(matches!(
+        jasper_ui_engine::ui_ir::NativeUiCompatibilitySnapshot::from_json_slice(
+            &serde_json::to_vec(&wire).unwrap()
+        ),
+        Err(jasper_ui_engine::ui_ir::UiIrError::Json { .. })
+    ));
 
     let mut bad_identity = snapshot.clone();
     bad_identity.identity_domain = "other/window".into();

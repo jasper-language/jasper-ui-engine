@@ -24,10 +24,12 @@ use crate::style::{
     Style as NativeStyle, TextAlign as NativeTextAlign,
     TextAlignVertical as NativeVerticalAlign, TextDirection as NativeTextDirection,
 };
+use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum SupportLevel {
     Required,
     Optional,
@@ -74,7 +76,8 @@ impl fmt::Display for MappingIssue {
 
 impl std::error::Error for MappingIssue {}
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct MappedProperty {
     pub support: SupportLevel,
     pub host_accepted: bool,
@@ -173,7 +176,8 @@ pub struct NativeSceneUpdate {
 }
 
 /// One field omitted or normalized by a Native subtree compatibility projection.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct NativeNodeLoss {
     pub path: String,
     pub detail: String,
@@ -188,7 +192,8 @@ pub struct NativeUiNodeProjection {
 }
 
 /// Current resource state visible to the compatibility envelope.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct NativeResourceProjection {
     pub active: Option<ResourceRef>,
     pub prepared: Option<ResourceRef>,
@@ -209,7 +214,102 @@ pub struct NativeUiCompatibilitySnapshot {
     pub losses: BTreeMap<UiKey, Vec<NativeNodeLoss>>,
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct NativeUiCompatibilitySnapshotWire {
+    identity_domain: String,
+    identity: UiIdentitySnapshot,
+    owner: String,
+    session: String,
+    revision: u64,
+    root: UiNode,
+    environment: UiEnvironment,
+    resources: BTreeMap<String, NativeResourceProjection>,
+    mapped_properties: BTreeMap<String, MappedProperty>,
+    losses: Vec<NativeUiKeyLosses>,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct NativeUiKeyLosses {
+    key: UiKey,
+    losses: Vec<NativeNodeLoss>,
+}
+
 impl NativeUiCompatibilitySnapshot {
+    /// Serialize this Rust compatibility envelope as strict JSON. This is not a public ABI.
+    pub fn to_json_vec(&self) -> Result<Vec<u8>, UiIrError> {
+        self.validate()?;
+        let wire = NativeUiCompatibilitySnapshotWire {
+            identity_domain: self.identity_domain.clone(),
+            identity: self.identity.clone(),
+            owner: self.owner.clone(),
+            session: self.session.clone(),
+            revision: self.revision,
+            root: self.root.clone(),
+            environment: self.environment.clone(),
+            resources: self.resources.clone(),
+            mapped_properties: self
+                .mapped_properties
+                .iter()
+                .map(|(property, value)| ((*property).into(), *value))
+                .collect(),
+            losses: self
+                .losses
+                .iter()
+                .map(|(key, losses)| NativeUiKeyLosses {
+                    key: *key,
+                    losses: losses.clone(),
+                })
+                .collect(),
+        };
+        serde_json::to_vec(&wire).map_err(|error| UiIrError::Json {
+            path: "$.compatibility".into(),
+            detail: error.to_string(),
+        })
+    }
+
+    /// Parse and validate strict JSON for this Rust compatibility envelope.
+    pub fn from_json_slice(bytes: &[u8]) -> Result<Self, UiIrError> {
+        let wire: NativeUiCompatibilitySnapshotWire =
+            serde_json::from_slice(bytes).map_err(|error| UiIrError::Json {
+                path: "$.compatibility".into(),
+                detail: error.to_string(),
+            })?;
+        let mut mapped_properties = BTreeMap::new();
+        for (property, value) in wire.mapped_properties {
+            let profile = native_property_profile(&property).ok_or_else(|| {
+                incomplete_projection(format!(
+                    "serialized mapped property {property:?} is absent from the Native profile"
+                ))
+            })?;
+            mapped_properties.insert(profile.property, value);
+        }
+        let mut losses = BTreeMap::new();
+        for entry in wire.losses {
+            if losses.insert(entry.key, entry.losses).is_some() {
+                return Err(incomplete_projection(format!(
+                    "serialized snapshot repeats loss identity {}:{}",
+                    entry.key.semantic_id, entry.key.generation
+                )));
+            }
+        }
+        let snapshot = Self {
+            identity_domain: wire.identity_domain,
+            identity: wire.identity,
+            owner: wire.owner,
+            session: wire.session,
+            revision: wire.revision,
+            root: wire.root,
+            environment: wire.environment,
+            resources: wire.resources,
+            mapped_properties,
+            losses,
+        };
+        snapshot.validate()?;
+        Ok(snapshot)
+    }
+
     pub fn validate(&self) -> Result<(), UiIrError> {
         if self.identity.identity_domain != self.identity_domain {
             return Err(incomplete_projection(
