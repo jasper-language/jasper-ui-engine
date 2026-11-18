@@ -92,7 +92,9 @@ pub fn project_native_style_with_context(
             path: "style.grid",
             detail: "non-default grid fields exist while Native display is not Grid; projecting them would change display",
         });
-    } else if source.display != expected_display && !grid_display {
+    } else if source.display != expected_display
+        && !(grid_can_select_display && grid_display)
+    {
         losses.push(NativeStyleLoss {
             path: "style.display",
             detail: "the Typed v0.1 style groups cannot encode this Native display mode",

@@ -256,6 +256,20 @@ fn native_style_projection_preserves_grid_and_reports_extended_field_losses() {
     assert_eq!(grid_profile.support, SupportLevel::Candidate);
     assert!(!grid_profile.host_accepted);
 
+    let table_grid = Style {
+        display: Display::Grid,
+        grid_columns: Some(vec![GridTrack::Fr(1.0)]),
+        ..Style::default()
+    };
+    let table_projection =
+        project_native_style(&table_grid, ElementKind::TableRow).unwrap();
+    assert!(table_projection.style.grid.is_some());
+    assert!(table_projection
+        .losses
+        .iter()
+        .any(|loss| loss.path == "style.display"));
+    assert!(!table_projection.is_lossless());
+
     let mut extended = Style {
         hit_slop: jasper_ui_engine::geometry::Edges::all(3.0),
         transform: Transform2D::translate(2.0, 3.0),
@@ -345,7 +359,11 @@ fn native_style_projection_preserves_grid_and_reports_extended_field_losses() {
 fn native_node_projection_recovers_public_tree_semantics_events_and_styles() {
     use jasper_ui_engine::ui_ir::{SemanticRole, UiOp};
 
-    let frame = UiFrame::from_json_slice(&fixture("settings-page.ir.json")).unwrap();
+    let mut frame = UiFrame::from_json_slice(&fixture("settings-page.ir.json")).unwrap();
+    let UiOp::Insert(root) = &mut frame.ops[0] else {
+        panic!("settings fixture must start with one root insertion");
+    };
+    root.node.events = Some(Vec::new());
     let document = NativeUiDocument::from_frame(&frame).unwrap();
     let root = UiKey::new(1, 1);
     let projection = document
@@ -354,6 +372,7 @@ fn native_node_projection_recovers_public_tree_semantics_events_and_styles() {
         .unwrap();
     assert!(projection.losses.is_empty(), "{:?}", projection.losses);
     assert_eq!(projection.node.key, root);
+    assert!(projection.node.events.is_none());
     let children = projection.node.children.as_ref().unwrap();
     assert_eq!(children.len(), 3);
     let field = &children[1];

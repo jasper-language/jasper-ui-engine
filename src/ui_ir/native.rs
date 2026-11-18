@@ -716,12 +716,16 @@ impl NativeUiDocument {
             NodeKind::Text(text) => Some(text.clone()),
             _ => None,
         };
-        let events = self.event_bindings.get(&key).map(|bindings| {
-            bindings
-                .values()
-                .cloned()
-                .collect::<Vec<EventBinding>>()
-        });
+        let events = self
+            .event_bindings
+            .get(&key)
+            .filter(|bindings| !bindings.is_empty())
+            .map(|bindings| {
+                bindings
+                    .values()
+                    .cloned()
+                    .collect::<Vec<EventBinding>>()
+            });
         let mut children = Vec::new();
         for child in &node.children {
             let child_key = self
