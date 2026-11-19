@@ -1,30 +1,30 @@
 verification results:: 1 verified, 1 errors
 note: while loop: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
-  --> <repo>/evidence/scene-batch-stage-kernel/negative_apply_wrong_patch.rs:24:5
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-batch-stage-kernel/negative_apply_wrong_patch.rs:25:5
    |
-24 |     while index < patches.len()
+25 |     while index < patches.len()
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: postcondition not satisfied
-  --> <repo>/evidence/scene-batch-stage-kernel/negative_apply_wrong_patch.rs:13:17
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-batch-stage-kernel/negative_apply_wrong_patch.rs:14:17
    |
-13 |           ensures match result {
+14 |           ensures match result {
    |  _________________^
-14 | |             Ok(end)=>exists|trace:Seq<S>| #[trigger] batch_stage_trace(apply,detached,patches@,trace)
-15 | |                 && trace.len()==patches@.len()+1 && trace.last()==end,
-16 | |             Err(error)=>exists|trace:Seq<S>| #[trigger] batch_stage_trace(apply,detached,patches@,trace)
-17 | |                 && trace.len()<=patches@.len()
-18 | |                 && apply.ensures((trace.last(),&patches@[trace.len()-1]),Err::<S,E>(error)),
-19 | |         },
+15 | |             Ok(end)=>exists|trace:Seq<S>| #[trigger] batch_stage_trace(apply,detached,patches@,trace)
+16 | |                 && trace.len()==patches@.len()+1 && trace.last()==end,
+17 | |             Err(error)=>exists|trace:Seq<S>| #[trigger] batch_stage_trace(apply,detached,patches@,trace)
+18 | |                 && trace.len()<=patches@.len()
+19 | |                 && apply.ensures((trace.last(),&patches@[trace.len()-1]),Err::<S,E>(error)),
+20 | |         },
    | |_________^ failed this postcondition
 ...
-47 |                   return Err(error);
+48 |                   return Err(error);
    |                   ----------------- at this exit
 
 error: assertion failed
-  --> <repo>/evidence/scene-batch-stage-kernel/negative_apply_wrong_patch.rs:36:69
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-batch-stage-kernel/negative_apply_wrong_patch.rs:37:69
    |
-36 | ...own.len()-1 implies apply.ensures((#[trigger] grown[i],&patches@[i]),Ok::<S,E>(grown[i+1])) by {
+37 | ...own.len()-1 implies apply.ensures((#[trigger] grown[i],&patches@[i]),Ok::<S,E>(grown[i+1])) by {
    |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ assertion failed
 
 error: aborting due to 2 previous errors

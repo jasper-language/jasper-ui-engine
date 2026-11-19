@@ -3,9 +3,9 @@
   "status": "proved",
   "scope": "Exact production node insertion on the real Node declaration: a hit inserts exactly the supplied node under the first matching parent and clamps the index to the child count; every other node is structurally unchanged. A miss keeps the tree unchanged. Identity admission, Move extraction, final Move tree and whole-batch transaction are outside this kernel",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "ebe0050a317bd2a672c97923fab2fca3e1342ba5f5419599b739547d6e5ad68c",
+  "source_sha256": "6843323a5d78425c967ddad9b817b10e1dca450baa95a6602369384e4b8d1d4c",
   "sources": {
-    "src/scene.rs": "ebe0050a317bd2a672c97923fab2fca3e1342ba5f5419599b739547d6e5ad68c"
+    "src/scene.rs": "6843323a5d78425c967ddad9b817b10e1dca450baa95a6602369384e4b8d1d4c"
   },
   "kernel_sha256": "26556c7ce8a1c249ee4fda7ad80b3f659490210920e826217014f376e2bbd9f0",
   "dependencies": {
@@ -15,8 +15,8 @@
     "scene-node-find": "b74b778af544687350673b5791f817007560bb7babf2f9ee62b2fdc7f0b6b57d",
     "scene-node-remove": "e98e2b1c9a3a0e57bcb8f8464d976ac0316807148cb696c7abd25905564cb483"
   },
-  "proof_sha256": "0279c0c689ecc12aaeee49a5f6de034b851a3c34289309a2064b2396769e6676",
-  "runner_sha256": "20331d1493ca886bbd4f275edabe2cb6e9a76a6c93712935d6f4a980648ed80e",
+  "proof_sha256": "ad2514eddc68b2043f6c905d311fac551b8f6cbc2276bc359dd20253b258d3f0",
+  "runner_sha256": "8f79d843449e0834b8202739afe3bc7515f11eed6e2cb59a7b6e769f581ce965",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "/tmp/jasper-verus-0.2026.10.18/verus-x86-linux/verus",
@@ -30,7 +30,7 @@
     "version": "Z3 version 4.16.0 - 64 bit\n",
     "explicit_override": null
   },
-  "verified_obligations": 15,
+  "verified_obligations": 17,
   "negative_controls": [
     {
       "name": "report-hit-on-miss",

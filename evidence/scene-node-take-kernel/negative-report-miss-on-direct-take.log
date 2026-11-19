@@ -1,15 +1,17 @@
-verification results:: 21 verified, 1 errors
+verification results:: 22 verified, 1 errors
 error: postcondition not satisfied
-   --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-node-take-kernel/negative_report_miss_on_direct_take.rs:262:17
+   --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-node-take-kernel/negative_report_miss_on_direct_take.rs:285:17
     |
-262 |           ensures match result {
+285 |           ensures match result {
     |  _________________^
-263 | |             Some(taken) => node_removed(*old(parent),*final(parent),id) && node_holds_value(*old(parent),id,taken),
-264 | |             None => node_same(*old(parent),*final(parent)) && !node_below(*old(parent),id),
-265 | |         },
+286 | |             Some(taken) => node_removed(*old(parent),*final(parent),id)
+287 | |                 && node_removed_value(*old(parent),*final(parent),id,taken)
+288 | |                 && node_holds_value(*old(parent),id,taken),
+289 | |             None => node_same(*old(parent),*final(parent)) && !node_below(*old(parent),id),
+290 | |         },
     | |_________^ failed this postcondition
 ...
-286 |               return None;
+315 |               return None;
     |               ----------- at this exit
 
 error: aborting due to 1 previous error

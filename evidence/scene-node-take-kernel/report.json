@@ -3,9 +3,9 @@
   "status": "proved",
   "scope": "Exact production subtree extraction on the real Node declaration: a direct matching child wins; otherwise the first child subtree containing the identity supplies it. Some returns that node and the remaining tree is exactly that node removed; None leaves the tree structurally equal and means the identity is not a proper descendant. Insertion destination, preorder lookup with duplicate identities, recursive depth/stack use, allocation failure and whole Move transaction are outside this kernel",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "ebe0050a317bd2a672c97923fab2fca3e1342ba5f5419599b739547d6e5ad68c",
+  "source_sha256": "6843323a5d78425c967ddad9b817b10e1dca450baa95a6602369384e4b8d1d4c",
   "sources": {
-    "src/scene.rs": "ebe0050a317bd2a672c97923fab2fca3e1342ba5f5419599b739547d6e5ad68c"
+    "src/scene.rs": "6843323a5d78425c967ddad9b817b10e1dca450baa95a6602369384e4b8d1d4c"
   },
   "kernel_sha256": "e20e6a00dec7fd75009ce987bc1eb5da14fd7366254c0d531681aa2cd2362b19",
   "dependencies": {
@@ -15,8 +15,8 @@
     "scene-node-find": "b74b778af544687350673b5791f817007560bb7babf2f9ee62b2fdc7f0b6b57d",
     "scene-node-remove": "e98e2b1c9a3a0e57bcb8f8464d976ac0316807148cb696c7abd25905564cb483"
   },
-  "proof_sha256": "052aa1cae9fcdfdd67a971f51318b279873af474b300c02d05c9e047a8208a5d",
-  "runner_sha256": "20331d1493ca886bbd4f275edabe2cb6e9a76a6c93712935d6f4a980648ed80e",
+  "proof_sha256": "69777cb499b15899085ec8970dfe249cc51056d5dc7cf63da80af1f489062c7c",
+  "runner_sha256": "8f79d843449e0834b8202739afe3bc7515f11eed6e2cb59a7b6e769f581ce965",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
     "/tmp/jasper-verus-0.2026.10.18/verus-x86-linux/verus",
@@ -30,7 +30,7 @@
     "version": "Z3 version 4.16.0 - 64 bit\n",
     "explicit_override": null
   },
-  "verified_obligations": 22,
+  "verified_obligations": 23,
   "negative_controls": [
     {
       "name": "report-miss-on-direct-take",

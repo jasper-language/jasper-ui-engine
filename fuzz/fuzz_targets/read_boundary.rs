@@ -1,6 +1,6 @@
 #![no_main]
 use jasper_ui_read_verification::{
-    assert_scene_batch_stage, assert_scene_move_admission, assert_scene_node_insert, assert_scene_node_take, assert_scene_node_remove_bytes, assert_scene_node_find_bytes, assert_scene_patch_bytes, assert_scene_unique_ids_bytes, assert_scene_checked_patch_bytes, assert_scene_batch_unique_bytes, assert_scene_batch_commit_bytes, assert_scene_interaction_restore, assert_scene_frame_order, assert_borrow, assert_bold_alias, assert_desktop_pointer_path, assert_desktop_timestamp, DesktopPointerStep, assert_handle_allocator_path, assert_handle_status_path, assert_handle_fixed_path, assert_handle_path, assert_handle_retirement, HandleStep, assert_bytes_slot, assert_canvas_import, assert_canvas_pixel, assert_capture_query, assert_color_construct,
+    assert_scene_batch_stage, assert_scene_move, assert_scene_move_admission, assert_scene_node_insert, assert_scene_node_take, assert_scene_node_remove_bytes, assert_scene_node_find_bytes, assert_scene_patch_bytes, assert_scene_unique_ids_bytes, assert_scene_checked_patch_bytes, assert_scene_batch_unique_bytes, assert_scene_batch_commit_bytes, assert_scene_interaction_restore, assert_scene_frame_order, assert_borrow, assert_bold_alias, assert_desktop_pointer_path, assert_desktop_timestamp, DesktopPointerStep, assert_handle_allocator_path, assert_handle_status_path, assert_handle_fixed_path, assert_handle_path, assert_handle_retirement, HandleStep, assert_bytes_slot, assert_canvas_import, assert_canvas_pixel, assert_capture_query, assert_color_construct,
     assert_command_modifier, assert_cursor, assert_endpoint, assert_focus_cleanup,
     assert_damage_convergence, assert_damage_rect, assert_damage_span, assert_damage_write, assert_focus_selection, assert_font_family, assert_font_order, assert_font_weight, assert_frame_damage, assert_glyph_skew, assert_glyph_skew_pure, assert_frame_pace, assert_frame_reuse, assert_frame_tick, assert_gpu_readback_layout, assert_header, assert_access_actions, assert_access_change, assert_access_request, assert_text_offset, assert_text_range, assert_hover_lifecycle, assert_input_retire,
     assert_keyboard_focus, assert_payload, assert_pixel_conversion, assert_pointer_order,
@@ -184,6 +184,12 @@ fuzz_target!(|data: &[u8]| {
         frame_bits as u64 % 8,
         &mut removal.iter(),
         &mut removal_room,
+    );
+    assert_scene_move(
+        removal_tree.clone(),
+        jasper_ui_read_verification::NodeId(len as u64 % 8),
+        jasper_ui_read_verification::NodeId(pos as u64 % 8),
+        total,
     );
     assert_scene_node_take(removal_tree.clone(), jasper_ui_read_verification::NodeId(len as u64 % 8));
     let inserted_spec = Vec::new();

@@ -1341,6 +1341,16 @@ pub fn assert_scene_patch(tree: Node, patch: ScenePatch) {
     assert_eq!(actual, expected);
 }
 
+/// The complete Move kernel against the independent patch oracle.
+/// Move 完整内核对照独立的补丁规格。
+pub fn assert_scene_move(tree: Node, id: NodeId, parent: NodeId, index: usize) {
+    let patch = ScenePatch::Move { id, parent, index };
+    let (expected, result) = patch_oracle(&tree, &patch);
+    let mut actual = tree;
+    assert_eq!(move_node_at(&mut actual, id, parent, index), result);
+    assert_eq!(actual, expected);
+}
+
 /// Independent Scene Move error-precedence oracle.
 /// 独立的 Scene Move 错误优先级 oracle。
 pub fn assert_scene_move_admission(
@@ -3581,6 +3591,26 @@ mod kani_checks {
     }
 
     #[kani::proof]
+    #[kani::unwind(6)]
+    fn scene_move_shape() {
+        let (root, first, second): (u64, u64, u64) =
+            (kani::any(), kani::any(), kani::any());
+        let tree = removal_leaf(
+            root,
+            vec![
+                removal_leaf(first, vec![removal_leaf(kani::any(), Vec::new())]),
+                removal_leaf(second, Vec::new()),
+            ],
+        );
+        assert_scene_move(
+            tree,
+            NodeId(kani::any()),
+            NodeId(kani::any()),
+            kani::any(),
+        );
+    }
+
+    #[kani::proof]
     #[kani::unwind(4)]
     fn scene_node_take_shape() {
         let (root, child): (u64, u64) = (kani::any(), kani::any());
@@ -4130,6 +4160,23 @@ mod properties {
             assert_scene_move_admission(root_matches, id_present, parent_present, parent_in_moved, id, parent);
         }
         #[test]
+        fn scene_move_property(
+            spec in prop::collection::vec(any::<(u8, u8)>(), 0..24),
+            root in any::<u8>(),
+            id in any::<u8>(),
+            parent in any::<u8>(),
+            index in any::<usize>(),
+        ) {
+            let mut room = spec.len();
+            let tree = removal_tree(root as u64 % 8, &mut spec.iter(), &mut room);
+            assert_scene_move(
+                tree,
+                NodeId(id as u64 % 8),
+                NodeId(parent as u64 % 8),
+                index,
+            );
+        }
+        #[test]
         fn scene_node_take_property(
             spec in prop::collection::vec(any::<(u8, u8)>(), 0..24),
             root in any::<u8>(),
@@ -4540,6 +4587,29 @@ mod memory {
         assert_scene_move_admission(false, true, false, true, u64::MAX, 0);
         assert_scene_move_admission(false, true, true, true, u64::MAX, 0);
         assert_scene_move_admission(false, true, true, false, u64::MAX, 0);
+    }
+
+    #[test]
+    fn scene_move_boundaries() {
+        let tree = removal_leaf(
+            1,
+            vec![
+                removal_leaf(2, vec![removal_leaf(3, Vec::new())]),
+                removal_leaf(4, Vec::new()),
+            ],
+        );
+        for id in [0, 1, 2, 3, 4, u64::MAX] {
+            for parent in [0, 1, 2, 3, 4, u64::MAX] {
+                for index in [0, 1, 2, usize::MAX] {
+                    assert_scene_move(
+                        tree.clone(),
+                        NodeId(id),
+                        NodeId(parent),
+                        index,
+                    );
+                }
+            }
+        }
     }
 
     #[test]

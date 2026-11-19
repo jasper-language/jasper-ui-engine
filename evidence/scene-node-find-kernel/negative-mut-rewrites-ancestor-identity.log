@@ -1,11 +1,11 @@
-verification results:: 6 verified, 1 errors
+verification results:: 8 verified, 1 errors
 error: postcondition not satisfied
-   --> <repo>/evidence/scene-node-find-kernel/negative_mut_rewrites_ancestor_identity.rs:89:13
+   --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-node-find-kernel/negative_mut_rewrites_ancestor_identity.rs:105:13
     |
- 89 |             result matches Some(found) ==> node_relocated(*old(node),*final(node),id,*found,*final(found)),
+105 |             result matches Some(found) ==> node_relocated(*old(node),*final(node),id,*found,*final(found)),
     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
 ...
-108 |             return find_node_mut(&mut node.children[index], id);
+124 |             return find_node_mut(&mut node.children[index], id);
     |             --------------------------------------------------- at this exit
 
 error: aborting due to 1 previous error

@@ -2,28 +2,28 @@ verification results:: 0 verified, 1 errors (partial verification with `--verify
 note: verifying root module (selected functions)
 
 note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
-   --> <repo>/evidence/scene-checked-patch-kernel/negative_swallow_the_failure.rs:960:1
-    |
-960 | fn apply_checked_patch<T: IdentitySet>(root:&mut Node,patch:ScenePatch,ids:&mut T)->(result:Result<(), SceneError>)
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-checked-patch-kernel/negative_swallow_the_failure.rs:1357:1
+     |
+1357 | fn apply_checked_patch<T: IdentitySet>(root:&mut Node,patch:ScenePatch,ids:&mut T)->(result:Result<(), SceneError>)
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: postcondition not satisfied
-   --> <repo>/evidence/scene-checked-patch-kernel/negative_swallow_the_failure.rs:962:17
-    |
-962 |         ensures patch_checked(*old(root),*final(root),patch,result),
-    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+    --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-checked-patch-kernel/negative_swallow_the_failure.rs:1359:17
+     |
+1359 |         ensures patch_checked(*old(root),*final(root),patch,result),
+     |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
 ...
-994 |     result
-    |     ------ at the end of the function body
+1391 |     result
+     |     ------ at the end of the function body
 
 error: precondition not satisfied
-   --> <repo>/evidence/scene-checked-patch-kernel/negative_swallow_the_failure.rs:989:31
-    |
-511 |     requires ids_distinct(preorder_ids(o)+preorder_ids(node)),
-    |              ------------------------------------------------ failed precondition
+    --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-checked-patch-kernel/negative_swallow_the_failure.rs:1386:31
+     |
+ 680 |     requires ids_distinct(preorder_ids(o)+preorder_ids(node)),
+     |              ------------------------------------------------ failed precondition
 ...
-989 |             if result is Ok { lemma_insert_ok_ids(o,*root,parent,index,node); }
-    |                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1386 |             if result is Ok { lemma_insert_ok_ids(o,*root,parent,index,node); }
+     |                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: aborting due to 2 previous errors
 

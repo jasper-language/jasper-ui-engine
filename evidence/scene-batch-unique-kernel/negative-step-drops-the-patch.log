@@ -1,18 +1,18 @@
-verification results:: 57 verified, 1 errors (partial verification with `--verify-*`)
+verification results:: 72 verified, 1 errors (partial verification with `--verify-*`)
 note: verifying root module
 
 error: postcondition not satisfied
-    --> <repo>/evidence/scene-batch-unique-kernel/negative_step_drops_the_patch.rs:1266:13
+    --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-batch-unique-kernel/negative_step_drops_the_patch.rs:1665:13
      |
-1266 |       ensures result is Ok ==> detached_step(staged,*patch,result->Ok_0),
+1665 |       ensures result is Ok ==> detached_step(staged,*patch,result->Ok_0),
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
 ...
-1273 | /     match applied {
-1274 | |         Ok(()) => Ok(staged),
-1275 | |         Err(error) => {
-1276 | |             let result=Err::<Scene,SceneError>(error);
+1672 | /     match applied {
+1673 | |         Ok(()) => Ok(staged),
+1674 | |         Err(error) => {
+1675 | |             let result=Err::<Scene,SceneError>(error);
 ...    |
-1280 | |     }
+1679 | |     }
      | |_____- at the end of the function body
 
 error: aborting due to 1 previous error

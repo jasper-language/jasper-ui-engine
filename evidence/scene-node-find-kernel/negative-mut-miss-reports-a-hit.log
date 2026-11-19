@@ -1,26 +1,26 @@
-verification results:: 6 verified, 1 errors
+verification results:: 8 verified, 1 errors
 note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
-  --> <repo>/evidence/scene-node-find-kernel/negative_mut_miss_reports_a_hit.rs:86:1
-   |
-86 | fn find_node_mut(node: &mut Node, id: NodeId) -> (result:Option<&mut Node>)
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-node-find-kernel/negative_mut_miss_reports_a_hit.rs:102:1
+    |
+102 | fn find_node_mut(node: &mut Node, id: NodeId) -> (result:Option<&mut Node>)
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: postcondition not satisfied
-   --> <repo>/evidence/scene-node-find-kernel/negative_mut_miss_reports_a_hit.rs:87:17
+   --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-node-find-kernel/negative_mut_miss_reports_a_hit.rs:103:17
     |
- 87 |         ensures (result is None) == !node_holds(*old(node),id),
+103 |         ensures (result is None) == !node_holds(*old(node),id),
     |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
 ...
-111 |     Some(node)
+127 |     Some(node)
     |     ---------- at the end of the function body
 
 error: postcondition not satisfied
-   --> <repo>/evidence/scene-node-find-kernel/negative_mut_miss_reports_a_hit.rs:89:13
+   --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-node-find-kernel/negative_mut_miss_reports_a_hit.rs:105:13
     |
- 89 |             result matches Some(found) ==> node_relocated(*old(node),*final(node),id,*found,*final(found)),
+105 |             result matches Some(found) ==> node_relocated(*old(node),*final(node),id,*found,*final(found)),
     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
 ...
-111 |     Some(node)
+127 |     Some(node)
     |     ---------- at the end of the function body
 
 error: aborting due to 2 previous errors

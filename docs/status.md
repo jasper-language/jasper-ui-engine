@@ -879,7 +879,7 @@ CP-02 仍无判定：只选一个断言（切片后 30 个 VCC）在 45 分钟�
 
 ## 2026-11-04：单个补丁对树的写入（CP-03 子性质）
 
-`apply_one` 拆出 `apply_tree_patch`，七个分支的写入与错误有 Verus 全域证明，范围见 `verification.md` 的 UI-SCENE-PATCH-001。`Insert` 分支在 Kani 上每种形状都超时、无判定，只有 Verus 与测试。`Insert` 前的身份检查、版本赋值与整体替换仍未证明。
+`apply_one` 拆出 `apply_tree_patch`，当前八个分支（后续加入 `Move`）的写入与错误有 Verus 全域证明，范围见 `verification.md` 的 UI-SCENE-PATCH-001。`Insert` 分支在 Kani 上每种形状都超时、无判定，只有 Verus 与测试。`Insert` 前的身份检查、版本赋值与整体替换仍未证明。
 
 ## 2026-11-04：插入前的身份检查（CP-03 子性质）
 
@@ -995,3 +995,14 @@ Windows 10 LTSC x86_64 虚拟机参考宿主已完成运行验收：单窗口与
 `Bgra8UnormSrgb` 与 `Fifo`，完成单帧、Surface 重建 generation 1→2 和宿主持有 device-loss
 演练 generation 1→2。该结果证明 Windows wgpu 宿主路径可运行；虚拟机基础渲染适配器不是
 物理 GPU，也不能替代 Ubuntu RTX 3060 的硬件呈现证据。
+
+2026-11-19：`ScenePatch::Move` 的准入、子树取出与目标插入已收敛为生产内核
+`move_node_at`。Verus 证明最终树是原树精确移除实际取出的子树后，把同一个值插入首个目标
+父节点并钳制下标；把该子树替换成新节点或忽略目标下标两个反例被拒。证明结果
+`26 verified / 0 errors`；Move 之后的身份唯一传递在 checked-patch（62/0）和 batch-unique
+（73/0）中闭合。最终 `verify-ui` 的 Verus、Proptest（72 个 read-boundary 属性）、Miri
+（18 个 read-boundary 边界）与 6 个 fuzz target 全部为非空 PASS，其中 read-boundary
+17,198 次；Loom PASS。Kani harness 已登记，但本机未安装 Kani，最终全链按仓库策略记为
+deferred-to-release。报告为 `scoped_checks_complete=true`、`slice_complete=true`、
+`complete=false`：递归深度/栈、分配失败和整批事务 `UI-TXN-ATOMIC-001` 仍未证明，不能
+宣称 Rust 部分已经整体验收。

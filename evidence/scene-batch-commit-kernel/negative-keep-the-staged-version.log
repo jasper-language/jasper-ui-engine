@@ -1,17 +1,17 @@
 verification results:: 3 verified, 1 errors
 error: postcondition not satisfied
-   --> <repo>/evidence/scene-batch-commit-kernel/negative_keep_the_staged_version.rs:125:17
+   --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-batch-commit-kernel/negative_keep_the_staged_version.rs:128:17
     |
-125 |           ensures batch_committed(*old(scene),*final(scene),expected_version,empty,validate,stage,result),
+128 |           ensures batch_committed(*old(scene),*final(scene),expected_version,empty,validate,stage,result),
     |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
 ...
-145 | /     match staged {
-146 | |         Ok(staged) => {
-147 | |             let ghost staged_version=staged.version;
-148 | |             let mut next = staged;
+148 | /     match staged {
+149 | |         Ok(staged) => {
+150 | |             let ghost staged_version=staged.version;
+151 | |             let mut next = staged;
 ...   |
-154 | |         Err(error) => Err(error),
-155 | |     }
+157 | |         Err(error) => Err(error),
+158 | |     }
     | |_____- at the end of the function body
 
 error: aborting due to 1 previous error

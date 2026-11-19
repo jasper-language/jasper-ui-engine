@@ -95,7 +95,7 @@ for file, markers in [
     ("src/pointer.rs", ["POINTER ROUTER TYPE", "CAPTURE QUERY KERNEL", "HOVER CHANGE TYPE", "HOVER STORAGE TYPE", "HOVER UPDATE KERNEL", "HOVER RETIRE KERNEL"]),
     ("src/desktop.rs", ["PIXEL ERROR TYPE", "PIXEL CONVERT KERNEL", "DESKTOP POINTER KERNEL", "DESKTOP POINTER STATE TYPE", "DESKTOP POINTER STATE KERNEL"]),
     ("src/handle.rs", ["HANDLE TYPE", "HANDLE KERNEL"]),
-    ("src/scene.rs", ["NODE ID TYPE", "VERSION KERNEL", "TRANSACTION GATE KERNEL", "SCENE BATCH STAGE KERNEL", "SCENE STATE TYPE", "SCENE BATCH COMMIT KERNEL", "SCENE MOVE ADMISSION KERNEL", "SCENE NODE KIND TYPE", "SCENE NODE TYPE", "SCENE PATCH TYPE", "SCENE ERROR TYPE", "SCENE NODE INSERT KERNEL", "SCENE NODE TAKE KERNEL", "SCENE NODE REMOVE KERNEL", "SCENE NODE FIND KERNEL", "SCENE PATCH KERNEL", "SCENE CHECKED PATCH KERNEL", "SCENE BATCH UNIQUE KERNEL", "SCENE UNIQUE IDS KERNEL", "SCENE IDENTITY SET INSTANCE"]),
+    ("src/scene.rs", ["NODE ID TYPE", "VERSION KERNEL", "TRANSACTION GATE KERNEL", "SCENE BATCH STAGE KERNEL", "SCENE STATE TYPE", "SCENE BATCH COMMIT KERNEL", "SCENE MOVE ADMISSION KERNEL", "SCENE NODE KIND TYPE", "SCENE NODE TYPE", "SCENE PATCH TYPE", "SCENE ERROR TYPE", "SCENE NODE INSERT KERNEL", "SCENE NODE TAKE KERNEL", "SCENE NODE REMOVE KERNEL", "SCENE MOVE KERNEL", "SCENE NODE FIND KERNEL", "SCENE PATCH KERNEL", "SCENE CHECKED PATCH KERNEL", "SCENE BATCH UNIQUE KERNEL", "SCENE UNIQUE IDS KERNEL", "SCENE IDENTITY SET INSTANCE"]),
 ]:
     source = (ROOT / file).read_text()
     for marker in markers:
@@ -115,7 +115,7 @@ for target in FUZZ_TARGETS:
     for seed in (ROOT / "fuzz/seeds" / target).iterdir():
         shutil.copyfile(seed, corpora / target / seed.name)
 kernels = ["version", "decode-range", "transaction-gate", "byte-read", "cursor-read",
-           "scalar-read", "header-read", "bounded-payload", "surface-row", "surface-span", "surface-borrow", "surface-write", "surface-segment", "surface-view", "pixel-pack", "pixel-convert", "canvas-import", "canvas-pixel", "color-construct", "desktop-pointer", "desktop-pointer-state", "handle", "font-order", "font-weight", "font-family", "bold-alias", "glyph-skew", "frame-reuse", "damage-span", "damage-rect", "frame-tick", "frame-pace", "text-offset", "text-range", "utf8-floor-boundary", "preedit-buffer-offset", "access-actions", "access-change", "access-request", "gpu-readback", "resource-gate", "role-activation", "bytes-slot", "command-modifier", "text-class", "focus-cleanup", "keyboard-focus", "focus-select", "input-retire", "hover-update", "hover-retire", "pointer-order", "capture-query", "scene-update-admission", "scene-frame-completion", "scene-frame-order", "scene-batch-stage", "scene-move-admission", "scene-node-insert", "scene-node-take", "scene-node-remove", "scene-node-find", "scene-patch", "scene-unique-ids", "scene-checked-patch", "scene-batch-unique", "scene-batch-commit", "scene-interaction-restore", "component-update-admission", "ui-plugin-rect", "ui-plugin-count", "ui-plugin-reloc", "surface-render-gate", "surface-transition", "surface-coordination", "surface-render-outcome", "core-frame-bytes", "core-frame-budget", "ui-identity-next", "ui-event-permission", "authority-match", "permission-match", "resource-transition", "capability-matrix"]
+           "scalar-read", "header-read", "bounded-payload", "surface-row", "surface-span", "surface-borrow", "surface-write", "surface-segment", "surface-view", "pixel-pack", "pixel-convert", "canvas-import", "canvas-pixel", "color-construct", "desktop-pointer", "desktop-pointer-state", "handle", "font-order", "font-weight", "font-family", "bold-alias", "glyph-skew", "frame-reuse", "damage-span", "damage-rect", "frame-tick", "frame-pace", "text-offset", "text-range", "utf8-floor-boundary", "preedit-buffer-offset", "access-actions", "access-change", "access-request", "gpu-readback", "resource-gate", "role-activation", "bytes-slot", "command-modifier", "text-class", "focus-cleanup", "keyboard-focus", "focus-select", "input-retire", "hover-update", "hover-retire", "pointer-order", "capture-query", "scene-update-admission", "scene-frame-completion", "scene-frame-order", "scene-batch-stage", "scene-move-admission", "scene-move", "scene-node-insert", "scene-node-take", "scene-node-remove", "scene-node-find", "scene-patch", "scene-unique-ids", "scene-checked-patch", "scene-batch-unique", "scene-batch-commit", "scene-interaction-restore", "component-update-admission", "ui-plugin-rect", "ui-plugin-count", "ui-plugin-reloc", "surface-render-gate", "surface-transition", "surface-coordination", "surface-render-outcome", "core-frame-bytes", "core-frame-budget", "ui-identity-next", "ui-event-permission", "authority-match", "permission-match", "resource-transition", "capability-matrix"]
 if a.kani_full:
     # Sequential whole-library run keeps the shared lock and memory ceiling; the per-harness clock does not apply.
     # 整库顺序运行保留共享锁与内存上限；单 harness 时钟不适用。
@@ -264,8 +264,12 @@ for stage in report["stages"]:
     log_path = out / (stage["name"].replace("+", "-") + ".log")
     output = log_path.read_text()
     required = {
-        "Proptest": [("test result: ok. 2 passed", 3), ("test result: ok. 3 passed", 1), ("test result: ok. 60 passed", 1), ("test result: ok. 8 passed", 1), ("test result: ok. 16 passed", 1)],
-        "Miri": [("test result: ok. 2 passed", 4), ("test result: ok. 3 passed", 2), ("test result: ok. 6 passed", 1), ("test result: ok. 11 passed", 1)],
+        "Proptest": [("test result: ok. 2 passed", 4), ("test result: ok. 3 passed", 1),
+                     ("test result: ok. 13 passed", 1), ("test result: ok. 17 passed", 1),
+                     ("test result: ok. 72 passed", 1), ("test result: ok. 11 passed", 1)],
+        "Miri": [("test result: ok. 2 passed", 4), ("test result: ok. 3 passed", 1),
+                 ("test result: ok. 6 passed", 2), ("test result: ok. 12 passed", 1),
+                 ("test result: ok. 18 passed", 1)],
         "Kani": [("VERIFICATION:- SUCCESSFUL", 70)],
         "Loom": [("test result: ok. 1 passed", 1)],
     }

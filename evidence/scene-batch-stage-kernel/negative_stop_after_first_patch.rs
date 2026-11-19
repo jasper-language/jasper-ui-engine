@@ -1,4 +1,5 @@
 use vstd::prelude::*;
+extern crate alloc;
 verus! {
 pub open spec fn batch_stage_trace<S,P,E,F:Fn(S,&P)->Result<S,E>>(apply:F,start:S,patches:Seq<P>,trace:Seq<S>)->bool {
     1<=trace.len()<=patches.len()+1 && trace[0]==start

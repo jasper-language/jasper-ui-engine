@@ -1,15 +1,15 @@
-verification results:: 14 verified, 1 errors
+verification results:: 26 verified, 1 errors
 error: postcondition not satisfied
-   --> <repo>/evidence/scene-patch-kernel/negative_text_writes_on_refusal.rs:294:17
+   --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-patch-kernel/negative_text_writes_on_refusal.rs:622:17
     |
-294 |           ensures patch_applied(*old(root),*final(root),patch,result),
+622 |           ensures patch_applied(*old(root),*final(root),patch,result),
     |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
-295 | /     {
-296 | |     match patch {
-297 | |         ScenePatch::Insert {
-298 | |             parent,
+623 | /     {
+624 | |     match patch {
+625 | |         ScenePatch::Insert {
+626 | |             parent,
 ...   |
-370 | | }
+697 | | }
     | |_- at the end of the function body
 
 error: aborting due to 1 previous error

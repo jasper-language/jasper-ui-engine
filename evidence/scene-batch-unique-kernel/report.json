@@ -3,20 +3,24 @@
   "status": "proved",
   "scope": "Exact production batch path on the real Node, NodeKind, ScenePatch, SceneError and Scene declarations with Canvas, Style, Semantics and Point replaced by opaque values the kernel cannot read, over any set obeying the IdentitySet contract and starting empty, for any scene, version and patch sequence. A stale batch reports staleness; a tree that already repeats is refused; an empty batch on a tree free of repeats succeeds with the scene unchanged; an exhausted version is refused; every failure leaves the scene equal to what it was. A successful non-empty batch advances the version once and its tree repeats no identity, and the tree is the end of a trace with one checked step per patch in order, every state of which repeats nothing. The derived clones of Scene and ScenePatch are assumed to return the same value; tests compare them. Not covered: that BTreeSet obeys the contract (tested), panic, allocation failure, stack use and cost.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "05d5de1f8763acb66df5749bebf5613f79ebc4af0415280a76f5cd6316439a36",
+  "source_sha256": "6843323a5d78425c967ddad9b817b10e1dca450baa95a6602369384e4b8d1d4c",
   "sources": {
-    "src/scene.rs": "05d5de1f8763acb66df5749bebf5613f79ebc4af0415280a76f5cd6316439a36"
+    "src/scene.rs": "6843323a5d78425c967ddad9b817b10e1dca450baa95a6602369384e4b8d1d4c"
   },
   "kernel_sha256": "cbb34c00ada82500559bae7abfed4177eeb3c6ea99083625e3c00faff61814d0",
   "dependencies": {
     "node-id-type": "39ff7bd8c3c5c51e025059e0f104105a839165e2cb4a455f094a2d2bb9cfffad",
     "scene-node-kind-type": "15662ba19978b1271632b776e224c3307e0955852bb2e44b8c7533452a83f313",
     "scene-node-type": "5cd4fff573ded959d547838b4447ec6383241e3ce53bef409cf839882fcf018b",
-    "scene-patch-type": "319ea18b09a59885ec8b42dc6b63f478bb93d87f5d63a196a3e27cb0cb6c3f43",
-    "scene-error-type": "2139dbdcdd29d341ab1184f217b263e52cfa2d04cde0f17021af1ff002d1051f",
+    "scene-patch-type": "836da9f9c8e123ba1178526c822b8f1a3c9d40a6374f5e0d61c9f65b3645dceb",
+    "scene-error-type": "3504db5ec8081421a4f57db5463bef15ba723f7ef7f40fa30b253e107ee11e9b",
     "scene-node-find": "b74b778af544687350673b5791f817007560bb7babf2f9ee62b2fdc7f0b6b57d",
     "scene-node-remove": "e98e2b1c9a3a0e57bcb8f8464d976ac0316807148cb696c7abd25905564cb483",
-    "scene-patch": "f2bcaf5f6d470182f2eca98a8d185b10fe457e2895ebb4004fd22ba83258f444",
+    "scene-move-admission": "6014fb86b470c30ed232dcb9c02193956d12b01d0f56e1b2a8b0a86345ecc7ea",
+    "scene-node-take": "e20e6a00dec7fd75009ce987bc1eb5da14fd7366254c0d531681aa2cd2362b19",
+    "scene-node-insert": "26556c7ce8a1c249ee4fda7ad80b3f659490210920e826217014f376e2bbd9f0",
+    "scene-move": "09bc48d669c38f917241c87df3b5bb22be36f8cdd5f237e6548dd9735639930d",
+    "scene-patch": "3c859e38acf7f88d11de36e6ddc4c71ce835303870ca4926a21034df14d0ff32",
     "scene-unique-ids": "53e14531454a64931cb421b76cc60fa852c042aadea3f24a829087e708d9bbac",
     "scene-checked-patch": "e6d40441d8f4c213096c9b16e248412865b7da86f18de1120bebee24a4808130",
     "scene-batch-stage": "e177fe8a750730a557b1a1666690a93c907d673aa81d5508d1c67eadeee10708",
@@ -25,22 +29,22 @@
     "transaction-gate": "21915020f6995629cb4636e14afa3038ec6220e0f9ce860043561009a5069536",
     "scene-batch-commit": "94bb7446c06ca86796853a134f620e18a46e2cde89611b97e25bd6d376b3ca94"
   },
-  "proof_sha256": "966adf6e3020034b1b3c569dc128c493d0a1f4f4efb8a8b31dd4811862564343",
-  "runner_sha256": "9aac303c7b1f05df3ecb673001616a8910a6155452fbb2496f5190611d039d6d",
+  "proof_sha256": "f78a73c7168976faa18c83789fc1f8cc51e140427e135451d73d5a236a669b17",
+  "runner_sha256": "8f79d843449e0834b8202739afe3bc7515f11eed6e2cb59a7b6e769f581ce965",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
-    "<home>/verus/verus",
+    "/tmp/jasper-verus-0.2026.10.18/verus-x86-linux/verus",
     "--crate-type",
     "lib",
-    "<repo>/evidence/scene-batch-unique-kernel/kernel.rs"
+    "/home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-batch-unique-kernel/kernel.rs"
   ],
   "exit_code": 0,
   "solver": {
-    "path": "<home>/verus/z3",
+    "path": "/tmp/jasper-verus-0.2026.10.18/verus-x86-linux/z3",
     "version": "Z3 version 4.16.0 - 64 bit\n",
     "explicit_override": null
   },
-  "verified_obligations": 58,
+  "verified_obligations": 73,
   "negative_controls": [
     {
       "name": "validate-accepts-all",

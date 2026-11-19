@@ -1,23 +1,23 @@
 verification results:: 1 verified, 1 errors
 error: postcondition not satisfied
-  --> <repo>/evidence/scene-batch-stage-kernel/negative_stop_after_first_patch.rs:13:17
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-batch-stage-kernel/negative_stop_after_first_patch.rs:14:17
    |
-13 |           ensures match result {
+14 |           ensures match result {
    |  _________________^
-14 | |             Ok(end)=>exists|trace:Seq<S>| #[trigger] batch_stage_trace(apply,detached,patches@,trace)
-15 | |                 && trace.len()==patches@.len()+1 && trace.last()==end,
-16 | |             Err(error)=>exists|trace:Seq<S>| #[trigger] batch_stage_trace(apply,detached,patches@,trace)
-17 | |                 && trace.len()<=patches@.len()
-18 | |                 && apply.ensures((trace.last(),&patches@[trace.len()-1]),Err::<S,E>(error)),
-19 | |         },
+15 | |             Ok(end)=>exists|trace:Seq<S>| #[trigger] batch_stage_trace(apply,detached,patches@,trace)
+16 | |                 && trace.len()==patches@.len()+1 && trace.last()==end,
+17 | |             Err(error)=>exists|trace:Seq<S>| #[trigger] batch_stage_trace(apply,detached,patches@,trace)
+18 | |                 && trace.len()<=patches@.len()
+19 | |                 && apply.ensures((trace.last(),&patches@[trace.len()-1]),Err::<S,E>(error)),
+20 | |         },
    | |_________^ failed this postcondition
-20 | /     {
-21 | |     let mut staged = detached;
-22 | |     let mut index = 0usize;
-23 | |     let ghost mut trace=seq![detached];
+21 | /     {
+22 | |     let mut staged = detached;
+23 | |     let mut index = 0usize;
+24 | |     let ghost mut trace=seq![detached];
 ...  |
-52 | |     Ok(staged)
-53 | | }
+53 | |     Ok(staged)
+54 | | }
    | |_- at the end of the function body
 
 error: aborting due to 1 previous error

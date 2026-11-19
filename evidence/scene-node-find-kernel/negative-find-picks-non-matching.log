@@ -1,23 +1,23 @@
-verification results:: 6 verified, 1 errors
+verification results:: 8 verified, 1 errors
 note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
-  --> <repo>/evidence/scene-node-find-kernel/negative_find_picks_non_matching.rs:50:1
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-node-find-kernel/negative_find_picks_non_matching.rs:63:1
    |
-50 | fn find_node(node: &Node, id: NodeId) -> (result:Option<&Node>)
+63 | fn find_node(node: &Node, id: NodeId) -> (result:Option<&Node>)
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: postcondition not satisfied
-  --> <repo>/evidence/scene-node-find-kernel/negative_find_picks_non_matching.rs:51:17
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-node-find-kernel/negative_find_picks_non_matching.rs:64:17
    |
-51 |         ensures (result is None) == !node_holds(*node,id),
+64 |         ensures (result is None) == !node_holds(*node,id),
    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
 ...
-56 |         return Some(node);
+70 |         return Some(node);
    |         ----------------- at this exit
 
 error: invariant not satisfied before loop
-  --> <repo>/evidence/scene-node-find-kernel/negative_find_picks_non_matching.rs:60:48
+  --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-node-find-kernel/negative_find_picks_non_matching.rs:74:48
    |
-60 |         invariant index<=node.children@.len(), node.id!=id,
+74 |         invariant index<=node.children@.len(), node.id!=id,
    |                                                ^^^^^^^^^^^
 
 error: aborting due to 2 previous errors

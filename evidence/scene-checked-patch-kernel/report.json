@@ -3,38 +3,42 @@
   "status": "proved",
   "scope": "Exact production composition of the insertion identity check and the tree patch on the real Node, NodeKind, ScenePatch and SceneError declarations with Canvas, Style, Semantics and Point replaced by opaque values the kernel cannot read, over any set obeying the IdentitySet contract and starting empty, for any tree and any patch. Insert: when the tree followed by the subtree repeats an identity the tree is unchanged and DuplicateNode names an identity of that sequence; otherwise the patch applies as in UI-SCENE-PATCH-001, a success leaves a tree whose preorder identities repeat nothing and equal the old sequence with the subtree's sequence put in at one position, and a failure leaves the tree unchanged. Any other patch applies as in UI-SCENE-PATCH-001 with no check; updates, refusals and misses keep the preorder sequence, a successful Remove takes exactly one subtree carrying the identity out of it, and a tree that repeated nothing still repeats nothing. BTreeSet obeying the contract is tested, not proved; apply_one passing an empty set is by reading.",
   "integer_model": "Verus default integer/usize model; not a cross-platform execution test",
-  "source_sha256": "05d5de1f8763acb66df5749bebf5613f79ebc4af0415280a76f5cd6316439a36",
+  "source_sha256": "6843323a5d78425c967ddad9b817b10e1dca450baa95a6602369384e4b8d1d4c",
   "sources": {
-    "src/scene.rs": "05d5de1f8763acb66df5749bebf5613f79ebc4af0415280a76f5cd6316439a36"
+    "src/scene.rs": "6843323a5d78425c967ddad9b817b10e1dca450baa95a6602369384e4b8d1d4c"
   },
   "kernel_sha256": "e6d40441d8f4c213096c9b16e248412865b7da86f18de1120bebee24a4808130",
   "dependencies": {
     "node-id-type": "39ff7bd8c3c5c51e025059e0f104105a839165e2cb4a455f094a2d2bb9cfffad",
     "scene-node-kind-type": "15662ba19978b1271632b776e224c3307e0955852bb2e44b8c7533452a83f313",
     "scene-node-type": "5cd4fff573ded959d547838b4447ec6383241e3ce53bef409cf839882fcf018b",
-    "scene-patch-type": "319ea18b09a59885ec8b42dc6b63f478bb93d87f5d63a196a3e27cb0cb6c3f43",
-    "scene-error-type": "2139dbdcdd29d341ab1184f217b263e52cfa2d04cde0f17021af1ff002d1051f",
+    "scene-patch-type": "836da9f9c8e123ba1178526c822b8f1a3c9d40a6374f5e0d61c9f65b3645dceb",
+    "scene-error-type": "3504db5ec8081421a4f57db5463bef15ba723f7ef7f40fa30b253e107ee11e9b",
     "scene-node-find": "b74b778af544687350673b5791f817007560bb7babf2f9ee62b2fdc7f0b6b57d",
     "scene-node-remove": "e98e2b1c9a3a0e57bcb8f8464d976ac0316807148cb696c7abd25905564cb483",
-    "scene-patch": "f2bcaf5f6d470182f2eca98a8d185b10fe457e2895ebb4004fd22ba83258f444",
+    "scene-move-admission": "6014fb86b470c30ed232dcb9c02193956d12b01d0f56e1b2a8b0a86345ecc7ea",
+    "scene-node-take": "e20e6a00dec7fd75009ce987bc1eb5da14fd7366254c0d531681aa2cd2362b19",
+    "scene-node-insert": "26556c7ce8a1c249ee4fda7ad80b3f659490210920e826217014f376e2bbd9f0",
+    "scene-move": "09bc48d669c38f917241c87df3b5bb22be36f8cdd5f237e6548dd9735639930d",
+    "scene-patch": "3c859e38acf7f88d11de36e6ddc4c71ce835303870ca4926a21034df14d0ff32",
     "scene-unique-ids": "53e14531454a64931cb421b76cc60fa852c042aadea3f24a829087e708d9bbac"
   },
-  "proof_sha256": "0aa694422f6c30a189f98b90a08eef2d756bbeda295519740bd243b7b9c1280b",
-  "runner_sha256": "9aac303c7b1f05df3ecb673001616a8910a6155452fbb2496f5190611d039d6d",
+  "proof_sha256": "92d6e0a6edd828f1dd1722d2246f11a291970397c7f63e1fc5ebfca4462b0bcc",
+  "runner_sha256": "8f79d843449e0834b8202739afe3bc7515f11eed6e2cb59a7b6e769f581ce965",
   "verus": "Verus\n  Version: 0.2026.10.18.7d82994\n  Profile: release\n  Platform: linux_x86_64\n  Toolchain: 1.99.1-x86_64-unknown-linux-gnu (overridden by environment variable RUSTUP_TOOLCHAIN)\n\n",
   "command": [
-    "<home>/verus/verus",
+    "/tmp/jasper-verus-0.2026.10.18/verus-x86-linux/verus",
     "--crate-type",
     "lib",
-    "<repo>/evidence/scene-checked-patch-kernel/kernel.rs"
+    "/home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-checked-patch-kernel/kernel.rs"
   ],
   "exit_code": 0,
   "solver": {
-    "path": "<home>/verus/z3",
+    "path": "/tmp/jasper-verus-0.2026.10.18/verus-x86-linux/z3",
     "version": "Z3 version 4.16.0 - 64 bit\n",
     "explicit_override": null
   },
-  "verified_obligations": 47,
+  "verified_obligations": 62,
   "negative_controls": [
     {
       "name": "report-success-on-duplicate",

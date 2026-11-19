@@ -1,4 +1,5 @@
 use vstd::prelude::*;
+extern crate alloc;
 verus! {
 
 pub struct Canvas(u64);
@@ -10,6 +11,18 @@ broadcast use vstd::std_specs::vec::axiom_vec_index_decreases;
 
 pub open spec fn node_holds(n:Node,id:NodeId)->bool decreases n, {
     n.id==id || exists|i:int| #![trigger n.children@[i]] 0<=i<n.children@.len() && node_holds(n.children@[i],id)
+}
+pub open spec fn node_holds_value(n:Node,id:NodeId,t:Node)->bool decreases n, {
+    if n.id==id { t==n }
+    else { exists|i:int| #![trigger n.children@[i]] 0<=i<n.children@.len() && node_holds_value(n.children@[i],id,t) }
+}
+proof fn lemma_child_holds_value(n:Node,p:int,id:NodeId,t:Node)
+    requires n.id!=id, 0<=p<n.children@.len(), node_holds_value(n.children@[p],id,t),
+    ensures node_holds_value(n,id,t),
+{
+    assert(node_holds_value(n,id,t)) by {
+        assert(node_holds_value(n.children@[p],id,t));
+    }
 }
 // f is o with the first preorder match of id, namely t, replaced by ft; nothing else differs.
 // f 是把 o 中前序首个匹配 id 的节点（即 t）换成 ft 的结果，其余皆同。
@@ -78,7 +91,8 @@ pub struct Node {
 /// 按前序查找首个身份匹配的节点，节点本身先于其子节点。
 fn find_node(node: &Node, id: NodeId) -> (result:Option<&Node>)
         ensures (result is None) == !node_holds(*node,id),
-            result matches Some(found) ==> node_relocated(*node,*node,id,*found,*found),
+            result matches Some(found) ==> node_relocated(*node,*node,id,*found,*found)
+                && node_holds_value(*node,id,*found),
         decreases *node,
     {
     if node.id.0 == id.0 {
@@ -98,6 +112,8 @@ fn find_node(node: &Node, id: NodeId) -> (result:Option<&Node>)
             proof {
                 let p=index as int;
                 assert(node_relocated(node.children@[p],node.children@[p],id,*found,*found));
+                assert(node_holds_value(node.children@[p],id,*found));
+                lemma_child_holds_value(*node,p,id,*found);
             }
             return Some(found);
         }

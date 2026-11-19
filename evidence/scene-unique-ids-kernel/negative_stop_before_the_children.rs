@@ -1,4 +1,5 @@
 use vstd::prelude::*;
+extern crate alloc;
 verus! {
 
 pub struct Canvas(u64);
@@ -127,6 +128,8 @@ pub enum SceneError {
     NodeNotFound(NodeId),
     DuplicateNode(NodeId),
     CannotRemoveRoot,
+    CannotMoveRoot,
+    MoveIntoDescendant(NodeId),
     NotText(NodeId),
     NotCanvas(NodeId),
     StaleVersion {

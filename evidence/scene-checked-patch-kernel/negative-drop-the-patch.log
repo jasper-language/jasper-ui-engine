@@ -2,42 +2,42 @@ verification results:: 0 verified, 1 errors (partial verification with `--verify
 note: verifying root module (selected functions)
 
 note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
-   --> <repo>/evidence/scene-checked-patch-kernel/negative_drop_the_patch.rs:960:1
-    |
-960 | fn apply_checked_patch<T: IdentitySet>(root:&mut Node,patch:ScenePatch,ids:&mut T)->(result:Result<(), SceneError>)
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-checked-patch-kernel/negative_drop_the_patch.rs:1357:1
+     |
+1357 | fn apply_checked_patch<T: IdentitySet>(root:&mut Node,patch:ScenePatch,ids:&mut T)->(result:Result<(), SceneError>)
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: postcondition not satisfied
-   --> <repo>/evidence/scene-checked-patch-kernel/negative_drop_the_patch.rs:962:17
-    |
-962 |           ensures patch_checked(*old(root),*final(root),patch,result),
-    |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
-963 | /     {
-964 | |     let ghost o=*root;
-965 | |     let ghost original=patch;
-966 | |     if let ScenePatch::Insert { node, .. } = &patch {
-...   |
-995 | |     result
-996 | | }
-    | |_- at the end of the function body
+    --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-checked-patch-kernel/negative_drop_the_patch.rs:1359:17
+     |
+1359 |           ensures patch_checked(*old(root),*final(root),patch,result),
+     |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+1360 | /     {
+1361 | |     let ghost o=*root;
+1362 | |     let ghost original=patch;
+1363 | |     if let ScenePatch::Insert { node, .. } = &patch {
+...    |
+1392 | |     result
+1393 | | }
+     | |_- at the end of the function body
 
 error: precondition not satisfied
-   --> <repo>/evidence/scene-checked-patch-kernel/negative_drop_the_patch.rs:990:31
-    |
-512 |         patch_applied(o,n,ScenePatch::Insert{parent:parent,index:index,node:node},patch_ok()),
-    |         ------------------------------------------------------------------------------------- failed precondition
+    --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-checked-patch-kernel/negative_drop_the_patch.rs:1387:31
+     |
+ 681 |         patch_applied(o,n,ScenePatch::Insert{parent:parent,index:index,node:node},patch_ok()),
+     |         ------------------------------------------------------------------------------------- failed precondition
 ...
-990 |             if result is Ok { lemma_insert_ok_ids(o,*root,parent,index,node); }
-    |                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1387 |             if result is Ok { lemma_insert_ok_ids(o,*root,parent,index,node); }
+     |                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: precondition not satisfied
-   --> <repo>/evidence/scene-checked-patch-kernel/negative_drop_the_patch.rs:992:13
-    |
-459 |     requires patch_applied(o,n,patch,r), !(patch is Insert),
-    |              -------------------------- failed precondition
+    --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-checked-patch-kernel/negative_drop_the_patch.rs:1389:13
+     |
+ 626 |     requires patch_applied(o,n,patch,r), !(patch is Insert),
+     |              -------------------------- failed precondition
 ...
-992 |             lemma_patch_keeps_ids(o,*root,original,result);
-    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1389 |             lemma_patch_keeps_ids(o,*root,original,result);
+     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: aborting due to 3 previous errors
 

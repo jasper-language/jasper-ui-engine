@@ -2,33 +2,33 @@ verification results:: 0 verified, 1 errors (partial verification with `--verify
 note: verifying root module (selected functions)
 
 note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
-   --> <repo>/evidence/scene-checked-patch-kernel/negative_skip_the_check.rs:960:1
-    |
-960 | fn apply_checked_patch<T: IdentitySet>(root:&mut Node,patch:ScenePatch,ids:&mut T)->(result:Result<(), SceneError>)
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-checked-patch-kernel/negative_skip_the_check.rs:1357:1
+     |
+1357 | fn apply_checked_patch<T: IdentitySet>(root:&mut Node,patch:ScenePatch,ids:&mut T)->(result:Result<(), SceneError>)
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: postcondition not satisfied
-   --> <repo>/evidence/scene-checked-patch-kernel/negative_skip_the_check.rs:962:17
-    |
-962 |           ensures patch_checked(*old(root),*final(root),patch,result),
-    |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
-963 | /     {
-964 | |     let ghost o=*root;
-965 | |     let ghost original=patch;
-966 | |     if let ScenePatch::Insert { node, .. } = &patch {
-...   |
-995 | |     result
-996 | | }
-    | |_- at the end of the function body
+    --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-checked-patch-kernel/negative_skip_the_check.rs:1359:17
+     |
+1359 |           ensures patch_checked(*old(root),*final(root),patch,result),
+     |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+1360 | /     {
+1361 | |     let ghost o=*root;
+1362 | |     let ghost original=patch;
+1363 | |     if let ScenePatch::Insert { node, .. } = &patch {
+...    |
+1392 | |     result
+1393 | | }
+     | |_- at the end of the function body
 
 error: precondition not satisfied
-   --> <repo>/evidence/scene-checked-patch-kernel/negative_skip_the_check.rs:990:31
-    |
-511 |     requires ids_distinct(preorder_ids(o)+preorder_ids(node)),
-    |              ------------------------------------------------ failed precondition
+    --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-checked-patch-kernel/negative_skip_the_check.rs:1387:31
+     |
+ 680 |     requires ids_distinct(preorder_ids(o)+preorder_ids(node)),
+     |              ------------------------------------------------ failed precondition
 ...
-990 |             if result is Ok { lemma_insert_ok_ids(o,*root,parent,index,node); }
-    |                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1387 |             if result is Ok { lemma_insert_ok_ids(o,*root,parent,index,node); }
+     |                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: aborting due to 2 previous errors
 

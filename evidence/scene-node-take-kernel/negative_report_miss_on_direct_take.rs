@@ -1,4 +1,5 @@
 use vstd::prelude::*;
+extern crate alloc;
 verus! {
 
 pub struct Canvas(u64);
@@ -10,6 +11,18 @@ broadcast use vstd::std_specs::vec::axiom_vec_index_decreases;
 
 pub open spec fn node_holds(n:Node,id:NodeId)->bool decreases n, {
     n.id==id || exists|i:int| #![trigger n.children@[i]] 0<=i<n.children@.len() && node_holds(n.children@[i],id)
+}
+pub open spec fn node_holds_value(n:Node,id:NodeId,t:Node)->bool decreases n, {
+    if n.id==id { t==n }
+    else { exists|i:int| #![trigger n.children@[i]] 0<=i<n.children@.len() && node_holds_value(n.children@[i],id,t) }
+}
+proof fn lemma_child_holds_value(n:Node,p:int,id:NodeId,t:Node)
+    requires n.id!=id, 0<=p<n.children@.len(), node_holds_value(n.children@[p],id,t),
+    ensures node_holds_value(n,id,t),
+{
+    assert(node_holds_value(n,id,t)) by {
+        assert(node_holds_value(n.children@[p],id,t));
+    }
 }
 // f is o with the first preorder match of id, namely t, replaced by ft; nothing else differs.
 // f 是把 o 中前序首个匹配 id 的节点（即 t）换成 ft 的结果，其余皆同。
@@ -53,24 +66,12 @@ pub open spec fn node_removed(o:Node,n:Node,id:NodeId)->bool decreases o, {
                 && node_removed(o.children@[p],n.children@[p],id)))
 }
 
-pub open spec fn node_holds_value(n:Node,id:NodeId,t:Node)->bool decreases n, {
-    if n.id==id { t==n }
-    else { exists|i:int| #![trigger n.children@[i]] 0<=i<n.children@.len() && node_holds_value(n.children@[i],id,t) }
-}
 proof fn lemma_child_holds(n:Node,p:int,id:NodeId)
     requires n.id!=id, 0<=p<n.children@.len(), node_holds(n.children@[p],id),
     ensures node_holds(n,id),
 {
     assert(node_holds(n,id)) by {
         assert(node_holds(n.children@[p],id));
-    }
-}
-proof fn lemma_child_holds_value(n:Node,p:int,id:NodeId,t:Node)
-    requires n.id!=id, 0<=p<n.children@.len(), node_holds_value(n.children@[p],id,t),
-    ensures node_holds_value(n,id,t),
-{
-    assert(node_holds_value(n,id,t)) by {
-        assert(node_holds_value(n.children@[p],id,t));
     }
 }
 proof fn lemma_node_below_holds(n:Node,id:NodeId)
@@ -101,6 +102,25 @@ proof fn lemma_holds_below(n:Node,id:NodeId)
         && node_holds(n.children@[p],id);
     if n.children@[p].id!=id { lemma_holds_below(n.children@[p],id); }
 }
+// Functional extraction result: `taken` is the exact subtree removed. Unlike the existential
+// node_holds_value relation, this also identifies which duplicate wins.
+pub open spec fn node_removed_value(o:Node,n:Node,id:NodeId,taken:Node)->bool decreases o, {
+    node_fields_same(o,n) && (
+        (exists|p:int| #![trigger o.children@[p]]
+            0<=p<o.children@.len() && o.children@[p].id==id
+            && (forall|j:int| #![trigger o.children@[j]] 0<=j<p ==> o.children@[j].id!=id)
+            && n.children@=~=o.children@.remove(p)
+            && taken==o.children@[p])
+        || ((forall|j:int| #![trigger o.children@[j]]
+                0<=j<o.children@.len() ==> o.children@[j].id!=id)
+            && n.children@.len()==o.children@.len()
+            && exists|p:int| #![trigger o.children@[p]]
+                0<=p<o.children@.len()
+                && (forall|j:int| #![trigger o.children@[j]] 0<=j<p ==> !node_below(o.children@[j],id))
+                && (forall|j:int| #![trigger o.children@[j]]
+                    0<=j<o.children@.len() && j!=p ==> node_same(o.children@[j],n.children@[j]))
+                && node_removed_value(o.children@[p],n.children@[p],id,taken)))
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct NodeId(pub u64);
@@ -126,7 +146,8 @@ pub struct Node {
 /// 按前序查找首个身份匹配的节点，节点本身先于其子节点。
 fn find_node(node: &Node, id: NodeId) -> (result:Option<&Node>)
         ensures (result is None) == !node_holds(*node,id),
-            result matches Some(found) ==> node_relocated(*node,*node,id,*found,*found),
+            result matches Some(found) ==> node_relocated(*node,*node,id,*found,*found)
+                && node_holds_value(*node,id,*found),
         decreases *node,
     {
     if node.id.0 == id.0 {
@@ -146,6 +167,8 @@ fn find_node(node: &Node, id: NodeId) -> (result:Option<&Node>)
             proof {
                 let p=index as int;
                 assert(node_relocated(node.children@[p],node.children@[p],id,*found,*found));
+                assert(node_holds_value(node.children@[p],id,*found));
+                lemma_child_holds_value(*node,p,id,*found);
             }
             return Some(found);
         }
@@ -260,7 +283,9 @@ fn remove_node(parent: &mut Node, id: NodeId) -> (result:bool)
 fn take_node(parent: &mut Node, id: NodeId) -> (result:Option<Node>)
         requires (*old(parent)).id != id,
         ensures match result {
-            Some(taken) => node_removed(*old(parent),*final(parent),id) && node_holds_value(*old(parent),id,taken),
+            Some(taken) => node_removed(*old(parent),*final(parent),id)
+                && node_removed_value(*old(parent),*final(parent),id,taken)
+                && node_holds_value(*old(parent),id,taken),
             None => node_same(*old(parent),*final(parent)) && !node_below(*old(parent),id),
         },
         decreases *old(parent),
@@ -282,6 +307,10 @@ fn take_node(parent: &mut Node, id: NodeId) -> (result:Option<Node>)
                 assert(parent.children@=~=start.children@.remove(p));
                 assert(node_holds_value(start.children@[p],id,taken));
                 lemma_child_holds_value(start,p,id,taken);
+                assert(node_removed_value(start,*parent,id,taken)) by {
+                    assert(parent.children@=~=start.children@.remove(p));
+                    assert(taken==start.children@[p]);
+                }
             }
             return None;
         }
@@ -323,6 +352,10 @@ fn take_node(parent: &mut Node, id: NodeId) -> (result:Option<Node>)
                     assert(start.id != id);
                     lemma_child_holds_value(start,p,id,moved);
                     assert(node_removed(start,*parent,id));
+                    assert(node_removed_value(start,*parent,id,moved)) by {
+                        assert(parent.children@.len()==start.children@.len());
+                        assert(node_removed_value(start.children@[p],parent.children@[p],id,moved));
+                    }
                 } else {
                     assert(!node_below(start.children@[p],id));
                     assert(node_holds(start.children@[p],id));

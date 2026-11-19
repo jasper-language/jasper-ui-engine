@@ -532,32 +532,8 @@ fn apply_tree_patch(root: &mut Node, patch: ScenePatch) -> Result<(), SceneError
             None => Err(SceneError::NodeNotFound(id)),
         },
         ScenePatch::Move { id, parent, index } => {
-            let moved = find_node(&*root, id);
-            let parent_present = find_node(&*root, parent).is_some();
-            let parent_in_moved = moved
-                .is_some_and(|moved| find_node(moved, parent).is_some());
-            if let Some(failure) = scene_move_failure(
-                root.id.0 == id.0,
-                moved.is_some(),
-                parent_present,
-                parent_in_moved,
-                id,
-                parent,
-            ) {
-                return Err(failure);
-            }
-            if moved.is_none() {
-                return Err(SceneError::NodeNotFound(id));
-            }
-            let Some(moved) = take_node(root, id) else {
-                return Err(SceneError::NodeNotFound(id));
-            };
-            if insert_node_at(root, parent, index, moved) {
-                Ok(())
-            } else {
-                Err(SceneError::NodeNotFound(parent))
-            }
-        }
+            move_node_at(root, id, parent, index)
+        },
         ScenePatch::UpdateText { id, text } => match find_node_mut(root, id) {
             Some(node) => match &mut node.kind {
                 NodeKind::Text(existing) => {
@@ -689,6 +665,45 @@ fn remove_node(parent: &mut Node, id: NodeId) -> bool {
     false
 }
 // END VERIFIED SCENE NODE REMOVE KERNEL
+
+// BEGIN VERIFIED SCENE MOVE KERNEL
+/// Admits, extracts and reinserts one existing subtree. The extracted value is moved into the
+/// destination, so the successful result is exactly removal followed by insertion.
+fn move_node_at(
+    root: &mut Node,
+    id: NodeId,
+    parent: NodeId,
+    index: usize,
+) -> Result<(), SceneError> {
+    let moved = find_node(&*root, id);
+    let parent_present = find_node(&*root, parent).is_some();
+    let parent_in_moved = match moved {
+        Some(moved) => find_node(moved, parent).is_some(),
+        None => false,
+    };
+    let _source_match = moved;
+    match scene_move_failure(
+        root.id.0 == id.0,
+        moved.is_some(),
+        parent_present,
+        parent_in_moved,
+        id,
+        parent,
+    ) {
+        Some(failure) => return Err(failure),
+        None => {}
+    }
+    let Some(moved) = take_node(root, id) else {
+        return Err(SceneError::NodeNotFound(id));
+    };
+    let inserted = insert_node_at(root, parent, index, moved);
+    if inserted {
+        Ok(())
+    } else {
+        Err(SceneError::NodeNotFound(parent))
+    }
+}
+// END VERIFIED SCENE MOVE KERNEL
 
 #[cfg(test)]
 mod tests {

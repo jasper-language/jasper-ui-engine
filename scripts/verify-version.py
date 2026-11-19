@@ -2950,6 +2950,18 @@ KERNELS["scene-node-find"] = {
     "spec_prelude":"""pub open spec fn node_holds(n:Node,id:NodeId)->bool decreases n, {
     n.id==id || exists|i:int| #![trigger n.children@[i]] 0<=i<n.children@.len() && node_holds(n.children@[i],id)
 }
+pub open spec fn node_holds_value(n:Node,id:NodeId,t:Node)->bool decreases n, {
+    if n.id==id { t==n }
+    else { exists|i:int| #![trigger n.children@[i]] 0<=i<n.children@.len() && node_holds_value(n.children@[i],id,t) }
+}
+proof fn lemma_child_holds_value(n:Node,p:int,id:NodeId,t:Node)
+    requires n.id!=id, 0<=p<n.children@.len(), node_holds_value(n.children@[p],id,t),
+    ensures node_holds_value(n,id,t),
+{
+    assert(node_holds_value(n,id,t)) by {
+        assert(node_holds_value(n.children@[p],id,t));
+    }
+}
 // f is o with the first preorder match of id, namely t, replaced by ft; nothing else differs.
 // f 是把 o 中前序首个匹配 id 的节点（即 t）换成 ft 的结果，其余皆同。
 pub open spec fn node_relocated(o:Node,f:Node,id:NodeId,t:Node,ft:Node)->bool decreases o, {
@@ -2967,7 +2979,8 @@ pub open spec fn node_relocated(o:Node,f:Node,id:NodeId,t:Node,ft:Node)->bool de
     "signature":"fn find_node(node: &Node, id: NodeId) -> Option<&Node> {",
     "contract":"""fn find_node(node: &Node, id: NodeId) -> (result:Option<&Node>)
         ensures (result is None) == !node_holds(*node,id),
-            result matches Some(found) ==> node_relocated(*node,*node,id,*found,*found),
+            result matches Some(found) ==> node_relocated(*node,*node,id,*found,*found)
+                && node_holds_value(*node,id,*found),
         decreases *node,
     {""",
     "extra_annotations":[
@@ -2984,6 +2997,8 @@ pub open spec fn node_relocated(o:Node,f:Node,id:NodeId,t:Node,ft:Node)->bool de
             proof {
                 let p=index as int;
                 assert(node_relocated(node.children@[p],node.children@[p],id,*found,*found));
+                assert(node_holds_value(node.children@[p],id,*found));
+                lemma_child_holds_value(*node,p,id,*found);
             }
             return Some(found);
         }"""),
@@ -3024,24 +3039,12 @@ pub open spec fn node_relocated(o:Node,f:Node,id:NodeId,t:Node,ft:Node)->bool de
 KERNELS["scene-node-take"] = {
     "source":"src/scene.rs", "marker":"SCENE NODE TAKE",
     "property":"UI-SCENE-NODE-TAKE-001",
-    "spec_prelude":"""pub open spec fn node_holds_value(n:Node,id:NodeId,t:Node)->bool decreases n, {
-    if n.id==id { t==n }
-    else { exists|i:int| #![trigger n.children@[i]] 0<=i<n.children@.len() && node_holds_value(n.children@[i],id,t) }
-}
-proof fn lemma_child_holds(n:Node,p:int,id:NodeId)
+    "spec_prelude":"""proof fn lemma_child_holds(n:Node,p:int,id:NodeId)
     requires n.id!=id, 0<=p<n.children@.len(), node_holds(n.children@[p],id),
     ensures node_holds(n,id),
 {
     assert(node_holds(n,id)) by {
         assert(node_holds(n.children@[p],id));
-    }
-}
-proof fn lemma_child_holds_value(n:Node,p:int,id:NodeId,t:Node)
-    requires n.id!=id, 0<=p<n.children@.len(), node_holds_value(n.children@[p],id,t),
-    ensures node_holds_value(n,id,t),
-{
-    assert(node_holds_value(n,id,t)) by {
-        assert(node_holds_value(n.children@[p],id,t));
     }
 }
 proof fn lemma_node_below_holds(n:Node,id:NodeId)
@@ -3072,12 +3075,33 @@ proof fn lemma_holds_below(n:Node,id:NodeId)
         && node_holds(n.children@[p],id);
     if n.children@[p].id!=id { lemma_holds_below(n.children@[p],id); }
 }
+// Functional extraction result: `taken` is the exact subtree removed. Unlike the existential
+// node_holds_value relation, this also identifies which duplicate wins.
+pub open spec fn node_removed_value(o:Node,n:Node,id:NodeId,taken:Node)->bool decreases o, {
+    node_fields_same(o,n) && (
+        (exists|p:int| #![trigger o.children@[p]]
+            0<=p<o.children@.len() && o.children@[p].id==id
+            && (forall|j:int| #![trigger o.children@[j]] 0<=j<p ==> o.children@[j].id!=id)
+            && n.children@=~=o.children@.remove(p)
+            && taken==o.children@[p])
+        || ((forall|j:int| #![trigger o.children@[j]]
+                0<=j<o.children@.len() ==> o.children@[j].id!=id)
+            && n.children@.len()==o.children@.len()
+            && exists|p:int| #![trigger o.children@[p]]
+                0<=p<o.children@.len()
+                && (forall|j:int| #![trigger o.children@[j]] 0<=j<p ==> !node_below(o.children@[j],id))
+                && (forall|j:int| #![trigger o.children@[j]]
+                    0<=j<o.children@.len() && j!=p ==> node_same(o.children@[j],n.children@[j]))
+                && node_removed_value(o.children@[p],n.children@[p],id,taken)))
+}
 """,
     "signature":"fn take_node(parent: &mut Node, id: NodeId) -> Option<Node> {",
     "contract":"""fn take_node(parent: &mut Node, id: NodeId) -> (result:Option<Node>)
         requires (*old(parent)).id != id,
         ensures match result {
-            Some(taken) => node_removed(*old(parent),*final(parent),id) && node_holds_value(*old(parent),id,taken),
+            Some(taken) => node_removed(*old(parent),*final(parent),id)
+                && node_removed_value(*old(parent),*final(parent),id,taken)
+                && node_holds_value(*old(parent),id,taken),
             None => node_same(*old(parent),*final(parent)) && !node_below(*old(parent),id),
         },
         decreases *old(parent),
@@ -3099,6 +3123,10 @@ proof fn lemma_holds_below(n:Node,id:NodeId)
                 assert(parent.children@=~=start.children@.remove(p));
                 assert(node_holds_value(start.children@[p],id,taken));
                 lemma_child_holds_value(start,p,id,taken);
+                assert(node_removed_value(start,*parent,id,taken)) by {
+                    assert(parent.children@=~=start.children@.remove(p));
+                    assert(taken==start.children@[p]);
+                }
             }
             return Some(taken);"""),
         ("    index = 0;\n    while index < parent.children.len() {","""    proof { node_same_refl(start); }
@@ -3137,6 +3165,10 @@ proof fn lemma_holds_below(n:Node,id:NodeId)
                     assert(start.id != id);
                     lemma_child_holds_value(start,p,id,moved);
                     assert(node_removed(start,*parent,id));
+                    assert(node_removed_value(start,*parent,id,moved)) by {
+                        assert(parent.children@.len()==start.children@.len());
+                        assert(node_removed_value(start.children@[p],parent.children@[p],id,moved));
+                    }
                 } else {
                     assert(!node_below(start.children@[p],id));
                     assert(node_holds(start.children@[p],id));
@@ -3187,6 +3219,101 @@ KERNELS["scene-node-insert"] = {
         ("report-hit-on-miss","        return false;","        return true;"),
         ("drop-insert","    parent_node.children.insert(index, node);","    // insertion omitted"),
         ("ignore-clamp","    let index = if index < len { index } else { len };","    let index = if index < len { index } else { 0 };"),
+    ],
+}
+
+
+KERNELS["scene-move"] = {
+    "source":"src/scene.rs", "marker":"SCENE MOVE",
+    "property":"UI-SCENE-MOVE-001",
+    "spec_prelude":"""pub open spec fn move_succeeded(o:Node,n:Node,id:NodeId,parent:NodeId,index:usize)->bool {
+    exists|moved:Node,removed:Node,target:Node,inserted:Node|
+        #![trigger node_removed_value(o,removed,id,moved), node_relocated(removed,n,parent,target,inserted)]
+        node_removed(o,removed,id)
+        && node_removed_value(o,removed,id,moved)
+        && node_relocated(removed,n,parent,target,inserted)
+        && node_fields_same(target,inserted)
+        && inserted.children@==target.children@.insert(
+            if index<target.children@.len() {index as int} else {target.children@.len() as int},moved)
+}
+pub open spec fn move_applied(
+    o:Node,n:Node,id:NodeId,parent:NodeId,index:usize,
+    result:Result<(),SceneError>)->bool {
+    match result {
+        Ok(_) => move_succeeded(o,n,id,parent,index),
+        Err(SceneError::CannotMoveRoot) => o.id==id && n==o,
+        Err(SceneError::NodeNotFound(missing)) =>
+            (missing==id && !node_holds(o,id) && n==o)
+            || (missing==parent && !node_holds(o,parent) && n==o)
+            || (missing==parent && exists|moved:Node,removed:Node|
+                #![trigger node_removed_value(o,removed,id,moved)]
+                node_removed_value(o,removed,id,moved) && n==removed),
+        Err(SceneError::MoveIntoDescendant(moved)) => moved==id && n==o,
+        Err(_) => false,
+    }
+}
+""",
+    "signature":"""fn move_node_at(
+    root: &mut Node,
+    id: NodeId,
+    parent: NodeId,
+    index: usize,
+) -> Result<(), SceneError> {""",
+    "contract":"""fn move_node_at(
+    root: &mut Node,
+    id: NodeId,
+    parent: NodeId,
+    index: usize,
+) -> (result: Result<(), SceneError>)
+    ensures move_applied(*old(root),*final(root),id,parent,index,result),
+{""",
+    "extra_annotations":[
+        ("    let moved = find_node(&*root, id);\n    let parent_present","""    let ghost start=*root;
+    let moved = find_node(&*root, id);
+    let parent_present"""),
+        ("    let _source_match = moved;","    let ghost source_match=moved;\n    let _source_match = moved;"),
+        ("        Some(failure) => return Err(failure),","""        Some(failure) => {
+            proof {
+                assert(*root==start);
+                assert(move_applied(start,start,id,parent,index,Err(failure)));
+            }
+            return Err(failure);
+        }"""),
+        ("        None => {}\n    }\n    let Some(moved) = take_node(root, id) else {\n        return Err(SceneError::NodeNotFound(id));\n    };","""        None => {
+            proof { assert(moved.is_some()); }
+        }
+    }
+    let Some(moved) = take_node(root, id) else {
+        proof {
+            assert(start.id!=id);
+            lemma_holds_below(start,id);
+        }
+        return Err(SceneError::NodeNotFound(id));
+    };"""),
+        ("    let inserted = insert_node_at(root, parent, index, moved);\n    if inserted {\n        Ok(())\n    } else {\n        Err(SceneError::NodeNotFound(parent))\n    }","""    let ghost extracted=moved;
+    let ghost removed_tree=*root;
+    let inserted = insert_node_at(root, parent, index, moved);
+    if inserted {
+        proof {
+            assert(move_succeeded(start,*root,id,parent,index));
+            assert(move_applied(start,*root,id,parent,index,Ok(())));
+        }
+        Ok(())
+    } else {
+        proof {
+            assert(!node_holds(removed_tree,parent));
+            assert(move_applied(start,*root,id,parent,index,Err(SceneError::NodeNotFound(parent))));
+        }
+        Err(SceneError::NodeNotFound(parent))
+    }"""),
+    ],
+    "depends":["scene-move-admission","scene-node-find","scene-node-remove","scene-node-take","scene-node-insert"],
+    "evidence":"scene-move-kernel", "function_count":1,
+    "scope":"Exact production Move admission plus subtree extraction and insertion in one callable kernel: success is the original subtree removed and exactly that value inserted at the clamped index under the first surviving matching parent; every admission failure leaves the tree unchanged. Identity uniqueness, whole-batch rollback, recursive depth/stack use, allocation failure and the outer clone/staging transaction are outside this kernel",
+    "mutations":[],
+    "refused_mutations":[
+        ("drop-extracted-subtree","    let inserted = insert_node_at(root, parent, index, moved);","    let inserted = insert_node_at(root, parent, index, Node { id:NodeId(999), kind:NodeKind::Container, style:Style(0), semantics:Semantics(0), scroll:Point(0), children:Vec::new() });","assertion failed"),
+        ("ignore-final-index","    let inserted = insert_node_at(root, parent, index, moved);","    let inserted = insert_node_at(root, parent, 0, moved);","assertion failed"),
     ],
 }
 
@@ -3272,6 +3399,7 @@ pub open spec fn patch_applied(o:Node,n:Node,patch:ScenePatch,r:Result<(),SceneE
         ScenePatch::SetScroll{id,offset} => patch_updated(o,n,id,r,|t:Node,f:Node| f==(Node{scroll:offset,..t})),
         ScenePatch::UpdateText{id,text} => patch_kind_set(o,n,id,r,|k:NodeKind| k is Text,NodeKind::Text(text),SceneError::NotText(id)),
         ScenePatch::SetCanvas{id,canvas} => patch_kind_set(o,n,id,r,|k:NodeKind| k is Canvas,NodeKind::Canvas(canvas),SceneError::NotCanvas(id)),
+        ScenePatch::Move{id,parent,index} => move_applied(o,n,id,parent,index,r),
         ScenePatch::Remove{id} => if o.id==id { n==o && r==patch_err(SceneError::CannotRemoveRoot) }
             else if node_below(o,id) { r==patch_ok() && node_removed(o,n,id) }
             else { node_same(o,n) && r==patch_err(SceneError::NodeNotFound(id)) },
@@ -3286,23 +3414,17 @@ pub open spec fn patch_applied(o:Node,n:Node,patch:ScenePatch,r:Result<(),SceneE
         ('                node.semantics = semantics;\n                Ok(())','                let ghost t=*node;\n                node.semantics = semantics;\n                proof { assert(node_relocated(*old(root),*final(root),id,t,*node)); }\n                Ok(())'),
         ('                node.style = style;\n                Ok(())','                let ghost t=*node;\n                node.style = style;\n                proof { assert(node_relocated(*old(root),*final(root),id,t,*node)); }\n                Ok(())'),
         ('                node.scroll = offset;\n                Ok(())','                let ghost t=*node;\n                node.scroll = offset;\n                proof { assert(node_relocated(*old(root),*final(root),id,t,*node)); }\n                Ok(())'),
-        ('                let len = parent_node.children.len();','                let ghost t=*parent_node;\n                let len = parent_node.children.len();'),
-        ('                parent_node.children.insert(index, node);\n                Ok(())','                parent_node.children.insert(index, node);\n                proof { assert(node_relocated(*old(root),*final(root),parent,t,*parent_node)); }\n                Ok(())'),
     ],
-    "depends":["scene-patch-type","scene-error-type","scene-node-find","scene-node-remove"], "evidence":"scene-patch-kernel", "function_count":1,
-    "scope":"Exact production match over every real ScenePatch variant, on the real Node, NodeKind, ScenePatch and SceneError declarations with Canvas, Style, Semantics and Point replaced by opaque values the kernel cannot read: an update of an absent identity reports NodeNotFound and leaves the tree; a hit rewrites exactly the named field of the node find_node_mut lends and nothing else; UpdateText and SetCanvas write only a node of the matching kind and otherwise report the refusal with the node unchanged; Insert places the node under the first match at the index clamped to the child count; Remove refuses the root, removes the first match otherwise, and reports NodeNotFound with the tree structurally the same on a miss. Not proved: the identity check apply_one runs before Insert, apply_batch_at's version write and swap, Scene clone, destructors, recursion depth.",
+    "depends":["scene-patch-type","scene-error-type","scene-node-find","scene-node-remove","scene-move"], "evidence":"scene-patch-kernel", "function_count":1,
+    "scope":"Exact production match over every real ScenePatch variant, on the real Node, NodeKind, ScenePatch and SceneError declarations with Canvas, Style, Semantics and Point replaced by opaque values the kernel cannot read: an update of an absent identity reports NodeNotFound and leaves the tree; a hit rewrites exactly the named field of the node find_node_mut lends and nothing else; UpdateText and SetCanvas write only a node of the matching kind and otherwise report the refusal with the node unchanged; Insert places the node under the first match at the index clamped to the child count; Move delegates to the proved production helper and therefore carries its exact extracted-subtree insertion result; Remove refuses the root, removes the first match otherwise, and reports NodeNotFound with the tree structurally the same on a miss. Not proved: the identity check apply_one runs before Insert, apply_batch_at's version write and swap, Scene clone, destructors, recursion depth.",
     "mutations":[
-                 ('insert-clamps-to-front','let index = if index < len { index } else { len };','let index = if index < len { index } else { 0 };'),
-                 ('insert-ignores-index','let index = if index < len { index } else { len };','let index = if index < len { len } else { len };'),
-                 ('insert-ok-on-miss','None => Err(SceneError::NodeNotFound(parent)),','None => Ok(()),'),
-                 ('insert-wrong-miss-identity','None => Err(SceneError::NodeNotFound(parent)),','None => Err(SceneError::NodeNotFound(NodeId(0))),'),
-                 ('insert-rewrites-parent','parent_node.children.insert(index, node);','parent_node.children.insert(index, node);\n                parent_node.id=NodeId(0);'),
+                 ('move-swaps-source-and-target','move_node_at(root, id, parent, index)','move_node_at(root, parent, id, index)'),
                  ('semantics-not-written','                node.semantics = semantics;\n',''),
                  ('style-not-written','                node.style = style;\n',''),
                  ('scroll-not-written','                node.scroll = offset;\n',''),
                  ('style-also-writes-scroll','node.style = style;','node.style = style;\n                node.scroll=Point(0);'),
                  ('style-finds-another-identity','ScenePatch::UpdateStyle { id, style } => match find_node_mut(root, id) {','ScenePatch::UpdateStyle { id, style } => match find_node_mut(root, NodeId(0)) {'),
-                 ('scroll-ok-on-miss','                Ok(())\n            }\n            None => Err(SceneError::NodeNotFound(id)),\n        },\n        ScenePatch::UpdateText','                Ok(())\n            }\n            None => Ok(()),\n        },\n        ScenePatch::UpdateText'),
+                 ('scroll-ok-on-miss','                node.scroll = offset;\n                proof { assert(node_relocated(*old(root),*final(root),id,t,*node)); }\n                Ok(())\n            }\n            None => Err(SceneError::NodeNotFound(id)),\n        },\n        ScenePatch::Move','                node.scroll = offset;\n                proof { assert(node_relocated(*old(root),*final(root),id,t,*node)); }\n                Ok(())\n            }\n            None => Ok(()),\n        },\n        ScenePatch::Move'),
                  ('text-not-written','                    *existing = text;\n',''),
                  ('text-admits-other-kinds','_ => Err(SceneError::NotText(id)),','_ => Ok(()),'),
                  ('text-reports-canvas-refusal','_ => Err(SceneError::NotText(id)),','_ => Err(SceneError::NotCanvas(id)),'),
@@ -3315,7 +3437,7 @@ pub open spec fn patch_applied(o:Node,n:Node,patch:ScenePatch,r:Result<(),SceneE
                  ('remove-reports-miss-as-ok','            } else {\n                Err(SceneError::NodeNotFound(id))\n            }','            } else {\n                Ok(())\n            }'),
                  ('remove-reports-hit-as-miss','if remove_node(root, id) {\n                Ok(())','if remove_node(root, id) {\n                Err(SceneError::NodeNotFound(id))'),
     ],
-    "refused_mutations":[("insert-under-the-root","match find_node_mut(root, parent) {","match Some(root) {","assertion failed")],
+    "refused_mutations":[],
 }
 
 
@@ -3582,6 +3704,7 @@ pub open spec fn patch_keeps_ids(o:Node,n:Node,patch:ScenePatch,r:Result<(),Scen
         ScenePatch::Remove{id} => if r is Ok {
                 exists|t:Node| #![trigger preorder_ids(t)] t.id==id && spliced_ids(preorder_ids(o),preorder_ids(t),preorder_ids(n))
             } else { preorder_ids(n)==preorder_ids(o) },
+        ScenePatch::Move{..} => true,
         _ => preorder_ids(n)==preorder_ids(o),
     }
 }
@@ -3599,7 +3722,9 @@ pub open spec fn patch_checked(o:Node,n:Node,patch:ScenePatch,r:Result<(),SceneE
                 n==o && exists|d:NodeId| #![trigger order.contains(d)] order.contains(d) && r==patch_err(SceneError::DuplicateNode(d))
             }
         }
-        _ => patch_applied(o,n,patch,r) && patch_keeps_ids(o,n,patch,r) && (ids_distinct(preorder_ids(o)) ==> ids_distinct(preorder_ids(n))),
+        ScenePatch::Move{..} => patch_applied(o,n,patch,r) && patch_keeps_ids(o,n,patch,r),
+        _ => patch_applied(o,n,patch,r) && patch_keeps_ids(o,n,patch,r)
+            && (ids_distinct(preorder_ids(o)) ==> ids_distinct(preorder_ids(n))),
     }
 }
 pub open spec fn ids_span(n:Node,i:int,p:int)->Seq<NodeId> decreases p-i {
@@ -3834,6 +3959,71 @@ proof fn lemma_distinct_inserted(a:Seq<NodeId>,x:Seq<NodeId>,b:Seq<NodeId>)
         lemma_distinct_any(p,pi,pj);
     };
 }
+proof fn lemma_distinct_moved_to_end(a:Seq<NodeId>,x:Seq<NodeId>,b:Seq<NodeId>)
+    requires ids_distinct(a+x+b),
+    ensures ids_distinct(a+b+x),
+{
+    let p=a+x+b;
+    let s=a+b+x;
+    assert forall|i:int,j:int| #![trigger s[i],s[j]] 0<=i<j<s.len() implies s[i]!=s[j] by {
+        let pi=if i<a.len() { i } else if i<a.len()+b.len() { i+x.len() } else { i-b.len() };
+        let pj=if j<a.len() { j } else if j<a.len()+b.len() { j+x.len() } else { j-b.len() };
+        assert(s[i]==p[pi]);
+        assert(s[j]==p[pj]);
+        lemma_distinct_any(p,pi,pj);
+    };
+}
+proof fn lemma_removed_value_sequence(o:Node,n:Node,id:NodeId,taken:Node)->(w:(Seq<NodeId>,Seq<NodeId>))
+    requires node_removed_value(o,n,id,taken),
+    ensures preorder_ids(o)==w.0+preorder_ids(taken)+w.1, preorder_ids(n)==w.0+w.1,
+    decreases o,
+{
+    if exists|p:int| #![trigger o.children@[p]]
+        0<=p<o.children@.len() && o.children@[p].id==id
+    {
+        let p=choose|p:int| #![trigger o.children@[p]]
+            0<=p<o.children@.len() && o.children@[p].id==id
+            && (forall|j:int| #![trigger o.children@[j]] 0<=j<p ==> o.children@[j].id!=id)
+            && n.children@=~=o.children@.remove(p)
+            && taken==o.children@[p];
+        lemma_removed_direct(o,n,p)
+    } else {
+        let p=choose|p:int| #![trigger o.children@[p]]
+            0<=p<o.children@.len()
+            && (forall|j:int| #![trigger o.children@[j]] 0<=j<p ==> !node_below(o.children@[j],id))
+            && (forall|j:int| #![trigger o.children@[j]]
+                0<=j<o.children@.len() && j!=p ==> node_same(o.children@[j],n.children@[j]))
+            && node_removed_value(o.children@[p],n.children@[p],id,taken);
+        let inner=lemma_removed_value_sequence(o.children@[p],n.children@[p],id,taken);
+        lemma_removed_nested(o,n,p,preorder_ids(taken),inner.0,inner.1)
+    }
+}
+proof fn lemma_move_keeps_distinct(o:Node,n:Node,id:NodeId,parent:NodeId,index:usize)
+    requires ids_distinct(preorder_ids(o)), move_succeeded(o,n,id,parent,index),
+    ensures ids_distinct(preorder_ids(n)),
+{
+    let (moved,removed,target,inserted)=choose|moved:Node,removed:Node,target:Node,inserted:Node|
+        #![trigger node_removed_value(o,removed,id,moved), node_relocated(removed,n,parent,target,inserted)]
+        node_removed(o,removed,id)
+        && node_removed_value(o,removed,id,moved)
+        && node_relocated(removed,n,parent,target,inserted)
+        && node_fields_same(target,inserted)
+        && inserted.children@==target.children@.insert(
+            if index<target.children@.len() {index as int} else {target.children@.len() as int},moved);
+    let removed_ids=lemma_removed_value_sequence(o,removed,id,moved);
+    lemma_distinct_removed(removed_ids.0,preorder_ids(moved),removed_ids.1);
+    let relocated=lemma_relocated_ids(removed,n,parent,target,inserted);
+    let k=if index<target.children@.len() {index as int} else {target.children@.len() as int};
+    lemma_inserted_child(target,inserted,k,moved);
+    let middle=seq![target.id]+ids_span(target,0,k);
+    let left=relocated.0+middle;
+    let right=children_ids(target,k)+relocated.1;
+    assert(preorder_ids(removed)==left+right);
+    assert(preorder_ids(n)==left+preorder_ids(moved)+right);
+    lemma_distinct_moved_to_end(removed_ids.0,preorder_ids(moved),removed_ids.1);
+    assert(ids_distinct(left+right+preorder_ids(moved)));
+    lemma_distinct_inserted(left,preorder_ids(moved),right);
+}
 // The written node keeps its identity and its children, so the whole sequence stays.
 // 被写入的节点保留身份与子节点，整个序列不变。
 proof fn lemma_written_keeps_ids(o:Node,n:Node,id:NodeId,t:Node,f:Node)
@@ -3845,7 +4035,8 @@ proof fn lemma_written_keeps_ids(o:Node,n:Node,id:NodeId,t:Node,f:Node)
 }
 proof fn lemma_patch_keeps_ids(o:Node,n:Node,patch:ScenePatch,r:Result<(),SceneError>)
     requires patch_applied(o,n,patch,r), !(patch is Insert),
-    ensures patch_keeps_ids(o,n,patch,r), ids_distinct(preorder_ids(o)) ==> ids_distinct(preorder_ids(n)),
+    ensures patch_keeps_ids(o,n,patch,r),
+        !(patch is Move) ==> (ids_distinct(preorder_ids(o)) ==> ids_distinct(preorder_ids(n))),
 {
     match patch {
         ScenePatch::Insert{..} => {}
@@ -3881,6 +4072,7 @@ proof fn lemma_patch_keeps_ids(o:Node,n:Node,patch:ScenePatch,r:Result<(),SceneE
                 lemma_written_keeps_ids(o,n,id,t,f);
             }
         }
+        ScenePatch::Move{..} => {}
         ScenePatch::Remove{id} => {
             if o.id!=id {
                 if node_below(o,id) {
@@ -4095,6 +4287,8 @@ proof fn lemma_step_keeps_distinct(o:Node,n:Node,patch:ScenePatch)
             let d=choose|d:NodeId| #![trigger (preorder_ids(o)+preorder_ids(node)).contains(d)] (preorder_ids(o)+preorder_ids(node)).contains(d) && Ok::<(),SceneError>(())==patch_err(SceneError::DuplicateNode(d));
             assert(false);
         }
+    } else if let ScenePatch::Move{id,parent,index}=patch {
+        lemma_move_keeps_distinct(o,n,id,parent,index);
     }
 }
 proof fn lemma_fold_distinct_at(start:Scene,patches:Seq<ScenePatch>,trace:Seq<Scene>,i:int)
@@ -5461,7 +5655,7 @@ def main():
         (evidence / "dependency-mapping.json").write_text(json.dumps({"package":"winit", "version":"0.30.13", "actual_source":str(candidates[0]), "source_sha256":sha(candidates[0].read_bytes()), "declaration_sha256":sha(declaration.encode()), "declaration_exact":True},indent=2)+"\n")
     extracted = {name: extract(root, name) for name in ordered}
     specs = "\n".join(KERNELS[name].get("spec_prelude", "") for name in ordered)
-    proof = "use vstd::prelude::*;\nverus! {\n" + specs + "\n" + "\n".join(
+    proof = "use vstd::prelude::*;\nextern crate alloc;\nverus! {\n" + specs + "\n" + "\n".join(
         extracted[name][1] for name in ordered) + "\n}\n"
     proof_path = evidence / "kernel.rs"
     proof_path.write_text(proof)

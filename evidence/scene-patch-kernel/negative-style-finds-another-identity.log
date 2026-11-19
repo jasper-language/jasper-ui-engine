@@ -1,27 +1,27 @@
-verification results:: 14 verified, 1 errors
+verification results:: 26 verified, 1 errors
 note: function body check: not all errors may have been reported; rerun with a higher value for --multiple-errors to find other potential errors in this function
-   --> <repo>/evidence/scene-patch-kernel/negative_style_finds_another_identity.rs:293:1
+   --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-patch-kernel/negative_style_finds_another_identity.rs:621:1
     |
-293 | fn apply_tree_patch(root: &mut Node, patch: ScenePatch) -> (result:Result<(), SceneError>)
+621 | fn apply_tree_patch(root: &mut Node, patch: ScenePatch) -> (result:Result<(), SceneError>)
     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: postcondition not satisfied
-   --> <repo>/evidence/scene-patch-kernel/negative_style_finds_another_identity.rs:294:17
+   --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-patch-kernel/negative_style_finds_another_identity.rs:622:17
     |
-294 |           ensures patch_applied(*old(root),*final(root),patch,result),
+622 |           ensures patch_applied(*old(root),*final(root),patch,result),
     |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
-295 | /     {
-296 | |     match patch {
-297 | |         ScenePatch::Insert {
-298 | |             parent,
+623 | /     {
+624 | |     match patch {
+625 | |         ScenePatch::Insert {
+626 | |             parent,
 ...   |
-370 | | }
+697 | | }
     | |_- at the end of the function body
 
 error: assertion failed
-   --> <repo>/evidence/scene-patch-kernel/negative_style_finds_another_identity.rs:325:32
+   --> /home/auth/Documents/jasper/jasper-ui-engine-ir-rust/evidence/scene-patch-kernel/negative_style_finds_another_identity.rs:649:32
     |
-325 |                 proof { assert(node_relocated(*old(root),*final(root),id,t,*node)); }
+649 |                 proof { assert(node_relocated(*old(root),*final(root),id,t,*node)); }
     |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ assertion failed
 
 error: aborting due to 2 previous errors

@@ -38,9 +38,10 @@ Loom 当前执行实际生产函数体的调用侧调度场景：两个线程共
 |---|---|---|---|
 | UI-TXN-VERSION-001 | `scene.rs::next_scene_version` | 对所有 u64：小于最大值时返回严格增加 1 的版本；最大值时拒绝；无回绕/溢出 | 以 `evidence/version-kernel/report.json` 的实际结果和源码哈希为准；报告缺失/失配即 not_verified |
 | UI-TXN-ADMISSION-001 | `scene.rs::decide_scene_version` 及版本计算依赖 | 陈旧版本优先拒绝；匹配空批不推进；匹配非空批耗尽拒绝；可推进时精确加 1 | proved，两个生产函数体同时验证，2 verified/0 errors；错误准入反例被拒；需匹配当前源码哈希 |
-| UI-SCENE-MOVE-ADMISSION-001 | `scene.rs::scene_move_failure` | Move 失败优先级严格为根节点 → 源节点不存在 → 目标父节点不存在 → 目标位于被移动子树内；仅全部条件通过时准入替换 | proved，2 verified/0 errors，忽略根节点与忽略后代冲突两个反例被拒；独立四布尔 oracle、Proptest、Miri、Kani harness 与 read-boundary fuzz 覆盖。实际 find/clone/remove/insert、移动后精确树形与整批回滚不在该切片；`UI-TXN-ATOMIC-001` 仍保持 not_verified |
-| UI-SCENE-NODE-TAKE-001 | `scene.rs::take_node` 及既有查找/移除依赖 | 成功返回前序首个匹配的直属或后代子树；返回后的树恰为旧树移除该首棵匹配子树；未命中保持整棵树结构相同 | proved，含查找/移除依赖 22 verified/0 errors；直属命中与深层命中返回未命中两个反例被拒；独立 clone/remove oracle、Proptest、Miri、Kani harness 与 read-boundary fuzz 覆盖。目标父节点插入、Move 后最终树、递归深度/栈与整批回滚不在该切片 |
-| UI-SCENE-NODE-INSERT-001 | `scene.rs::insert_node_at` 及既有查找依赖 | 父节点存在时恰在整个树中首个匹配父节点处插入传入子树，下标钳制到 `0..=child_count`；其他节点和字段保持；父节点不存在时整树不变 | proved，含查找依赖 15 verified/0 errors；未命中报成功、跳过插入、错误钳制三个反例被拒；独立 path oracle、Proptest、Miri、Kani harness 与 read-boundary fuzz 覆盖。Identity admission、Move 提取与插入的两阶段组合、Move 后最终树和整批事务不在该切片 |
+| UI-SCENE-MOVE-ADMISSION-001 | `scene.rs::scene_move_failure` | Move 失败优先级严格为根节点 → 源节点不存在 → 目标父节点不存在 → 目标位于被移动子树内；仅全部条件通过时准入替换 | proved，2 verified/0 errors，忽略根节点与忽略后代冲突两个反例被拒；独立四布尔 oracle、Proptest、Miri、Kani harness 与 read-boundary fuzz 覆盖。实际子树取出与插入的组合由 `UI-SCENE-MOVE-001` 单独证明；整批回滚仍不在该切片 |
+| UI-SCENE-NODE-TAKE-001 | `scene.rs::take_node` 及既有查找/移除依赖 | 成功返回前序首个匹配的直属或后代子树；返回值就是实际移除的精确子树；返回后的树恰为旧树移除该子树；未命中保持整棵树结构相同 | proved，含查找/移除依赖 23 verified/0 errors；直属命中与深层命中返回未命中两个反例被拒；独立 clone/remove oracle、Proptest、Miri、Kani harness 与 read-boundary fuzz 覆盖。目标父节点插入、Move 后最终树、递归深度/栈与整批回滚不在该切片 |
+| UI-SCENE-NODE-INSERT-001 | `scene.rs::insert_node_at` 及既有查找依赖 | 父节点存在时恰在整个树中首个匹配父节点处插入传入子树，下标钳制到 `0..=child_count`；其他节点和字段保持；父节点不存在时整树不变 | proved，含查找依赖 17 verified/0 errors；未命中报成功、跳过插入、错误钳制三个反例被拒；独立 path oracle、Proptest、Miri、Kani harness 与 read-boundary fuzz 覆盖。Identity admission、整批事务不在该切片；取出与插入的组合由 `UI-SCENE-MOVE-001` 覆盖 |
+| UI-SCENE-MOVE-001 | `scene.rs::move_node_at` 及准入、查找、取出、插入依赖 | 准入通过后，原树中实际取出的精确子树成为插入值；插入后的最终树是“先精确移除该子树、再把同一值插入移除后树的首个目标父节点并钳制下标”的结果；准入失败保持整树不变。重复身份异常树上若取出后目标消失，结果精确保持移除后的中间树，活动场景的 clone/staging 不会提交它 | proved，含依赖 26 verified/0 errors；把取出子树替换成新建节点、忽略目标下标两个反例被拒；独立 path/take/insert oracle、256 例 Proptest、Miri 与 read-boundary fuzz 覆盖。身份唯一转移另由 `UI-SCENE-CHECKED-PATCH-001` 与 `UI-SCENE-BATCH-UNIQUE-001` 证明；递归深度/栈、分配失败、整批回滚和整个 `UI-TXN-ATOMIC-001` 仍为 not_verified |
 | UI-IDENTITY-NEXT-001 | `ui_ir::identity::next_ui_identity` | live 身份拒绝再分配；retired 身份只返回 `last_generation + 1`；`u64::MAX` 显式返回 GenerationExhausted，不回绕 | proved，生产函数与 UiKey/IdentityError 类型同场 3 verified/0 errors；准入 live 复用/generation 回退两个反例被拒；独立 u128 Proptest、Miri 和 read-boundary fuzz 同时覆盖。BTreeMap 插入顺序、retire、snapshot restore 与整份文档事务不在该切片 |
 | UI-EVENT-PERMISSION-001 | `ui_ir::events::UiEventKind::required_permission` | Click/Activate → Activate；PointerDown/Up/Hover → Pointer；其余 Focus、Keyboard、TextCommit→TextEdit、IME、Scroll、Dismiss、Accessibility 各入其权限域 | proved，事件/权限类型与生产函数同场 3 verified/0 errors；Click 错入 Focus、Dismiss 错入 Activate 两个反例被拒；独立穷举 oracle、Proptest、Miri 和 read-boundary fuzz 同时覆盖。binding 查找、权限集合成员、会话/revision 与回调派发不在该切片 |
 | UI-EVENT-AUTHORITY-001 | `ui_ir::events::authority_failure_from_matches` | 四项全部匹配才准入；错误优先级严格为 identity domain → owner → session → revision | proved，生产函数与 AuthorityFailure 类型同场 2 verified/0 errors；忽略 domain、把 owner 错排到 domain 前两个反例被拒；字符串实际比较由调用方生成四个 match 布尔量，独立 Proptest、Miri 与 fuzz 覆盖组合。错误 String 构造、frame 校验、target/binding 查找和回调派发不在该切片 |
@@ -111,6 +112,7 @@ python3 scripts/verify-version.py --kernel resource-transition --verus "$VERUS"
 python3 scripts/verify-version.py --kernel utf8-floor-boundary --verus "$VERUS"
 python3 scripts/verify-version.py --kernel preedit-buffer-offset --verus "$VERUS"
 python3 scripts/verify-version.py --kernel scene-move-admission --verus "$VERUS"
+python3 scripts/verify-version.py --kernel scene-move --verus "$VERUS"
 python3 scripts/verify-version.py --kernel scene-node-take --verus "$VERUS"
 python3 scripts/verify-version.py --kernel scene-node-insert --verus "$VERUS"
 cargo test --locked --manifest-path verification/read-boundary/Cargo.toml \
@@ -138,6 +140,9 @@ cargo +nightly-2026-10-17 miri test --locked \
 cargo +nightly-2026-10-17 miri test --locked \
   --manifest-path verification/read-boundary/Cargo.toml \
   memory::scene_node_insert_boundaries -- --exact
+cargo +nightly-2026-10-17 miri test --locked \
+  --manifest-path verification/read-boundary/Cargo.toml \
+  memory::scene_move_boundaries -- --exact
 cargo +nightly-2026-10-17 fuzz run read_boundary fuzz/seeds/read_boundary -- \
   -max_total_time=10 -max_len=4096 -rss_limit_mb=1024 -timeout=5 -seed=12345
 ```
@@ -1108,10 +1113,10 @@ Kani 未得出结论的形状：一子一孙（unwind 3）520 秒超时、无判
 
 | 阶段 | 范围 | 结果 |
 |---|---|---|
-| Verus/Z3 | 真实 `Node`、`NodeKind`、`ScenePatch`、`SceneError` 声明上任意树与任意补丁的七个分支：身份不存在时报 `NodeNotFound` 且树仍是旧树；字段更新只改 `find_node_mut` 借出节点的该字段；`UpdateText`、`SetCanvas` 只写种类匹配的节点，否则报对应拒绝且节点不变；`Insert` 把节点放到首个匹配节点之下、下标钳制到子节点数的位置；`Remove` 拒绝根，否则移除首个匹配，未命中时树结构相同 | 15 verified/0 errors（含依赖的查找与移除内核）。23 个反例被拒：22 个在后置条件，1 个在中间断言 |
-| Proptest | 至多 24 节点的任意树、按身份变化的种类、七种补丁，对照基于显式栈路径和函数式重建的独立规格；身份域含根 | 256 例通过 |
-| Miri | 固定小树上七种补丁 | 通过 |
-| cargo-fuzz | `read_boundary` | 16647 次（与其他构建同跑；`batch_decode` 1115393 次不触及此内核） |
+| Verus/Z3 | 真实 `Node`、`NodeKind`、`ScenePatch`、`SceneError` 声明上任意树与任意补丁的八个分支：身份不存在时报 `NodeNotFound` 且树仍是旧树；字段更新只改 `find_node_mut` 借出节点的该字段；`UpdateText`、`SetCanvas` 只写种类匹配的节点，否则报对应拒绝且节点不变；`Insert` 把节点放到首个匹配节点之下、下标钳制到子节点数的位置；`Move` 委托给已证明的 `move_node_at`，继承其精确子树取出/插入结果；`Remove` 拒绝根，否则移除首个匹配，未命中时树结构相同 | 27 verified/0 errors（含依赖的查找、移除、插入与 Move 内核）。18 个分支变异被拒 |
+| Proptest | 至多 24 节点的任意树、按身份变化的种类、八种补丁（含 Move），对照基于显式栈路径和函数式重建的独立规格；身份域含根 | 256 例通过 |
+| Miri | 固定小树上八种补丁 | 通过 |
+| cargo-fuzz | `read_boundary` | 17198 次（最终全链；`batch_decode` 2063259 次不触及此内核） |
 | Kani | **只有三个分支和最小形状，`Insert` 没有结果**：根加一个无子节点的子节点，身份任意，unwind 2。`scene_patch_update` 只查 `UpdateStyle`，`scene_patch_kind` 只查 `SetCanvas`，`scene_patch_remove` 查根拒绝、命中、未命中。其余分支没有 harness | 677、769、643 checks / 0 failed（15、15、11 unreachable） |
 | Loom | N/A：内核无共享状态与同步原语，树经 `&mut` 独占 | 不计 PASS；未添加替代运行 |
 
@@ -1178,10 +1183,10 @@ Kani 未得出结论的形状（都在链外，已撤下；构建机与其他构
 
 | 阶段 | 范围 | 结果 |
 |---|---|---|
-| Verus/Z3 | 真实 `Node`、`NodeKind`、`ScenePatch`、`SceneError` 声明上任意树、任意补丁、从空开始且遵守 `IdentitySet` 契约的任意集合。`Insert`：树后接子树的前序身份有重复时报 `DuplicateNode`（指名该序列中的身份，父节点不存在时也如此），树不变；否则按 UI-SCENE-PATCH-001 写入，成功后前序身份无重复，且恰为旧序列在一个位置放入子树的序列，失败树不变。其他补丁：按 UI-SCENE-PATCH-001 写入且不做检查；更新、拒绝与未命中保持序列，成功的 `Remove` 恰好取走一棵带该身份的子树；原本无重复的树仍无重复 | 47 verified/0 errors（含重新验证的依赖）。7 个反例被拒：跳过检查、报重复时返回成功、吞掉失败、丢弃补丁由后置条件拒绝；只查树、只查子树、去掉空集合要求由证明中失败路径上的断言拒绝。反例只验证 `apply_checked_patch`，依赖已由正例验证 |
+| Verus/Z3 | 真实 `Node`、`NodeKind`、`ScenePatch`、`SceneError` 声明上任意树、任意补丁、从空开始且遵守 `IdentitySet` 契约的任意集合。`Insert`：树后接子树的前序身份有重复时报 `DuplicateNode`（指名该序列中的身份，父节点不存在时也如此），树不变；否则按 UI-SCENE-PATCH-001 写入，成功后前序身份无重复，且恰为旧序列在一个位置放入子树的序列，失败树不变。其他补丁：按 UI-SCENE-PATCH-001 写入且不做检查；更新、拒绝与未命中保持序列，成功的 `Remove` 恰好取走一棵带该身份的子树；`Move` 把同一子树从旧序列移除并在另一位置放回，原本无重复的树仍无重复 | 62 verified/0 errors（含重新验证的依赖）。7 个反例被拒：跳过检查、报重复时返回成功、吞掉失败、丢弃补丁由后置条件拒绝；只查树、只查子树、去掉空集合要求由证明中失败路径上的断言拒绝。反例只验证 `apply_checked_patch`，依赖已由正例验证 |
 | Proptest | 至多 24 节点的树，按标志重新编号以走准入路径，否则用重复身份走拒绝路径；除 `UpdateSemantics` 外的补丁，配真实 `BTreeSet`，对照独立的递归前序和已有的补丁规格 | 256 例通过 |
-| Miri | 一个固定形状上六种补丁与标志组合 | 通过 |
-| cargo-fuzz | `read_boundary` | 11464 次（与其他构建同跑；`batch_decode` 978403 次不触及此内核） |
+| Miri | 一个固定形状上八种补丁与标志组合 | 通过 |
+| cargo-fuzz | `read_boundary` | 17198 次（最终全链；`batch_decode` 2063259 次不触及此内核） |
 | Kani | 发版时验证。没有新增 harness，也没有运行 | 未运行 |
 | Loom | N/A：内核无共享状态与同步原语，树与集合都经 `&mut` 独占 | 不计 PASS；未添加替代运行 |
 
@@ -1197,10 +1202,10 @@ Kani 未得出结论的形状（都在链外，已撤下；构建机与其他构
 
 | 阶段 | 范围 | 结果 |
 |---|---|---|
-| Verus/Z3 | 真实 `Node`、`NodeKind`、`ScenePatch`、`SceneError`、`Scene` 声明上任意场景、任意期望版本、任意补丁序列，遵守 `IdentitySet` 契约且从空开始的任意集合。陈旧批次报陈旧；已有重复的树被拒绝；无重复的树上空批成功且场景不变；版本耗尽被拒绝；任何失败都让场景保持原值。成功的非空批次版本加一，结果树无重复，且结果树是一条轨迹的终点：每个补丁按序一步受检补丁，轨迹上每个状态都无重复 | 58 verified/0 errors（含重新验证的依赖）。8 个反例被拒：校验全放行、暂存吞掉失败、丢弃补丁、改版本、提交不校验、空批标志恒假由后置条件拒绝；暂存跳过补丁由证明中的断言拒绝；使用非空集合由前置条件拒绝 |
+| Verus/Z3 | 真实 `Node`、`NodeKind`、`ScenePatch`、`SceneError`、`Scene` 声明上任意场景、任意期望版本、任意补丁序列，遵守 `IdentitySet` 契约且从空开始的任意集合。陈旧批次报陈旧；已有重复的树被拒绝；无重复的树上空批成功且场景不变；版本耗尽被拒绝；任何失败都让场景保持原值。成功的非空批次版本加一，结果树无重复，且结果树是一条轨迹的终点：每个补丁按序一步受检补丁，轨迹上每个状态都无重复；`Move` 的子树换位保持身份唯一 | 73 verified/0 errors（含重新验证的依赖）。8 个反例被拒：校验全放行、暂存吞掉失败、丢弃补丁、改版本、提交不校验、空批标志恒假由后置条件拒绝；暂存跳过补丁由证明中的断言拒绝；使用非空集合由前置条件拒绝 |
 | Proptest | 至多 24 节点的树、至多 4 个补丁（插入、更新文本、移除），标志控制重新编号、耗尽版本和陈旧版本，配真实 `BTreeSet`，对照本地写出的折叠：准入来自独立前序，写入来自树补丁，每步后身份无重复 | 256 例通过 |
 | Miri | 一个固定形状上五种标志组合、四个补丁 | 通过 |
-| cargo-fuzz | `read_boundary` | 10572 次（与其他构建同跑；`batch_decode` 1342818 次、`ui_plugin_gate` 34518 次不触及此内核） |
+| cargo-fuzz | `read_boundary` | 17198 次（最终全链；`batch_decode` 2063259 次、`ui_plugin_gate` 44426 次不触及此内核） |
 | Kani | 发版时验证。没有新增 harness，也没有运行 | 未运行 |
 | Loom | N/A：内核无共享状态与同步原语，场景与集合都经独占引用或移动 | 不计 PASS；未添加替代运行 |
 
